@@ -1,0 +1,7 @@
+/receipt
+/cmd/receipt/main
+/.receipt/
+*.test
+coverage.out
+__pycache__/
+.pytest_cache/
