@@ -2,6 +2,11 @@
 
 Preserve existing user changes. Keep implementation status distinct from roadmap plans.
 
+Before writing or revising living documents, phase reviews or explanatory
+handoffs, read docs/PROSE-STYLE-GUIDE.md and apply its draft-review checklist.
+Teach the execution sequence through concrete examples before summarizing
+guarantees or alternatives. A glossary alone does not make a review readable.
+
 Before implementing or reviewing Go code, read `docs/CODING-PRACTICES.md`.
 It records this repository's error handling, enum, abstraction, validation and
 verification conventions. Follow its enforced rules; distinguish suggestions
@@ -24,5 +29,11 @@ After every implemented phase:
    If alternatives were not previously recorded, label the comparison retrospective rather than inventing decision history. Connect substantial claims to implementing code, evidence and limitations.
 3. Record verification performed, measurement scope, remaining limitations and decisions. Never equate stable input keys with deterministic outputs, safe filesystem publication with system-wide lock freedom, or an interface with free future reuse.
 4. Explain new concepts for a learner with no assumed prior knowledge. Keep old phase reviews as historical records and append amendments if their conclusions change.
+   Define unfamiliar terms, use a concrete example before abstract explanations,
+   and compare plausible alternatives with their costs and revisit conditions.
+   Avoid vague architectural slogans. Preserve dated decisions and evidence
+   during readability rewrites. Use Git history for earlier committed document
+   versions; do not create duplicate full-file snapshots unless requested.
+   Remove existing snapshots only at the user's explicit request and update links.
 
 Do not deploy, publish, or change external repositories without authorization.

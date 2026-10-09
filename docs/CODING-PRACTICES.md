@@ -106,6 +106,17 @@ to game. Revisit them with concrete false positives and readable alternatives.
 
 ## Verification and documentation
 
+- Read and follow [the prose style guide](PROSE-STYLE-GUIDE.md) when writing
+  explanations or phase reviews. Use its rejection checklist before claiming
+  that a draft is beginner-friendly; automated checks cannot certify readability.
+- Write phase explanations for a beginner computer science student. Define new
+  terms, show concrete execution examples and attribute actual code excerpts.
+  Explain which alternative structures could work, what they cost, and when to
+  revisit the choice. Avoid vague architectural slogans or unexplained jargon.
+- Preserve dated decisions and evidence when rewriting the guide. Use Git history
+  for earlier committed versions rather than duplicate full-file snapshots unless
+  requested. Clearly separate historical implementation evidence from checks
+  performed for the rewrite.
 - Run `make check`, `make race` and `make build` for cross-cutting refactors.
   Run PostgreSQL integration/race tests against an explicitly selected disposable
   database for shared-storage or HTTP error-classification changes.

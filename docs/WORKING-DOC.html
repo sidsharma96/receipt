@@ -1,571 +1,449 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Receipt — Living Architecture & Decision Record</title>
-  <style>
-    :root { --paper:#ecece6; --card:#f7f7f2; --ink:#17212b; --muted:#56616b; --line:#c6c8c1; --blue:#2f6690; --red:#a8391f; }
-    * { box-sizing:border-box } html { scroll-behavior:smooth }
-    body { margin:0; color:var(--ink); background:var(--paper); font:17px/1.58 Georgia,serif }
-    header,main,footer { max-width:1080px; margin:auto; padding:0 24px }
-    header { padding-top:64px; padding-bottom:40px; border-bottom:3px solid var(--ink) }
-    h1,h2,h3,nav,th,.label { font-family:Arial,sans-serif }
-    h1 { margin:.25rem 0; font-size:clamp(40px,7vw,78px); line-height:.95; text-transform:uppercase }
-    h1 em { color:var(--blue); font-style:normal }
-    h2 { margin-top:64px; padding-top:14px; border-top:3px solid var(--ink); text-transform:uppercase }
-    h3 { margin-top:32px } a { color:var(--blue) } code { background:var(--card); border:1px solid var(--line); padding:1px 5px }
-    pre { max-width:100%; overflow-x:auto; padding:16px; background:var(--card); border:1px solid var(--line); font:14px/1.5 monospace }
-    pre code { padding:0; border:0; background:none }
-    .label { color:var(--red); font-size:11px; letter-spacing:.16em; text-transform:uppercase }
-    .lede { max-width:66ch; color:var(--muted); font-size:20px }
-    nav { position:sticky; top:0; z-index:1; background:rgba(236,236,230,.96); border-bottom:1px solid var(--line); padding:10px 24px; text-align:center }
-    nav a { margin:0 10px; color:var(--ink); font-size:13px }
-    .callout { max-width:76ch; padding:16px 20px; background:var(--card); border-left:3px solid var(--blue) }
-    .warning { border-left-color:var(--red) }
-    table { width:100%; border-collapse:collapse; margin:20px 0; font-size:15px }
-    th { text-align:left; border-bottom:2px solid var(--ink); font-size:11px; text-transform:uppercase; letter-spacing:.08em }
-    th,td { padding:10px; vertical-align:top } td { border-bottom:1px solid var(--line) }
-    .status { white-space:nowrap; font-family:monospace; font-size:12px }
-    figure { margin:28px 0 } svg { width:100%; height:auto; background:var(--card); border:1px solid var(--line) }
-    figcaption { color:var(--muted); font:12px/1.4 monospace }
-    .box { fill:var(--paper); stroke:var(--ink); stroke-width:1.5 } .future { fill:#dce7ef; stroke:var(--blue); stroke-width:1.5 }
-    .edge { fill:none; stroke:var(--blue); stroke-width:2 } .svg-label { font:13px monospace; fill:var(--ink) }
-    .weeks { display:grid; grid-template-columns:100px 1fr; max-width:78ch }
-    .weeks>* { padding:10px; border-top:1px solid var(--line) } .weeks b { color:var(--blue); font-family:monospace }
-    footer { padding-top:56px; padding-bottom:80px; color:var(--muted) }
-    @media(max-width:650px){ nav { position:static } .weeks { grid-template-columns:1fr } table { display:block; overflow-x:auto } p,li { overflow-wrap:anywhere } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt — how it works, and why</title>
+<style>
+
+:root{color-scheme:light;--ink:#203044;--muted:#526477;--line:#d8e1e8;--accent:#145977;--paper:#fff;--wash:#f3f7fa}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--wash);color:var(--ink);font:17px/1.7 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-wrap:anywhere}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px;overflow-wrap:anywhere}
+a:hover{color:#0c374b}
+header{max-width:1240px;margin:0 auto;padding:48px 32px 26px}
+header .eyebrow{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(29px,4vw,43px);line-height:1.17;letter-spacing:-.035em;margin:10px 0 14px}
+header p{max-width:760px;color:var(--muted);margin:0}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:28px;max-width:1240px;margin:0 auto;padding:0 32px 64px}
+nav{position:sticky;top:24px;align-self:start;font-size:14px;max-height:calc(100vh - 48px);overflow:auto;padding-right:12px}
+nav details summary{font-weight:650;cursor:pointer;margin:0 0 12px}
+nav ol{padding-left:21px;margin:0}
+nav li{margin:0 0 9px;line-height:1.45}
+nav a{text-decoration:none}
+main{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 36px 40px}
+h2{font-size:27px;line-height:1.3;letter-spacing:-.02em;padding-top:30px;margin:34px 0 18px;border-top:1px solid var(--line)}
+h2:first-of-type{margin-top:16px}
+h3{font-size:21px;line-height:1.4;margin:32px 0 14px}
+p{margin:16px 0}
+ul,ol{padding-left:25px;margin:18px 0}
+li{margin:9px 0}
+.table-scroll{width:100%;overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:15px;line-height:1.55}
+th,td{text-align:left;vertical-align:top;padding:13px 15px;border-bottom:1px solid var(--line)}
+th{background:#eaf2f7;font-weight:650}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:550}
+pre{max-width:100%;overflow:auto;padding:20px;background:#eef3f7;border:1px solid var(--line);border-radius:8px;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:4;white-space:pre}
+footer{max-width:1240px;margin:0 auto;padding:0 32px 40px;color:var(--muted);font-size:14px}
+@media(max-width:1050px){
+ header{padding:30px 20px 22px}
+ .layout{display:block;padding:0 16px 40px}
+ nav{position:static;max-height:none;margin:0 0 20px;padding:14px 18px;background:#fff;border:1px solid var(--line);border-radius:8px}
+ nav ol{columns:2;column-gap:28px}
+ main{padding:6px 22px 28px}
+}
+@media(max-width:520px){
+ body{font-size:16px;line-height:1.65}
+ header{padding:26px 18px 20px}
+ .layout{padding:0 10px 32px}
+ main{padding:6px 16px 26px;border-radius:9px}
+ nav{max-height:240px}
+ nav ol{columns:1}
+ h2{font-size:24px}
+ h3{font-size:20px}
+ pre{padding:14px;font-size:12px}
+ footer{padding:0 20px 30px}
+}
+@media print{
+ body{background:#fff;font-size:11pt}
+ header{padding:0 0 16px}
+ .layout{display:block;padding:0}
+ nav{display:none}
+ main{border:0;padding:0}
+ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:8pt}
+ .table-scroll{overflow:visible}
+ table{min-width:0;font-size:9pt}
+ h2,h3{break-after:avoid}
+}
+
+</style>
 </head>
 <body>
-<nav><a href="#north-star">North star</a><a href="#architecture">Architecture</a><a href="#plan">12 weeks</a><a href="#decisions">Decisions</a><a href="#workload">Workload</a><a href="#unknowns">Unknowns</a><a href="#log">Change log</a><a href="#phase-review-2026-10-08">Code walkthrough</a><a href="WORKING-DOC.md">Phone companion</a></nav>
-<header>
-  <div class="label">Living document · update whenever the design changes</div>
-  <h1>Receipt <em>Working Doc</em></h1>
-  <p class="lede">A test-result cache that begins as a trustworthy local CLI, becomes a useful personal tool, and grows into a distributed cache without discarding its core model.</p>
-  <p><b>Current phase:</b> Phase 2 local shared-storage milestone implemented &nbsp;·&nbsp; <b>Updated:</b> 2026-10-08 &nbsp;·&nbsp; <b>Next:</b> GC/quotas, workload measurements, cloud adapter and identity gates · <a href="#phase-2-review">Phase 2 review</a></p>
-</header>
-<main>
-  <section id="north-star">
-    <h2>North star</h2>
-    <div class="callout"><b>Promise:</b> Receipt replays successful observations when declared inputs match. This does not prove a test is deterministic: external state, ignored files, time and randomness require explicit inputs, immutable environments or cache bypass.</div>
-    <p>Receipt is one evolving product, not three rewrites. Fingerprinting, replay and the store interface provide extension seams. Result schemas and consistency rules must evolve explicitly as we add separate blobs and networked storage; reuse is not automatic.</p>
-    <p><b>Primary success metric:</b> test minutes saved with zero known wrong hits. Secondary metrics are hit rate, lookup latency, fingerprint overhead and bytes stored. Phase 2 deduplicates server output blobs; controlled workload measurements remain a separate gate.</p>
-    <div class="callout warning"><b>Safety rule:</b> a false miss costs time; a false hit can conceal broken software. Every uncertain input must cause a miss.</div>
-  </section>
-
-  <section id="architecture">
-    <h2>Architecture that grows</h2>
-    <figure>
-      <svg viewBox="0 0 950 350" role="img" aria-label="Receipt architecture and evolution">
-        <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#2f6690"/></marker></defs>
-        <rect class="box" x="30" y="45" width="170" height="60"/><text class="svg-label" x="55" y="72">CLI / runner adapter</text><text class="svg-label" x="55" y="92">pytest first</text>
-        <rect class="box" x="265" y="45" width="180" height="60"/><text class="svg-label" x="290" y="72">Fingerprint engine</text><text class="svg-label" x="290" y="92">manifest → key</text>
-        <rect class="box" x="510" y="45" width="180" height="60"/><text class="svg-label" x="540" y="72">CacheStore</text><text class="svg-label" x="540" y="92">stable interface</text>
-        <path class="edge" d="M200 75H260" marker-end="url(#arrow)"/><path class="edge" d="M445 75H505" marker-end="url(#arrow)"/>
-        <rect class="box" x="35" y="195" width="210" height="70"/><text class="svg-label" x="65" y="222">Weeks 1–4: local</text><text class="svg-label" x="65" y="244">filesystem + JSON</text>
-        <rect class="future" x="370" y="195" width="210" height="70"/><text class="svg-label" x="398" y="222">Personal tool</text><text class="svg-label" x="398" y="244">verify + disk LRU</text>
-        <rect class="future" x="705" y="195" width="210" height="70"/><text class="svg-label" x="730" y="222">Weeks 9–12: shared</text><text class="svg-label" x="730" y="244">HTTP + Postgres + S3</text>
-        <path class="edge" d="M245 230H365" marker-end="url(#arrow)"/><path class="edge" d="M580 230H700" marker-end="url(#arrow)"/>
-        <text class="svg-label" x="132" y="315">same domain types · same cache keys · new storage implementations</text>
-      </svg>
-      <figcaption>Boundary first: business rules depend on interfaces, so network and storage can change without rewriting fingerprinting or replay behavior.</figcaption>
-    </figure>
-    <h3>Stable domain concepts</h3>
-    <table>
-      <tr><th>Concept</th><th>Meaning</th><th>Initial representation</th></tr>
-      <tr><td>Input</td><td>One fact that may affect the command's result.</td><td>kind, name, content hash</td></tr>
-      <tr><td>Manifest</td><td>Canonical, sorted description of every input.</td><td>Versioned JSON</td></tr>
-      <tr><td>Action key</td><td>Hash of the canonical manifest.</td><td>SHA-256</td></tr>
-      <tr><td>Result</td><td>Exit code, inline stdout/stderr, duration and input manifest.</td><td>Versioned JSON; output references are future work</td></tr>
-      <tr><td>Blob (planned)</td><td>Immutable output bytes addressed by their own hash.</td><td>Not implemented; separate files or object storage require a schema change</td></tr>
-      <tr><td>CacheStore</td><td>Lookup and write-once storage contract.</td><td>Local filesystem implementation</td></tr>
-      <tr><td>Runner</td><td>Executes commands and captures bounded output; replay does not reproduce side effects or stream interleaving.</td><td><code>os/exec</code>; pytest-specific identity probing lives in fingerprinting</td></tr>
-    </table>
-  </section>
-
-  <section id="plan">
-    <h2>Provisional 12-week build</h2>
-    <div class="callout"><b>Implementation status, 2026-10-08:</b> Local CLI and trusted HTTP sharing are implemented. Phase 2 adds optional Postgres metadata, separate content-addressed filesystem output blobs, shared conflict evidence/quarantine, counters and bounded HTTP admission. Cloud object storage, blob GC/quotas, tenant roles and portable keys remain planned. See <a href="#phase-2-review">Phase 2 review</a> and <a href="../README.md">README.md</a> for evidence and operational limits. The earlier phase review is historical.</div>
-    <div class="weeks">
-      <b>Weeks 1–2</b><div>Go fundamentals; CLI skeleton; canonical manifest; file, command and tool-version inputs; golden tests proving stable keys.</div>
-      <b>Weeks 3–4</b><div>Local immutable cache; subprocess capture and replay; pytest adapter; atomic writes; first end-to-end demo repository.</div>
-      <b>Weeks 5–6</b><div>Configuration file; explain command for hits/misses; Git-aware inputs; environment allowlist; cache inspection and deletion commands.</div>
-      <b>Weeks 7–8</b><div>Local LRU and size limits; concurrent-process safety; fault injection; benchmarks; adapters for <code>go test</code> and generic commands.</div>
-      <b>Weeks 9–10</b><div>HTTP API; authentication appropriate for a personal deployment; Postgres metadata; object storage for blobs; local cache fronts remote cache.</div>
-      <b>Weeks 11–12</b><div>Multi-client concurrency; observability; corrupted/missing-blob repair; deployment on one machine; published benchmark and wrong-hit ledger.</div>
-    </div>
-    <p>The schedule is evidence-driven. A phase graduates only when its invariants are tested; calendar time alone does not promote it.</p>
-  </section>
-
-  <section id="decisions">
-    <h2>Decision record</h2>
-    <p>Append decisions here; do not silently rewrite history. If a decision changes, mark it superseded and link the replacement.</p>
-    <table>
-      <tr><th>ID</th><th>Status</th><th>Decision</th><th>Reason / consequence</th></tr>
-      <tr><td>ADR-001</td><td class="status">ACCEPTED</td><td>Implement Receipt in Go.</td><td>Matches the source roadmap; strong standard library for CLIs, hashing, processes and HTTP; builds to one binary.</td></tr>
-      <tr><td>ADR-002</td><td class="status">ACCEPTED</td><td>Keep domain contracts independent of storage and transport.</td><td>Allows local-file, local-daemon and distributed implementations to share behavior and conformance tests.</td></tr>
-      <tr><td>ADR-003</td><td class="status">AMENDED</td><td>Use SHA-256 input keys and immutable entries; first complete publication wins.</td><td>Input identity does not guarantee result identity. Verification detects conflicting observations and quarantines keys locally. Atomic publication uses a synced temporary file and create-if-absent hard link. Remote conflict coordination remains future work.</td></tr>
-      <tr><td>ADR-004</td><td class="status">ACCEPTED</td><td>Support pytest first, using CodeCraft as the first real workload.</td><td>CodeCraft has 185 pytest files across 21 configured suites, a <code>pyproject.toml</code>, <code>uv.lock</code>, shared fixtures, and slow/concurrency markers. It is large and varied enough to measure useful cache behavior.</td></tr>
-      <tr><td>ADR-005</td><td class="status">ACCEPTED / EXTENDED</td><td>Hash tracked and untracked nonignored working-tree files, plus declared extras.</td><td>The original tracked-only proposal missed new test files. Ignored inputs must be declared explicitly. Symlinks and submodules currently force an uncached run.</td></tr>
-      <tr><td>ADR-006</td><td class="status">ACCEPTED</td><td>Versioned JSON with sorted input records; SHA-256 payload checksums.</td><td>Canonical keys are order-independent. Corrupted local entries cause execution or remote fallback. Checksums detect damaged bytes, not dishonest clients.</td></tr>
-      <tr><td>ADR-007</td><td class="status">ACCEPTED</td><td>Hash environment values, executable bytes and resolved package versions; include absolute paths.</td><td>Values are not stored in plaintext. Shell variables can cause harmless misses. Package versions assume installed packages are immutable; editable dependencies need explicit extra inputs. Absolute paths deliberately limit remote portability.</td></tr>
-      <tr><td>ADR-008</td><td class="status">ACCEPTED</td><td>Store successes only; stream misses, replay stdout then stderr; close stdin.</td><td>Interactive input and original stream interleaving are outside the replay contract. Side effects are not reproduced. Output capture is capped at 8 MiB per stream; larger runs are not stored.</td></tr>
-      <tr><td>ADR-009</td><td class="status">ACCEPTED</td><td>Compare manifests before and after execution.</td><td>Changed inputs prevent storage. This does not detect files changed and restored mid-run; stable checkouts remain a precondition.</td></tr>
-      <tr><td>ADR-010</td><td class="status">ACCEPTED</td><td>Trusted-client HTTP baseline over the disk store, authenticated with a bearer token.</td><td>HTTPS required by the client outside loopback. No tenant isolation or global quarantine yet. Postgres metadata and content-addressed output blobs are the next shared-storage phase.</td></tr>
-      <tr><td>ADR-011</td><td class="status">ACCEPTED</td><td>Approximate disk LRU with a 1 GiB entry budget.</td><td>Successful replay updates entry modification time. Concurrent pruning has a soft bound. History and quarantine metadata are excluded from the budget.</td></tr>
-    </table>
-  </section>
-
-  <section id="workload">
-    <h2>First workload: CodeCraft</h2>
-    <p><code>/Users/siddharthsharma/Desktop/interview-prep/CodeCraft</code> is the acceptance workload. Its initial command is <code>uv run pytest</code>; smaller suite and single-file invocations will also be used while developing.</p>
-    <table>
-      <tr><th>Observed property</th><th>Fingerprint implication</th></tr>
-      <tr><td>Python ≥3.11, pytest ≥8 and Hypothesis ≥6</td><td>Include the Python implementation/version, resolved pytest version, and dependency lockfile.</td></tr>
-      <tr><td><code>pyproject.toml</code> defines test paths and markers</td><td>Include both <code>pyproject.toml</code> and the exact command arguments.</td></tr>
-      <tr><td><code>uv.lock</code> is present</td><td>Include its content hash; it describes the resolved dependency environment.</td></tr>
-      <tr><td>Root <code>conftest.py</code> provides fixtures</td><td>It must be included even when running one nested test file.</td></tr>
-      <tr><td>Concurrency, time-sensitive and fault-injection tests exist</td><td>Do not assume all results are deterministic. Initially cache successful results only and maintain an escape hatch to bypass caching.</td></tr>
-      <tr><td>Working tree commonly contains uncommitted edits</td><td>Hash working-tree bytes, not only the Git commit SHA. Git supplies the file list, not the content identity.</td></tr>
-    </table>
-    <p>LeetCode is reserved for a later compatibility test. It has many Python solution files but presently lacks CodeCraft's explicit pytest configuration and broad test suite, making it less informative as the first benchmark.</p>
-  </section>
-
-  <section id="unknowns">
-    <h2>Open questions</h2>
-    <ol>
-      <li>After successful-result caching is trustworthy, which classes of pytest failure are safe and useful to cache?</li>
-      <li>Which environment variables can be excluded safely to reduce harmless misses?</li>
-      <li>Which CodeCraft suites are deterministic enough to cache? Performance and concurrency tests should initially bypass caching.</li>
-      <li>How should pytest duration text be normalized for semantic verification without concealing meaningful changes?</li>
-      <li>How should clients publish and discover conflicting observations in the shared cache?</li>
-      <li>What sandbox and input policy would justify portable keys across checkout paths?</li>
-    </ol>
-  </section>
-
-  <section id="log">
-    <h2>Change log</h2>
-    <table>
-      <tr><th>Date</th><th>Change</th><th>Why</th></tr>
-      <tr><td>2026-09-11</td><td>Created the living document and the three-stage architecture.</td><td>Turn the roadmap project into one extensible product delivered over 10–12 weeks.</td></tr>
-      <tr><td>2026-09-11</td><td>Accepted pytest and CodeCraft as the first runner and workload; reserved LeetCode for later compatibility testing.</td><td>CodeCraft provides a configured, varied suite large enough to exercise correctness, performance, concurrency and explainability.</td></tr>
-      <tr><td>2026-10-08</td><td>Implemented the Go CLI, input manifests, disk cache, replay, verification, explanations, pruning and authenticated HTTP sharing.</td><td>One complete product path precedes Postgres, blob dedupe and sandboxed execution. Added concurrency, corruption, remote-fallback and CLI tests. Build, unit tests, race detector and vet pass.</td></tr>
-      <tr><td>2026-10-08</td><td>CodeCraft smoke test: <code>uv run pytest 02_string_parsing/tests/test_05_run_length_encoding.py -q -p no:cacheprovider</code>.</td><td>15 tests passed; next invocation was a hit. Observed invocation wall times: ~1.69 s miss, ~0.22 s hit; test-process duration ~0.50 s. One pair on this machine, not a statistically controlled benchmark. Also exercised the included two-test Python fixture.</td></tr>
-    </table>
-  </section>
-  <section id="phase-review-2026-10-08">
-    <h2>Phase code walkthrough</h2>
-    <p>This is the phone-readable companion to <a href="WORKING-DOC.html">the living HTML document</a>. If a phone's file viewer displays literal HTML, that is not evidence the page is broken: the viewer may be treating the attachment as text instead of rendering a web page. Use this Markdown companion in a Markdown/text viewer. Serving the HTML through a web server is another option; no public deployment is configured.</p>
-    <h3>Phase review convention</h3>
-    <p>After <strong>every implemented phase</strong>, update both documents and answer these nine questions in the chat, using actual code snippets where applicable: data structures; architecture and extension boundaries; concurrency/networking primitives; pitfalls; hot/cold paths; guarantees/assumptions/non-goals; alternatives and tradeoffs; evidence/untested failures/risks; conditions for revisiting decisions. Connect substantial claims to code, evidence and limitations. Label retrospective alternative comparisons honestly. Distinguish implemented behavior from future plans. Keep earlier reviews as dated records; append a new review when behavior changes. Sections 6–9 below expand this review on 2026-10-08 without changing implementation behavior.</p>
-    <h3>Review: 2026-10-08 — local tool + trusted-client HTTP baseline</h3>
-    <p>This is a review of the implementation delivered so far, not a claim that the entire 12-week roadmap has graduated. Postgres, separate output blobs, tenant identity/authorization, sandboxed execution and distributed conflict coordination remain future work. The CLI supports run, explain, cache inspection/pruning and serving the shared cache.</p>
-    <h4>1. Data structures: what and why?</h4>
-    <p>From <code>internal/fingerprint/manifest.go</code> (field tags omitted here):</p>
-    <pre><code>type Input struct {
-    Kind string
-    Name string
-    Hash string
-}
-
-type Manifest struct {
-    Version   int
-    Root      string
-    Directory string
-    Platform  string
-    Command   []string
-    Inputs    []Input
+<header><div class="eyebrow">Receipt · living working document</div><h1>How Receipt works, and why</h1><p>Follow a command from a local cache to a shared server and safe cleanup. Implementation: ff45e74 · Documentation revision: 8 October 2026.</p></header>
+<div class="layout"><nav aria-label="Guide contents"><details open><summary>Contents</summary><ol><li><a href="#how-to-read-this-guide">How to read this guide</a></li><li><a href="#what-exists-now">What exists now?</a></li><li><a href="#one-command-from-the-users-perspective">One command, from the user's perspective</a></li><li><a href="#phase-1-review-remembering-a-local-run">Phase 1 review: remembering a local run</a></li><li><a href="#phase-2-review-sharing-results-between-clients">Phase 2 review: sharing results between clients</a></li><li><a href="#phase-3-review-limits-and-cleanup-without-deleting-needed-files">Phase 3 review: limits and cleanup without deleting needed files</a></li><li><a href="#coding-quality-review-explaining-our-implementation-conventions">Coding-quality review: explaining our implementation conventions</a></li><li><a href="#where-to-find-the-implementation">Where to find the implementation</a></li><li><a href="#decision-history-and-current-explanations">Decision history and current explanations</a></li><li><a href="#verification-implementation-evidence-versus-documentation-checks">Verification: implementation evidence versus documentation checks</a></li><li><a href="#what-should-the-next-learning-phases-teach">What should the next learning phases teach?</a></li><li><a href="#future-updates">Future updates</a></li></ol></details></nav><main id="content">
+<p>Updated 2026-10-08. This is an explanation of the code at commit ff45e74. The update changes documentation, not Receipt's behaviour.</p>
+<p>Suppose you run the same Python tests twice without editing anything. Running them again may repeat work you have already done. Receipt tries to save that work: it remembers a successful run and can print its saved output the next time the recorded inputs match.</p>
+<p>That sounds simple. The interesting questions begin when a test reads something we did not record, two users get different outputs, or cleanup deletes a file another command still needs. This guide follows those questions from a personal command-line tool to a small shared service.</p>
+<h2 id="how-to-read-this-guide">How to read this guide</h2>
+<p>Start with Phase 1. It explains how Receipt describes a command and remembers its result. Phase 2 adds a server so several clients can share results. Phase 3 adds limits and cleanup.</p>
+<p>Each phase answers the same nine review questions. The answers explain the current code, including later changes where they affect an earlier phase. This is not a claim that earlier implementations already had every current safeguard. Earlier committed document versions are available through Git history.</p>
+<p>A code excerpt is copied from the attributed source file. Examples that invent file names, counts or output are labelled illustrative. They show the reasoning, not a measurement.</p>
+<p>For phone reading, use <a href="WORKING-DOC.md">the Markdown companion</a> if your file viewer displays HTML as text. In a browser, wide code blocks and comparison tables scroll inside their own boxes. The page itself should fit the screen.</p>
+<p>The writing rules are in <a href="PROSE-STYLE-GUIDE.md">PROSE-STYLE-GUIDE.md</a>. In short: explain a situation and its sequence before naming the concept. A reader should be able to describe what happens, not just recognize the terms.</p>
+<h2 id="what-exists-now">What exists now?</h2>
+<p>Receipt has three implemented parts:</p>
+<ul><li>Phase 1 saves successful command results on the user's computer, explains input changes, reruns results for verification and prunes old local entries.</li><li>Phase 2 shares results through HTTP, stores result descriptions in PostgreSQL, stores output in content-named files and remembers conflicting observations.</li><li>Phase 3 limits selected storage quantities and provides maintenance commands that coordinate with readers and writers.</li></ul>
+<p>The code also has typed command names, automated lint checks and selected error-handling helpers. These are implementation conventions, not another product phase.</p>
+<p>There are still important unfinished areas. Receipt does not discover every dependency a test might read. Its shared server trusts the holders of one access token; it does not give different users separate roles or private tenants. Multi-machine output storage, fully strict JSON decoding and production deployment measurements remain future work.</p>
+<h2 id="one-command-from-the-users-perspective">One command, from the user's perspective</h2>
+<p>Imagine running pytest in a Git repository. Git is used to discover files in the working tree; Receipt reads their current contents, not just the latest commit.</p>
+<p>Receipt records those files together with the command arguments, environment-value hashes and supported runtime information. It gives that record a content-derived name, called an input key. If it finds a usable saved result under that key, it prints the result. Otherwise it runs pytest.</p>
+<p>A usable saved result is a cache hit. Having to execute the command is a cache miss. Those names describe whether earlier work can be reused.</p>
+<p>The distinction matters: printing a saved result is not running the tests again. If the tests normally write a report file or send a network request, replay does not repeat that side effect.</p>
+<p>To try the personal tool, build it in the Receipt repository with “make build”, then invoke the built executable from the Git repository containing your tests. These are illustrative invocations, not a new smoke-test record:</p>
+<pre class="code"><code class="language-sh">/Users/siddharthsharma/Desktop/projects/receipt/receipt run -- uv run pytest
+/Users/siddharthsharma/Desktop/projects/receipt/receipt explain -- uv run pytest
+/Users/siddharthsharma/Desktop/projects/receipt/receipt run --verify -- uv run pytest</code></pre>
+<p>The double dash separates Receipt's options from the test command. “explain” compares recorded inputs with the last run. “--verify” reruns a saved result and compares its output. See the <a href="../README.md">README</a> for configuration, supported commands and setup.</p>
+<h2 id="phase-1-review-remembering-a-local-run">Phase 1 review: remembering a local run</h2>
+<p>Reviewed 2026-10-08; explanations revised using the style guide on the same date.</p>
+<h3 id="phase-1-review-remembering-a-local-run-1-what-data-structures-are-used-and-why">1. What data structures are used, and why?</h3>
+<p>Imagine writing down everything Receipt needs to identify a run: its command, its working directory and the files it depends on. We need to keep those pieces together without confusing one with another.</p>
+<p>Go's struct does that. It groups named fields with known types. Receipt calls this record a Manifest. From <a href="../internal/fingerprint/manifest.go">internal/fingerprint/manifest.go</a>:</p>
+<pre class="code"><code class="language-go">type Manifest struct {
+	Version   int      `json:&quot;version&quot;`
+	Root      string   `json:&quot;root&quot;`
+	Directory string   `json:&quot;directory&quot;`
+	Platform  string   `json:&quot;platform&quot;`
+	Command   []string `json:&quot;command&quot;`
+	Inputs    []Input  `json:&quot;inputs&quot;`
 }</code></pre>
-    <p>A <strong>struct</strong> is a named group of fields. An Input records one dependency, such as a file or environment variable. Its hash is a compact fingerprint of its value. The Manifest collects the declared dependencies of a command, including its location and platform.</p>
-    <p>A <strong>slice</strong> (<code>[]Input</code>, <code>[]string</code>) is a variable-length sequence. The command must preserve argument order: <code>pytest tests -q</code> and a different argument sequence are not interchangeable. Input discovery order must *not* affect identity, so inputs are sorted before serialization and hashing:</p>
-    <pre><code>func (m Manifest) Key() string {
-    m.Inputs = append([]Input(nil), m.Inputs...)
-    sort.Slice(m.Inputs, func(i, j int) bool {
-        if m.Inputs[i].Kind != m.Inputs[j].Kind {
-            return m.Inputs[i].Kind &lt; m.Inputs[j].Kind
-        }
-        return m.Inputs[i].Name &lt; m.Inputs[j].Name
-    })
-    b, _ := json.Marshal(m)
-    return Hash(b)
-}</code></pre>
-    <p>The first line copies the slice: a Go struct copy does not copy the slice's underlying elements. Without it, sorting could unexpectedly modify the caller's manifest. Stable keys mean stable identity for the recorded inputs, <strong>not deterministic test results</strong>.</p>
-    <p>Maps (<code>map[string]bool</code>) act as sets to deduplicate file paths. Manifest comparison uses maps from input identity to hash so it can find additions, deletions and changes without comparing every pair.</p>
-    <p><code>cache.Result</code> groups the manifest, key, stdout/stderr byte slices, exit code, duration and creation time. Entries use versioned JSON plus a SHA-256 payload checksum. This makes inspection/debugging simple, but reading an entry also reads its logs; byte slices become base64 in JSON, increasing size. Output is inline, not a separate deduplicated blob store.</p>
-    <p>Eviction uses a slice of entry metadata sorted by modification time. This is <strong>approximate disk LRU</strong>, not a hash map + doubly linked list giving constant-time LRU operations. With E entries, pruning needs roughly O(E log E) sorting plus directory/metadata reads. No Merkle tree is implemented or required for this baseline.</p>
-    <h4>2. Flow, architecture and extensibility</h4>
-    <pre><code>cmd/receipt → app: flags, configuration, policy
-                 ↓
-             fingerprint: declared inputs → key
-                 ↓
-             local disk lookup → optional HTTP lookup
-                 ↓                         ↓
-             valid hit                 no usable hit
-             replay output             runner executes command
-                                       fingerprint again
-                                       store eligible success
-
-HTTP server → authentication + validation → Store → disk</code></pre>
-    <p><code>cmd/receipt/main.go</code> is intentionally small:</p>
-    <pre><code>func main() {
-    os.Exit(app.Main(os.Args[1:], os.Stdout, os.Stderr))
-}</code></pre>
-    <p>The entry point connects the operating system to the application. <code>app</code> decides when to reuse, execute, verify or quarantine a result. <code>fingerprint</code> defines identity; <code>runner</code> owns subprocess behavior; <code>cache</code> owns storage and HTTP transport. Separating these concerns lets us test them independently.</p>
-    <p>From <code>internal/cache/store.go</code>:</p>
-    <pre><code>type Store interface {
-    Get(context.Context, string) (Result, error)
-    Put(context.Context, Result) error
-}</code></pre>
-    <p>An <strong>interface</strong> describes required behavior without choosing an implementation. The HTTP handler depends on this contract rather than filesystem details. Another store can implement it, and its behavior can be tested against the same expectations.</p>
-    <p>This is an extension seam, not free reuse. The CLI still directly manages disk history, quarantine and eviction. Postgres/object storage would require consistency rules and a versioned result format for blob references. New runner adapters currently mean extending fingerprint probing, not installing plugins. Shared identity/authorization can become a reusable platform module, but today's bearer token is not that module yet. Those changes deserve explicit phases rather than pretending the current interface solves them all.</p>
-    <h4>3. Concurrency, networking and fundamental primitives</h4>
-    <p>From <code>internal/runner/process.go</code>:</p>
-    <pre><code>c := exec.CommandContext(ctx, args[0], args[1:]...)
+<p>Command holds the arguments in order. Inputs holds individual records describing an input's kind, name and hash. Root and Directory are paths; Platform records the operating system and CPU architecture. Version identifies the format of this record so future changes can be distinguished from the current format. JSON is a text format for structured data; the labels beside the fields say which names to use when encoding this struct as JSON.</p>
+<p>The square brackets in “[]string” and “[]Input” mean slices: sequences whose length can vary. One command may have three arguments; another may have ten. One repository may contain fifty inputs; another may contain thousands. A fixed-size array would force us to choose a length in advance.</p>
+<p>Order has different meanings in these two slices. Rearranging command arguments can change the command. Rearranging the discovered input records should not change which run they describe. Receipt therefore keeps argument order but sorts the inputs before calculating the key.</p>
+<p>From Manifest.Key in the same file:</p>
+<pre class="code"><code class="language-go">m.Inputs = append([]Input(nil), m.Inputs...)
+sort.Slice(m.Inputs, func(i, j int) bool {
+	if m.Inputs[i].Kind != m.Inputs[j].Kind {
+		return m.Inputs[i].Kind &lt; m.Inputs[j].Kind
+	}
+	return m.Inputs[i].Name &lt; m.Inputs[j].Name
+})</code></pre>
+<p>Here m is the manifest being named. The first line makes a new slice containing the input records. Why copy before sorting? A slice refers to an underlying array. Sorting that array could otherwise rearrange the caller's inputs too. The remaining lines order records first by kind and then by name.</p>
+<p>During file discovery, Receipt also uses a map to remember paths it has already seen. A map is a lookup table. If Git and an explicit extra-input setting both identify the same file, the map helps avoid including it twice.</p>
+<p>A list could also remember those paths. But each new path would have to search the existing list for a duplicate. The map is a better fit for repeated membership questions; the slice is a better fit for the final ordered record. Neither is universally better.</p>
+<p>A linked list could hold the inputs, but Receipt does not need frequent insertion in the middle of a sequence. Extra nodes and pointers would add work to an operation that mostly appends, sorts and scans. A generic JSON map could hold the manifest fields, but then code would have to check what type each value contains. Named struct fields make the intended shape easier to inspect.</p>
+<h3 id="phase-1-review-remembering-a-local-run-2-what-is-the-overall-flow-and-where-can-it-be-extended">2. What is the overall flow, and where can it be extended?</h3>
+<p>A Go package groups related source files and functions. Follow one run through those packages:</p>
+<pre class="code"><code class="language-text">app: read the user's command and options
+  → fingerprint: describe inputs and calculate their key
+  → cache: look for a saved result
+       found → app validates and prints it
+       missing → runner executes the command
+                   → fingerprint describes inputs again
+                   → app saves an eligible successful result</code></pre>
+<p>The arrows show who calls whom; they are not separate services. All of this can happen inside one Receipt process on the user's computer.</p>
+<p>The fingerprint package answers “What inputs are we recording?” The runner answers “How do we launch this command and capture its output?” The cache package answers “How do we store and retrieve a result?” The app package combines those operations according to the user's options.</p>
+<p>Keeping these jobs separate makes a change easier to place. A new pytest-like tool might need a new input probe in fingerprint. A new result store belongs behind the cache methods. A new CLI option belongs in app.</p>
+<p>That does not mean extensions are automatic. A store with basic Get and Put methods still needs correct publication and failure behaviour. A new tool adapter still needs to understand what the tool reads. Later phases add requirements that are not captured by the original two storage methods.</p>
+<p>The <a href="#where-to-find-the-implementation">directory overview</a> maps these responsibilities to files.</p>
+<h3 id="phase-1-review-remembering-a-local-run-3-which-basic-execution-and-coordination-tools-are-used">3. Which basic execution and coordination tools are used?</h3>
+<p>On a miss, Receipt must start another program. That program is a subprocess: a separate process launched by Receipt. Starting it directly avoids an extra shell interpreting the arguments.</p>
+<p>From Run in <a href="../internal/runner/process.go">internal/runner/process.go</a>:</p>
+<pre class="code"><code class="language-go">stdout, stderr := &amp;limitedBuffer{limit: 8 &lt;&lt; 20}, &amp;limitedBuffer{limit: 8 &lt;&lt; 20}
+c := exec.CommandContext(ctx, args[0], args[1:]...)
 c.Dir = dir
 configureProcess(c)
+// Stdin is closed: a cached run cannot replay interactive input.
 c.Stdout = io.MultiWriter(out, stdout)
-c.Stderr = io.MultiWriter(errOut, stderr)
-c.WaitDelay = 2 * time.Second</code></pre>
-    <p><code>exec.CommandContext</code> starts a subprocess using separate arguments, without automatic shell interpretation. A <strong>context</strong> carries cancellation/deadlines. <code>MultiWriter</code> sends each stream both to your terminal and a bounded capture buffer. Capture stops growing at 8 MiB per stream; output continues streaming, but oversized results are not cached. Stdin is closed: interactive input is outside the replay contract.</p>
-    <p>On supported Unix platforms, a process group lets cancellation target the command and descendants that remain in its group:</p>
-    <pre><code>c.SysProcAttr = &amp;syscall.SysProcAttr{Setpgid: true}
-// Inside the cancellation callback:
-err := syscall.Kill(-c.Process.Pid, syscall.SIGKILL)</code></pre>
-    <p>This is not a sandbox, and a process that escapes the group is not covered. The fallback on other platforms does not provide equivalent group termination.</p>
-    <p>Disk publication uses a temporary file in the destination directory, writes and syncs it, then:</p>
-    <pre><code>e = os.Link(tmp, p)
-if os.IsExist(e) {
-    return nil
+c.Stderr = io.MultiWriter(errOut, stderr)</code></pre>
+<p>args[0] is the executable; the remaining arguments are passed to it. Dir selects the working directory. stdout and stderr are buffers for the command's normal-output and error-output streams.</p>
+<p>MultiWriter copies each stream to two destinations: the user's output writer and the capture buffer. You see a miss's output as it arrives rather than waiting until the command finishes.</p>
+<p>Each capture buffer stops growing at 8 MiB. The expression “8 &lt;&lt; 20” calculates that number of bytes. The user can still receive later output, but a result whose capture overflowed is not saved for reuse. This bounds Receipt's capture memory; it does not bound the test program's own memory. The command's standard input, stdin, is closed: interactive answers cannot be replayed from a saved result.</p>
+<p>The context passed to CommandContext carries a cancellation signal. On supported Unix systems, Receipt also targets the launched process group during cancellation so children in that group are not left running unnecessarily. That is process management, not isolation from the user's files or network.</p>
+<p>Saving the result has its own sequence: write a temporary file, sync and close it, then create the final filename only if absent. Sync asks the operating system to persist writes. Creating the final name after writing prevents readers from seeing a partly written final record.</p>
+<p>Two Receipt processes may still run the same tests at once. Only one can first publish at a given final name, but safe publication of one file does not eliminate duplicate execution or coordinate every other operation.</p>
+<h3 id="phase-1-review-remembering-a-local-run-4-what-can-go-wrong-and-how-would-we-investigate-it">4. What can go wrong, and how would we investigate it?</h3>
+<p>Suppose a test reads a CSV file that Git ignores. If we do not declare that file as an extra input, its contents may change without the key changing. Receipt can then reuse a result whose tests would behave differently now.</p>
+<p>This is why dependency discovery matters more than simply choosing a good hash function. Receipt includes tracked and nonignored untracked working-tree files, explicit extras, environment-value hashes, executable bytes and supported runtime/package information. It does not automatically record external databases, network responses, time, randomness or every installed-package byte.</p>
+<p>A hash is a fixed-size value calculated from bytes. Receipt uses the SHA-256 algorithm for these hashes. The same manifest bytes produce the same input key. But that tells us only that the recorded inputs match. It does not prove that they are every input the program uses.</p>
+<p>Receipt scans inputs before and after execution. A changed file normally prevents saving the result. But imagine the file contains A before the run, changes to B while the test reads it, then returns to A before the second scan. Receipt sees A twice. Two scans do not freeze the filesystem.</p>
+<p>Symbolic links—paths pointing to another path—and Git submodules are not treated as fully understood inputs. Unsupported cases run without caching rather than creating a result from an incomplete description.</p>
+<p>When debugging an unexpected hit or miss, start with “explain”, then inspect argument, environment, path and tool information. Absolute checkout paths are part of the key, so moving a repository can cause a miss even if its source files are unchanged.</p>
+<p>Finally, replay prints saved stdout followed by saved stderr. If the original run alternated between them, replay does not reconstruct that alternation. That can explain apparent changes in message order without implying that the stored stream bytes changed.</p>
+<h3 id="phase-1-review-remembering-a-local-run-5-which-work-happens-often-and-what-does-it-cost">5. Which work happens often, and what does it cost?</h3>
+<p>Looking for a usable result happens on ordinary runs. This is the hot path: frequently performed work. Pruning old cache entries is occasional work, or a cold path. “Cold” does not mean free.</p>
+<p>A hit skips pytest, but still describes the inputs, reads file contents, probes supported tool information, reads the saved result and prints the output. If describing the inputs costs almost as much as the tests themselves, the cache may offer little benefit.</p>
+<p>As an illustrative example, a one-file test in a thousand-file repository still uses the broader recorded input set. Receipt may inspect many files even though the test command names only one. This favours a conservative description over finely targeted reuse.</p>
+<p>If T is the total file content read and F is the number of input records, hashing includes work proportional to T. Sorting the records adds roughly O(F log F) work. Big O describes how work grows with input size; it is not a measured duration. Disk speed and runtime probes also matter.</p>
+<p>A miss pays that preparation cost, the test execution and another input scan before saving. Large captured output adds encoding, hashing and disk-writing work.</p>
+<p>Local pruning reads the entry inventory, sorts by file modification time and removes old entries until the approximate entry-byte budget is met. Hits touch those times to record recent use. With E entries, sorting adds O(E log E) work. Separate processes can overlap, so this is not a perfectly ordered global history or a strict instantaneous byte limit.</p>
+<h3 id="phase-1-review-remembering-a-local-run-6-what-does-the-local-design-ensure-and-what-does-it-assume">6. What does the local design ensure, and what does it assume?</h3>
+<p>A saved result is checked before reuse: its payload digest must match the stored bytes, its manifest must produce the claimed key and its exit status must indicate success. This catches a changed or malformed record rather than blindly trusting its filename.</p>
+<p>That is useful protection, but consider a dishonest person who changes the result and recalculates all its hashes. Hash checks alone do not identify the producer. They are integrity checks, not signatures.</p>
+<p>The main assumption is that the recorded inputs adequately describe the command. If a test reads the current time, the same recorded key can produce different outputs. Deterministic execution means the same inputs always give the same output; Receipt does not establish that property.</p>
+<p>Verification reruns and compares exit status plus output bytes. If pytest prints a different elapsed time, verification can find a conflict even if all assertions passed. The comparison means “these observations matched exactly,” not “these test outcomes were semantically equivalent.”</p>
+<p>The local entry budget excludes history and quarantine records. Quarantine means a recorded instruction not to reuse a key after conflicting observations. It persists rather than automatically trusting the key again after some time.</p>
+<p>Hashing environment values avoids storing their plaintext values, but hashing is not encryption. Someone may guess a simple value and hash the guess. Captured output can also contain secrets. Share results only within the trust assumptions of the tool.</p>
+<h3 id="phase-1-review-remembering-a-local-run-7-what-other-approaches-could-solve-these-problems">7. What other approaches could solve these problems?</h3>
+<p>These are comparisons added to explain the design, not claims that every alternative was debated before implementation.</p>
+<p>For input preparation, an incremental tree of hashes could help avoid reprocessing unchanged portions of a large repository. Such a structure is called a Merkle tree: parent hashes summarize child hashes. It would require rules for detecting changes reliably. It would not discover the ignored CSV file from the earlier example or make a time-dependent test deterministic.</p>
+<p>For eviction, consider three saved entries A, B and C. If A was saved first but read most recently, deleting the oldest saved entry is not the same as deleting the least recently used entry. FIFO—first in, first out—would remove A by age. Receipt instead uses touched file times as an approximation to recent use.</p>
+<p>A linked list plus a map can track exact recent use within one process. A heap can keep the oldest candidate readily available: it is a structure organized around finding a highest-priority item. Both approaches need maintained state if we want the benefit across many separate CLI processes. Rebuilding and sorting an on-disk inventory is simpler for a small personal cache.</p>
+<p>For targeted reuse, a full build system could track which tests depend on which files. That could avoid a miss after an unrelated edit. But we would have to obtain reliable dependency information first. Hashing the broader declared input set accepts extra misses instead of claiming that narrow relationship.</p>
+<h3 id="phase-1-review-remembering-a-local-run-8-what-evidence-supports-the-design">8. What evidence supports the design?</h3>
+<p><a href="../internal/fingerprint/manifest_test.go">The fingerprint tests</a> check canonical key behaviour, working-tree/environment changes and unsupported-input cases. <a href="../internal/runner/process_test.go">The runner tests</a> check output streaming, exit status, cancellation and capture limits. Local-store tests also exercise malformed and corrupted records.</p>
+<p>The historical review records one CodeCraft pytest comparison: about 1.69 seconds for a miss and 0.22 seconds for a hit. That shows the particular invocation benefited. It does not establish typical speedups across repository sizes or commands.</p>
+<p>We have not shown that all dependencies are discoverable. Systematic power-loss and disk-full testing also remain unfinished. The verification ledger later in this guide distinguishes recorded implementation checks from checks performed for this documentation update.</p>
+<h3 id="phase-1-review-remembering-a-local-run-9-what-would-make-us-change-these-decisions">9. What would make us change these decisions?</h3>
+<p>If input scanning takes most of an ordinary run, measure where it spends time before adding incremental hashing. If users need reuse across different checkout paths, define when those paths are equivalent before removing them from identity.</p>
+<p>If byte comparisons quarantine many useful results because of timing text, investigate explicit output normalization. That means specifying which differences can be ignored, with tests showing that meaningful differences are still caught.</p>
+<p>If local pruning becomes slow, revisit the maintained eviction structures above. If inputs frequently change during execution, revisit the two-scan model; a stronger execution environment may be needed rather than another hash function.</p>
+<h2 id="phase-2-review-sharing-results-between-clients">Phase 2 review: sharing results between clients</h2>
+<p>Reviewed 2026-10-08; explanations revised using the style guide on the same date. Phase 3 later adds the broader coordination used by current shared storage.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-1-what-data-structures-are-used-and-why">1. What data structures are used, and why?</h3>
+<p>Suppose Alice and Bob run different commands that both print the same output. Saving a complete copy of that output inside every result would waste space.</p>
+<p>The shared server separates the description of a result from its output bytes. PostgreSQL stores rows describing which input key produced which result. Files hold the stdout and stderr bytes. We call a stored chunk of bytes a blob; here it means one output stream.</p>
+<p>A row refers to its output through BlobRef. From <a href="../internal/cache/blob.go">internal/cache/blob.go</a>:</p>
+<pre class="code"><code class="language-go">type BlobRef struct {
+	Hash string `json:&quot;hash&quot;`
+	Size int    `json:&quot;size&quot;`
 }</code></pre>
-    <p>The hard link publishes a complete file only if the destination does not already exist. Concurrent writers therefore follow <strong>first publication wins</strong>; readers do not see a partly written final file. File and directory syncs address crash durability separately. There is no application mutex around this publication, but it is misleading to call the whole system lock-free: the filesystem performs coordination. Also, two processes can both execute tests before publishing. There is no singleflight, lease or distributed execution coordinator.</p>
-    <p>Networking uses <code>net/http</code>: GET and PUT of bounded, validated entries, bearer authentication, request contexts, client/server timeouts, and redirect refusal in the default client. The client requires HTTPS outside loopback. The server uses concurrent request handling; shutdown uses a goroutine (independent task) and channel (notification mechanism) to respond to cancellation. HTTP sharing shares stored results, <strong>not remote test execution</strong>.</p>
-    <h4>4. Pitfalls and debugging</h4>
-    <p>The most important safety check in <code>internal/app/app.go</code> is:</p>
-    <pre><code>after, e := fingerprint.Build(ctx, dir, command,
-    cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
-stable := e == nil &amp;&amp; after.Key() == key</code></pre>
-    <p>Changed inputs prevent storage, but a file could change and change back while tests run. This is a before/after check, not a snapshot or hermetic execution environment.</p>
-    <p>Other tricky boundaries:</p>
-    <ul>
-    <li><strong>Missing dependencies:</strong> ignored files, external files, network responses, clocks and randomness are not automatically fully modeled. Declare extra inputs, or bypass caching. Python package versions assume installed packages are unchanged; editable package source needs explicit inclusion.</li>
-    <li><strong>Surprising misses:</strong> environment values and absolute checkout paths participate in identity. Different shell state or checkout paths can prevent reuse even when code appears unchanged. Use <code>receipt explain -- &lt;command&gt;</code> to compare recorded inputs; it reports local cache state, not remote availability.</li>
-    <li><strong>Verification noise:</strong> <code>--verify</code> compares stdout/stderr byte-for-byte. A pytest duration change can trigger a mismatch even when the assertions match. Do not casually strip output until a semantic contract is defined.</li>
-    <li><strong>Replay limits:</strong> replay writes stdout then stderr; it does not preserve their original interleaving or reproduce test side effects. A displayed cached test duration belongs to the original run, not the current invocation.</li>
-    <li><strong>Trust:</strong> checksums detect corruption, not malicious fabrication. Trusted token holders can publish plausible fake successes. One bearer token provides no tenant isolation or read/write roles. Environment-value hashes are not encryption and may expose guessable values.</li>
-    <li><strong>Conflict scope:</strong> quarantine is local, so another client may still reuse the remote entry. Existing-entry publication does not itself detect differing outputs. Verification is explicit, not automatic on every hit.</li>
-    <li><strong>Operational edges:</strong> refresh removes an old entry before publishing a replacement; this is not an atomic swap. Some history, cache population and timestamp errors are best-effort. Large file reads consume memory; hard links/directory syncs depend on filesystem support. These deserve failure-injection tests and clearer diagnostics as the tool matures.</li>
-    </ul>
-    <h4>5. Hot and cold paths</h4>
-    <p><strong>Hot path</strong> means the repeated path we want fast; <strong>cold path</strong> is work done less often or when reusable state is missing. These labels depend on workload: frequent misses make the miss path hot too.</p>
-    <pre><code>Local hit: fingerprint → read/check entry → replay → touch/history
-Remote hit: fingerprint → local miss → GET/check → local write → replay
-Miss: fingerprint → lookups → execute → fingerprint again
-      → encode/sync/publish → optional PUT → prune
-Verify: lookup → execute anyway → fingerprint again → compare/quarantine</code></pre>
-    <p>A local hit skips tests, but still reads/hashes all selected files, probes the tool environment and decodes logs. Roughly, fingerprinting costs O(B + N log N), where B is input bytes and N is input records, plus subprocess/filesystem overhead. Replay costs scale with entry/output size. It is <strong>not O(1) for the whole hit</strong>.</p>
-    <p>Remote hits add network latency and local disk publication. Misses pay execution plus a second fingerprint, syncs and pruning. Pruning currently runs after successful miss storage and can become a bottleneck with many entries. Explain, list and maintenance are normally cold paths; listing currently decodes entire entries, so it is not a cheap metadata index. Separate blobs/indexes, incremental hashing and background pruning are future options that need correctness evidence first.</p>
-    <h4>6. Guarantees, assumptions and non-goals</h4>
-    <p>The contract is reuse of successful observations under declared inputs, not proof of deterministic behavior. <code>cache.Validate</code> checks version 1, a valid key matching <code>Manifest.Key()</code>, and exit code zero. The application also avoids publishing interrupted, oversized or input-changing runs.</p>
-    <p>From <code>internal/cache/store.go</code>, after writing and syncing a temporary file:</p>
-    <pre><code>e = os.Link(tmp, p)
-if os.IsExist(e) {
-    return nil
-}</code></pre>
-    <p>Successful linking is the visibility point for a new entry: readers see a complete file. File and directory syncs address durability, subject to operating-system/filesystem behavior. If the destination already exists, success does not establish that its output matches the submitted observation. HTTP 204 therefore does not mean the server retained that writer's particular bytes. A lost reply leaves the client uncertain whether publication happened; retry does not replace an existing entry, but deletion/pruning can change that state.</p>
-    <p>Assumptions: stable working trees, correctly declared dependencies, supported filesystem operations, and trusted shared-cache writers. Non-goals today: hermetic execution, reproduced side effects, remote execution, deterministic results, exactly-once execution, global quarantine, portable checkout keys or tenant isolation. Refresh is removal followed by publication, not an atomic replacement.</p>
-    <h4>7. Alternatives and tradeoffs</h4>
-    <p>This is a <strong>retrospective comparison</strong>, not a claim that every alternative was formally evaluated before implementation.</p>
-    <ul>
-    <li>Whole-repository hashing versus a dependency graph: broad simple coverage now, at the cost of misses from unrelated edits. Dependency selection needs evidence that omitted files cannot affect a command.</li>
-    <li>JSON with inline output versus separate blobs: easy inspection and fewer moving parts now; base64 and whole-entry reads cost space/memory. Blobs need versioned references, cleanup and missing-object handling.</li>
-    <li>Filesystem versus a database: no service dependency now; weaker indexing and shared coordination. A database introduces operations and transaction design, and does not automatically make external blob writes atomic.</li>
-    <li>First publication wins versus execution leases: simple complete publication now; duplicate execution and conflicting observations remain possible. Leases require expiry, crashed-owner recovery and protection against stale owners.</li>
-    <li>Shared token versus per-client identity/roles: sufficient only for a small trusted group; no isolated authorization or individual revocation. Identity is deferred, not solved by the token.</li>
-    <li>Byte-exact versus semantic verification: simple, auditable comparison now; harmless timing text can mismatch. Normalization must specify what differences it may hide before becoming trusted behavior.</li>
-    </ul>
-    <h4>8. Evidence, untested failures and remaining risks</h4>
-    <p>Claim-to-evidence examples:</p>
-    <ul>
-    <li>Stable ordering: <code>Manifest.Key()</code> sorts input records; <code>TestCanonicalKey</code> checks reordered inputs keep their key and changed arguments alter it. This does not establish complete input discovery.</li>
-    <li>Concurrent publication: <code>Disk.Put</code> uses create-if-absent linking; <code>TestDiskAtomicConcurrent</code> uses 32 goroutines and checks the first entry survives a later different output. This is not a separate-process crash/durability or concurrent-conflict-resolution test.</li>
-    <li>Input-change protection: the post-run manifest comparison is exercised by <code>TestChangedInputsNotStored</code>. Change-and-restore during execution remains undetected.</li>
-    <li>Remote authentication/transport checks: <code>TestHTTPConformance</code> exercises missing/wrong credentials and valid round trips; <code>TestRemoteRejectsPlaintextNonLoopback</code> checks unsafe URL rejection. This is not a full security audit or live TLS deployment test.</li>
-    </ul>
-    <p>Prior unit/race/vet/build checks and the CodeCraft smoke test are recorded below. The race detector checks exercised in-memory races; it does not prove cross-process or distributed correctness. One miss/hit timing pair is not a benchmark.</p>
-    <p>Untested or insufficiently characterized scenarios include independent-process publication, crash injection around sync/link, disk-full/permission errors, lost network replies, refresh/prune/read races and aggregate overload. A 32 MiB upload limit does not cap memory across concurrent uploads. Server pruning is explicit, so valid uploads can exhaust disk. Crashes may leave pending temporary files. There is no documented key/schema migration or correctness-bug invalidation policy yet.</p>
-    <p>Security/operations risks also include secret-bearing output, guessable environment hashes, shared-token compromise, absent per-client quotas, and undefined retention/token-rotation/deletion procedures. These are release gates before expanding trust, not reasons to claim production readiness now.</p>
-    <h4>9. Conditions for revisiting decisions</h4>
-    <ul>
-    <li>Add selective/incremental fingerprinting when repeated measurements show hashing or unrelated-edit misses materially reduce value; require equivalence/invalidation tests first.</li>
-    <li>Split output into blobs when measured storage, transfer or whole-entry decoding costs justify the added consistency and cleanup work.</li>
-    <li>Add shared metadata/transactions when indexing, global conflict handling or multi-client lifecycle rules exceed the filesystem contract. Define authority and partial-failure recovery before choosing storage.</li>
-    <li>Add execution deduplication when measured duplicate expensive runs matter; tolerate duplication until a correct ownership/expiry design exists.</li>
-    <li>Replace the shared token before untrusted or mutually isolated clients are admitted. Define tenants, permissions, revocation and data handling first.</li>
-    <li>Introduce semantic verification only after observed false mismatches yield an explicit normalization contract and tests preserving meaningful differences.</li>
-    <li>Change input-key semantics only with a documented version/invalidation policy; version fields alone are not a migration plan.</li>
-    </ul>
-    <p>Measure value using direct execution versus full Receipt invocation, with repeated trials, input/tool state, local/remote hit rates and timing distributions recorded. Include workloads where Receipt is slower. Do not add distributed infrastructure simply to make the project appear more advanced: each new phase should serve a measured product need or an explicitly labeled learning experiment.</p>
-    <h4>Verification evidence and next learning gates</h4>
-    <p>Previously completed checks: <code>make test</code>, <code>make race</code>, <code>make vet</code>, <code>make build</code>; toy pytest fixture; CodeCraft's selected run-length-encoding suite (15 passing tests), then a hit. Observed invocation times were approximately 1.69 s miss and 0.22 s hit on one machine. This is a smoke test, not a controlled benchmark or proof of universal cache correctness. No implementation changes were made for this review.</p>
-    <p>Next gates: define cache eligibility per workload; collect repeated end-to-end and fingerprint timings; exercise concurrent conflicting publications, refresh/prune races and crash recovery; define semantic versus byte-exact verification; then design shared conflict evidence and tenant authorization before broadening trust.</p>
-    <p>Review validation: <code>make test</code> passed again (cached results). Direct <code>go test ./...</code> hit the known macOS/Go linker issue, <code>missing LC_UUID</code>; the Makefile selects the external linker on Darwin. Use the project test command on this machine. Both document formats now contain all nine review sections. HTML mobile layout scrolls long code blocks and tables; a phone viewer that treats HTML as text still needs the companion or a browser-served page. The nine-question expansion is documentation-only; prior test evidence is not a new test run for this amendment.</p>
-  </section>
-  <section id="phase-2-review">
-    <h2>Phase 2 review: 2026-10-08 — locally verified shared storage</h2>
-    <p>For the expanded plain-language walkthrough, see the <a href="#phase-2-learning-amendment">Phase 2 learning amendment</a>. The original review below is preserved.</p>
-    <p>Scope: turn the trusted-client HTTP baseline into an inspectable, persistent shared cache. This completes the local shared-storage milestone, not cloud deployment or every future operational requirement. No existing external database was changed; verification used an isolated PostgreSQL 14.17 cluster on a private Unix socket.</p>
-    <h3>1. Data structures and reasons</h3>
-    <p>From <code>internal/cache/blob.go</code>:</p>
-    <pre><code>type BlobRef struct {
-    Hash string `json:&quot;hash&quot;`
-    Size int    `json:&quot;size&quot;`
-}
-type BlobStore interface {
-    Get(context.Context, BlobRef) ([]byte, error)
-    Put(context.Context, []byte) (BlobRef, error)
-}</code></pre>
-    <p>A reference replaces inline output in stored metadata. Its SHA-256 identifies bytes; its size helps reject damaged or oversized objects. Equal output shares one object, including empty output. A version-2 <code>blobRecord</code> contains a v1 result header without logs plus stdout/stderr references. PostgreSQL tables use primary keys for action identity and <code>(key, digest)</code> for distinct observation evidence. Observation digest includes exit code and output hashes, <strong>not</strong> execution/creation time. Reports retain hashes, not an additional complete log copy.</p>
-    <h3>2. Architecture, flow and extension boundaries</h3>
-    <pre><code>client → bounded/authenticated HTTP → Postgres Store
-PUT: validate → publish/check output blobs → metadata transaction
-GET: read metadata/quarantine → fetch/check blobs → v1 result response
-verify mismatch → POST conflict report → persistent shared tombstone
-local copy → remote status check → replay only if status allows it</code></pre>
-    <p><code>Postgres{DB *sql.DB, Blobs BlobStore}</code> composes database metadata and object bytes. <code>Store</code> remains unchanged; HTTP v1 and standalone local disk entries remain compatible. <code>ConflictStore</code> adds status/report behavior rather than assuming all stores implement it. A cloud adapter can implement <code>BlobStore</code>, but must supply the same integrity and durable publication behavior. Multiple API servers must share blobs as well as the database. Filesystem blobs are the implemented object backend; S3/R2 are not.</p>
-    <h3>3. Concurrency/networking primitives and reasons</h3>
-    <p>From <code>internal/cache/shared.go</code>, the publication transaction:</p>
-    <pre><code>INSERT INTO receipt_entries_v2(key,digest,record,quarantined)
-VALUES($1,$2,$3,$4) ON CONFLICT(key) DO NOTHING;
-SELECT digest,quarantined FROM receipt_entries_v2
-WHERE key=$1 FOR UPDATE;</code></pre>
-    <p>The primary key coordinates the first insert; the row lock serializes subsequent decisions for that key. Differing observations set quarantine and append evidence before commit. Blobs are written first, outside the transaction, avoiding database locks during filesystem writes. Startup migrations use a transaction-scoped advisory lock. These are explicit locks, not lock-free algorithms. Consult <a href="https://www.postgresql.org/docs/current/sql-insert.html">PostgreSQL INSERT</a> and <a href="https://www.postgresql.org/docs/current/explicit-locking.html">row locking</a>.</p>
-    <p>HTTP admission uses a bounded channel; nonblocking acquisition returns 503 when full. Atomic counters track aggregate outcomes. Admitted requests have a 25-second context deadline; client operations retain 10-second timeouts. Database pooling caps connections. Parameters carry values separately from SQL text. The pinned <a href="https://github.com/lib/pq">lib/pq driver</a> connects <code>database/sql</code> to Postgres.</p>
-    <h3>4. Pitfalls and debugging</h3>
-    <ul>
-    <li>Database transactions do not include blob writes. A failed commit may leave orphan objects; GC must later prove an object is unreferenced before deleting it.</li>
-    <li>Missing blobs fail reads; a valid re-upload restores them. Corrupt blobs fail reads and re-uploads rather than silently overwriting immutable data. Automatic repair is not implemented.</li>
-    <li>A local hit with a configured remote now needs a status request. A network outage or legacy server's 501 causes execution, not offline replay.</li>
-    <li>Status and replay are separate operations: a later quarantine cannot recall output already read. Old clients lack status checks; removing remote configuration opts back into standalone semantics.</li>
-    <li>Reports are trusted assertions. A compromised writer can quarantine valid keys. Report failures retain local quarantine but have no durable retry outbox; shared propagation can fail.</li>
-    <li>Byte-exact output still includes timing noise. Captured oversized outputs may produce only partial output identities in reports; local verification treats exceeding the capture limit as non-reusable, not proof of semantic failure.</li>
-    <li>Environment drift remains significant: the CLI smoke test observed a <code>SHLVL</code> change causing a miss, correctly explained by the tool.</li>
-    </ul>
-    <h3>5. Hot/cold paths and costs</h3>
-    <p>Standalone local hits are unchanged. Shared local hits add a metadata-only status request. Remote hits read one metadata row, verify up to two output blobs and rebuild inline v1 JSON; deduplication currently saves server disk space, <strong>not wire bytes</strong>. Miss publication adds blob sync/checks, a metadata transaction and evidence insertion. Output hashing still costs proportional to output bytes. Contending same-key uploads wait on database coordination.</p>
-    <p>Migration is a startup/cold path. Counters are cheap aggregate operations but not latency histograms. Request admission limits active API work, not all connections or exact process RSS. GC, index-only admin listing and controlled workload benchmarks remain future work.</p>
-    <h3>6. Guarantees, assumptions and non-goals</h3>
-    <p>Eligible successes become visible at metadata commit after complete blobs exist. Same exit/output identities are idempotent even if timing differs; conflicting uploads return 409 <strong>after committing quarantine and evidence</strong>. Explicit reports create persistent quarantine even before an entry exists. Future successful uploads cannot clear it. Failed observations can be evidence but are never replayable successes.</p>
-    <p>From <code>internal/cache/shared.go</code>:</p>
-    <pre><code>if err = tx.Commit(); err != nil {
-    return err
-}
-if conflict {
-    return ErrConflict
-}</code></pre>
-    <p>Returning a conflict after commit is deliberate: rolling back would erase the safety decision. A lost reply remains ambiguous; a retry consults the existing state. Database and filesystem durability are assumed to follow their documented storage guarantees. We do not promise two-resource atomicity, exactly-once tests, malicious-writer resistance, hermetic inputs, tenant isolation, cross-path portability or instant revocation of in-flight replay.</p>
-    <p>Compatibility policy: metadata uses separate <code>_v2</code> tables and a record version 2; key semantics, wire result version 1 and local entries are unchanged. Old disk data is not automatically imported. Unsupported stored record versions are rejected. Future key-policy changes need a new manifest version and explicit invalidation strategy.</p>
-    <h3>7. Alternatives and reasons</h3>
-    <p>This phase deliberately chooses Postgres rather than adding an ad-hoc filesystem lock protocol for shared evidence. JSONB keeps metadata inspectable; query-critical key/digest/quarantine fields remain explicit columns. A dedicated database is an optional operational cost, not a local requirement.</p>
-    <p>Filesystem CAS precedes a cloud adapter so integrity/publication tests run without credentials. Blob-first publication accepts recoverable garbage rather than making partially uploaded output visible. Row locks provide simpler same-key conflict reasoning than leases, which would solve duplicate execution rather than observation consistency. Shared-status checks favor safety over offline availability. Cloud storage, GC, execution leases and semantic normalization are deferred for the reasons above.</p>
-    <h3>8. Evidence, untested failures and risks</h3>
-    <p>Verification performed with database tests enabled and caching disabled: full unit/integration suite; full race suite; vet; build. <code>make integration</code> requires <code>RECEIPT_TEST_DATABASE_URL</code>; ordinary tests skip the database cases without it. Tests create/drop uniquely named isolated schemas, not the application's tables.</p>
-    <p>Evidence includes 32 equal concurrent database uploads; 20 differing concurrent observations; timing-insensitive equality; persistent quarantine/evidence; report-before-upload tombstones; missing-object re-upload; corrupt-object rejection; HTTP status/report behavior; overload 503 and metrics authentication; local-copy invalidation and outage behavior. Six independent subprocesses exercise blob publication, in addition to goroutine tests. The built CLI fetched a stored result through the still-running HTTP service into a fresh client cache after a real database stop/start. This verifies restart recovery, not power-loss durability.</p>
-    <p>Remaining tests: power-loss/crash injection at every publication boundary, disk-full/permissions, lost commit acknowledgements, independent API processes racing metadata operations, prolonged load/memory measurements, TLS deployment and repair/GC races. No controlled performance improvement is claimed for Phase 2. Counters reset on API restart; no durable monitoring stack is deployed.</p>
-    <p>Operational limits: no shared disk quota, retention, GC or per-client limits. A request cap does not prevent repeated uploads filling storage. Even bounded admitted requests can allocate substantial memory for payloads and JSON copies. Secret-bearing logs and environment hashes still need a data-handling policy. Do not expose the service to untrusted writers.</p>
-    <h3>9. Conditions for revisiting decisions</h3>
-    <p>Add cloud objects when clients need multi-node blob availability or filesystem storage is operationally inadequate; implement conformance tests before trusting the adapter. Add GC/quotas before sustained shared use; design reference-safe deletion with concurrent uploads. Add durable report retries if connectivity failures make conflict propagation unreliable. Add histograms/tracing when aggregate counters no longer explain measured latency.</p>
-    <p>Replace shared tokens before adding mutually isolated tenants. Revisit status-check availability only with an explicit bounded-staleness policy. Add remote blob transfer/deduplication only if measured wire costs justify a protocol version change. Upgrade the pinned SQL driver/toolchain through tested dependency changes, not silently. Execution deduplication and selective input hashing still need measured product value and separate correctness gates.</p>
-    <h3>Phase 2 decisions</h3>
-    <ul>
-    <li>ADR-012: optional Postgres authority plus content-addressed filesystem blobs; v2 metadata, unchanged v1 wire/key semantics.</li>
-    <li>ADR-013: record differing output identities and quarantine in the same transaction; explicit trusted-client reports create permanent tombstones.</li>
-    <li>ADR-014: new remote-configured clients check shared status before local replay and execute on unavailable status; acknowledge the in-flight race and legacy-client boundary.</li>
-    <li>ADR-015: authenticated aggregate counters, bounded admission and request deadlines; no production-resource or observability claim.</li>
-    </ul>
-    <p>Follow-up gates: GC/retention and quota design; durable conflict reporting; measured deterministic workloads; cloud adapter conformance; identity/authorization before broadening trust. Commands and operational boundaries are in README.</p>
-  </section>
-  <section id="phase-2-learning-amendment">
-    <h2>Phase 2 learning amendment — 2026-10-08</h2>
-    <p>This amendment expands the nine-question review in plain language. The earlier review and its evidence remain intact. No implementation or guarantee changed, and no new runtime tests were performed for this documentation amendment.</p>
-    <p>Phase 1 asks, “Can I safely reuse my own recorded result?” Phase 2 adds, “How do several clients share results, and what happens when they disagree?” The goal is understandable ownership and failure rules, not a claim of production readiness.</p>
-    <h3>1. Data structures: separate the description from the bytes</h3>
-    <p>A blob is simply a chunk of bytes. Here, stdout and stderr are blobs. From <code>internal/cache/blob.go</code>:</p>
-    <pre><code>type BlobRef struct {
-    Hash string `json:&quot;hash&quot;`
-    Size int    `json:&quot;size&quot;`
-}</code></pre>
-    <p>Instead of naming output after a test run, we name it using a SHA-256 hash of its contents. Identical output shares a stored object, even across different results. This is content addressing. The size checks expected length; the hash checks contents.</p>
-    <pre><code>Result A → stdout reference ─┐
-                            ├→ one blob containing &quot;PASS&quot;
-Result B → stdout reference ─┘</code></pre>
-    <p>From <code>internal/cache/shared.go</code>:</p>
-    <pre><code>type blobRecord struct {
-    Version int     `json:&quot;version&quot;`
-    Head    Result  `json:&quot;head&quot;`
-    Stdout  BlobRef `json:&quot;stdout&quot;`
-    Stderr  BlobRef `json:&quot;stderr&quot;`
-}</code></pre>
-    <p>The header keeps the manifest, exit code and timing, with inline output cleared. The references say where to retrieve output. Postgres stores this metadata, not the full output bytes.</p>
-    <p>Two identities matter: the <strong>action key</strong> identifies declared inputs and command; the <strong>observation digest</strong> identifies exit code and output hashes. Same action with different observations signals disagreement. It does not tell us whether the cause is randomness, missing inputs, timing text or dishonest reporting. The evidence table has one row per distinct <code>(key, digest)</code>; it is not a complete event-by-event audit log.</p>
-    <h3>2. Architecture: who owns which decision?</h3>
-    <p>The shared store composes two systems (<code>internal/cache/shared.go</code>):</p>
-    <pre><code>type Postgres struct {
-    DB    *sql.DB
-    Blobs BlobStore
-}</code></pre>
-    <p>Postgres answers, “Does this result exist, and is it eligible for reuse?” The blob store answers, “Where are the output bytes, and are they intact?”</p>
-    <pre><code>Upload: validate → write/check blobs → database transaction → commit
-Read: check metadata/quarantine → fetch/check blobs → reconstruct response</code></pre>
-    <p>Blobs come first so published metadata never intentionally points at output that has not finished uploading. <code>BlobStore</code> is the extension boundary for future cloud storage. The interface makes substitution possible; it does not supply cloud durability, permissions or recovery behavior. Multiple servers need access to the same blobs as well as the same database.</p>
-    <h3>3. Concurrency and networking: different mechanisms solve different problems</h3>
-    <p>Two writers for one action key must not independently make contradictory eligibility decisions. Publication uses these statements inside one transaction (<code>internal/cache/shared.go</code>):</p>
-    <pre><code>INSERT INTO receipt_entries_v2(key,digest,record,quarantined)
-VALUES($1,$2,$3,$4) ON CONFLICT(key) DO NOTHING;
-
-SELECT digest,quarantined FROM receipt_entries_v2
-WHERE key=$1 FOR UPDATE;</code></pre>
-    <p>The first statement creates the entry if absent without replacing an existing one. The second locks its row while deciding whether observations agree. Other writers for that key wait; different keys can generally proceed independently. The transaction makes evidence and quarantine changes commit together or roll back together.</p>
-    <p>HTTP admission has another job: avoid unlimited active cache work. From <code>internal/cache/http.go</code> (comments shortened):</p>
-    <pre><code>select {
+<p>Hash identifies the exact expected bytes. Size records their expected length. A reader checks both when opening the file. The filename is based on the content hash, so identical output can be stored once and referenced by several results.</p>
+<p>For illustration, 100 different input keys with the same 1 MiB stdout can reference one stdout file. There are still 100 result descriptions, and clients still upload the output. Deduplication saves repeated server-side storage; it does not automatically save upload bandwidth.</p>
+<p>The database also stores conflict evidence. Its action table identifies an input key; its evidence table identifies distinct observations for that key. A primary key is the table's uniqueness rule. Repeating the same observation does not create another identical evidence row.</p>
+<p>There are three different identities to keep separate:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table><thead><tr><th scope="col">Identity</th><th scope="col">Example question it answers</th></tr></thead><tbody><tr><td>Input key, calculated from the manifest</td><td>Are Alice and Bob describing the same recorded inputs?</td></tr><tr><td>Blob hash, calculated from output bytes</td><td>Is this exactly the output file the record expects?</td></tr><tr><td>Observation digest, calculated from exit status and output hashes</td><td>Did the two runs have the same recorded outcome?</td></tr></tbody></table></div>
+<p>Elapsed execution duration and creation time are excluded from the observation digest. But a timing value printed inside stdout is still output, so it can make the observations differ.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-2-how-do-clients-and-the-server-work-together">2. How do clients and the server work together?</h3>
+<p>A client is the Receipt program making requests. The server is the Receipt process accepting those requests. PostgreSQL is the database service the server uses.</p>
+<p>A client first describes its inputs. It can check the server's status for the key and fetch a shared result, or execute the command when no usable result is available. After a successful run, it can upload the result.</p>
+<p>The server checks the access token and request bounds, then asks shared storage to publish or retrieve the result. Storage reads/writes the database description and the output files.</p>
+<pre class="code"><code class="language-text">client → HTTP request → Receipt server
+                           → PostgreSQL: result description and conflict state
+                           → files: stdout and stderr bytes
+client ← HTTP response ← reconstructed result</code></pre>
+<p>The server's description uses format version 2 with file references. The HTTP result and local-cache result remain version 1 with the full output. The server reconstructs that result for the client, so a client does not need to understand the server's file layout.</p>
+<p>Now imagine Alice publishes one output for key K and Bob later publishes a different output for K. The server records the conflict and quarantines K. Quarantine says “do not reuse this key”; it does not say which client was right.</p>
+<p>A conflict report can also create that prohibition before any successful result has been saved. In that case the database remembers the warning without a reusable result. This small record is sometimes called a tombstone.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-3-how-does-it-handle-overlapping-requests-and-network-work">3. How does it handle overlapping requests and network work?</h3>
+<p>The server may receive many requests at once. Go runs request handlers using goroutines: independently scheduled activities inside one process.</p>
+<p>Unrestricted handlers could start more work than the service can reasonably handle. Receipt uses a buffered channel as a limited collection of admission slots. A request puts an item into the channel when admitted and removes it when finished.</p>
+<p>The following excerpt is from serveHTTP in <a href="../internal/cache/http.go">internal/cache/http.go</a>:</p>
+<pre class="code"><code class="language-go">select {
 case slots &lt;- struct{}{}:
-    // Acquired a slot; process the request.
 default:
-    metrics.rejected.Add(1)
-    w.Header().Set(&quot;Retry-After&quot;, &quot;1&quot;)
-    http.Error(w, &quot;busy&quot;, 503)
-    return
+	metrics.rejected.Add(1)
+	w.Header().Set(&quot;Retry-After&quot;, &quot;1&quot;)
+	http.Error(w, &quot;busy&quot;, http.StatusServiceUnavailable)
+	return
 }</code></pre>
-    <p>The bounded channel acts as available slots. Excess requests are rejected rather than placed in an unbounded queue. Contexts carry cancellation/deadlines; atomic counters allow concurrent updates without lost increments. Row locks protect decisions, slots limit active work, and deadlines limit how long cancellable work waits. None of these prevents duplicate test execution.</p>
-    <h3>4. Pitfalls: two stores do not become one transaction</h3>
-    <p>A database transaction cannot undo a filesystem write. If blobs succeed but metadata fails, the blobs remain with no references: they are orphans. We accept extra unused bytes rather than advertising missing output. Future garbage collection must not delete a blob another upload is about to reference.</p>
-    <p>The most easily misunderstood code is (<code>internal/cache/shared.go</code>):</p>
-    <pre><code>if err = tx.Commit(); err != nil {
-    return err
-}
-if conflict {
-    return ErrConflict
+<p>The empty struct is a token representing one occupied slot; its contents are irrelevant. If all slots are occupied, default rejects this request with HTTP 503 instead of starting more API work. The default capacity is 16. Each admitted operation also receives a 25-second context deadline.</p>
+<p>The database connection pool has a separate purpose: reuse connections while limiting how many are open. The shared maintenance CLI allows up to 16 open connections, four idle connections and a five-minute lifetime. A request slot and a database connection are not the same resource.</p>
+<p>Database updates use transactions. A transaction groups changes so they commit together or are rolled back together. Row locks make conflicting updates wait rather than both modifying a selected row independently.</p>
+<p>Current shared writers also take the broader locks added in Phase 3. Different keys therefore do not imply concurrent writes. The row-level rules remain useful, but the complete current sequence serializes shared writers.</p>
+<p>HTTP describes requests and responses. HTTPS adds transport encryption and server-certificate checks. An access token is separate: it shows that the request possesses the configured credential. Encryption alone does not decide whether the caller may upload a result.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-4-which-cases-are-easy-to-misunderstand">4. Which cases are easy to misunderstand?</h3>
+<p>A conflicting upload is supposed to fail as a reusable publication, but its warning must still be saved.</p>
+<p>If we automatically rolled back every database change whenever returning an error, we could report “conflict” while forgetting that K should no longer be reused. The implementation therefore commits the conflict state before returning the conflict error.</p>
+<p>A client with a shared server configured also checks status before replaying its local copy. If the status request fails, it runs the command rather than replaying a result whose shared status it cannot check.</p>
+<p>That check has a limit. Alice can check K, then Bob can quarantine K just before Alice finishes replaying. One status response cannot recall output Alice already read. Older clients that do not check status also do not follow this rule.</p>
+<p>When debugging conflicting results, look at the exit status and exact output, not only whether both test suites passed. Timing text or random ordering can differ. When debugging rejected uploads, distinguish a conflict from a storage-budget failure or an unavailable server; they mean different things.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-5-which-paths-are-frequent-and-what-do-they-cost">5. Which paths are frequent, and what do they cost?</h3>
+<p>A client fetching a shared result sends a network request, waits for the response and receives the saved output. The server reads the result description, reads the two output files, verifies them and encodes the response.</p>
+<p>A local hit with a shared server configured still needs the status request. Thus “the bytes are already on my laptop” does not mean “no network work.” Network latency can matter even when the server has little computation to do.</p>
+<p>Uploading involves output hashing, file work and database updates. If the output is already stored, the server still checks that existing file's bytes rather than accepting its name blindly. The current file implementation can do temporary-file work for a duplicate too.</p>
+<p>Metrics are occasional operational requests. They report aggregate counters such as requests and failures, not a history of individual executions. The counters reset when the server restarts.</p>
+<p>Phase 3 adds whole-store accounting to writes. That is a current cost of publication, described in its review below, not an optimization we already solved.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-6-what-can-clients-rely-on-and-who-must-they-trust">6. What can clients rely on, and who must they trust?</h3>
+<p>The server checks stored output against its expected length and hash. A malformed or changed file is not returned as a valid result simply because its name matches.</p>
+<p>It also records conflicting observations and refuses reuse of quarantined keys. This is stronger than silently keeping the first result after learning that another observation disagrees.</p>
+<p>But an authorized client can lie about what it ran. Conflict reports are assertions from trusted clients, not verified execution proofs. Someone with the token can prevent useful reuse by submitting false conflicting observations.</p>
+<p>The bearer token grants shared read/write access. Receipt does not yet distinguish users, organizations, administrative roles or private tenants. It should not be exposed to unrelated untrusted writers as if those rules existed.</p>
+<p>Clients require HTTPS for non-loopback URLs. Loopback is the local machine's network interface. That client rule does not mean a production TLS server and certificate setup are already deployed. Deployment and untrusted-code execution are separate unfinished problems.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-7-what-other-storage-and-conflict-designs-could-work">7. What other storage and conflict designs could work?</h3>
+<p>The comparisons below explain current choices after implementation. The decision summary later in this guide identifies the recorded decisions; new comparisons are not claims about earlier debates.</p>
+<p>Putting output inside every metadata record is simpler: one record contains everything. But repeated large output then consumes repeated storage. Keeping PostgreSQL descriptions and content-named files separates those costs.</p>
+<p>Putting output bytes directly in PostgreSQL could keep their publication and the result description in one database transaction. It would also enlarge the database and change write, backup and retrieval costs. That is a plausible alternative, not inherently bad.</p>
+<p>SQLite could reduce setup for a local deployment. Before substituting it in a shared server, we would need to test its write behaviour and operating assumptions for that deployment. PostgreSQL was chosen for shared metadata and transaction coordination; it is not established as optimal for every workload.</p>
+<p>An object-storage service could hold bytes for servers on different machines. It adds network failures and different rules for writing, reading and deleting objects. Current local filesystem locks would not carry over automatically.</p>
+<p>For evidence, storing every run would give more history than storing distinct observations. It would also grow faster. Ignoring conflicts would be cheaper still, but would knowingly allow reuse of contradictory results. The present design chooses distinct evidence plus quarantine within the Phase 3 budgets.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-8-what-tests-and-measurements-support-this">8. What tests and measurements support this?</h3>
+<p><a href="../internal/cache/shared_test.go">The shared-store tests</a> exercise publication, concurrent conflicts, reports, missing/corrupted output and HTTP handling. TestHTTPAdmissionAndMetricsAuth checks bounded admission and metrics access.</p>
+<p>The historical review describes 32 equal and 20 differing concurrent uploads, six independent blob-writer processes and fetching results after a database restart. These are specific scenarios, not a proof covering every sequence of distributed events.</p>
+<p>Production TLS, malicious token holders, multi-machine filesystem behaviour and sustained server load remain unestablished. The current tests are useful evidence for the cases they execute, not a deployment certificate.</p>
+<h3 id="phase-2-review-sharing-results-between-clients-9-when-should-the-shared-design-change">9. When should the shared design change?</h3>
+<p>If output bandwidth dominates, measure uploads before changing the wire format. Server-side deduplication does not solve repeated network transfer.</p>
+<p>Before allowing unrelated users, specify ownership and access rules. Adding a login page without authorization checks would not make one user's results private from another.</p>
+<p>Before running independent server machines, revisit where output lives and how cleanup coordinates with every instance. If strict immediate revocation becomes necessary, the status-then-replay approach needs a different protocol; another status endpoint alone will not close that timing gap.</p>
+<h2 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files">Phase 3 review: limits and cleanup without deleting needed files</h2>
+<p>Reviewed 2026-10-08; explanations revised using the style guide on the same date.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-1-what-data-structures-are-used-and-why">1. What data structures are used, and why?</h3>
+<p>Suppose we want the shared cache to stop growing indefinitely. Limiting only output bytes is not enough: a large number of tiny results can still create many database rows.</p>
+<p>Receipt stores four budgets in Limits. From <a href="../internal/cache/maintenance.go">internal/cache/maintenance.go</a>:</p>
+<pre class="code"><code class="language-go">type Limits struct {
+	MaxBlobBytes     int64 `json:&quot;max_blob_bytes&quot;`
+	MaxMetadataBytes int64 `json:&quot;max_metadata_bytes&quot;`
+	MaxEntries       int64 `json:&quot;max_entries&quot;`
+	MaxEvidence      int64 `json:&quot;max_evidence&quot;`
 }</code></pre>
-    <p>Why commit before returning an error? Detecting disagreement successfully produced a safety decision: quarantine the key. Rolling back would erase it. Conflict is a meaningful application outcome, not automatically a database failure.</p>
-    <p>Another race remains: checking shared status and replaying local output are separate operations. A quarantine can happen between them. We cannot recall output already read. Failed conflict reporting also has no durable retry queue; local quarantine can survive while shared propagation fails.</p>
-    <h3>5. Hot and cold paths: what work did we add?</h3>
-    <p>Shared local hits now add a metadata-only status request. Remote hits read metadata and up to two blobs, verify their hashes, and build the response. Uploads hash output, write/sync objects, and run a transaction.</p>
-    <p>Deduplication saves server disk space, <strong>not network bytes</strong>: HTTP still returns full output. Repeated uploads are not free either; the filesystem implementation writes a temporary file before discovering and checking the existing object. Standalone local hits still hash declared inputs as before.</p>
-    <p>Migration is startup work, usually a cold path. Counters give totals, not detailed latency distributions. Admission bounds active API work, not exact process memory or all incoming connections. Garbage collection is planned maintenance, not implemented behavior.</p>
-    <h3>6. Guarantees: what can we honestly promise?</h3>
-    <p>For the Postgres backend, equal exit/output identities do not conflict merely because creation time or execution duration differs. Different observations commit shared quarantine and evidence. Quarantined shared results are rejected. Failed executions can be evidence, never reusable successes. Retrieved output must match its reference's length and hash.</p>
-    <p>Important nuance: ignoring the separate duration field does <strong>not</strong> remove timing text printed inside stdout. That text still changes the output hash and can cause a conflict.</p>
-    <p>Explicit reports are trusted assertions, not proof that a conflicting execution happened. Complete input discovery, deterministic results, exactly-once execution, malicious-client resistance and immediate recall of in-flight reads are not guaranteed. Durability depends on the configured database/filesystem behavior. A reported mismatch is not automatically a genuine wrong hit.</p>
-    <h3>7. Alternatives: why this design now?</h3>
-    <p>This phase chooses Postgres for persistent, coordinated shared decisions rather than designing a custom filesystem lock protocol. Filesystem blobs make the content-addressing contract testable without cloud credentials. Blob-first publication favors orphan cleanup over visible missing output.</p>
-    <p>Shared-status checks favor safety over offline availability: if status cannot be established, run tests instead. Execution leases are deferred. A lease would try to prevent two clients running tests; our transaction coordinates decisions <strong>after</strong> they have observations. Those are different problems. Earlier broader alternative comparisons remain explicitly retrospective where decision history was not recorded.</p>
-    <h3>8. Evidence: what did the tests actually demonstrate?</h3>
-    <p>The implementation review records successful integration/race/vet/build checks. Database tests exercise equal and differing concurrent uploads, timing-insensitive equality, quarantine/evidence, report-before-upload tombstones, missing/corrupt output and HTTP behavior. Client tests check local-copy invalidation and outage behavior. Six independent subprocesses exercise blob publication. A database stop/start followed by a fresh-client fetch demonstrates persistence through that restart.</p>
-    <p>Relevant tests include <code>TestPostgresConformance</code>, <code>TestPostgresConcurrentConflictAndReport</code>, <code>TestPostgresMissingBlobAndHTTP</code>, <code>TestBlobIndependentProcesses</code>, <code>TestSharedQuarantineBlocksLocalReplay</code> and <code>TestSharedOutageDoesNotReplayLocalCopy</code> in <code>internal/cache/*_test.go</code> and <code>internal/app/shared_test.go</code>.</p>
-    <p>These do not prove power-loss durability, sustained-load performance, production security or safe GC. Goroutines exercising concurrent SQL operations are not independent API processes. The race detector does not prove distributed correctness. No performance improvement is claimed for Phase 2. Missing quotas/retention and secret-bearing logs remain operational risks.</p>
-    <h3>9. Revisit conditions: what should cause the design to change?</h3>
-    <ul>
-    <li>Add GC/quotas before sustained shared use can exhaust storage; deletion must respect concurrent uploads and references.</li>
-    <li>Add cloud blobs when several servers need reliable shared output access, with the same conformance expectations.</li>
-    <li>Add durable report retries when connectivity makes conflict propagation unreliable.</li>
-    <li>Add tenant identity/authorization before mutually isolated users share the service.</li>
-    <li>Add execution deduplication when measured duplicate expensive runs justify its ownership/recovery rules.</li>
-    <li>Change verification normalization only after defining which output differences are safe to ignore.</li>
-    <li>Add richer latency metrics when aggregate counters cannot explain measured delays.</li>
-    </ul>
-    <p>The defense is not “Postgres plus blobs is scalable.” It is: “Each component owns a clear responsibility, the failure rules are explicit, and the evidence has a stated boundary.”</p>
-  </section>
-<section id="coding-quality-2026-10-08">
-<h2>2026-10-08 — Coding-quality amendment, not a new product phase</h2>
-<p>Implemented: responsibility-based refactoring, enum coverage checks, complexity checks, wrapped-error checks, a sticky printer and independent limit validation. The full quotas/retention/GC phase review remains deferred at the user's request. Historical reviews above are preserved. See <a href="CODING-PRACTICES.md">CODING-PRACTICES.md</a>, now required reading through AGENTS.md.</p>
-<h3>1. Data structures: what and why?</h3>
-<p>Root/cache/shared commands use named string types and typed constants. InputKind retains the version-one wire strings. runSession groups one invocation's inputs and dependencies; cacheAPI holds the existing handler's shared counters and admission channel. Neither is a generic workflow framework. A printer stores an io.Writer and the first write error.</p>
-<p>Actual excerpt from internal/app/printer.go:</p>
-<pre><code>func (p *printer) println(args ...any) {
-    if p.err == nil {
-        _, p.err = fmt.Fprintln(p.out, args...)
-    }
-}</code></pre>
-<h3>2. Architecture and extension boundaries</h3>
-<p>The CLI now separates explanation, lookup, replay, verification, failed-result handling and publication in internal/app/run_session.go. HTTP authentication, admission and timing wrap separate routing/endpoint methods in internal/cache/http.go. Fingerprint discovery, file hashing, environment hashing and toolchain probing are separate helpers. Blob inventory separates walking from layout classification. These are named responsibility boundaries, not guarantees of free future reuse.</p>
-<p>Actual excerpt from internal/app/app.go:</p>
-<pre><code>if hit &amp;&amp; o.verify {
-    return s.verify(ctx, prior, r, stable)
-}
-if r.ExitCode != 0 {
-    return s.failed(ctx, prior, r, stable)
-}
-return s.publish(ctx, r, stable)</code></pre>
-<h3>3. Concurrency, networking and fundamental primitives</h3>
-<p>No new goroutines, network endpoints or lock protocols were added. Existing contexts, HTTP timeouts, admission slots, SQL transactions and filesystem locks remain. The printer is per-command and not concurrency-safe. errors.Is preserves sentinel classification through wrapping; errors.Join combines independent validation failures without performing database work.</p>
-<p>Actual excerpt from internal/cache/maintenance.go, Limits.validate:</p>
-<pre><code>if field.value &lt; 0 {
-    errs = append(errs, fmt.Errorf("%s: limits must be nonnegative", field.name))
-}</code></pre>
-<p>After checking the four fields, that function returns errors.Join(errs...).</p>
-<h3>4. Pitfalls and debugging challenges</h3>
-<p>Always check the printer's final error: suppressed later writes do not undo earlier output or stop non-printing computations. Do not put cleanup behind sticky errors. A chain runner would stop on failure but would not roll back side effects. Typed string values still require boundary validation; exhaustive checks switches, not arbitrary if comparisons or every invalid cast. Metadata publication and lifecycle cleanup remain explicit.</p>
-<h3>5. Hot/cold paths and costs</h3>
-<p>Lookup/execution/publication remain the run-time paths; explanation/listing are read-only user commands. The printer skips subsequent underlying writes after failure. Limits validation is four independent checks before accessing the database. Helper extraction is a maintainability change, not a measured speedup. No latency, allocation, throughput or production-load benchmark was performed.</p>
-<h3>6. Guarantees, assumptions and non-goals</h3>
-<p>Configured lint checks pass with gocognit threshold 30 and nestif threshold 5. An enum default does not excuse missing known values. Version-one encoding is covered by a regression fixture; this is not proof of deterministic test output. HTTP now classifies wrapped miss/conflict/quota errors with errors.Is. Negative limit diagnostics include all failing field names in stable order. No general Must abstraction, closure-chain framework or strict JSON firewall was introduced. Operational startup errors remain returned errors. Existing cleanup suppressions and test errcheck exemptions remain explicit.</p>
-<h3>7. Alternatives and decisions</h3>
-<p>The alternatives were discussed with the user before this amendment: use a sticky printer for repeated homogeneous output; use errors.Join for independent validation; keep ordinary early returns for dependent storage work. Defer generic closure pipelines because branching workflow state and resource ownership would become less visible. Keep MustCompile for fixed programmer-owned regexes, not user config or database availability. Cognitive/nesting checks were selected instead of adding overlapping raw branch-count gates.</p>
-<h3>8. Evidence, untested failures and remaining risk</h3>
-<p>Verified: make check (format/config/lint/unit tests), make race, make build, and the full PostgreSQL suite with race detection against the disposable local PostgreSQL 14 cluster. A temporary extra sharedMode caused exhaustive to flag both parser and dispatcher, then was removed. New regression tests cover first-output-error/no-op behavior, root command parsing, wrapped HTTP storage errors, aggregate negative limits before DB access, and version-one input-kind encoding/key compatibility. Existing replay/refresh/quarantine, inventory safety, concurrency and session-loss tests also passed. These are local tests, not exhaustive proof of crash safety, network faults, filesystem portability or scalability. Strict unknown/duplicate/missing/null JSON handling and explicit Postgres maintenance-capability typing remain deferred.</p>
-<h3>9. Revisit conditions</h3>
-<p>Revisit printer design if partial-write progress, concurrent output or structured output requires a different contract. Consider a pipeline only when a real linear workflow can keep results/cleanup explicit. Revisit complexity thresholds when concrete false positives arise, not to conceal tangled responsibilities. Version and migrate encoding before changing key bytes. Make maintenance capabilities explicit before new blob backends. Tighten JSON boundaries with compatibility and malformed-input tests before treating payloads as strict schemas.</p>
-</section>
-<section id="phase3-review-2026-10-08">
-<h2>2026-10-08 — Phase 3 review: bounded shared storage and safe maintenance</h2>
-<p>Implementation status: quotas, usage statistics, storage retention, orphan collection, directory/store binding and maintenance CLI are implemented locally. This review includes the subsequent coding-quality refactor. It does not claim cloud deployment, high-throughput operation or strict schema-firewall completion.</p>
-<h3>1. What data structures are used, and why?</h3>
-<p>Limits and Usage are typed structs: they give budgets and measurements explicit names and units. BlobRef identifies bytes by hash and expected length. SQL stores action rows and distinct observation evidence; files store output bytes. This lets identical output share a blob rather than consume its size repeatedly. GC uses a map as a set of live hashes. A set answers whether a blob is referenced without rescanning every metadata record for every file.</p>
-<p>Actual excerpt from internal/cache/maintenance.go, Collect:</p>
-<pre><code>live := map[string]bool{}
-// After validating each record and its references:
-live[ref.Hash] = true</code></pre>
-<p>The in-memory inventory/live set grows with storage size; it is not an unbounded-scale solution. BlobBytes includes recognized pending files as well as complete blobs; MetadataBytes measures JSONB text size, not database disk pages, indexes, WAL or backups.</p>
-<h3>2. What is the architecture/flow, and where can it extend?</h3>
-<p>Write flow: validate the result, acquire lifecycle locks, check blob capacity, write immutable blobs, then publish metadata/evidence and commit. A metadata rejection can leave orphan files; GC later removes unreferenced bytes. Retention and GC deliberately have different jobs. Retention deletes eligible metadata references; GC deletes files with no remaining reference. CLI orchestration uses named lookup/replay/verify/publish operations. HTTP authentication/admission wraps endpoint handlers rather than being duplicated.</p>
-<p>Actual excerpt from internal/cache/shared.go, Put:</p>
-<pre><code>if err = s.checkBlobQuota(ctx, tx, r); err != nil {
-    return err
-}
-stdout, err := s.Blobs.Put(ctx, r.Stdout)</code></pre>
-<p>Store/ConflictStore isolate lookup and quarantine capabilities. ManagedBlobs is filesystem-specific. Postgres currently accepts BlobStore but discovers the managed capability at runtime: that mismatch should be made explicit before adding another backend. Object storage requires a new lifecycle design, not just a drop-in interface implementation.</p>
-<h3>3. What concurrency/networking/fundamental primitives are used?</h3>
-<p>A shared lock permits overlapping readers; an exclusive lock excludes readers and writers during publication or destructive maintenance. We combine SQL transaction-scoped advisory locks with a local filesystem flock. The filesystem lock continues protecting byte operations if a SQL session loses its lock. HTTP still has bearer authentication, bounded payloads, request timeouts and admission slots. No tenant identity model was added.</p>
-<p>Actual excerpt from internal/cache/lifecycle_unix.go:</p>
-<pre><code>operation := syscall.LOCK_SH | syscall.LOCK_NB
+<p>The first field limits inventoried blob bytes. The second limits the measured JSON representation of metadata. The other two limit the number of result rows and distinct evidence rows.</p>
+<p>Initial limits are 1 GiB, 64 MiB, 10,000 result rows and 100,000 evidence rows respectively. MiB and GiB are byte units: 1 MiB is 1,048,576 bytes; 1 GiB is 1,073,741,824 bytes. These are defaults, not measured capacity recommendations.</p>
+<p>Cleanup needs a different structure: a set of output hashes still referenced by saved results. Consider this illustrative state:</p>
+<pre class="code"><code class="language-text">result A → stdout X, stderr Y
+result B → stdout X, stderr Z
+files on disk: X, Y, Z, W</code></pre>
+<p>X is needed twice, but the collector only needs to know that it is needed at least once. Y and Z are needed too. W has no reference.</p>
+<p>Collect builds the set with a map. Two separate excerpts from the function in the same source file:</p>
+<pre class="code"><code class="language-go">live := map[string]bool{}</code></pre>
+<pre class="code"><code class="language-go">live[ref.Hash] = true</code></pre>
+<p>The second line records the hash from one stdout/stderr reference. In our example, adding X twice still leaves one X entry with value true. During inspection, the collector can ask whether a file's hash is in this map. Missing hashes identify unreferenced candidates, after the other safety checks described below.</p>
+<p>A slice of referenced hashes would work too. But checking W could require scanning the whole slice; repeating that for every file does more work. A sorted slice could use binary search, repeatedly halving the search range. A map directly supports the repeated lookup we need, with memory overhead for its lookup structure.</p>
+<p>The collector also keeps an inventory slice of files. Both the map and the inventory grow with the store. They are not fixed-memory structures.</p>
+<p>A stored reference count could avoid rebuilding the set. That changes the problem from “what do surviving records reference now?” to “did every earlier update maintain the count correctly?” We return to that trade-off in question 7.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-2-what-happens-during-retention-and-collection">2. What happens during retention and collection?</h3>
+<p>Two commands remove different kinds of things.</p>
+<p>Retention, called “prune”, removes old nonquarantined database records and their evidence. Garbage collection, called “gc”, removes output files no surviving record needs.</p>
+<p>Return to results A and B above. If retention removes A, file X is still needed by B. Deleting A's output files blindly would break B. Collection therefore looks at the references that remain after retention, rather than assuming each result owns a private copy.</p>
+<p>The collector's sequence is:</p>
+<ol><li>Take the maintenance locks.</li><li>Read and validate surviving result descriptions.</li><li>Build the map of referenced output hashes.</li><li>Inspect and validate the recognized file layout.</li><li>Report eligible deletions, or delete them if “--apply” was supplied.</li><li>Release the locks.</li></ol>
+<p>Quarantined records survive retention. If they contain saved output references, those references remain in the live map too. A known conflict is not forgotten just because the result becomes old.</p>
+<p>Dry-run is the default for requested maintenance changes. However, opening shared storage can initialize database tables, policy and directory binding. Dry-run does not promise that first-time setup changes nothing.</p>
+<p>These methods currently require filesystem operations such as directory inventory and removal. ManagedBlobs expresses that requirement. Postgres still accepts the broader BlobStore interface and checks this capability at runtime. A future constructor should make that requirement clearer; a cloud backend is not a plug-in replacement just because it can Get and Put bytes.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-3-why-do-readers-writers-and-cleanup-need-locks">3. Why do readers, writers and cleanup need locks?</h3>
+<p>Safe publication of a complete file solves one problem: another process should not see half its bytes. It does not make “publish the file, then update the database” a single operation.</p>
+<p>Without the current locks, the following sequence could occur. This is an illustrative failure trace, not a claim that current tests found this exact execution in production:</p>
+<ol><li>An upload writes and publishes output file X.</li><li>Before the upload commits a database record referencing X, cleanup reads the database.</li><li>Cleanup sees no reference to X and deletes it.</li><li>The upload commits its record. That record now points to a missing file.</li></ol>
+<p>Every individual step can succeed while the final result is wrong. We need cleanup to wait until publication has finished.</p>
+<p>A reader has a similar problem. It may read a database record naming X before it opens X. If retention removes the record and collection deletes X in between, the later open fails. On Unix, an already-open file descriptor can remain usable after its pathname is removed; our example deliberately concerns the interval before opening.</p>
+<p>Receipt coordinates these sequences with shared and exclusive locks. A lock is a rule for who must wait while another operation uses the resource.</p>
+<p>Several readers may hold a shared lock together. They keep it while reading the description and output files. A writer or cleanup needs an exclusive lock: it waits for readers to finish, then makes new readers and other writers wait until its own operation ends.</p>
+<p>The lock is therefore held across the sequence that needs protection, not merely around a single file write. This also means that a long cleanup can delay ordinary requests.</p>
+<p>Current storage uses two lock mechanisms:</p>
+<ul><li>A PostgreSQL advisory transaction lock coordinates operations through the database.</li><li>A native filesystem lock on the directory's lifecycle lock file protects file work across cooperating processes.</li></ul>
+<p>Why isn't the database lock enough? Suppose a writer's database connection dies while file work is still running. PostgreSQL releases the database lock. The filesystem lock is still held until that file operation returns and cleanup releases its resources. Other participating processes cannot begin deletion just because the database connection disappeared.</p>
+<p>Why not use only a Go mutex? A mutex coordinates activities sharing it inside one process. A separate maintenance CLI process does not share that in-memory mutex. The filesystem lock supplies process-to-process coordination for this directory.</p>
+<p>The SQL lock choice in lifecycle, <a href="../internal/cache/maintenance.go">internal/cache/maintenance.go</a>, is:</p>
+<pre class="code"><code class="language-go">function := &quot;pg_advisory_xact_lock_shared&quot;
 if exclusive {
-    operation = syscall.LOCK_EX | syscall.LOCK_NB
+	function = &quot;pg_advisory_xact_lock&quot;
 }</code></pre>
-<p>LOCK_NB means try without blocking inside the syscall; a cancellation-aware loop retries. This is emphatically not lock-free operation. All participating servers must use the protocol and the same managed local filesystem.</p>
-<h3>4. What is tricky to implement or debug?</h3>
-<p>Database rollback cannot restore deleted filesystem files. GC therefore checks all metadata and inventory first, then deletes only unreferenced recognized objects. Interrupted deletion may make partial progress; retrying is supported. A database rollback after blob creation similarly cannot remove those blobs automatically. Treat them as quota-consuming orphans, not visible cached results. The directory's .store-id prevents a different marked metadata store from collecting its files. It is an ownership check, not authentication, and a first-time unmarked directory still depends on the operator selecting the correct trusted directory.</p>
-<p>Actual excerpt from internal/cache/blob_binding.go, Bind:</p>
-<pre><code>if string(b) != id+"\n" {
-    return fmt.Errorf("blob directory belongs to another metadata store")
+<p>“Shared” selects the reader-compatible mode; exclusive selects the mode used by publication and maintenance. The function then obtains the filesystem lock.</p>
+<p>Every operation uses that order: database first, filesystem second. Otherwise one operation could hold the database lock while waiting for the filesystem lock, while another holds the filesystem lock and waits for the database. Neither can finish. That is a deadlock.</p>
+<p>These locks are cooperative, also called advisory. An old program or a person deleting files manually can bypass the rules. They are not filesystem permissions and are not claimed to behave identically on every network filesystem.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-4-what-partial-failures-make-maintenance-tricky">4. What partial failures make maintenance tricky?</h3>
+<p>A database transaction can undo database changes. It cannot undo an independently published file.</p>
+<p>Suppose the writer saves X, then its metadata update fails. There is no successful result row, but X may still exist. It is an orphan: a file no saved result references. Collection can remove it later; until then it uses space.</p>
+<p>Cancellation creates another subtlety. A context deadline says the caller wants work to stop. It does not instantly interrupt every operating-system file operation.</p>
+<p>If database/sql automatically rolled back on cancellation while file work continued, the SQL lock could disappear too early. lifecycle therefore starts the transaction with context.WithoutCancel and uses the caller's context for individual SQL operations. Explicit Commit/Rollback and resource cleanup control the combined lock lifetime. The filesystem lock also protects the connection-loss case.</p>
+<p>Cleanup validates the records and recognized directory layout before starting deletion. A malformed record could otherwise make a needed file look unreferenced. An unexpected symbolic link could point outside the intended directory. Rather than guess, collection stops on those unsafe conditions.</p>
+<p>Another mistake would be pairing database A with database B's file directory. Database A would see no references to B's files and might delete them. Bind prevents this with a store-identity marker. From <a href="../internal/cache/blob_binding.go">internal/cache/blob_binding.go</a>:</p>
+<pre class="code"><code class="language-go">if string(b) != id+&quot;\n&quot; {
+	return fmt.Errorf(&quot;blob directory belongs to another metadata store&quot;)
 }</code></pre>
-<p>context.WithoutCancel is used for transaction lifetime so cancellation cannot automatically release the SQL lock during filesystem work; queries and lock acquisition still receive the caller's cancelable context. That does not make every filesystem syscall interruptible. Closing/rollback/unlock ordering is significant; sticky errors must not suppress cleanup.</p>
-<h3>5. What are the hot/cold paths and their costs?</h3>
-<p>Hot paths are shared lookup and publication. Lookup reads metadata plus two bounded blobs and validates their bytes under read locks. Publication hashes the streams and scans inventory/metadata to enforce budgets. Those scans can be roughly proportional to stored files/action/evidence rows, rather than constant-time updates. Writers are globally serialized within this store. Cold paths are admin stats, limits, retention and GC; stats also scans storage. GC builds an in-memory live set, inventories files and performs selected deletions. It holds exclusive locks, so a large run can delay normal requests. No throughput/latency benchmark was performed. Race/concurrency tests establish specific behavior under tested schedules, not acceptable production latency.</p>
-<h3>6. What are the guarantees, assumptions and non-goals?</h3>
-<p>Cooperating shared writes check capacity before publication. Quota rejection does not convert a successful test execution into a failing test outcome. GC preserves every validated referenced blob, including those retained by quarantined winning records. Unrecognized layout, unsafe files or corrupt metadata make collection fail closed rather than guess. Retention deletes only old nonquarantined metadata/evidence.</p>
-<p>Actual excerpt from internal/cache/maintenance.go, Expire:</p>
-<pre><code>_, err = tx.ExecContext(ctx,
-    "DELETE FROM receipt_entries_v2 WHERE NOT quarantined AND created_at&lt;$1",
-    before)</code></pre>
-<p>Storage retention is not result freshness or revocation: local copies may still be replayed. Quarantine records do not expire automatically. At an evidence budget, an existing-key conflict can still quarantine the key while marking evidence_capped; an unknown key may be rejected at the action-row limit. Dry-run does not apply requested maintenance changes, but opening the admin backend can initialize/migrate schema and binding. Assumptions include trusted writers and filesystem permissions, cooperating lock-aware processes and compatible local Unix filesystem semantics. Non-goals include hostile-local-user safety, cloud/network-filesystem support, multi-tenancy, lock freedom and a complete strict JSON schema firewall.</p>
-<h3>7. What alternatives were considered?</h3>
-<p>Retrospective comparison where no earlier decision record exists: per-object locks/reference counters could reduce full scans and permit more parallel writes, but introduce more bookkeeping and deletion races. They are deferred until measurements justify their complexity. Age-only blob deletion was rejected for this implementation: a referenced blob can be old and still necessary. Reference-based collection keeps that distinction. Immediate blob deletion with retention was deferred because blobs are shared; separate GC sees the remaining references. Automatic quarantine expiry was not added because it would forget known contradictory evidence without a defined trust-restoration policy. For coding quality, the recorded user discussion selected sticky output and independent aggregation, not generic chain/Must wrappers for operational errors.</p>
-<h3>8. What evidence supports the claims, and what is still untested?</h3>
-<p>Verification for this commit: make check, make race, make build, diff whitespace checks and a fresh full PostgreSQL integration run with race detection against the disposable local PostgreSQL 14 cluster. Named tests include TestSharedQuotaAndDedup, TestEvidenceLimitStillQuarantines, TestMetadataQuotaAndOrphanCollection, TestStorageRetentionPreservesQuarantine, TestGCFailsClosedOnCorruptMetadataAndSymlinks, TestStorageBindingRejectsWrongMetadataStore, TestLifecycleCancellationKeepsFilesystemExclusion, TestDatabaseConnectionLossKeepsFilesystemExclusion, TestConcurrentUploadsAndCollection and TestRetentionWaitsForReaders. Quality regressions cover wrapped HTTP errors, aggregate validation, sticky output, command parsing and version-one encoding compatibility. Not tested exhaustively: power loss at each syscall, real disk-full/I/O failures, network filesystem locking semantics, heterogeneous server versions, large datasets, adversarial filesystem mutation or production load. Strict JSON decoding, durable conflict-report retry and explicit backend capability typing remain open. Lint and race success do not close those risks.</p>
-<h3>9. What would make us revisit the decisions?</h3>
-<ul><li>Slow uploads/GC blocking reads: measure first, then evaluate incremental   accounting, smaller locking scopes or an explicit concurrent-GC protocol.</li><li>Multiple hosts/cloud storage: redesign object lifecycle/ownership and run   backend conformance tests; native flock does not coordinate separate disks.</li><li>Evidence/quarantine growth: add an audited retention/trust-restoration policy   rather than silently dropping contradiction markers.</li><li>Untrusted users: implement identity, tenant-scoped authorization and stricter   input boundaries before exposing shared access.</li><li>Offline conflicts: add durable reporting/retry when local-only quarantine   cannot meet the desired shared correctness policy.</li><li>Cleanup failures or ambiguous recovery: strengthen error reporting and   fault-injection evidence, not merely hide errors behind helpers.</li><li>Key/schema changes: define a versioned compatibility/migration contract.</li><li>Demonstrated lint false positives: adjust rules with examples and readable   alternatives, rather than increasing thresholds to hide tangled workflows.</li></ul>
-</section>
-</main>
-<footer>Receipt working document · Prefer an explicit decision over an undocumented assumption.</footer>
+<p>b is the marker's bytes; id is the expected store identity. A valid marker is a regular 65-byte file: a 64-character identity plus a newline. A mismatch stops setup or maintenance.</p>
+<p>When creating it, Bind writes a temporary marker, syncs and closes it, creates the final name only if absent, then syncs the directory. A hard link gives the already-written file its final name without copying its bytes; creating that link fails if the name already exists.</p>
+<p>The marker checks pairing, not a person's identity. Adopting an unmarked directory still requires the operator to choose the right directory. Database and file backups must also be restored as a matching pair.</p>
+<p>Finally, collection can fail after deleting some unused files. A database rollback will not bring those files back. Retrying can finish the remaining work, but this is not an all-or-nothing batch of file deletions.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-5-which-work-is-frequent-what-grows-and-what-makes-requests-wait">5. Which work is frequent, what grows, and what makes requests wait?</h3>
+<p>Fetching and saving shared results are frequent request work—the hot paths. Retention and collection are occasional maintenance—the cold paths. That distinction describes frequency, not duration. Fetching a shared result is ordinary request work. Before loading its description and output, the server takes shared locks. Several readers can proceed together.</p>
+<p>Cleanup takes exclusive locks. It must wait for existing readers; after it obtains the locks, new readers and writers must wait for cleanup. Thus a request with very little reading to do can still be slow because it is waiting behind maintenance.</p>
+<p>Saving a result also takes exclusive locks. Before accepting more data, the server calculates current usage by inspecting the file inventory and database metadata/evidence. It does not simply read four continuously maintained counters.</p>
+<p>As an illustrative example, uploading a 1 KiB result into a store with thousands of files can still inspect that existing inventory. The work depends on what is already stored, not only on the new result's size. Making other writers wait prevents two uploads from both admitting data against the same remaining budget.</p>
+<p>Collection reads surviving references once, builds the live map, inspects the files and optionally deletes unreferenced ones. If A is the number of result records and B the number of files, the traversal has roughly O(A + B) work, plus validation and file operations. That means both populations matter.</p>
+<p>Its map and inventory also take memory. If U is the number of unique referenced hashes, memory grows approximately with U + B. Repeated references to X do not create repeated map entries, but each inventoried file still has a representation.</p>
+<p>Map lookup usually avoids scanning all references again for every file. It does not make the whole request constant-time: reading records, hashing output, walking directories and waiting for locks remain.</p>
+<p>Stats performs usage calculation too. Calling it is not equivalent to reading one saved integer. Retention finds and deletes eligible database rows; its actual duration depends on row counts, indexes and the database's query plan—the method the database chooses to execute the query.</p>
+<p>We have not measured typical or worst-observed production request delays at increasing store sizes. Current correctness choices should be defended as simple coordination for a small deployment, not as demonstrated high throughput.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-6-what-is-protected-and-where-do-those-protections-end">6. What is protected, and where do those protections end?</h3>
+<p>For current operations that follow the lock rules, cleanup cannot enter between a writer publishing X and committing X's record. It also cannot enter between a reader finding X's record and finishing the output read. Those are the concrete failures the locks prevent.</p>
+<p>The condition matters: every participant must use the rules. An older writer that ignores the locks can create a file while cleanup is deciding what to delete. A hostile local process can also change paths despite our checks. The current design assumes a controlled directory and a supported filesystem-lock implementation.</p>
+<p>Storage limits cover selected quantities, not all physical host usage. For example, a small JSON record may occupy space in database pages and indexes too. Transaction logs, filesystem allocation and temporary copies can use additional space. A 64 MiB logical metadata budget therefore does not promise a 64 MiB PostgreSQL data directory.</p>
+<p>There are two different “full evidence budget” cases. If a key already exists, Receipt can still mark it quarantined and mark that detailed evidence was capped. It can remember “do not reuse K” without saving another full observation.</p>
+<p>If K is new, creating that warning record may itself exceed a budget. The shared report can fail. The client can keep local quarantine, but there is no durable retry queue guaranteeing that the shared server later receives the warning. Other clients may therefore not learn it from this failed report.</p>
+<p>Retention also has a precise meaning. It removes old storage records; it does not revoke every client's local copy. Suppose the server deletes an old, nonquarantined result while Alice still has it locally. An absence of server quarantine is not a prohibition on Alice's replay. If we want deletion to mean revocation, we need another rule.</p>
+<p>Known quarantine is retained rather than expired. Collection preserves its referenced output, but does not repair missing files or verify every retained file's full content. Reads do content verification when retrieving them.</p>
+<p>These are deliberately separate promises: coordinated deletion, bounded selected quantities and remembered conflicts. There is no single rollback covering both SQL and files, no assumed network-filesystem guarantee and no claim of protection against arbitrary hostile local changes.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-7-what-could-we-do-differently-and-what-would-it-change">7. What could we do differently, and what would it change?</h3>
+<p>These comparisons explain the design after implementation. They are not claims that every alternative was debated before it was built.</p>
+<p>First consider writer concurrency. We could lock by input key, letting uploads for A and B proceed together. But A and B may both reference X, and both consume one global remaining budget. Separate key locks alone do not settle who may delete X or who may claim the last available space. We would need additional coordination for those shared resources.</p>
+<p>The current broader lock makes that reasoning simpler by letting writers take turns. The cost is waiting even when their output is unrelated.</p>
+<p>Next consider collection. We could store a reference count beside X: the number of result records that need it. Removing A would decrease the count; saving B would increase it. A zero would be a deletion candidate.</p>
+<p>Now imagine saving B succeeds but increasing the count does not. X can appear unused even though B needs it. A reference-count design therefore needs reliable updates through retries and failures, plus a way to check or repair counts. The current collector rebuilds its set from surviving records instead of trusting a maintained count.</p>
+<p>We could delay deletion, perhaps by five minutes. That gives many normal uploads time to finish. It does not prove that a paused process has finished: a machine or operation can remain stuck longer. A grace period may help an existing coordination design, but is not a replacement for deciding which operations still use the file.</p>
+<p>We could maintain running usage totals too, making admission cheaper than repeated scans. The difficult case is a file successfully published before metadata fails. The total must account for that orphan until collection removes it. Faster counters need reconciliation: a way to compare them with what is really stored and correct mismatches.</p>
+<p>Finally, storing output in PostgreSQL could place output and metadata changes in one transaction. Moving output to an object-storage service could support independent server machines. These are distinct solutions with different costs and failure rules, not small variations of the current local-file lock.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-8-which-tests-support-the-important-claims">8. Which tests support the important claims?</h3>
+<p><a href="../internal/cache/maintenance_test.go">The maintenance tests</a> make the failure situations above executable.</p>
+<p>TestRetentionWaitsForReaders pauses a reader and checks that retention waits. TestConcurrentUploadsAndCollection overlaps publication and collection. They test specific waiting/deletion behaviour rather than only checking that individual methods return success.</p>
+<p>TestLifecycleCancellationKeepsFilesystemExclusion pauses blob work, cancels the upload and tries collection with a short deadline. Collection must not enter the still-active publication. After releasing the paused work, the test checks that the lock was not leaked.</p>
+<p>TestDatabaseConnectionLossKeepsFilesystemExclusion goes further: it terminates the upload's PostgreSQL connection while blob work is paused. Collection must still wait on filesystem exclusion. This is the reason for the second lock, tested directly.</p>
+<p>Other tests check quota/deduplication, evidence saturation, orphan collection, retained quarantine, corrupt descriptions, unsafe directory entries and wrong-store binding.</p>
+<p>Recorded verification includes uncached, race-enabled integration tests using a disposable PostgreSQL 14 database. Race-enabled Go tests can detect some cases where goroutines access the same memory without safe coordination; the explicit scenario tests exercise database and file coordination that the race detector alone cannot certify.</p>
+<p>We still lack systematic power-loss, disk-full and broad I/O-error testing. Multi-machine deployment, network filesystems, sustained load and hostile path mutation are also not established. Those gaps should remain visible when defending the design.</p>
+<h3 id="phase-3-review-limits-and-cleanup-without-deleting-needed-files-9-what-observations-would-make-us-revisit-these-choices">9. What observations would make us revisit these choices?</h3>
+<p>Measure time spent waiting for locks separately from time spent doing work. If ordinary uploads or reads wait too long, we can investigate shorter maintenance batches or more detailed coordination. The trigger should be measured behaviour, not the word “distributed.”</p>
+<p>If most upload time goes into usage scans, investigate maintained counters with orphan accounting and reconciliation. If collection memory is too high, consider processing inventory in chunks—but retain a safe view of the references throughout deletion.</p>
+<p>Before running server instances on independent machines, choose a shared output-storage protocol and test its failure rules. Do not assume a filesystem lock on one machine coordinates another machine's objects.</p>
+<p>If quarantine accumulates indefinitely, define who may clear it and why clearing is safe. Automatic age-based deletion would change what the system remembers about conflicting results.</p>
+<p>If users expect a physical disk ceiling or immediate revocation, those are different requirements from logical budgets and retention. Name them explicitly before changing the implementation.</p>
+<h2 id="coding-quality-review-explaining-our-implementation-conventions">Coding-quality review: explaining our implementation conventions</h2>
+<p>These changes reorganize and check code; they do not add another product phase. Their detailed rules remain in <a href="CODING-PRACTICES.md">CODING-PRACTICES.md</a>.</p>
+<h3 id="coding-quality-review-explaining-our-implementation-conventions-when-should-an-error-stop-the-next-step">When should an error stop the next step?</h3>
+<p>Consider opening a file, writing it and publishing it. If opening fails, there is no valid file to write. If writing fails, we should not publish it as complete. Returning immediately after these errors keeps that dependency visible.</p>
+<p>Printing several CLI lines is a narrower problem. If printing the first line fails, later printing is unlikely to help. A small helper remembers the first error and skips subsequent printing.</p>
+<p>From <a href="../internal/app/printer.go">internal/app/printer.go</a>:</p>
+<pre class="code"><code class="language-go">type printer struct {
+	out io.Writer
+	err error
+}
+
+func (p *printer) println(args ...any) {
+	if p.err == nil {
+		_, p.err = fmt.Fprintln(p.out, args...)
+	}
+}</code></pre>
+<p>out is the destination. err starts empty. Each println checks it; after a failed write, later calls do not write. The caller must still return/check err at the end.</p>
+<p>This helper belongs to one command and is not safe for concurrent use. It must not become shared error state in a server: one user's failure should not stop another user's request. Closing files, unlocking and rolling back must also still run after failure; those are not optional later printing steps.</p>
+<p>For independent validation, stopping early can be less useful. If two limits are negative, the user should be able to see both problems in one response. Limits.validate collects these field errors and finishes with this actual line from <a href="../internal/cache/maintenance.go">internal/cache/maintenance.go</a>:</p>
+<pre class="code"><code class="language-go">return errors.Join(errs...)</code></pre>
+<p>errs is the slice of validation errors collected for the four budgets. Join combines them into one returned error, or returns nil when there are no errors. Here nil means no error was recorded. This is safe because checking one limit does not require another limit to be valid. Continuing a dependent file-writing sequence would be a different matter.</p>
+<p>Must helpers turn failure into a panic. They can fit programmer-owned constants, such as a hard-coded regular expression that should never be invalid. Missing credentials or an unreachable database are normal operational failures; they should produce useful errors instead.</p>
+<p>A general closure-chain framework was not added. Named operations keep sequencing, cancellation and cleanup explicit. It can be reconsidered for a genuinely uniform local sequence, not to hide necessary error checks.</p>
+<h3 id="coding-quality-review-explaining-our-implementation-conventions-why-use-typed-command-names">Why use typed command names?</h3>
+<p>A CLI receives strings such as “stats” and “gc”. We validate those strings, then represent known choices with named string types and constants. Later dispatch code uses the constants instead of independently spelling the same command everywhere.</p>
+<p>Go still allows constructing an invalid value through a conversion. The type is not a completely closed set. The parser remains responsible for rejecting unrecognized input.</p>
+<p>The exhaustive lint rule checks whether switches cover the known constants. Adding a new command should make missing dispatch cases visible. It does not prove that every received string is valid.</p>
+<h3 id="coding-quality-review-explaining-our-implementation-conventions-what-do-the-automated-checks-actually-check">What do the automated checks actually check?</h3>
+<p>Formatting gives code consistent layout. Lint tools inspect source for selected mistakes and maintainability problems. Tests execute selected behaviours. They answer different questions.</p>
+<p>golangci-lint is the main engine. Enabled checks include govet, staticcheck, errcheck, goconst, revive, depguard, ineffassign, unused, nolintlint, exhaustive, gocognit, nestif and errorlint; gofumpt formats code.</p>
+<p>errcheck flags ignored errors. errorlint checks common problems with wrapped errors. depguard restricts selected package imports. gocognit and nestif flag complicated branching/nesting, with thresholds of 30 and 5. The scores are review prompts, not proof that a function is well designed.</p>
+<p>Some cleanup errors deliberately do not replace the main error, and tests currently have an explicit errcheck exception. These exceptions are documented; they are not claims that ignored operations cannot fail.</p>
+<h3 id="coding-quality-review-explaining-our-implementation-conventions-why-isnt-a-struct-enough-to-validate-json">Why isn't a struct enough to validate JSON?</h3>
+<p>Imagine a request repeats a field or omits a required value. Decoding into a struct may not reject every distinction the product cares about.</p>
+<p>A schema is the set of rules for accepted fields and values. A strict decoder must define required fields, unknown fields, duplicates, nulls and limits, then test them. A named InputKind alone does not enforce those rules.</p>
+<p>Configuration decoding rejects unknown fields and extra JSON values. Result/report decoding is not yet a complete strict firewall. Strengthening it is proposed work, with compatibility tests needed so intentional existing clients are not silently broken.</p>
+<h2 id="where-to-find-the-implementation">Where to find the implementation</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table><thead><tr><th scope="col">Location</th><th scope="col">Question to ask when reading it</th></tr></thead><tbody><tr><td>cmd/receipt</td><td>How does the executable start and return an exit status?</td></tr><tr><td>internal/app</td><td>How does one user's command combine lookup, execution and publication?</td></tr><tr><td>internal/fingerprint</td><td>What inputs are recorded, and how is their key calculated?</td></tr><tr><td>internal/runner</td><td>How is the subprocess started, streamed and cancelled?</td></tr><tr><td>internal/cache</td><td>How are results stored, served, quarantined and cleaned up?</td></tr><tr><td>docs</td><td>What did we decide, test and leave unfinished?</td></tr></tbody></table></div>
+<p>Go's internal directory limits which Go packages may import these packages. It does not restrict a program's file or network permissions. The package layout organizes responsibilities inside the program; it is not a deployment diagram.</p>
+<h2 id="decision-history-and-current-explanations">Decision history and current explanations</h2>
+<p>Architecture decision records—ADRs—are short records of choices and reasons. Their current summary follows; earlier committed wording can be retrieved from Git history.</p>
+<p>ADRs 001–004 chose Go, separated storage from HTTP transport, introduced content identity/first publication and selected pytest/CodeCraft as the first workload. The current shared conflict handling was added later; first publication never proved identical execution.</p>
+<p>ADRs 005–009 described Git-aware inputs plus extras, sorted manifests and payload digests, environment/executable identity, bounded successful output and pre/post input scans. The limitations discussed in Phase 1 still apply: broad input discovery is not a snapshot or complete dependency discovery.</p>
+<p>ADRs 010–011 covered a trusted HTTP service and approximate local pruning. The original shared-storage plans are now partly implemented by Phases 2–3, not all still future work.</p>
+<p>ADRs 012–015 recorded PostgreSQL metadata with output references, conflict evidence/quarantine, shared status before local replay and bounded requests/aggregate metrics. The status check is not universal immediate revocation, and server-side file deduplication does not deduplicate every upload over the network.</p>
+<p>Phase 3 adds full-store accounting, reference-based collection, combined database/filesystem coordination and preservation of quarantine during retention. Its review explains their costs. Newly added alternative comparisons are teaching material, not an invented account of earlier debates.</p>
+<h2 id="verification-implementation-evidence-versus-documentation-checks">Verification: implementation evidence versus documentation checks</h2>
+<p>The following implementation results were previously recorded for ff45e74:</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table><thead><tr><th scope="col">Check</th><th scope="col">What was exercised</th></tr></thead><tbody><tr><td>make check</td><td>Formatting, lint configuration/checks and unit tests</td></tr><tr><td>make race</td><td>The race-enabled test suite</td></tr><tr><td>make build</td><td>Executable build, including the macOS linker setup</td></tr><tr><td>Fresh PostgreSQL 14 integration tests with race detection</td><td>Uncached shared-storage scenarios on a disposable database</td></tr><tr><td>CodeCraft smoke timing</td><td>One historical miss/hit comparison</td></tr><tr><td>Temporary added enum constant, removed afterwards</td><td>Lint caught missing switch coverage</td></tr></tbody></table></div>
+<p>These are scoped observations. They do not establish crash recovery under every failure, universal deterministic outputs or performance at production load.</p>
+<p>For this documentation update, checks cover the three nine-question reviews, twelve attributed Go excerpts, matching HTML/Markdown content, local links and the copies' integrity before their subsequent removal at the user's request. Browser checks at 320, 390 and 1200 pixels found no page-wide horizontal overflow; code and wide tables keep their own scrolling. Runtime tests are not being rerun for prose-only changes.</p>
+<p>The style guide also requires a manual reading check. In this revision, the local input/slice explanation, the shared upload/conflict explanation and Phase 3 questions 5–7 were reviewed for named actors, concrete sequences and costs. Those are editorial checks, not evidence from a study of beginner readers.</p>
+<h2 id="what-should-the-next-learning-phases-teach">What should the next learning phases teach?</h2>
+<p>The original 10–12 week idea is a sequence for learning and useful product development, not a statement about elapsed weeks. The personal cache and small shared-store foundations already exist.</p>
+<p>One useful next step is input explanation: help a user see which recorded change caused a miss. That makes dependency and serialization ideas visible through a real problem.</p>
+<p>Another is stronger request validation and deliberate failure tests. For example, force a write failure after a temporary file exists and check what the next operation sees. That teaches recovery through observable behaviour rather than only reading error-handling rules.</p>
+<p>Identity and security can remain a shared platform learning track across projects. Start with concrete access questions: who uploaded this result, who may read it, who may quarantine it and who may administer storage? Authentication establishes identity or possession of a credential; authorization decides what that identity may do.</p>
+<p>WorkOS/Clerk-style topics would include sessions, organizations, token lifecycle and those access decisions. Infrastructure-oriented topics would include service credentials, TLS, network boundaries, deployment configuration and finding the cause of failed requests. These are future topics, not current features.</p>
+<p>Before adding independent server machines, learn and specify the output-storage rules. Before claiming a performance improvement, measure representative runs and separate lock waiting, file work, database work and network time.</p>
+<p>A module can be reused when its requirements fit the next project. The concepts may transfer sooner than the implementation: another project may need different ownership and access rules.</p>
+<h2 id="future-updates">Future updates</h2>
+<p>This revision follows <a href="PROSE-STYLE-GUIDE.md">the prose style guide</a>. Future phase reviews should use the same nine questions and explain the normal sequence before exceptions. Keep attributed code, evidence scope and revisit conditions.</p>
+<p>Redundant document snapshots were removed from the repository at the user's request on 2026-10-08. Keep the current HTML and Markdown guides in agreement; use Git history for earlier committed versions.</p>
+<p>A future handoff should let the user find both the explanation and its evidence. It should not describe a document as beginner-friendly simply because it has a glossary or because its links pass a check.</p>
+</main></div>
+<footer>Read the <a href="WORKING-DOC.md">Markdown companion</a> or the <a href="PROSE-STYLE-GUIDE.md">prose style guide</a>. Historical reviews are linked above. Examples and scoped evidence are distinguished from untested claims.</footer>
 </body>
 </html>
