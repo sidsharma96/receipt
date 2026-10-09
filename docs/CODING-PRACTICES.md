@@ -136,6 +136,16 @@ this file records how to apply those decisions in future code.
 - Measurements require workload, sample count, environment, failure counts and
   limitations. A test or small benchmark is not a production capacity claim.
 
+## Go environment probe
+
+Go probe correction (2026-10-09): `resolved-go-environment-v2` retains all
+`go env -json` string fields and normalizes only a numeric `go-build` suffix in
+GOGCCFLAGS's generated file/debug prefix-map, under the reported GOTMPDIR (or
+the process temporary directory), targeting `/tmp/go-build`. Retain flags,
+roots and destinations. Unknown forms stay unchanged; prefer a miss to erasing
+an input. Do not apply this normalization to test output or other runners.
+The manifest schema stays v1; the new probe name deliberately separates Go keys.
+
 ## Enforced tooling
 
 `make lint` uses pinned golangci-lint v2.14.0 and checks gofumpt formatting.

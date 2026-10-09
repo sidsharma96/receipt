@@ -234,7 +234,15 @@ func executionInputs(ctx context.Context, dir string, args []string, generic boo
 		if e != nil {
 			return nil, e
 		}
-		inputs = append(inputs, Input{ToolchainInput, "resolved-environment", Hash(b)})
+		name := "resolved-environment"
+		if filepath.Base(args[0]) == "go" && args[1] == "test" {
+			b, e = stableGoEnvironment(b)
+			if e != nil {
+				return nil, e
+			}
+			name = "resolved-go-environment-v2"
+		}
+		inputs = append(inputs, Input{ToolchainInput, name, Hash(b)})
 	}
 
 	return inputs, nil

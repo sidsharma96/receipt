@@ -439,6 +439,27 @@ filesystem and database outcomes explicitly and explains why a well-formed
 result is not proof that tests ran. The review has seventeen figures; this
 count is not a claim that every explanation needs or now has an illustration.
 
+### 9 October 2026: try real upstream test suites
+
+The [real-repository lab](REAL-REPO-LAB.md) records initial tests in pytest,
+Hugo, regex, Ghostty and Vue core. Each selected baseline passes. Only the
+Python experiment currently demonstrates Receipt reuse: Go's probe includes
+a changing temporary path, and the other three runners execute uncached.
+A deliberately failing Python test also shows why a changed file must trigger
+execution instead of replaying an earlier success. This is experimental evidence
+and a list of next fixes, not a completed new runner-support phase.
+
+### 9 October 2026: correct Go's changing temporary-path input
+
+Hugo's selected tests can now be saved and replayed. Go invents a new temporary
+directory for each probe; Receipt used to mistake that generated name for a
+meaningful change. The correction replaces only the random suffix in the known
+compiler mapping, keeping real compiler settings in the key. A deliberately
+failing source change forced execution; restoring the source restored the hit.
+The [dated correction review](REAL-REPO-LAB.md#9-october-2026-go-scratch-path-correction)
+explains the comparison, alternatives, evidence and remaining limits. This is
+a small maintenance fix, not completed Cargo/Vitest/Zig support.
+
 ### Maintaining these documents
 
 Edit this Markdown source and regenerate the offline HTML with `python3 docs/render_working_doc.py`. Check for stale output with `python3 docs/render_working_doc.py --check`. Update the relevant teaching chapter when behavior changes, then append the dated nine-question review and evidence to both review-reference formats. Preserve historical amendments.
