@@ -6,6 +6,54 @@ The reader is a beginning computer science student. They can follow a short code
 
 This guide applies to teaching prose. It does not require deleting precise names from API references, code or agent-facing implementation rules.
 
+## Reading structure, revised 2026-10-09
+
+The working guide is an explanation for a learner, not a complete implementation
+report. Follow one test run through bounded chapters. Keep setup instructions in
+the README and task guides, exact contracts in reference documents, and dated
+nine-question reviews with their evidence in PHASE-REVIEWS.md and PHASE-REVIEWS.html.
+Link those records where the reader may want to inspect a claim.
+
+Do not put every available fact in the main reading path. A fact belongs there
+when the reader needs it to understand the current problem or consequence.
+Exact token byte counts, timeout settings, test function names, runtime versions,
+and fuzz execution totals usually belong in the reference. Important limitations
+still belong beside the behavior they limit. Moving evidence out of the lesson
+does not mean deleting it or strengthening a claim.
+
+Introduce unfamiliar mechanisms one at a time. Before naming a lock, show the
+reader and cleanup operation that need coordination. Before naming a transaction,
+show which changes must succeed together. A sentence with several unexplained
+mechanisms fails even if it is short and technically accurate.
+
+Use figures for sequences or relationships that readers would otherwise have
+to reconstruct. Explain what a figure represents, including whether it is a
+possible execution rather than a measurement. A diagram is not decoration.
+Keep a textual equivalent for phone reading and assistive technology.
+
+Apply this to the phase reviews as well. Place each figure beside the decision
+it explains and link the relevant implementation. Show concrete fields for a
+data structure, separate the participants in a concurrency example, and mark
+where a request stops in a failure sequence. Label hypothetical failures and
+sample hashes as illustrative. Preserve the dated review around additions.
+The review HTML and Markdown use matching `review-figure` comment markers so
+each illustration and its text equivalent can be found together.
+
+Each phase chapter ends with a prediction or explanation question. In HTML,
+the answer may be collapsed; the main explanation must remain visible.
+Exercises do not replace teaching or require the learner to discover missing
+background alone.
+
+Use one Markdown source for the current guide and generate its offline HTML.
+Do not maintain two independent copies of the teaching prose. Historical reviews
+remain dated records; the current guide states today's behavior directly.
+
+This structure draws on [pstack technical writing](https://github.com/cursor/plugins/blob/main/pstack/skills/technical-writing/SKILL.md)
+and [unslop](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md).
+Separate explanation, tutorial, how-to, and reference material. Use direct verbs,
+consistent names, and complete sentences. Remove filler and abstract slogans.
+Do not apply a sentence-length rule mechanically when it damages an explanation.
+
 ## 1. Build an explanation, not a summary of conclusions
 
 For each substantial concept, use this order:
@@ -102,7 +150,10 @@ If a condition matters, explain why it matters: “every writer must use this lo
 
 ## 8. Organize for reading, not checklist completion
 
-Keep the nine phase-review questions, but answer each with connected paragraphs. Lists suit execution steps and short checks. Tables suit comparisons or exact mappings. Neither should replace the explanation.
+Keep the nine phase-review questions in the linked review reference, answered
+with connected paragraphs. They are inspection questions, not chapter titles
+for the main teaching sequence. Lists suit execution steps and short checks.
+Tables suit comparisons or exact mappings. Neither should replace explanation.
 
 Use informative headings. Introduce a new topic with its question, not a promotional claim. Keep paragraphs centred on one idea, but do not chop every sentence into a separate paragraph.
 
@@ -143,6 +194,9 @@ Before declaring an update beginner-friendly, pick at least one dense section fr
 5. Is the cost described as actual work or waiting?
 6. Are limitations explained through situations rather than a list of labels?
 7. Can an external reviewer find the implementing code and scoped evidence?
+8. Does the chapter teach one problem without making the reader learn several unrelated mechanisms at once?
+9. Can the reader skip detailed evidence and still understand the explanation and its important limits?
+10. Does a needed sequence have a figure or an equally clear execution trace?
 
 If the answer is no, rewrite the explanation. Adding a glossary, passing a spelling check or shortening sentences is not sufficient.
 
@@ -150,7 +204,44 @@ Automated checks should verify links, excerpt accuracy, matching HTML/Markdown c
 
 ## 11. Publication and history
 
-Keep both working documents in agreement. Use responsive HTML without dependencies that make offline reading fail. Code and wide tables may scroll within their own boxes; the whole page should not overflow on a phone.
+### Illustrations must do explanatory work
+
+Audit every phase, not only the paragraph the reader last complained about.
+Check guarantees, pitfalls, and alternatives as well as architecture sections.
+For each multi-step failure, name what remains in each store after the error
+and what the next attempt does. A diagram elsewhere in the phase does not
+cover a different failure sequence; place the relevant picture beside it or
+link the exact existing figure when it explains the same mechanism.
+Choose the visual form from the question: connected references for shared files,
+parallel lanes for overlapping operations, branches for decisions, and a common
+scale for quantity comparisons. A collection of prose cards is not a substitute.
+
+Introduce each figure with something to notice: “follow both arrows to X” or
+“watch which operation must wait.” Keep object names stable. Let the picture
+show the relationship instead of requiring the caption to describe an invisible
+one. Use step controls when execution order matters; keep the complete picture
+and a text equivalent available without JavaScript. Avoid automatic animation
+that makes the reader chase the explanation.
+
+Check the rendered picture, not just its markup. Check arrows, label collisions,
+reading order, contrast, keyboard controls, and narrow-screen behavior. Keep
+unmeasured time out of proportional charts. Review code behavior separately from
+presentation inspiration: another project's diagram is not evidence for ours.
+
+The LearnHub [rate-limiting](https://learnhub-three-tan.vercel.app/systems/building-blocks/rate-limiting)
+and [blob-storage](https://learnhub-three-tan.vercel.app/systems/building-blocks/blob-storage)
+pages illustrate this approach through changing quantities and visible execution
+sequences. Use these as teaching references, not content to copy.
+
+The review illustrations are generated by `python3 docs/render_review_figures.py`.
+It updates marked HTML figures and their Markdown images/text; it leaves the
+surrounding historical prose alone. Run with `--check` after regeneration.
+
+Edit WORKING-DOC.md and regenerate WORKING-DOC.html with
+`python3 docs/render_working_doc.py`. Check it with the same command plus
+`--check`. Keep both review-reference formats in agreement. Use responsive HTML
+without dependencies that make offline reading fail. Code and wide tables may
+scroll within their own boxes; the whole page should not overflow on a phone.
 
 Preserve dated decisions and evidence when revising a review. Use Git history for previous committed document versions; do not create duplicate full-file snapshots unless requested. If the user asks to remove existing snapshots, remove their links too. Record documentation verification separately from historical runtime test results. Do not rerun or claim to rerun implementation tests merely because prose changed.
 

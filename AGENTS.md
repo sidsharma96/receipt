@@ -37,3 +37,42 @@ After every implemented phase:
    Remove existing snapshots only at the user's explicit request and update links.
 
 Do not deploy, publish, or change external repositories without authorization.
+
+## Persistent reader preferences (agreed 2026-10-09)
+
+These are repository instructions for future agents, not optional polish:
+
+- Write for a beginning computer science student. Use simple, precise language,
+  explain unfamiliar terms where they arise, and teach one mechanism at a time.
+- Start with a concrete example and execution sequence. Explain why the choice
+  fits, what alternatives could work, and what would make us change it.
+- Use actual, attributed code excerpts and explain them. Keep test inventories,
+  configuration minutiae and verification logs out of the main teaching flow;
+  preserve them in the linked reference without hiding important limitations.
+- Audit sections, not diagram counts. Include guarantees, failure cases, costs
+  and alternatives, not just each phase's architecture. Illustrate relationships
+  or changing state that a reader would otherwise have to reconstruct mentally.
+- Put illustrations beside the relevant explanation. Show actors, arrows,
+  before/after states, waiting and failure points—not prose boxes as decoration.
+  For partial failures, show what remains in each store and what a retry does.
+- Prefer purposeful SVG/HTML diagrams and manual step controls when helpful.
+  Keep text equivalents and phone-readable Markdown; preserve offline reading.
+- Follow docs/PROSE-STYLE-GUIDE.md, including its LearnHub visual references.
+  Inspect rendered pictures and check interactions/layout when possible. State
+  verification gaps honestly; passing tests is not proof of teaching quality.
+
+Keep these preferences in version-controlled files. Do not rely on chat history
+or an assumed personal memory to carry them into another session.
+
+## Living-document structure, revised 2026-10-09
+
+The main working document is the current beginner reading path. Update its
+relevant teaching chapter and append a dated phase entry that links the full
+nine-question review. Keep the complete dated review and verification record in
+docs/PHASE-REVIEWS.md and docs/PHASE-REVIEWS.html. This preserves the review
+requirements above without making test inventories the teaching sequence.
+
+Edit docs/WORKING-DOC.md, then regenerate docs/WORKING-DOC.html with
+`python3 docs/render_working_doc.py`. Run it with `--check` to detect stale HTML.
+Do not edit the generated HTML directly. Verify the reader on phone and desktop
+widths after layout changes, including navigation and answer disclosure.

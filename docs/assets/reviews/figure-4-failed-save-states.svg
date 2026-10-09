@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" role="img" aria-labelledby="failed-save-states-title failed-save-states-desc">
+<title id="failed-save-states-title">Two failed saves leave different files behind, but neither publishes a result</title>
+<desc id="failed-save-states-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="32" font-family="system-ui, sans-serif" font-size="13" fill="#24394b" text-anchor="start">FAILURE POINT</text>
+<text x="320" y="32" font-family="system-ui, sans-serif" font-size="13" fill="#167767" text-anchor="start">FILES LEFT ON DISK</text>
+<text x="565" y="32" font-family="system-ui, sans-serif" font-size="13" fill="#236ba0" text-anchor="start">NEW SQL RESULT</text>
+<text x="25" y="120" font-family="system-ui, sans-serif" font-size="17" fill="#ac3c43" text-anchor="start">Saving stderr fails</text>
+<path d="M25 142 L295 142" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M286.9 145.9 L295 142 L286.9 138.1" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M330 85 h44 l14 14 v62 h-58 Z M374 85 v14 h14" fill="#ffffff" stroke="#167767" stroke-width="2"/>
+<text x="359" y="132" font-family="system-ui, sans-serif" font-size="18" fill="#167767" text-anchor="middle">X</text>
+<rect x="565" y="85" width="125" height="76" rx="6" fill="#ffffff" stroke="#236ba0"/>
+<text x="627" y="129" font-family="system-ui, sans-serif" font-size="20" fill="#236ba0" text-anchor="middle">none</text>
+<text x="25" y="265" font-family="system-ui, sans-serif" font-size="17" fill="#ac3c43" text-anchor="start">Database insert fails</text>
+<path d="M25 287 L295 287" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M286.9 290.9 L295 287 L286.9 283.1" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M330 230 h44 l14 14 v62 h-58 Z M374 230 v14 h14" fill="#ffffff" stroke="#167767" stroke-width="2"/>
+<text x="359" y="277" font-family="system-ui, sans-serif" font-size="18" fill="#167767" text-anchor="middle">X</text>
+<path d="M415 230 h44 l14 14 v62 h-58 Z M459 230 v14 h14" fill="#ffffff" stroke="#167767" stroke-width="2"/>
+<text x="444" y="277" font-family="system-ui, sans-serif" font-size="18" fill="#167767" text-anchor="middle">Y</text>
+<rect x="565" y="230" width="125" height="76" rx="6" fill="#ffffff" stroke="#236ba0"/>
+<text x="627" y="274" font-family="system-ui, sans-serif" font-size="20" fill="#236ba0" text-anchor="middle">none</text>
+<text x="25" y="345" font-family="system-ui, sans-serif" font-size="15" fill="#24394b" text-anchor="start">X = stdout file; Y = stderr file. These are two separate failed attempts.</text>
+<text x="25" y="370" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">An error does not mean that the filesystem returned to its starting state.</text>
+</svg>

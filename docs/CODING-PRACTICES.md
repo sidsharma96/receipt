@@ -95,6 +95,32 @@ this file records how to apply those decisions in future code.
 - Retain filesystem safety checks when extracting helpers. Enumeration must
   finish validation before deletion; cooperating lifecycle locks remain required.
 
+## Service credentials and permissions (Phase 5, 2026-10-09)
+
+- internal/auth owns token generation, explicit scopes and PostgreSQL credential
+  lifecycle. Use crypto/rand, not math/rand, for secrets. Store only the SHA-256
+  token digest; never add bearer tokens to metadata, metrics, URLs or diagnostics.
+  Issuance output intentionally reveals a new token once; list only public metadata.
+- HTTP authentication identifies a credential; authorization checks an explicit
+  scope before decoding/writing storage. New scoped routes need an explicit mapping;
+  do not silently dispatch an unmapped route to the legacy handler.
+- Credential mode is opt-in with --postgres --credentials; it must never fall back
+  to RECEIPT_TOKEN or accept an authentication backend error. Legacy mode remains
+  a separate compatibility choice, not a scoped-permission deployment.
+- Use current database expiry/revocation state on every request. A successful
+  check is a snapshot, not cancellation of already admitted work. Any caching of
+  permissions must introduce and test an explicit staleness policy.
+- Do not equate operator-assigned subjects with verified people, scopes with tenant
+  isolation, or request identity with a durable upload audit. All are distinct.
+- Issuance and migration share a dedicated advisory lock; the 1024-row retained
+  credential budget includes expired/revoked rows and is separate from cache quotas.
+  Do not auto-purge records or add an administrative network scope without a decision.
+- Authentication work has its own bounded admission and two-second context; storage
+  admission remains separate. Cancellation must release slots. Public errors remain
+  generic, and metrics use aggregate counters without caller labels.
+- API keys must travel over HTTPS outside loopback, using the existing client rule
+  and an operator-managed TLS proxy. These changes do not provision TLS or DB roles.
+
 ## Enforced tooling
 
 `make lint` uses pinned golangci-lint v2.14.0 and checks gofumpt formatting.

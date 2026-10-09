@@ -5,6 +5,11 @@ previous successful result when those inputs match. Implemented in Go; the local
 version uses the standard library, while the optional shared backend uses the
 pinned `lib/pq` PostgreSQL driver. No database or cloud account is needed locally.
 
+To understand the design from the beginning, read [the illustrated working
+guide](docs/WORKING-DOC.html) or its [phone-readable text](docs/WORKING-DOC.md).
+The [dated phase reviews](docs/PHASE-REVIEWS.html) retain detailed decisions,
+alternatives, and verification evidence.
+
 ## Start
 
 ```sh
@@ -117,7 +122,14 @@ History and quarantine metadata are outside that entry-byte budget.
 
 ## Shared cache (trusted clients)
 
-Set `RECEIPT_TOKEN` to a randomly generated secret of at least 24 characters on
+For separate caller credentials, expiry, revocation and per-operation permissions,
+use `receipt serve --postgres --credentials`. Manage credentials locally with
+`receipt auth issue`, `receipt auth list` and `receipt auth revoke`; see the
+[service-credential guide](docs/SERVICE-CREDENTIALS.md) for setup and limitations.
+All callers still share one cache. Legacy shared-token mode remains available
+without `--credentials`; credential mode never falls back to that token.
+
+For legacy mode, set `RECEIPT_TOKEN` to a randomly generated secret of at least 24 characters on
 both server and clients. Keep it out of command arguments and config files.
 
 ```sh

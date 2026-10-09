@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" role="img" aria-labelledby="cost-title cost-desc">
+<title id="cost-title">An unchanged upload still inspects more inventory in a larger store</title>
+<desc id="cost-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="30" y="35" font-family="system-ui, sans-serif" font-size="15" fill="#236ba0" text-anchor="start">SAME NEW OUTPUT: 1 KiB</text>
+<text x="30" y="90" font-family="system-ui, sans-serif" font-size="17" fill="#24394b" text-anchor="start">Small store</text>
+<rect x="205" y="62" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M212 74 L230 74" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M212 83 L230 83" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="249" y="62" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M256 74 L274 74" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M256 83 L274 83" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="293" y="62" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M300 74 L318 74" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M300 83 L318 83" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="337" y="62" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M344 74 L362 74" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M344 83 L362 83" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M197 135 L653 135" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M644.9 138.9 L653 135 L644.9 131.1" fill="none" stroke="#236ba0" stroke-width="2"/>
+<text x="421" y="157" font-family="system-ui, sans-serif" font-size="13" fill="#236ba0" text-anchor="middle">inspect the existing inventory</text>
+<text x="30" y="223" font-family="system-ui, sans-serif" font-size="17" fill="#24394b" text-anchor="start">Larger store</text>
+<rect x="205" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M212 207 L230 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M212 216 L230 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="249" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M256 207 L274 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M256 216 L274 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="293" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M300 207 L318 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M300 216 L318 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="337" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M344 207 L362 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M344 216 L362 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="381" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M388 207 L406 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M388 216 L406 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="425" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M432 207 L450 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M432 216 L450 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="469" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M476 207 L494 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M476 216 L494 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="513" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M520 207 L538 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M520 216 L538 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="557" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M564 207 L582 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M564 216 L582 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="601" y="195" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M608 207 L626 207" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M608 216 L626 216" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="205" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M212 255 L230 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M212 264 L230 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="249" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M256 255 L274 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M256 264 L274 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="293" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M300 255 L318 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M300 264 L318 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="337" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M344 255 L362 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M344 264 L362 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="381" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M388 255 L406 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M388 264 L406 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="425" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M432 255 L450 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M432 264 L450 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="469" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M476 255 L494 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M476 264 L494 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="513" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M520 255 L538 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M520 264 L538 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="557" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M564 255 L582 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M564 264 L582 264" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="601" y="243" width="32" height="36" rx="2" fill="#e3f1eb" stroke="#167767"/>
+<path d="M608 255 L626 255" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M608 264 L626 264" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M197 305 L653 305" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M644.9 308.9 L653 305 L644.9 301.1" fill="none" stroke="#236ba0" stroke-width="2"/>
+<text x="421" y="327" font-family="system-ui, sans-serif" font-size="13" fill="#236ba0" text-anchor="middle">inspect the existing inventory</text>
+<text x="30" y="367" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">Drawn file counts illustrate growth; these are not benchmark results.</text>
+</svg>

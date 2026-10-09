@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"receipt/internal/auth"
 	"receipt/internal/cache"
 	"receipt/internal/fingerprint"
 	"receipt/internal/runner"
@@ -30,13 +31,14 @@ const (
 	commandCache   commandName = "cache"
 	commandServe   commandName = "serve"
 	commandShared  commandName = "shared"
+	commandAuth    commandName = "auth"
 	commandPrune               = "prune"
 )
 
 func parseCommand(raw string) (commandName, error) {
 	mode := commandName(raw)
 	switch mode {
-	case commandRun, commandExplain, commandCache, commandServe, commandShared:
+	case commandRun, commandExplain, commandCache, commandServe, commandShared, commandAuth:
 		return mode, nil
 	default:
 		return "", fmt.Errorf("unknown command %q; use receipt help", raw)
@@ -50,7 +52,11 @@ const help = `Receipt — reuse successful test results for identical declared i
   receipt cache list [--cache-dir DIR]
   receipt cache prune [--cache-dir DIR] [--max-bytes N]
   receipt serve [--cache-dir DIR] [--listen 127.0.0.1:7777]
-                [--postgres] [--max-inflight 16]
+                [--postgres] [--credentials] [--max-inflight 16]
+  receipt auth issue --cache-dir DIR --subject LABEL --scopes read,publish,report
+                     [--expires-in 24h]
+  receipt auth list --cache-dir DIR
+  receipt auth revoke --cache-dir DIR --id CREDENTIAL_ID
   receipt shared stats --cache-dir DIR
   receipt shared limits --cache-dir DIR [--max-blob-bytes N] [--max-metadata-bytes N]
                         [--max-entries N] [--max-evidence N] [--apply]
@@ -58,6 +64,8 @@ const help = `Receipt — reuse successful test results for identical declared i
   receipt shared prune --cache-dir DIR [--older-than 720h] [--apply]
 
 Shared maintenance requires RECEIPT_DATABASE_URL. Changes default to dry-run.
+Auth administration requires RECEIPT_DATABASE_URL; issue reveals the secret once.
+Credential mode requires --postgres and never accepts the legacy shared token.
 
 Run options:
   --bypass          Run directly; do not read or write the cache.
@@ -121,6 +129,8 @@ func execute(ctx context.Context, args []string, out, errOut io.Writer) (int, er
 		return 0, serve(ctx, args[1:], errOut)
 	case commandShared:
 		return 0, sharedCommand(ctx, args[1:], out, errOut)
+	case commandAuth:
+		return 0, authCommand(ctx, args[1:], out, errOut)
 	default:
 		return 0, fmt.Errorf("unknown command %q; use receipt help", args[0])
 	}
@@ -422,6 +432,7 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 	dir := f.String("cache-dir", "", "cache directory")
 	addr := f.String("listen", "127.0.0.1:7777", "listen address")
 	postgres := f.Bool("postgres", false, "use RECEIPT_DATABASE_URL for shared metadata")
+	credentials := f.Bool("credentials", false, "use database-backed scoped credentials (requires --postgres)")
 	maxInflight := f.Int("max-inflight", 16, "maximum active API requests")
 	if e := f.Parse(args); e != nil {
 		if errors.Is(e, flag.ErrHelp) {
@@ -433,7 +444,10 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 	if *maxInflight < 1 || *maxInflight > 128 {
 		return fmt.Errorf("max-inflight must be between 1 and 128")
 	}
-	if len(token) < 24 {
+	if *credentials && !*postgres {
+		return fmt.Errorf("credentials requires --postgres")
+	}
+	if !*credentials && len(token) < 24 {
 		return fmt.Errorf("serve requires RECEIPT_TOKEN of at least 24 characters")
 	}
 	wd, e := os.Getwd()
@@ -444,6 +458,7 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 		*dir = filepath.Join(wd, ".receipt", "server")
 	}
 	var store cache.Store = cache.Disk{Dir: *dir}
+	var authenticator auth.Authenticator
 	if *postgres {
 		startup, cancel := context.WithTimeout(ctx, 15*time.Second)
 		defer cancel()
@@ -453,13 +468,26 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 		}
 		defer shared.DB.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
 		store = shared
+		if *credentials {
+			credentialsDB := auth.Postgres{DB: shared.DB}
+			if e := credentialsDB.Migrate(startup); e != nil {
+				return fmt.Errorf("credential initialization failed: %w", e)
+			}
+			authenticator = credentialsDB
+		}
 	}
 	ln, e := net.Listen("tcp", *addr)
 	if e != nil {
 		return e
 	}
 	defer ln.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
-	srv := &http.Server{Handler: cache.HandlerLimit(store, token, *maxInflight), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
+	handler := cache.HandlerLimit(store, token, *maxInflight)
+	authDescription := "legacy shared token"
+	if *credentials {
+		handler = cache.HandlerAuthorized(store, authenticator, *maxInflight)
+		authDescription = "scoped credentials"
+	}
+	srv := &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	finished := make(chan struct{})
 	defer close(finished)
 	go func() {
@@ -473,7 +501,7 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 		case <-finished:
 		}
 	}()
-	diagnostic(errOut, "receipt: shared cache listening on", ln.Addr(), "(trusted-client API; use TLS reverse proxy off loopback)")
+	diagnostic(errOut, "receipt: shared cache listening on", ln.Addr(), "with", authDescription, "(use TLS reverse proxy off loopback)")
 	e = srv.Serve(ln)
 	if errors.Is(e, http.ErrServerClosed) {
 		return nil

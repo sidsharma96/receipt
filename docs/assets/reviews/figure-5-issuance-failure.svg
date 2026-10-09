@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 365" role="img" aria-labelledby="issuance-failure-title issuance-failure-desc">
+<title id="issuance-failure-title">A committed credential can survive failure to print its secret</title>
+<desc id="issuance-failure-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="125" y="40" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="middle">Database</text>
+<text x="570" y="40" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="middle">Operator terminal</text>
+<g data-step="1">
+<rect x="25" y="85" width="225" height="95" rx="6" fill="#e3f1eb" stroke="#167767"/>
+<text x="137" y="116" font-family="system-ui, sans-serif" font-size="17" fill="#167767" text-anchor="middle">Credential row saved</text>
+<text x="137" y="143" font-family="system-ui, sans-serif" font-size="16" fill="#167767" text-anchor="middle">ID + token hash</text>
+<text x="137" y="166" font-family="system-ui, sans-serif" font-size="14" fill="#167767" text-anchor="middle">not the secret itself</text>
+</g>
+<g data-step="2">
+<path d="M265 130 L530 130" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M521.9 133.9 L530 130 L521.9 126.1" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<text x="400" y="106" font-family="system-ui, sans-serif" font-size="16" fill="#ac3c43" text-anchor="middle">printing fails</text>
+<circle cx="570" cy="130" r="20" fill="#ac3c43"/>
+<text x="570" y="136" font-family="system-ui, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle">×</text>
+<text x="570" y="190" font-family="system-ui, sans-serif" font-size="16" fill="#ac3c43" text-anchor="middle">no complete secret</text>
+</g>
+<g data-step="3">
+<text x="25" y="255" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="start">Recovery: list the public ID → revoke it → issue a replacement</text>
+<text x="25" y="299" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">The saved hash cannot be turned back into the generated secret.</text>
+<text x="25" y="337" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">Known committed row; uncertain commit acknowledgement is a different case.</text>
+</g>
+</svg>

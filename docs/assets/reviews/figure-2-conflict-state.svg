@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 375" role="img" aria-labelledby="conflict-state-title conflict-state-desc">
+<title id="conflict-state-title">A rejected conflicting upload still changes the stored quarantine state</title>
+<desc id="conflict-state-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="35" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">SAME INPUT KEY K; DIFFERENT OBSERVED OUTPUT</text>
+<rect x="25" y="85" width="240" height="70" rx="6" fill="#e3f1eb" stroke="#167767"/>
+<text x="145" y="114" font-family="system-ui, sans-serif" font-size="19" fill="#167767" text-anchor="middle">K: reusable</text>
+<text x="145" y="140" font-family="system-ui, sans-serif" font-size="15" fill="#167767" text-anchor="middle">saved output X</text>
+<path d="M265 120 L432 120" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M423.9 123.9 L432 120 L423.9 116.1" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<text x="350" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#ac3c43" text-anchor="middle">upload Y ≠ X</text>
+<rect x="445" y="85" width="250" height="70" rx="6" fill="#fff0ef" stroke="#ac3c43"/>
+<text x="570" y="115" font-family="system-ui, sans-serif" font-size="19" fill="#ac3c43" text-anchor="middle">K: quarantined</text>
+<text x="570" y="140" font-family="system-ui, sans-serif" font-size="15" fill="#ac3c43" text-anchor="middle">do not reuse</text>
+<path d="M570 155 L570 230" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M566.1 221.9 L570 230 L573.9 221.9" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<text x="385" y="200" font-family="system-ui, sans-serif" font-size="15" fill="#ac3c43" text-anchor="start">1. commit warning</text>
+<text x="570" y="260" font-family="system-ui, sans-serif" font-size="17" fill="#ac3c43" text-anchor="middle">2. return conflict error</text>
+<text x="25" y="321" font-family="system-ui, sans-serif" font-size="17" fill="#24394b" text-anchor="start">The upload fails as a reusable result, but its warning must survive.</text>
+<text x="25" y="350" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Quarantine does not decide which observation was truthful.</text>
+</svg>

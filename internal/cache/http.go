@@ -10,12 +10,19 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"receipt/internal/auth"
 	"strings"
 	"sync/atomic"
 	"time"
 )
 
-const conflictsPath = "conflicts"
+const (
+	conflictsPath = "conflicts"
+	entriesPath   = "entries"
+	statusPath    = "status"
+	identityPath  = "/v1/identity"
+	metricsPath   = "/v1/metrics"
+)
 
 // Remote is an authenticated HTTP client for the trusted-team cache API.
 type Remote struct {
@@ -24,7 +31,7 @@ type Remote struct {
 }
 
 func (r Remote) request(ctx context.Context, method, key string, body []byte) (*http.Response, error) {
-	return r.requestPath(ctx, method, "entries", key, body)
+	return r.requestPath(ctx, method, entriesPath, key, body)
 }
 
 func (r Remote) requestPath(ctx context.Context, method, kind, key string, body []byte) (*http.Response, error) {
@@ -104,7 +111,7 @@ func (r Remote) Put(ctx context.Context, v Result) error {
 
 // Check refuses reuse when the shared key is quarantined or status is unavailable.
 func (r Remote) Check(ctx context.Context, key string) error {
-	resp, err := r.requestPath(ctx, http.MethodGet, "status", key, nil)
+	resp, err := r.requestPath(ctx, http.MethodGet, statusPath, key, nil)
 	if err != nil {
 		return err
 	}
@@ -142,7 +149,10 @@ func (r Remote) Report(ctx context.Context, report ConflictReport) error {
 }
 
 // APIMetrics uses aggregate counters only: no tokens, paths or output labels.
-type APIMetrics struct{ requests, rejected, conflicts, misses, failures, nanos atomic.Int64 }
+type APIMetrics struct {
+	requests, rejected, conflicts, misses, failures, nanos atomic.Int64
+	unauthorized, forbidden, authFailures, authBusy        atomic.Int64
+}
 
 // Handler serves one trusted user/team; token possession does not prove honest uploads.
 func Handler(store Store, token string) http.Handler { return HandlerLimit(store, token, 16) }
@@ -157,22 +167,39 @@ func HandlerLimit(store Store, token string, limit int) http.Handler {
 }
 
 type cacheAPI struct {
-	store   Store
-	token   string
-	slots   chan struct{}
-	metrics *APIMetrics
+	store         Store
+	token         string
+	slots         chan struct{}
+	metrics       *APIMetrics
+	authenticator auth.Authenticator
+	authSlots     chan struct{}
 }
 
 func (a *cacheAPI) serveHTTP(w http.ResponseWriter, r *http.Request) {
-	token, slots, metrics := a.token, a.slots, a.metrics
 	w.Header().Set("Cache-Control", "no-store")
-	if token == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+token)) != 1 {
+	if a.authSlots != nil {
+		a.serveScoped(w, r)
+		return
+	}
+	if a.token == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+a.token)) != 1 {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	if r.URL.Path == "/v1/metrics" && r.Method == http.MethodGet {
+	a.serveAuthenticated(w, r, nil)
+}
+
+func (a *cacheAPI) serveAuthenticated(w http.ResponseWriter, r *http.Request, principal *auth.Principal) {
+	slots, metrics := a.slots, a.metrics
+	if principal != nil && r.URL.Path == identityPath && r.Method == http.MethodGet {
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(map[string]int64{"requests": metrics.requests.Load(), "active": int64(len(slots)), "rejected": metrics.rejected.Load(), conflictsPath: metrics.conflicts.Load(), "misses": metrics.misses.Load(), "failures": metrics.failures.Load(), "duration_ns_total": metrics.nanos.Load()}); err != nil {
+		if err := json.NewEncoder(w).Encode(principal); err != nil {
+			metrics.failures.Add(1)
+		}
+		return
+	}
+	if r.URL.Path == metricsPath && r.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]int64{"requests": metrics.requests.Load(), "active": int64(len(slots)), "rejected": metrics.rejected.Load(), conflictsPath: metrics.conflicts.Load(), "misses": metrics.misses.Load(), "failures": metrics.failures.Load(), "duration_ns_total": metrics.nanos.Load(), "unauthorized": metrics.unauthorized.Load(), "forbidden": metrics.forbidden.Load(), "auth_failures": metrics.authFailures.Load(), "auth_busy": metrics.authBusy.Load()}); err != nil {
 			metrics.failures.Add(1)
 		}
 		return
@@ -210,7 +237,7 @@ func (a *cacheAPI) serveHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *cacheAPI) route(w http.ResponseWriter, r *http.Request) {
-	for _, kind := range []string{"status", conflictsPath} {
+	for _, kind := range []string{statusPath, conflictsPath} {
 		prefix := "/v1/" + kind + "/"
 		if strings.HasPrefix(r.URL.Path, prefix) {
 			a.shared(w, r, kind, strings.TrimPrefix(r.URL.Path, prefix))
@@ -243,7 +270,7 @@ func (a *cacheAPI) shared(w http.ResponseWriter, r *http.Request, kind, key stri
 		http.Error(w, "shared conflict contract unavailable", http.StatusNotImplemented)
 		return
 	}
-	if kind == "status" && r.Method == http.MethodGet {
+	if kind == statusPath && r.Method == http.MethodGet {
 		a.status(w, r, key, shared)
 		return
 	}

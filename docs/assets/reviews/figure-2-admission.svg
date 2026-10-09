@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 390" role="img" aria-labelledby="admission-title admission-desc">
+<title id="admission-title">A concurrency limit admits work only when a slot is free</title>
+<desc id="admission-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="35" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">FOUR SLOTS DRAWN FOR TEACHING</text>
+<rect x="125" y="110" width="104" height="72" rx="6" fill="#dfedf7" stroke="#236ba0"/>
+<text x="177" y="153" font-family="system-ui, sans-serif" font-size="17" fill="#236ba0" text-anchor="middle">job 1</text>
+<rect x="265" y="110" width="104" height="72" rx="6" fill="#dfedf7" stroke="#236ba0"/>
+<text x="317" y="153" font-family="system-ui, sans-serif" font-size="17" fill="#236ba0" text-anchor="middle">job 2</text>
+<rect x="405" y="110" width="104" height="72" rx="6" fill="#dfedf7" stroke="#236ba0"/>
+<text x="457" y="153" font-family="system-ui, sans-serif" font-size="17" fill="#236ba0" text-anchor="middle">job 3</text>
+<rect x="545" y="110" width="104" height="72" rx="6" fill="#dfedf7" stroke="#236ba0"/>
+<text x="597" y="153" font-family="system-ui, sans-serif" font-size="17" fill="#236ba0" text-anchor="middle">job 4</text>
+<text x="25" y="85" font-family="system-ui, sans-serif" font-size="15" fill="#236ba0" text-anchor="start">All occupied</text>
+<path d="M66 231 L590 231" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M581.9 234.9 L590 231 L581.9 227.1" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<text x="25" y="263" font-family="system-ui, sans-serif" font-size="15" fill="#ac3c43" text-anchor="start">new request</text>
+<rect x="595" y="206" width="96" height="50" rx="6" fill="#ffffff" stroke="#ac3c43"/>
+<text x="643" y="238" font-family="system-ui, sans-serif" font-size="20" fill="#ac3c43" text-anchor="middle">503</text>
+<text x="290" y="219" font-family="system-ui, sans-serif" font-size="14" fill="#ac3c43" text-anchor="middle">no free slot → no waiting queue</text>
+<path d="M597 184 L597 309" fill="none" stroke="#167767" stroke-width="2" stroke-dasharray="5 6"/>
+<path d="M593.1 300.9 L597 309 L600.9 300.9" fill="none" stroke="#167767" stroke-width="2"/>
+<text x="25" y="330" font-family="system-ui, sans-serif" font-size="17" fill="#167767" text-anchor="start">When a job finishes, it releases its slot.</text>
+<text x="25" y="360" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">A later request can enter. This limits overlap, not requests per second.</text>
+</svg>
