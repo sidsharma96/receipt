@@ -24,7 +24,7 @@ The writing rules are in [PROSE-STYLE-GUIDE.md](PROSE-STYLE-GUIDE.md). In short:
 
 ## What exists now?
 
-Receipt has six implemented parts:
+Receipt has seven implemented parts:
 
 - Phase 1 saves successful command results on the user's computer, explains input changes, reruns results for verification and prunes old local entries.
 - Phase 2 shares results through HTTP, stores result descriptions in PostgreSQL, stores output in content-named files and remembers conflicting observations.
@@ -32,6 +32,7 @@ Receipt has six implemented parts:
 - Phase 4 defines accepted JSON fields and values, rejects malformed entries and reports before storage, and tests selected interrupted storage operations.
 - Phase 5 adds opt-in scoped service credentials with expiry and revocation, local credential administration and authenticated identity inspection.
 - Phase 6 adds opt-in timing summaries, server-generated request IDs, and repeatable local/shared measurements; it does not add runner adapters or durable caller history.
+- Phase 7 adds bounded Cargo reuse, with dependency inspection and explicit refusal before lookup for unsupported cases.
 
 The code also has typed command names, automated lint checks and selected error-handling helpers. These are implementation conventions, not another product phase.
 
@@ -1581,6 +1582,366 @@ Final Phase 6 verification on 9 October 2026: make check passed with zero lint i
 ### Amendments to earlier reviews
 
 Earlier requests for measurements now have this limited local evidence. Phase 5's durable caller history, credential purging, private tenants and production deployment remain deferred. Phase 6 adds no runner adapter and no changes to key or result encoding.
+
+## Phase 7 review: bounded Cargo support
+
+Implemented 9 October 2026. This is one package's host-target Cargo test support,
+not a claim that any Rust command can be cached. The [Cargo contract](CARGO.md)
+lists exact options and limits; the [working chapter](WORKING-DOC.html#8-check-what-a-rust-test-depends-on)
+introduces the idea. Storage and manifest schema v1 are unchanged.
+
+### 1. What data structures are used, and why?
+
+Imagine a test crate that needs library A and test helper B. Both need common
+library C. Cargo describes packages and dependency arrows with IDs. Receipt
+uses maps to find a package and its arrows from an ID, a slice of pending IDs
+to hold unfinished work, and a `seen` map to remember completed visits.
+
+From [cargo_graph.go](../internal/fingerprint/cargo_graph.go):
+
+```go
+if seen[id] {
+	continue
+}
+seen[id] = true
+```
+
+When the second arrow reaches C, this check skips its repeated visit. A slice
+could also store completed IDs, but each membership check could require scanning
+that slice. A map gives direct lookup at the cost of extra memory. Pending work
+is removed from the end of its slice; no concurrent queue is needed.
+
+<!-- review-figure:figure-7-cargo-graph:start -->
+#### Figure 7.1 · Two arrows can lead to one dependency
+
+<!-- visual-summary:start -->
+![Figure 7.1 · Two arrows can lead to one dependency](assets/reviews/figure-7-cargo-graph.svg)
+
+Follow both branches down to C. A map of visited IDs prevents repeated inspection; a pending slice holds the remaining packages. This graph is illustrative, not regex-syntax’s actual dependency graph.
+<!-- visual-summary:end -->
+
+Illustrative graph: the selected crate needs A and test helper B; both need C.
+C is inspected once. The selected crate's test dependencies count, but we do
+not run A's or B's own test suites, so their test-only dependencies are excluded.
+Source: [cargoClosure](../internal/fingerprint/cargo_graph.go).
+<!-- review-figure:figure-7-cargo-graph:end -->
+
+### 2. What is the architecture and extension boundary?
+
+The existing command path still builds a fingerprint, looks up a result and
+either replays or executes. The Cargo adapter supplies additional input records
+before lookup. It accepts a small command grammar, refuses unsupported settings,
+resolves installed tools, asks Cargo for frozen metadata, follows the selected
+dependency graph and reads supported source files.
+
+Cargo's metadata is its description of packages and their resolved connections.
+The same manifest and feature options are supplied to the metadata probe.
+Receipt records the exact original test arguments too; it does not rewrite the
+test command. `Cargo.lock` is read even when ignored by Git. Resolved tool bytes,
+version output, raw metadata and a list of source hashes receive separate,
+versioned input names. Only their digests enter the manifest, not raw metadata.
+
+This stays inside fingerprinting. A probe failure uses the existing uncached
+execution path, not a new storage path. Other runners retain their probes.
+Supporting another Cargo option requires specifying what it changes in selection
+and inputs; adding its name to the parser is not sufficient.
+
+### 3. What concurrency, networking and fundamental primitives are used?
+
+No new goroutine or network service was added. Subprocesses query Rustup and
+the three Rust tools, then Cargo metadata. A shared context bounds the probe
+sequence; each output buffer has a byte limit. Registry files are read and
+hashed sequentially. A hash is a compact content-derived identifier, not proof
+that the file is trustworthy or the test deterministic.
+
+Metadata uses `--frozen`: Cargo cannot fetch missing dependencies or change the
+lockfile during that probe. Tools and dependencies must already be installed.
+Rustup must resolve an installed toolchain. Actual tests are not sandboxed and
+may still use files, processes or networking; Receipt's existing contract applies.
+
+### 4. What are the pitfalls and debugging challenges?
+
+A root crate without a build script may depend on a crate that has one. Checking
+only the root would miss code that runs during compilation. The adapter visits
+the selected dependency graph and refuses custom-build or procedural-macro
+targets before considering a cached success. It also refuses custom Cargo
+configuration, compiler overrides and path dependencies outside the Git root.
+
+<!-- review-figure:figure-7-cargo-refusal:start -->
+#### Figure 7.2 · Refusal happens before cache lookup
+
+<!-- visual-summary:start -->
+![Figure 7.2 · Refusal happens before cache lookup](assets/reviews/figure-7-cargo-refusal.svg)
+
+The red branch does not reach the saved-result lookup. A transitive dependency with a build script is enough to take it. This protects the refusal policy; it is not a sandbox for the command that runs.
+<!-- visual-summary:end -->
+
+A supported graph proceeds to input hashing and lookup. A graph containing a
+build script takes a different branch: Receipt executes Cargo without lookup
+or publication. An existing saved success cannot override that refusal, and
+`--allow-generic` cannot override it either. The command's exit code still wins.
+Source: [cargoInputs](../internal/fingerprint/cargo.go) and
+[executionInputs](../internal/fingerprint/manifest.go).
+<!-- review-figure:figure-7-cargo-refusal:end -->
+
+Another trap is confusing a passing command with a cache hit. Read the diagnostic
+and execution timing: unsupported commands can pass after running uncached.
+Frozen metadata can fail because a dependency has not been downloaded. That
+should lead to preparation or normal execution, not an invented empty graph.
+Cargo can over-approximate features across a workspace, so conservatively refusing
+a command is possible even when a narrower build would not need the flagged code.
+
+### 5. What are the hot/cold paths and costs?
+
+Every hit still resolves tools, reads executable bytes, obtains metadata and
+reads the selected registry source files. A miss normally performs these checks
+both before and after test execution. Following arrows is roughly linear in
+the inspected packages and dependency links; reading bytes can cost more than
+the graph traversal. Maps hold the metadata, pending IDs and visited IDs;
+source hashing streams file contents rather than keeping all registry files in RAM.
+
+<!-- review-figure:figure-7-cargo-cost:start -->
+#### Figure 7.3 · A real hit can still be slower than a direct run
+
+<!-- visual-summary:start -->
+![Figure 7.3 · A real hit can still be slower than a direct run](assets/reviews/figure-7-cargo-cost.svg)
+
+A hit skipped the tests but still paid for tool and input checks. For these short tests, that was more work than running Cargo directly. The small, partly overlapping sample does not establish typical latency or a general slowdown.
+<!-- visual-summary:end -->
+
+Two direct warm runs averaged about 140 ms, one miss took 994 ms, and two hits
+averaged about 556 ms for regex-syntax's 147 library tests. All passed; the hits
+did not execute tests. The checks outweighed this small suite's runtime.
+Other verification work overlapped; this five-sample experiment is not a
+performance distribution. Source: [raw observations](measurements/phase-7-cargo-2026-10-09.json).
+<!-- review-figure:figure-7-cargo-cost:end -->
+
+There is no new maintenance path. The extra scan's file/byte budgets bound that
+scan, not all fingerprint memory, tool reads or the test command. Cold toolchain
+installation and dependency downloads are preparation, not hidden hit costs.
+
+### 6. What are the guarantees, assumptions and non-goals?
+
+For accepted commands, changes to the recorded source, feature arguments,
+lockfile, selected executable bytes or scanned registry bytes change the key.
+Guard/probe failures prevent both lookup and publication. A failed test is still
+not cached. Output is compared exactly as before; variable timing text can still
+cause a verification mismatch.
+
+Local source discovery retains the Git/extra-input contract. Ignored helper files
+and external services are not discovered automatically. We do not hash the entire
+Rust sysroot, shared compiler libraries or system linker; installed toolchain
+contents beyond the recorded executables/version reports are assumed stable.
+Trusted directory access and no hostile concurrent mutation remain assumptions.
+Two matching scans cannot prove nothing changed and changed back between them.
+This is bounded reuse, not hermetic execution or complete toolchain attestation.
+
+### 7. What alternatives were considered, and why?
+
+Hashing only Cargo.lock would be cheaper, but modifying an extracted dependency
+file would leave that lockfile unchanged. Reading reachable registry bytes catches
+that case. Reading the entire Cargo cache would also include unrelated projects
+and increase cost, so the scan follows selected dependencies instead.
+
+Trusting build scripts' declared inputs was deferred: declarations can be incomplete,
+and collecting/validating them requires a separate design. Rejecting every package
+in the entire workspace was also avoided; an unused member's build script need
+not prevent a simple selected crate's tests. These are decisions made for this
+adapter, not retrospective claims about earlier phases. Parsing every Cargo
+configuration option was deferred in favour of a clear refusal boundary.
+
+### 8. What evidence supports the claims, and what risks remain?
+
+The real regex checkout at `72d650cb0a880a01ab6dc2137c0888e8f89740f7`
+passed 147 regex-syntax library tests, saved and replayed. Changing feature
+arguments forced a miss. The main package's seven library tests passed after
+the adapter refused reuse because of build scripts. This is a narrower workload
+than the earlier full regex test command, not a replacement claim for that suite.
+Selecting the separately named installed `1.92.0` Rustup toolchain also forced
+a miss; both selections reported the same Rust release, so this was a selection
+check, not an upgrade test. Enabling the `arbitrary` feature introduced unsupported
+compilation code: Receipt refused reuse and the 147 tests passed uncached.
+
+The opt-in local Cargo fixture checks a miss and hit, changed features, a failing
+source edit, a changed local dependency, restoration, an ignored lockfile change,
+build-script refusal and the inability of generic opt-in to bypass that refusal.
+Unit tests cover dependency traversal, duplicate/missing nodes, unsupported kinds,
+outside paths, config/override checks, modified registry bytes, symlinks, budgets,
+cancellation and tool-selection checks. A tool-byte change is tested locally;
+that is not evidence of a successful upgrade to a different Rust release.
+
+Verification used macOS arm64, Receipt built with Go 1.22.1 and installed Rust
+1.92.0. Lint, unit tests, the opt-in Cargo fixture, race checks and the build passed.
+PostgreSQL integration was not run; storage/authentication code did not change.
+Windows/Linux execution, hostile mutation, large dependency graphs and production
+performance remain unestablished. No full Rust source sandbox was added.
+
+Eight documentation checks pass. The three new SVG diagrams were rendered and
+inspected, including their labels and arrows. Full HTML browser interactions
+and phone layout remain unverified under the previously recorded local-file
+browser restriction. Diagram inspection is not a beginner comprehension study.
+
+### 9. What would make us revisit these decisions?
+
+Repeated real-project refusals should guide the next supported options, not a
+blanket relaxation. Build scripts need a defensible input-tracking or isolation
+design before admission. A dominant hashing cost could justify verified immutable
+dependency snapshots, with rules for detecting mutation. New Cargo metadata kinds
+or configuration behaviour require compatibility tests. Larger slow suites and
+repeated sequential measurements are needed before claiming practical speedups.
+
+### Cargo hardening amendment: 9 October 2026
+
+This follow-up strengthens the bounded adapter, not its accepted command set.
+The original Phase 7 observations above remain historical. New observations
+below come from sequential runs after the earlier verification work finished.
+
+### 1. What changed in the data structures?
+
+Cargo's package record now includes its name so a refusal can identify the
+package to inspect. A package ID can contain a private registry URL, so we do
+not print it. Names must fit a short letters/digits/underscore/hyphen alphabet;
+other names become `<unnamed>`. The dependency maps and pending-work slice are
+unchanged. Timing uses the existing fixed-size recorder, with three additional
+stage names, not a growing map of every package encountered.
+
+### 2. What is the flow and extension boundary?
+
+Suppose a saved test used the downloaded memchr library. Editing that library
+without changing Cargo.lock must not let Receipt replay the earlier success.
+The new offline fixture copies prepared registry data into a temporary Cargo
+home, saves a passing run, then adds a compiler error to that copy. Receipt
+detects different source bytes and executes; the compiler failure reaches the
+caller. Restoring the bytes restores the earlier hit.
+
+<!-- review-figure:figure-7-cargo-mutation:start -->
+#### Figure 7.4 · The lockfile stays the same; the dependency does not
+
+<!-- visual-summary:start -->
+![Figure 7.4 · The lockfile stays the same; the dependency does not](assets/reviews/figure-7-cargo-mutation.svg)
+
+The middle state cannot reuse key A. The test keeps the lockfile unchanged and edits only an isolated dependency copy. Restoring the original bytes brings key A back. Clearing temporary build artifacts makes Cargo compile the deliberate error; Receipt does not automatically clean Cargo builds.
+<!-- visual-summary:end -->
+
+The three states are a real regression-test sequence, with illustrative key
+labels A and B. The dependency edit changes Receipt's key even though the
+lockfile is identical. The fixture also clears its isolated compiled dependency
+files before the failure run; it does not change the user's Cargo cache.
+Source: [cargo_registry_test.go](../internal/app/cargo_registry_test.go).
+<!-- review-figure:figure-7-cargo-mutation:end -->
+
+### 3. What primitives were added?
+
+Only timing boundaries were added to production execution; no new concurrency,
+network service or lock. From [cargo_policy.go](../internal/fingerprint/cargo_policy.go):
+
+```go
+defer observe.Measure(ctx, observe.CargoTools)()
+```
+
+The first call starts a timer. Go's `defer` runs its returned completion function
+when the enclosing function returns, including on failure. This timer covers
+tool resolution, executable reads and version queries. Separate timers cover
+Cargo's dependency query and extra source reads. All three sit inside the
+existing fingerprint timer: adding them to it would count their work twice.
+
+### 4. What was tricky?
+
+Cargo itself assumes downloaded dependency sources do not change. Even if
+Receipt correctly chooses execution, Cargo may reuse previously compiled code.
+The fixture therefore clears only its temporary dependency build files before
+running the edited source. This makes the expected compiler failure observable;
+it does not introduce automatic Cargo cleaning into Receipt. Registry mutation
+is a deliberate test disturbance, not a recommended development workflow.
+
+The refusal tests also exclude their new config/build-script files and compiler
+flag from ordinary input recording. That prevents an ordinary changed key from
+masking a broken policy check. The earlier success exists, but the refusal must
+stop before any cache lookup. A procedural-macro dependency is checked too.
+
+### 5. What do the frequent paths cost now?
+
+Five direct runs, one Receipt miss and five hits were measured for each command,
+with warm compiled artifacts and no concurrent agent test/build work. The median
+direct regex-syntax run took 139 ms; the median hit took 434 ms. The longer-running
+unicode-width suite took 3,049 ms directly and 392 ms on a hit. Its 39 tests are
+fewer but slower, illustrating why test count alone does not predict benefit.
+The single misses took 1,066 ms and 3,884 ms respectively.
+
+<!-- review-figure:figure-7-cargo-hardening-cost:start -->
+#### Figure 7.5 · The same checks can hurt a short suite and help a longer one
+
+<!-- visual-summary:start -->
+![Figure 7.5 · The same checks can hurt a short suite and help a longer one](assets/reviews/figure-7-cargo-hardening-cost.svg)
+
+Regex-syntax was quicker directly: 139 ms versus a 434 ms hit. Unicode-width took 3,049 ms directly versus a 392 ms hit. Each hit still checks inputs, so the benefit depends on how much execution it skips. Source: the linked raw sequential measurement record.
+<!-- visual-summary:end -->
+
+Both pairs use one scale and show median client durations. Each hit avoided
+test execution but still checked tools and inputs. The raw record retains every
+sample, including the first regex direct run at 332 ms; it was not discarded.
+Source: [sequential measurements](measurements/cargo-hardening-2026-10-09.json).
+<!-- review-figure:figure-7-cargo-hardening-cost:end -->
+
+Median tool-check time was about 270 ms for regex-syntax and 267 ms for
+unicode-width; metadata took about 60 ms and 46 ms. Extra source scanning took
+less than 1 ms for both. These selected workloads have little extra source data;
+this does not establish scanning cost for large registry dependency sets.
+There is still no new maintenance path.
+
+### 6. What is guaranteed, assumed or excluded?
+
+Refusals still run the original command without Receipt lookup or publication.
+The compiler-override test deliberately ignores that variable for general
+hashing and still observes refusal. The registry fixture demonstrates changed
+dependency bytes preventing an old hit while Cargo.lock remains unchanged.
+It does not prove all dependencies are captured or make Cargo's own build cache
+understand source mutation. Installed compiler-library stability, declared local
+inputs and trusted directory access remain assumptions from the original review.
+
+### 7. What alternatives did we consider?
+
+Copying prepared registry data keeps automated tests offline and avoids editing
+the user's dependencies. Downloading on every test run was rejected because it
+would make tests depend on network availability. Parsing arbitrary Cargo stderr
+to guess an exact failure cause was also avoided: it can contain private data
+and its wording can change. The diagnostic names the failed stage and suggests
+what to check, without claiming every metadata failure means a missing download.
+Skipping executable reads might be faster but was deferred rather than weakening
+input checks during a hardening pass. These are decisions for this follow-up.
+
+### 8. What evidence and gaps remain?
+
+Normal and uncached race-enabled Go suites passed with both Cargo fixtures
+enabled, along with lint and the build, on macOS arm64 with Go 1.22.1 and Rust
+1.92.0. The new fixture reads prepared memchr 2.8.3 data but modifies only copies.
+Checks cover restoration, missing offline data, guarded settings after a saved
+success, diagnostic redaction and recording a failed metadata query's duration.
+The timing experiment's ten hits all skipped execution and all commands exited
+successfully. Upstream source files were not edited.
+
+The cloned aho-corasick and glob candidates are refused because selected
+dependencies contain build scripts. That is useful compatibility evidence, not
+support for those workloads. The [lab record](REAL-REPO-LAB.md) gives exact
+revisions. The timing order was not randomized, other desktop activity was not
+isolated, and no remote-cache or production throughput claim follows. PostgreSQL
+integration and other operating systems were not exercised in this follow-up.
+Full HTML browser/phone verification remains incomplete; rendered SVG inspection
+and structural checks are distinct from a beginner comprehension study.
+All eight documentation checks passed, and both new diagrams were rendered and
+inspected for label collisions and reading order. Aho-corasick's 150 library
+tests passed uncached. Glob's final test scans from the filesystem root; it was
+stopped after the other 16 tests finished, and Cargo returned 101. That run is
+incomplete, not a passing suite or a cache performance measurement.
+
+### 9. When should we revisit the decisions?
+
+The tool timer gives us a concrete optimization target if it remains dominant
+on useful workloads. Any remembered tool fingerprint needs rules for detecting
+toolchain changes first. Frequent real-project refusals justify a separate
+build-script design, not deleting the guard. This pass is enough to move next
+to the single-server remote-cache milestone; it does not require adding more
+runner flags or more languages beforehand.
 
 ## Documentation revamp verification: 9 October 2026
 

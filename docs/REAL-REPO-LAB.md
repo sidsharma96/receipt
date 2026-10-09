@@ -232,3 +232,60 @@ another volatile field. Revisit dependency capture when external module or
 compiler changes can escape the recorded inputs. Revisit cost only after
 sequential, repeated measurements show the probe is significant. Cargo,
 Vitest and Zig support remain separate work.
+
+## Cargo follow-up: 9 October 2026
+
+Phase 7 adds bounded Cargo support. In the same clean regex checkout, the
+`regex-syntax` package's 147 library tests saved and replayed with
+`cargo test --frozen --manifest-path regex-syntax/Cargo.toml --lib --quiet`.
+Changing feature arguments or the installed toolchain selection forced execution.
+The main regex package still runs uncached because its selected dependency graph
+contains build scripts; its seven library tests passed on that fallback path.
+This does not establish reuse for the earlier full regex workload.
+
+For this small warmed suite, two direct runs averaged about 140 ms, while two
+Receipt hits averaged about 556 ms. Tool and input checks cost more than the
+tests they skipped. Other verification overlapped, so these are exploratory
+observations, not a performance distribution. See the
+[raw samples](measurements/phase-7-cargo-2026-10-09.json),
+[supported Cargo contract](CARGO.md), and
+[Phase 7 review](PHASE-REVIEWS.html#phase-7-review-bounded-cargo-support).
+
+## Cargo hardening follow-up: 9 October 2026
+
+Three additional repositories were shallow-cloned beneath the lab's `repos/`:
+
+| Repository | Exact revision | Observed result |
+| --- | --- | --- |
+| aho-corasick | `6c0abf5681bfc30bb9d8f7f52b68a350b436fffa` | `cargo test --frozen --lib --quiet`: 150 passed, uncached because doc-comment has a build script. |
+| glob | `057cef2824f5a96f738e52d7d8ca3e024381bcc6` | Same command: reuse refused because rustix has a build script. Sixteen tests finished; the remaining filesystem-root scan was stopped with SIGTERM. Cargo returned 101. No full-suite success is claimed. |
+| unicode-width | `5180748ec0cacabfad0478996e9a89a612274e8f` | `cargo test --frozen --quiet`: 39 passed across library, integration and documentation tests; Receipt miss followed by five hits. |
+
+Lockfiles and dependencies were prepared with Cargo before frozen runs. Upstream
+tracked source files remain unchanged; build outputs used external lab target
+directories for the measured runs. The initial unicode-width baseline used its
+ordinary ignored target directory. The lab's repositories.json records the new
+revisions. These additions are compatibility experiments, not all examples of
+large supported suites. Glob's root-wide scan is not suitable for a routine
+benchmark on this workstation and should not be rerun here as part of the lab.
+
+After all Receipt test/build work finished, the measurement script ran five
+direct commands, one fresh-cache miss and five hits per supported workload,
+sequentially. Median client time was 139 ms direct / 434 ms hit for regex-syntax,
+and 3,049 ms direct / 392 ms hit for unicode-width. The latter is longer-running,
+not larger by test count. Every measured command exited successfully and every
+hit skipped execution. The first regex direct sample was 332 ms and is retained.
+Order was not randomized, and other desktop activity was not isolated.
+
+The new stage timers show roughly 267–270 ms per hit checking tools, 46–60 ms
+querying metadata, and less than 1 ms on the extra source scan. These are nested
+inside fingerprint time and must not be added to it. See the
+[raw sequential record](measurements/cargo-hardening-2026-10-09.json) and
+[comparison figure](PHASE-REVIEWS.html#figure-7-cargo-hardening-cost).
+
+Separately, the offline automated fixture copied prepared memchr 2.8.3 into a
+temporary Cargo home. Changing that dependency to contain a compiler error
+with an unchanged lockfile forced execution and exit 101; restoring its bytes
+restored the original hit. Only temporary compiled dependency artifacts were
+cleaned to make Cargo itself recompile the edit. No shared registry source was
+modified. Both opt-in Cargo fixtures passed normal and race-enabled Go suites.

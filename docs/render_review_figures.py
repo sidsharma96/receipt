@@ -9,6 +9,7 @@ import re
 import sys
 import json
 import statistics
+from render_cargo_review import update_review
 
 ROOT = Path(__file__).resolve().parent
 INK = '#24394b'
@@ -19,12 +20,12 @@ GOLD = '#97650d'
 
 
 class Drawing:
-    def __init__(self, name, height, description):
+    def __init__(self, name, height, description, measured=False):
         self.name = name
         self.height = height
         self.parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 {height}" role="img" aria-labelledby="{name}-title {name}-desc">',
                       f'<title id="{name}-title">{escape(description)}</title>',
-                      f'<desc id="{name}-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>',
+                      f'<desc id="{name}-desc">' + ('Measured local observations, not a general performance guarantee.' if measured else 'Illustrative records and execution order, not measured timings.') + ' Read the text explanation below for details.</desc>',
                       '<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>']
 
     def text(self, x, y, value, size=16, color=INK, anchor='start'):
@@ -427,7 +428,7 @@ def issuance_failure():
 
 def local_measurements():
     record = json.loads((ROOT/'measurements/phase-6-2026-10-09.json').read_text())
-    d = Drawing('local-measurements', 330, 'A measured CodeCraft hit was faster, but still did input work')
+    d = Drawing('local-measurements', 330, 'A measured CodeCraft hit was faster, but still did input work', measured=True)
     d.text(25, 32, 'ONE CODECRAFT SELECTION · 15 PASSING TESTS', 14)
     for y, kind, label, color in [(100,'direct','Direct pytest',BLUE),(180,'miss','First Receipt run',GOLD),(260,'hit','Receipt hit',GREEN)]:
         samples = [s['client_ns']/1e6 for s in record['local']['samples'] if s['kind']==kind]
@@ -445,7 +446,7 @@ def measured_wait():
     n=len(sample['sorted_client_ns'])
     total=statistics.mean(sample['sorted_client_ns'])/1e6
     wait=sample['server_stage_totals_ns']['db_lock']/n/1e6
-    d=Drawing('measured-wait',315,'Concurrent uploads spent much of their measured time waiting for the database lock')
+    d=Drawing('measured-wait',315,'Concurrent uploads spent much of their measured time waiting for the database lock', measured=True)
     d.text(25,32,'128 ENTRIES · 4 CLIENT WORKERS · 32 REPEATED UPLOADS',14)
     for y,label,value,color in [(110,'Whole request',total,BLUE),(215,'Database lock call',wait,GOLD)]:
         d.text(25,y,label,16)
@@ -455,7 +456,99 @@ def measured_wait():
     return d.finish(), [], 'The shorter bar measures the advisory-lock call, including its database round trip and wait. Do not add it to the whole-request bar. These were duplicate uploads on one local server; this is evidence of waiting in this experiment, not a production throughput limit.'
 
 
+def cargo_graph():
+    d = Drawing('cargo-graph', 405, 'One selected crate can reach the same dependency through two branches')
+    d.text(25, 30, 'ILLUSTRATIVE PACKAGE GRAPH · ARROWS MEAN “NEEDS”', 14)
+    for x, y, label in [(270, 60, 'Selected crate'), (80, 175, 'Library A'), (460, 175, 'Test helper B'), (270, 285, 'Common C')]:
+        d.rect(x, y, 180, 48, '#edf5ef', GREEN)
+        d.text(x+90, y+30, label, 18, INK, 'middle')
+    d.line(300, 108, 170, 175, arrow=True)
+    d.line(420, 108, 550, 175, arrow=True)
+    d.text(25, 143, 'normal dependency', 14, BLUE)
+    d.text(530, 143, 'test dependency', 14, BLUE)
+    d.line(170, 223, 300, 285, arrow=True)
+    d.line(550, 223, 420, 285, arrow=True)
+    d.text(360, 362, 'First visit to C: inspect it. Second visit: already seen → skip.', 16, GREEN, 'middle')
+    d.text(360, 389, 'A and B’s own test-only dependencies are not needed here.', 14, INK, 'middle')
+    return d.finish(), [], 'Follow both branches down to C. A map of visited IDs prevents repeated inspection; a pending slice holds the remaining packages. This graph is illustrative, not regex-syntax’s actual dependency graph.'
+
+
+def cargo_refusal():
+    d = Drawing('cargo-refusal', 380, 'Unsupported compilation code branches to execution before lookup')
+    d.text(25, 30, 'POLICY CHECK BEFORE ANY SAVED RESULT IS USED', 14)
+    d.rect(230, 55, 260, 55)
+    d.text(360, 89, 'Inspect selected packages', 18, INK, 'middle')
+    d.line(290, 110, 175, 175, GREEN, arrow=True)
+    d.line(430, 110, 545, 175, RED, arrow=True)
+    d.text(100, 148, 'supported', 15, GREEN)
+    d.text(545, 145, 'build.rs / macro', 15, RED)
+    d.rect(50, 175, 250, 65, '#edf5ef', GREEN)
+    d.text(175, 213, 'Hash declared inputs', 18, GREEN, 'middle')
+    d.rect(420, 175, 250, 65, '#faeeee', RED)
+    d.text(545, 204, 'Run Cargo uncached', 18, RED, 'middle')
+    d.text(545, 226, 'No lookup. No publication.', 14, RED, 'middle')
+    d.line(175, 240, 175, 282, GREEN, arrow=True)
+    d.rect(50, 282, 250, 55, '#edf5ef', GREEN)
+    d.text(175, 316, 'Look up this input key', 18, GREEN, 'middle')
+    d.text(420, 295, 'Even a saved success', 16)
+    d.text(420, 322, 'cannot override this branch.', 16)
+    d.text(360, 366, 'The actual Cargo command and its exit code remain unchanged.', 15, INK, 'middle')
+    return d.finish(), [], 'The red branch does not reach the saved-result lookup. A transitive dependency with a build script is enough to take it. This protects the refusal policy; it is not a sandbox for the command that runs.'
+
+
+def cargo_cost():
+    record = json.loads((ROOT/'measurements/phase-7-cargo-2026-10-09.json').read_text())
+    d = Drawing('cargo-cost', 335, 'A small warm Rust suite ran faster directly than through a Receipt hit', measured=True)
+    d.text(25, 32, 'REGEX-SYNTAX · 147 TESTS · WARM BUILD CACHE', 14)
+    for y, kind, label, color in [(100, 'direct', 'Direct (2 runs)', BLUE), (180, 'miss', 'Miss (1 run)', GOLD), (260, 'hit', 'Hit (2 runs)', GREEN)]:
+        value = statistics.mean(s['client_ns']/1e6 for s in record['samples'] if s['kind'] == kind)
+        d.text(25, y, label, 16)
+        d.rect(195, y-25, value*.43, 36, '#edf3ef', color, 2)
+        d.text(205+value*.43, y, f'{value:.0f} ms', 15, color)
+    d.text(25, 311, 'Means, one scale. Other verification overlapped; not a benchmark distribution.', 14)
+    return d.finish(), [], 'A hit skipped the tests but still paid for tool and input checks. For these short tests, that was more work than running Cargo directly. The small, partly overlapping sample does not establish typical latency or a general slowdown.'
+
+
+def cargo_mutation():
+    d = Drawing('cargo-mutation', 355, 'Changing a copied dependency prevents reuse despite an unchanged lockfile')
+    d.text(25, 30, 'REGRESSION SEQUENCE · KEYS A AND B ARE ILLUSTRATIVE', 14)
+    d.text(25, 65, 'Cargo.lock is unchanged throughout.', 17)
+    for x, title, body, key, outcome, color in [
+        (25, 'Original dependency', 'Valid source', 'Key A', 'Execute → save success', GREEN),
+        (265, 'Edited copy', 'Compiler error added', 'Key B', 'Execute → fail; no save', RED),
+        (505, 'Restored copy', 'Original bytes again', 'Key A', 'Replay saved success', GREEN),
+    ]:
+        d.rect(x, 95, 190, 160, '#f7f8f4', color)
+        d.text(x+95, 125, title, 16, INK, 'middle')
+        d.text(x+95, 157, body, 14, INK, 'middle')
+        d.text(x+95, 195, key, 20, color, 'middle')
+        d.text(x+95, 230, outcome, 14, color, 'middle')
+    d.line(215, 178, 265, 178, arrow=True)
+    d.line(455, 178, 505, 178, arrow=True)
+    d.text(25, 290, 'Before the edited run: clear only the fixture’s compiled dependency files.', 15)
+    d.text(25, 319, 'Otherwise Cargo may reuse its own build output even when Receipt executes.', 15)
+    return d.finish(), [], 'The middle state cannot reuse key A. The test keeps the lockfile unchanged and edits only an isolated dependency copy. Restoring the original bytes brings key A back. Clearing temporary build artifacts makes Cargo compile the deliberate error; Receipt does not automatically clean Cargo builds.'
+
+
+def cargo_hardening_cost():
+    record = json.loads((ROOT/'measurements/cargo-hardening-2026-10-09.json').read_text())
+    d = Drawing('cargo-hardening-cost', 390, 'Sequential measurements show a benefit only for the longer-running selected suite', measured=True)
+    d.text(25, 30, 'MEDIAN CLIENT TIME · FIVE DIRECT RUNS AND FIVE HITS PER SUITE', 14)
+    for top, workload in zip([70, 215], record['workloads']):
+        d.text(25, top, workload['name'], 18)
+        for offset, kind, label, color in [(38, 'direct', 'Direct', BLUE), (85, 'hit', 'Hit', GREEN)]:
+            value = statistics.median(s['client_ns']/1e6 for s in workload['samples'] if s['kind'] == kind)
+            d.text(25, top+offset, label, 16)
+            d.rect(125, top+offset-23, value*.16, 30, '#edf3ef', color, 2)
+            d.text(135+value*.16, top+offset-2, f'{value:,.0f} ms', 15, color)
+    d.text(25, 345, 'One scale. Warm builds; sequential runs; no overlapping agent test work.', 14)
+    d.text(25, 373, 'Not randomized or machine-isolated. No remote-cache measurement.', 14)
+    return d.finish(), [], 'Regex-syntax was quicker directly: 139 ms versus a 434 ms hit. Unicode-width took 3,049 ms directly versus a 392 ms hit. Each hit still checks inputs, so the benefit depends on how much execution it skips. Source: the linked raw sequential measurement record.'
+
+
 FIGURES = {
+    'figure-7-cargo-mutation': cargo_mutation, 'figure-7-cargo-hardening-cost': cargo_hardening_cost,
+    'figure-7-cargo-graph': cargo_graph, 'figure-7-cargo-refusal': cargo_refusal, 'figure-7-cargo-cost': cargo_cost,
     'figure-6-local-measurements': local_measurements, 'figure-6-measured-wait': measured_wait,
     'figure-1-scan-gap': scan_gap, 'figure-2-conflict-state': conflict_state,
     'figure-4-failed-save-states': failed_save_states, 'figure-4-cleanup-retry': cleanup_retry,
@@ -524,6 +617,7 @@ document.querySelectorAll('.review-figure[data-steps]').forEach(figure => {
 
 
 def render(html):
+    html = update_review(html, (ROOT / 'PHASE-REVIEWS.md').read_text())
     assets = {}
     for name, draw in FIGURES.items():
         svg, steps, watch = draw()

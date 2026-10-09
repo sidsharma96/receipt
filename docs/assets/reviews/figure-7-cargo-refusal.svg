@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" role="img" aria-labelledby="cargo-refusal-title cargo-refusal-desc">
+<title id="cargo-refusal-title">Unsupported compilation code branches to execution before lookup</title>
+<desc id="cargo-refusal-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="30" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">POLICY CHECK BEFORE ANY SAVED RESULT IS USED</text>
+<rect x="230" y="55" width="260" height="55" rx="6" fill="#e8f2f5" stroke="#236ba0"/>
+<text x="360" y="89" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="middle">Inspect selected packages</text>
+<path d="M290 110 L175 175" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M180.1 167.6 L175 175 L184.0 174.4" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M430 110 L545 175" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M536.0 174.4 L545 175 L539.9 167.6" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<text x="100" y="148" font-family="system-ui, sans-serif" font-size="15" fill="#167767" text-anchor="start">supported</text>
+<text x="545" y="145" font-family="system-ui, sans-serif" font-size="15" fill="#ac3c43" text-anchor="start">build.rs / macro</text>
+<rect x="50" y="175" width="250" height="65" rx="6" fill="#edf5ef" stroke="#167767"/>
+<text x="175" y="213" font-family="system-ui, sans-serif" font-size="18" fill="#167767" text-anchor="middle">Hash declared inputs</text>
+<rect x="420" y="175" width="250" height="65" rx="6" fill="#faeeee" stroke="#ac3c43"/>
+<text x="545" y="204" font-family="system-ui, sans-serif" font-size="18" fill="#ac3c43" text-anchor="middle">Run Cargo uncached</text>
+<text x="545" y="226" font-family="system-ui, sans-serif" font-size="14" fill="#ac3c43" text-anchor="middle">No lookup. No publication.</text>
+<path d="M175 240 L175 282" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M171.1 273.9 L175 282 L178.9 273.9" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="50" y="282" width="250" height="55" rx="6" fill="#edf5ef" stroke="#167767"/>
+<text x="175" y="316" font-family="system-ui, sans-serif" font-size="18" fill="#167767" text-anchor="middle">Look up this input key</text>
+<text x="420" y="295" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Even a saved success</text>
+<text x="420" y="322" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">cannot override this branch.</text>
+<text x="360" y="366" font-family="system-ui, sans-serif" font-size="15" fill="#24394b" text-anchor="middle">The actual Cargo command and its exit code remain unchanged.</text>
+</svg>

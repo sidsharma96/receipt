@@ -17,7 +17,11 @@ import (
 	"strings"
 )
 
-const pytestCommand = "pytest"
+const (
+	pytestCommand = "pytest"
+	cargoCommand  = "cargo"
+	testCommand   = "test"
+)
 
 // InputKind identifies the declared source of a fingerprint component.
 type InputKind string
@@ -224,6 +228,13 @@ func executionInputs(ctx context.Context, dir string, args []string, generic boo
 		return nil, err
 	}
 	inputs := []Input{{ExecutableInput, exe, Hash(data)}}
+	if filepath.Base(args[0]) == cargoCommand {
+		cargo, err := cargoInputs(ctx, dir, args)
+		if err != nil {
+			return nil, err
+		}
+		return append(inputs, cargo...), nil
+	}
 
 	probe, err := toolchainProbe(args, data, generic)
 	if err != nil {
@@ -235,7 +246,7 @@ func executionInputs(ctx context.Context, dir string, args []string, generic boo
 			return nil, e
 		}
 		name := "resolved-environment"
-		if filepath.Base(args[0]) == "go" && args[1] == "test" {
+		if filepath.Base(args[0]) == "go" && args[1] == testCommand {
 			b, e = stableGoEnvironment(b)
 			if e != nil {
 				return nil, e
@@ -263,11 +274,11 @@ func toolchainProbe(args []string, data []byte, generic bool) ([]string, error) 
 			return nil, fmt.Errorf("cannot identify pytest interpreter; use python -m pytest")
 		}
 		probe = []string{strings.TrimPrefix(line, "#!"), "-c", pythonProbe}
-	case base == "go" && len(args) > 1 && args[1] == "test":
+	case base == "go" && len(args) > 1 && args[1] == testCommand:
 		probe = []string{args[0], "env", "-json"}
 	default:
 		if !generic {
-			return nil, fmt.Errorf("supported commands: uv run pytest, python -m pytest, pytest, go test; --allow-generic opts into a declared-input-only command")
+			return nil, fmt.Errorf("supported commands: uv run pytest, python -m pytest, pytest, go test, bounded cargo test --frozen; --allow-generic opts into a declared-input-only command")
 		}
 	}
 	return probe, nil

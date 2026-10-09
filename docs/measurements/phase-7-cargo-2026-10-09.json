@@ -1,0 +1,15 @@
+{
+  "repository": "rust-lang/regex",
+  "revision": "72d650cb0a880a01ab6dc2137c0888e8f89740f7",
+  "platform": "darwin/arm64",
+  "cargo_version": "1.92.0",
+  "command": ["cargo", "test", "--frozen", "--manifest-path", "regex-syntax/Cargo.toml", "--lib", "--quiet"],
+  "scope": "Two direct runs, one miss, two hits; warm build/OS caches. Other verification work overlapped. Exploratory observations, not a benchmark distribution.",
+  "samples": [
+    {"kind":"direct","client_ns":141687333,"exit_code":0},
+    {"kind":"direct","client_ns":138632917,"exit_code":0},
+    {"kind":"miss","client_ns":994161917,"exit_code":0,"receipt_ns":986616083,"executed":true,"stages":[{"stage":"fingerprint","calls":2,"ns":807709458},{"stage":"execution","calls":1,"ns":138189958},{"stage":"lookup","calls":1,"ns":26084}]},
+    {"kind":"hit","client_ns":564334000,"exit_code":0,"receipt_ns":555846958,"executed":false,"stages":[{"stage":"fingerprint","calls":1,"ns":517115584},{"stage":"lookup","calls":1,"ns":12231500}]},
+    {"kind":"hit","client_ns":546774500,"exit_code":0,"receipt_ns":538945875,"executed":false,"stages":[{"stage":"fingerprint","calls":1,"ns":491452875},{"stage":"lookup","calls":1,"ns":10235459}]}
+  ]
+}

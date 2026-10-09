@@ -6,6 +6,7 @@ import re
 import unittest
 
 import render_working_doc as renderer
+import render_review_figures as review_renderer
 
 
 class ReaderParser(HTMLParser):
@@ -37,6 +38,26 @@ class ReaderParser(HTMLParser):
 
 
 class WorkingGuideTests(unittest.TestCase):
+    def test_review_rendering_and_links(self):
+        path = renderer.ROOT / "PHASE-REVIEWS.html"
+        html = path.read_text()
+        self.assertEqual(review_renderer.render(html)[0], html)
+        parser = ReaderParser()
+        parser.feed(html)
+        self.assertFalse(parser.tags)
+        self.assertEqual(len(parser.ids), len(set(parser.ids)))
+        self.assertEqual(parser.figures, 24)
+        for link in parser.links:
+            if link.startswith(("http://", "https://")):
+                continue
+            filename, separator, fragment = link.partition("#")
+            target = renderer.ROOT / filename if filename else path
+            self.assertTrue(target.is_file(), link)
+            if separator and target.suffix == ".html":
+                parsed = ReaderParser()
+                parsed.feed(target.read_text())
+                self.assertIn(fragment, parsed.ids, link)
+
     def test_generated_file_matches_source(self):
         self.assertEqual(renderer.OUTPUT.read_text(), renderer.render(renderer.SOURCE.read_text()))
 
@@ -45,8 +66,8 @@ class WorkingGuideTests(unittest.TestCase):
         parser.feed(renderer.OUTPUT.read_text())
         self.assertFalse(parser.tags)
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
-        self.assertEqual(parser.figures, 6)
-        self.assertEqual(parser.answers, 6)
+        self.assertEqual(parser.figures, 7)
+        self.assertEqual(parser.answers, 7)
         for link in parser.links:
             if link.startswith(("http://", "https://")):
                 continue
@@ -62,21 +83,21 @@ class WorkingGuideTests(unittest.TestCase):
         source = renderer.SOURCE.read_text()
         pattern = r"\[([^\]]+\.go)\]\(([^)]+\.go)\):\n\n```go\n(.*?)\n```"
         excerpts = re.findall(pattern, source, re.DOTALL)
-        self.assertEqual(len(excerpts), 4)
+        self.assertEqual(len(excerpts), 5)
         for _, filename, excerpt in excerpts:
             actual = (renderer.ROOT / filename).read_text()
             self.assertIn(re.sub(r"\s+", " ", excerpt).strip(),
                           re.sub(r"\s+", " ", actual), filename)
 
-    def test_all_six_reviews_keep_nine_questions(self):
+    def test_all_seven_reviews_keep_nine_questions(self):
         source = (renderer.ROOT / "PHASE-REVIEWS.md").read_text()
         phases = re.split(r"(?m)^## Phase \d review:", source)[1:]
-        self.assertEqual(len(phases), 6)
+        self.assertEqual(len(phases), 7)
         for phase in phases:
             questions = re.findall(r"(?m)^### ([1-9])\. ", phase)
             self.assertEqual(questions[:9], list("123456789"))
         html = (renderer.ROOT / "PHASE-REVIEWS.html").read_text()
-        self.assertEqual(html.count('<code class="language-go">'), 20)
+        self.assertEqual(html.count('<code class="language-go">'), 22)
 
     def test_historical_go_excerpts_match_source(self):
         class Excerpts(HTMLParser):
@@ -106,7 +127,7 @@ class WorkingGuideTests(unittest.TestCase):
 
         parser = Excerpts()
         parser.feed((renderer.ROOT / "PHASE-REVIEWS.html").read_text())
-        self.assertEqual(len(parser.excerpts), 20)
+        self.assertEqual(len(parser.excerpts), 22)
         for filename, excerpt in parser.excerpts:
             self.assertIsNotNone(filename)
             actual = (renderer.ROOT / filename).read_text()

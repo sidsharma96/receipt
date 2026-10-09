@@ -1,12 +1,12 @@
 # Receipt: follow one test run
 
-Updated 9 October 2026. This guide explains the code that exists now. Phases 1–4 are committed; Phase 5 is implemented locally but not yet committed. No public deployment is implied.
+Updated 9 October 2026. This guide explains the code that exists now: Phases 1–7, including the Go probe correction and Cargo hardening. Git history records committed revisions. No public deployment is implied.
 
 ## Start here
 
 You have a Python project and run its tests with `uv run pytest`. Pytest checks your code. Uv starts it in the project's Python environment. Receipt sits around that command: it can remember a successful run and show its saved output when the recorded inputs match next time.
 
-We will follow that run through six changes to Receipt: saving it locally, sharing it, cleaning up storage, checking incoming data, limiting what callers may do, and measuring where time goes. The examples use Alice and a continuous integration worker, called CI. CI is a program that runs tests automatically.
+We will follow that run through seven changes to Receipt: saving it locally, sharing it, cleaning up storage, checking incoming data, limiting what callers may do, measuring where time goes, and checking a Rust project's dependencies. The examples use Alice and a continuous integration worker, called CI. CI is a program that runs tests automatically.
 
 You do not need to understand database locks or Go channels before starting. Each chapter introduces a problem before the code that solves it. Diagrams show sequences, not measured timings. Examples of output and filenames are illustrative.
 
@@ -388,7 +388,111 @@ More goroutines can wait together, but only one can hold this exclusive lock.
 First measure what happens while it is held. A different locking design would
 still need to protect files from cleanup and enforce the shared storage budget.
 
+## 8. Check what a Rust test depends on
+
+Alice runs a Rust library's tests with Cargo, Rust's build and package tool.
+She has not changed her test file. But the test calls a helper library, and that
+library has changed. Replaying the old success would hide the change. Recording
+only the test command or compiler version is not enough.
+
+Receipt now asks Cargo which packages the selected test needs. This relationship
+is called a dependency graph: an arrow from A to B means A needs B. A helper may
+itself need another helper. Receipt follows these arrows before looking for a
+saved result. The [dependency illustration](PHASE-REVIEWS.html#figure-7-cargo-graph)
+shows why the same helper can be reached more than once.
+
+From [cargo_graph.go](../internal/fingerprint/cargo_graph.go):
+
+```go
+if seen[id] {
+	continue
+}
+seen[id] = true
+```
+
+`id` identifies the package being visited. `seen` remembers packages already
+checked. When two arrows lead to the same helper, Receipt checks it once rather
+than repeating its work. Other maps let Receipt find a package's description
+and outgoing arrows from its ID.
+
+```diagram
+Before Receipt reuses a Cargo result
+Select one package | Read frozen metadata using the chosen manifest and feature options.
+Check its dependencies | Refuse build scripts, procedural macros and unsupported configuration before lookup.
+Record the inputs | Read the lockfile, tools and supported package sources as well as repository files.
+Look up the result | Replay only an eligible saved success; otherwise execute the original command.
+```
+
+Some packages contain a build script: a program Cargo runs while compiling.
+That program could read an undeclared file or invoke another tool. Receipt does
+not yet track those actions. It therefore runs such a command normally without
+using its cache. Procedural macros, which also execute during compilation, get
+the same treatment. The [refusal illustration](PHASE-REVIEWS.html#figure-7-cargo-refusal)
+shows that this decision happens before reading a saved result.
+
+In the real regex repository, the `regex-syntax` library's 147 tests can be saved
+and replayed under the supported command. The main regex package still runs
+uncached because its dependency graph contains build scripts. This is useful
+partial support, not support for every Rust project.
+
+The checks also cost time. In a follow-up with five direct runs and five hits,
+the middle (median) regex-syntax run took 139 milliseconds directly and 434
+milliseconds through a Receipt hit. But unicode-width's longer-running suite
+took about 3.05 seconds directly and 0.39 seconds on a hit. The
+[side-by-side measurements](PHASE-REVIEWS.html#figure-7-cargo-hardening-cost)
+show why a hit is not automatically a speedup: the checks must cost less than
+the execution they avoid. These were local, warm-build observations, not a
+remote-cache benchmark.
+
+### What if a downloaded library changes?
+
+Cargo.lock records which dependency versions were selected. It does not change
+just because someone edits a downloaded source file. Receipt therefore also
+reads the selected dependency files. Our isolated test edits a copied library
+to introduce a compiler error: the old saved success must not hide that error.
+The [three-state illustration](PHASE-REVIEWS.html#figure-7-cargo-mutation)
+shows the edit and restoration.
+
+There are two caches in this example. Receipt remembers test results; Cargo
+remembers compiled code. To demonstrate the error, the test clears only its
+temporary compiled dependency files before execution. Receipt deciding to run
+Cargo is not a promise that Cargo recompiles every file. No user dependency
+cache is edited or cleared by this test.
+
+### Check your understanding
+
+Alice's selected crate has no build script, but one of its helper libraries
+does. Should Receipt replay a previous success?
+
+### Answer: follow the whole selected dependency graph
+
+No. The helper's build script is also part of compiling this test. The current
+adapter refuses reuse and lets Cargo execute. Ordinary tests can still read
+external files or services, so passing this check is not proof that all inputs
+have been captured. See the [command contract](CARGO.md) and
+[full Phase 7 review](PHASE-REVIEWS.html#phase-7-review-bounded-cargo-support).
+
 ## Updates and documentation records
+
+### 9 October 2026: harden Cargo before remote deployment
+
+The Phase 7 review now has a dated hardening amendment. It covers changed
+registry bytes with an unchanged lockfile, refusal after a saved success, more
+actionable diagnostics, and separate timings for tool checks, dependency queries
+and extra source reads. Three additional Rust repositories were cloned for the
+lab. Supported commands remain deliberately narrow; no build-script support
+was added. The next proposed milestone is a single-server remote deployment,
+then object storage—not another language adapter. Provisioning still requires
+provider, account and budget decisions.
+
+### 9 October 2026: Phase 7 bounded Cargo support
+
+Cargo reuse now checks installed tools, the selected dependency graph, a frozen
+lockfile and registry source bytes. Build scripts and other unsupported cases
+run uncached. The [nine-question review](PHASE-REVIEWS.html#phase-7-review-bounded-cargo-support)
+records source/dependency/feature changes, refusal checks and the small real
+regex experiment. The adapter does not normalize test output or change storage
+formats. Existing Go and Python probes remain separate.
 
 ### 9 October 2026: Phase 6 diagnostics and local measurements
 

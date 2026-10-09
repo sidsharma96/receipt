@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 330" role="img" aria-labelledby="local-measurements-title local-measurements-desc">
 <title id="local-measurements-title">A measured CodeCraft hit was faster, but still did input work</title>
-<desc id="local-measurements-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<desc id="local-measurements-desc">Measured local observations, not a general performance guarantee. Read the text explanation below for details.</desc>
 <rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
 <text x="25" y="32" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">ONE CODECRAFT SELECTION · 15 PASSING TESTS</text>
 <text x="25" y="100" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Direct pytest</text>

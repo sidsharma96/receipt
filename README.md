@@ -38,7 +38,10 @@ Receipt runs the command normally. If uv creates or updates the environment
 during that run, Receipt skips storage until the inputs stabilize.
 
 Supported probes: `uv run pytest`, `python -m pytest`, `python3 -m pytest`,
-an absolute-shebang `pytest`, and `go test`. Other commands require
+an absolute-shebang `pytest`, `go test`, and bounded `cargo test --frozen`.
+The [Cargo contract](docs/CARGO.md) lists accepted options and refusal cases;
+build scripts and procedural macros currently force uncached execution.
+Other commands require
 `--allow-generic`, which explicitly accepts responsibility for declaring their
 inputs. Run flags go **before** `--`; test flags go **after** it.
 

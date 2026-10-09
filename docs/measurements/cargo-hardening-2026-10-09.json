@@ -1,0 +1,505 @@
+{
+  "date": "2026-10-09",
+  "scope": "Sequential measurements on macOS arm64; Go 1.22.1, Rust 1.92.0. No concurrent agent test/build work during samples. Warm build and OS caches; first regex direct sample retained despite higher duration. Five direct runs, one fresh Receipt miss, five hits per workload, in that order. Not randomized, no machine isolation, no production or remote-cache claim.",
+  "workloads": [
+    {
+      "name": "regex-syntax",
+      "revision": "72d650cb0a880a01ab6dc2137c0888e8f89740f7",
+      "command": [
+        "cargo",
+        "test",
+        "--frozen",
+        "--manifest-path",
+        "regex-syntax/Cargo.toml",
+        "--lib",
+        "--quiet"
+      ],
+      "tests": 147,
+      "samples": [
+        {
+          "kind": "direct",
+          "client_ns": 332285417,
+          "exit_code": 0
+        },
+        {
+          "kind": "direct",
+          "client_ns": 138791750,
+          "exit_code": 0
+        },
+        {
+          "kind": "direct",
+          "client_ns": 137353000,
+          "exit_code": 0
+        },
+        {
+          "kind": "direct",
+          "client_ns": 137093709,
+          "exit_code": 0
+        },
+        {
+          "kind": "direct",
+          "client_ns": 140362667,
+          "exit_code": 0
+        },
+        {
+          "kind": "miss",
+          "client_ns": 1065798208,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 2,
+              "ns": 876232542
+            },
+            {
+              "stage": "execution",
+              "calls": 1,
+              "ns": 137957416
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 301417
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 2,
+              "ns": 537347876
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 2,
+              "ns": 142755375
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 2,
+              "ns": 372251
+            }
+          ],
+          "receipt_ns": 1058399458,
+          "executed": true
+        },
+        {
+          "kind": "hit",
+          "client_ns": 433349250,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 393795042
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 9311375
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 266262666
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 59402542
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 238333
+            }
+          ],
+          "receipt_ns": 425719000,
+          "executed": false
+        },
+        {
+          "kind": "hit",
+          "client_ns": 434705625,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 399083667
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 7916292
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 270579000
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 60140458
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 244666
+            }
+          ],
+          "receipt_ns": 427581458,
+          "executed": false
+        },
+        {
+          "kind": "hit",
+          "client_ns": 434894792,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 399270666
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 8003708
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 272322917
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 59813542
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 166958
+            }
+          ],
+          "receipt_ns": 427926875,
+          "executed": false
+        },
+        {
+          "kind": "hit",
+          "client_ns": 429996333,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 393964917
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 8198375
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 268458584
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 60091458
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 209208
+            }
+          ],
+          "receipt_ns": 422936500,
+          "executed": false
+        },
+        {
+          "kind": "hit",
+          "client_ns": 434478042,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 396351291
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 8968500
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 269876833
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 59439916
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 196584
+            }
+          ],
+          "receipt_ns": 426933834,
+          "executed": false
+        }
+      ],
+      "scope": "one selected command; warm OS caches; no edits between runs"
+    },
+    {
+      "name": "unicode-width",
+      "revision": "5180748ec0cacabfad0478996e9a89a612274e8f",
+      "command": [
+        "cargo",
+        "test",
+        "--frozen",
+        "--quiet"
+      ],
+      "tests": 39,
+      "samples": [
+        {
+          "kind": "direct",
+          "client_ns": 3049481958,
+          "exit_code": 0
+        },
+        {
+          "kind": "direct",
+          "client_ns": 3198820041,
+          "exit_code": 0
+        },
+        {
+          "kind": "direct",
+          "client_ns": 3054915917,
+          "exit_code": 0
+        },
+        {
+          "kind": "direct",
+          "client_ns": 3038735958,
+          "exit_code": 0
+        },
+        {
+          "kind": "direct",
+          "client_ns": 3030391959,
+          "exit_code": 0
+        },
+        {
+          "kind": "miss",
+          "client_ns": 3884232584,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 2,
+              "ns": 786202833
+            },
+            {
+              "stage": "execution",
+              "calls": 1,
+              "ns": 3045889583
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 21208
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 2,
+              "ns": 545292583
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 2,
+              "ns": 101882375
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 2,
+              "ns": 429041
+            }
+          ],
+          "receipt_ns": 3876812333,
+          "executed": true
+        },
+        {
+          "kind": "hit",
+          "client_ns": 395221291,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 364041750
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 1902375
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 266874000
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 45812083
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 245625
+            }
+          ],
+          "receipt_ns": 387708292,
+          "executed": false
+        },
+        {
+          "kind": "hit",
+          "client_ns": 393508666,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 363736417
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 1777667
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 267752875
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 45337334
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 202625
+            }
+          ],
+          "receipt_ns": 386379208,
+          "executed": false
+        },
+        {
+          "kind": "hit",
+          "client_ns": 392053666,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 363296333
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 1888375
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 267592375
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 45502041
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 218500
+            }
+          ],
+          "receipt_ns": 385177083,
+          "executed": false
+        },
+        {
+          "kind": "hit",
+          "client_ns": 391967041,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 362920417
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 1901666
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 266776625
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 45912125
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 219000
+            }
+          ],
+          "receipt_ns": 385222250,
+          "executed": false
+        },
+        {
+          "kind": "hit",
+          "client_ns": 388811958,
+          "exit_code": 0,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 359982209
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 1927375
+            },
+            {
+              "stage": "cargo_tools",
+              "calls": 1,
+              "ns": 264054041
+            },
+            {
+              "stage": "cargo_metadata",
+              "calls": 1,
+              "ns": 46114708
+            },
+            {
+              "stage": "cargo_sources",
+              "calls": 1,
+              "ns": 228333
+            }
+          ],
+          "receipt_ns": 381964416,
+          "executed": false
+        }
+      ],
+      "scope": "one selected command; warm OS caches; no edits between runs"
+    }
+  ]
+}

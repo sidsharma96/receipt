@@ -31,10 +31,16 @@ const (
 	Execution
 	// Lookup includes local lookup and optional remote status/fetch work.
 	Lookup
+	// CargoTools includes resolving, reading and querying installed Rust tools.
+	CargoTools
+	// CargoMetadata includes the frozen Cargo dependency query.
+	CargoMetadata
+	// CargoSources includes reading the lockfile and selected dependency files.
+	CargoSources
 	stageCount
 )
 
-var names = [stageCount]string{"authentication", "db_pool", "db_lock", "fs_lock", "sql", "files", "inventory", "fingerprint", "execution", "lookup"}
+var names = [stageCount]string{"authentication", "db_pool", "db_lock", "fs_lock", "sql", "files", "inventory", "fingerprint", "execution", "lookup", "cargo_tools", "cargo_metadata", "cargo_sources"}
 
 // Timing aggregates repeated calls to one boundary, in nanoseconds.
 type Timing struct {

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 315" role="img" aria-labelledby="measured-wait-title measured-wait-desc">
 <title id="measured-wait-title">Concurrent uploads spent much of their measured time waiting for the database lock</title>
-<desc id="measured-wait-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<desc id="measured-wait-desc">Measured local observations, not a general performance guarantee. Read the text explanation below for details.</desc>
 <rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
 <text x="25" y="32" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">128 ENTRIES · 4 CLIENT WORKERS · 32 REPEATED UPLOADS</text>
 <text x="25" y="110" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Whole request</text>

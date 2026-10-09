@@ -146,6 +146,28 @@ roots and destinations. Unknown forms stay unchanged; prefer a miss to erasing
 an input. Do not apply this normalization to test output or other runners.
 The manifest schema stays v1; the new probe name deliberately separates Go keys.
 
+## Cargo adapter (Phase 7, 2026-10-09)
+
+- Keep the command allowlist and refusal policy in `docs/CARGO.md` synchronized.
+  Recognized Cargo refusals cannot fall through to generic reuse.
+- Forward feature/manifest selection to frozen metadata; keep actual command
+  execution unchanged. Never accept missing metadata as an empty dependency set.
+- Follow root dev dependencies, not transitive packages' own dev dependencies.
+  Validate unknown graph/target kinds and refuse build scripts/procedural macros.
+- Hash the existing lockfile even when Git ignores it, resolved tool binaries,
+  versions and reachable registry source bytes. Do not claim sysroot/system
+  attestation, hermetic execution or complete discovery of ignored local inputs.
+- Probe errors mean uncached execution, not successful validation. Keep probe
+  stderr private; retain original command exit/output behaviour.
+- Rust-backed app tests require `RECEIPT_TEST_CARGO=1` and installed tools.
+  Ordinary unit tests must not download toolchains or registry dependencies.
+- Registry-mutation tests require `RECEIPT_TEST_CARGO_REGISTRY` pointing at
+  prepared data and must copy it before editing. Never mutate a user's registry
+  sources. Clear only isolated fixture artifacts when checking Cargo recompilation.
+- Cargo timing stages are nested in fingerprint time. Keep their fixed labels;
+  never use crate names as timing labels. Refusal diagnostics may include a
+  validated crate name, not package IDs, registry URLs or captured probe stderr.
+
 ## Enforced tooling
 
 `make lint` uses pinned golangci-lint v2.14.0 and checks gofumpt formatting.

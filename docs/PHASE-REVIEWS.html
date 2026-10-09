@@ -165,8 +165,8 @@ footer{max-width:1240px;margin:0 auto;padding:0 32px 40px;color:var(--muted);fon
 </style>
 </head>
 <body>
-<header><div class="eyebrow">Receipt · living working document</div><h1>Dated phase reviews</h1><p>Dated reviews for Phases 1–5. Illustrations added 9 October 2026; implementation dates and amendments are recorded below.</p></header>
-<div class="layout"><nav aria-label="Guide contents"><details open><summary>Contents</summary><ol><li><a href="#how-to-read-this-guide">How to read this guide</a></li><li><a href="#what-exists-now">What exists now?</a></li><li><a href="#one-command-from-the-users-perspective">One command, from the user's perspective</a></li><li><a href="#phase-1-review-remembering-a-local-run">Phase 1 review: remembering a local run</a></li><li><a href="#phase-2-review-sharing-results-between-clients">Phase 2 review: sharing results between clients</a></li><li><a href="#phase-3-review-limits-and-cleanup-without-deleting-needed-files">Phase 3 review: limits and cleanup without deleting needed files</a></li><li><a href="#coding-quality-review-explaining-our-implementation-conventions">Coding-quality review: explaining our implementation conventions</a></li><li><a href="#where-to-find-the-implementation">Where to find the implementation</a></li><li><a href="#decision-history-and-current-explanations">Decision history and current explanations</a></li><li><a href="#verification-implementation-evidence-versus-documentation-checks">Verification: implementation evidence versus documentation checks</a></li><li><a href="#what-should-the-next-learning-phases-teach">What should the next learning phases teach?</a></li><li><a href="#future-updates">Future updates</a></li><li><a href="#phase-4-review-checking-incoming-data-and-interrupted-writes">Phase 4 review: checking incoming data and interrupted writes</a></li><li><a href="#phase-5-review-separate-caller-credentials-and-operation-permissions">Phase 5 review: separate caller credentials and operation permissions</a></li></ol></details></nav><main id="content"><p>This is the detailed reference record, preserved during the 9 October 2026 revamp. <a href="WORKING-DOC.html">Start with the working guide</a> for the current explanation. The reviews below retain their dated decisions and evidence. Later amendments can supersede earlier behavior.</p>
+<header><div class="eyebrow">Receipt · living working document</div><h1>Dated phase reviews</h1><p>Dated reviews for Phases 1–7. Illustrations added 9 October 2026; implementation dates and amendments are recorded below.</p></header>
+<div class="layout"><nav aria-label="Guide contents"><details open><summary>Contents</summary><ol><li><a href="#how-to-read-this-guide">How to read this guide</a></li><li><a href="#what-exists-now">What exists now?</a></li><li><a href="#one-command-from-the-users-perspective">One command, from the user's perspective</a></li><li><a href="#phase-1-review-remembering-a-local-run">Phase 1 review: remembering a local run</a></li><li><a href="#phase-2-review-sharing-results-between-clients">Phase 2 review: sharing results between clients</a></li><li><a href="#phase-3-review-limits-and-cleanup-without-deleting-needed-files">Phase 3 review: limits and cleanup without deleting needed files</a></li><li><a href="#coding-quality-review-explaining-our-implementation-conventions">Coding-quality review: explaining our implementation conventions</a></li><li><a href="#where-to-find-the-implementation">Where to find the implementation</a></li><li><a href="#decision-history-and-current-explanations">Decision history and current explanations</a></li><li><a href="#verification-implementation-evidence-versus-documentation-checks">Verification: implementation evidence versus documentation checks</a></li><li><a href="#what-should-the-next-learning-phases-teach">What should the next learning phases teach?</a></li><li><a href="#future-updates">Future updates</a></li><li><a href="#phase-4-review-checking-incoming-data-and-interrupted-writes">Phase 4 review: checking incoming data and interrupted writes</a></li><li><a href="#phase-5-review-separate-caller-credentials-and-operation-permissions">Phase 5 review: separate caller credentials and operation permissions</a></li><li><a href="#phase-6-review-find-where-the-time-went">Phase 6: Find where the time went</a></li><li><a href="#phase-7-review-bounded-cargo-support">Phase 7: Bounded Cargo support</a></li></ol></details></nav><main id="content"><p>This is the detailed reference record, preserved during the 9 October 2026 revamp. <a href="WORKING-DOC.html">Start with the working guide</a> for the current explanation. The reviews below retain their dated decisions and evidence. Later amendments can supersede earlier behavior.</p>
 <details class="figure-index"><summary>Jump to an illustration</summary><ul><li><a href="#figure-1-manifest">Figure 1.1 · A manifest is one record with named fields</a></li><li><a href="#figure-1-key-change">Figure 1.2 · An edited file leads to a different lookup</a></li><li><a href="#figure-2-storage">Figure 2.1 · The server joins a database record to output files</a></li><li><a href="#figure-2-interrupted-write">Figure 2.2 · A failed database save can leave a complete output file</a></li><li><a href="#figure-3-reader-cleanup">Figure 3.1 · The lock protects the gap before opening the file</a></li><li><a href="#figure-3-upload-cost">Figure 3.2 · The same upload can require more inspection</a></li><li><a href="#figure-3-collection-map">Figure 3.3 · Two records can share the same “still needed” entries</a></li><li><a href="#figure-4-validation">Figure 4.1 · Each check answers a different question</a></li><li><a href="#figure-5-permissions">Figure 5.1 · A valid credential can still be refused an upload</a></li><li><a href="#figure-5-revocation">Figure 5.2 · Revocation changes the next credential check</a></li><li><a href="#figure-1-local-flow">Figure 1.3 · A hit and a miss do different work</a></li><li><a href="#figure-2-admission">Figure 2.3 · Full slots refuse another request</a></li><li><a href="#figure-1-scan-gap">Figure 1.4 · Matching scans can miss a change in between</a></li><li><a href="#figure-2-conflict-state">Figure 2.4 · A conflict error must leave a warning behind</a></li><li><a href="#figure-4-failed-save-states">Figure 4.2 · What remains after a failed save?</a></li><li><a href="#figure-4-cleanup-retry">Figure 4.3 · Cleanup retries from the state that remains</a></li><li><a href="#figure-5-issuance-failure">Figure 5.3 · Saving a credential and delivering it are separate steps</a></li><li><a href="#figure-6-local-measurements">Figure 6.1 · Measured local runs</a></li><li><a href="#figure-6-measured-wait">Figure 6.2 · Measured lock waiting</a></li></ul></details>
 <p>Updated 2026-10-09. Phases 1–3 describe the implementation at ff45e74; Phase 4 describes validation and failure testing committed in 90564c3. The appended Phase 5 review records scoped service credentials. Later amendments take precedence where earlier reviews describe decoding, local publication or shared-token access.</p>
 <p>Suppose you run the same Python tests twice without editing anything. Running them again may repeat work you have already done. Receipt tries to save that work: it remembers a successful run and can print its saved output the next time the recorded inputs match.</p>
@@ -178,8 +178,8 @@ footer{max-width:1240px;margin:0 auto;padding:0 32px 40px;color:var(--muted);fon
 <p>For phone reading, use <a href="PHASE-REVIEWS.md">the reference Markdown companion</a> if your file viewer displays HTML as text. In a browser, wide code blocks and comparison tables scroll inside their own boxes. The page itself should fit the screen.</p>
 <p>The writing rules are in <a href="PROSE-STYLE-GUIDE.md">PROSE-STYLE-GUIDE.md</a>. In short: explain a situation and its sequence before naming the concept. A reader should be able to describe what happens, not just recognize the terms.</p>
 <h2 id="what-exists-now">What exists now?</h2>
-<p>Receipt has six implemented parts:</p>
-<ul><li>Phase 1 saves successful command results on the user's computer, explains input changes, reruns results for verification and prunes old local entries.</li><li>Phase 2 shares results through HTTP, stores result descriptions in PostgreSQL, stores output in content-named files and remembers conflicting observations.</li><li>Phase 3 limits selected storage quantities and provides maintenance commands that coordinate with readers and writers.</li><li>Phase 4 defines accepted JSON fields and values, rejects malformed entries and reports before storage, and tests selected interrupted storage operations.</li><li>Phase 5 adds opt-in scoped service credentials with expiry and revocation, local credential administration and authenticated identity inspection.</li><li>Phase 6 adds opt-in timing summaries, server-generated request IDs, and repeatable local/shared measurements; it does not add runner adapters or durable caller history.</li></ul>
+<p>Receipt has seven implemented parts:</p>
+<ul><li>Phase 1 saves successful command results on the user's computer, explains input changes, reruns results for verification and prunes old local entries.</li><li>Phase 2 shares results through HTTP, stores result descriptions in PostgreSQL, stores output in content-named files and remembers conflicting observations.</li><li>Phase 3 limits selected storage quantities and provides maintenance commands that coordinate with readers and writers.</li><li>Phase 4 defines accepted JSON fields and values, rejects malformed entries and reports before storage, and tests selected interrupted storage operations.</li><li>Phase 5 adds opt-in scoped service credentials with expiry and revocation, local credential administration and authenticated identity inspection.</li><li>Phase 6 adds opt-in timing summaries, server-generated request IDs, and repeatable local/shared measurements; it does not add runner adapters or durable caller history.</li><li>Phase 7 adds bounded Cargo reuse, with dependency inspection and explicit refusal before lookup for unsupported cases.</li></ul>
 <p>The code also has typed command names, automated lint checks and selected error-handling helpers. These are implementation conventions, not another product phase.</p>
 <p>There are still important unfinished areas. Receipt does not discover every dependency a test might read. Legacy server mode still trusts one shared token; opt-in credential mode separates operation permissions, not private tenants or verified human accounts. Multi-machine output storage, durable upload-actor history and production deployment measurements remain future work. Phase 4 implements the documented JSON contract, not a universal guarantee about every input source or reported observation.</p>
 <h2 id="one-command-from-the-users-perspective">One command, from the user's perspective</h2>
@@ -1486,7 +1486,7 @@ return id, &quot;rcpt_&quot; + id + &quot;_&quot; + hex.EncodeToString(data[16:]
 <p class="rv-watch">Compare the bars on one duration scale. The miss pays for execution and two input scans. The hit avoids pytest but still scans inputs. Ordered local samples with warm OS caches are not a general speedup guarantee.</p>
 <div class="rv-view" tabindex="0" role="region" aria-label="Scrollable illustration"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 330" role="img" aria-labelledby="local-measurements-title local-measurements-desc">
 <title id="local-measurements-title">A measured CodeCraft hit was faster, but still did input work</title>
-<desc id="local-measurements-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<desc id="local-measurements-desc">Measured local observations, not a general performance guarantee. Read the text explanation below for details.</desc>
 <rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
 <text x="25" y="32" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">ONE CODECRAFT SELECTION · 15 PASSING TESTS</text>
 <text x="25" y="100" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Direct pytest</text>
@@ -1511,7 +1511,7 @@ return id, &quot;rcpt_&quot; + id + &quot;_&quot; + hex.EncodeToString(data[16:]
 <p class="rv-watch">The shorter bar measures the advisory-lock call, including its database round trip and wait. Do not add it to the whole-request bar. These were duplicate uploads on one local server; this is evidence of waiting in this experiment, not a production throughput limit.</p>
 <div class="rv-view" tabindex="0" role="region" aria-label="Scrollable illustration"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 315" role="img" aria-labelledby="measured-wait-title measured-wait-desc">
 <title id="measured-wait-title">Concurrent uploads spent much of their measured time waiting for the database lock</title>
-<desc id="measured-wait-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<desc id="measured-wait-desc">Measured local observations, not a general performance guarantee. Read the text explanation below for details.</desc>
 <rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
 <text x="25" y="32" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">128 ENTRIES · 4 CLIENT WORKERS · 32 REPEATED UPLOADS</text>
 <text x="25" y="110" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Whole request</text>
@@ -1547,6 +1547,236 @@ return id, &quot;rcpt_&quot; + id + &quot;_&quot; + hex.EncodeToString(data[16:]
 
 <h3>Amendments to earlier reviews</h3>
 <p>Earlier requests for measurements now have this limited local evidence. Phase 5's durable caller history, credential purging, private tenants and production deployment remain deferred. Phase 6 adds no runner adapter and no changes to key or result encoding.</p>
+
+<h2 id="phase-7-review-bounded-cargo-support">Phase 7 review: bounded Cargo support</h2>
+<p>Implemented 9 October 2026. This is one package&#x27;s host-target Cargo test support, not a claim that any Rust command can be cached. The <a href="CARGO.md">Cargo contract</a> lists exact options and limits; the <a href="WORKING-DOC.html#8-check-what-a-rust-test-depends-on">working chapter</a> introduces the idea. Storage and manifest schema v1 are unchanged.</p>
+<h3>1. What data structures are used, and why?</h3>
+<p>Imagine a test crate that needs library A and test helper B. Both need common library C. Cargo describes packages and dependency arrows with IDs. Receipt uses maps to find a package and its arrows from an ID, a slice of pending IDs to hold unfinished work, and a <code>seen</code> map to remember completed visits.</p>
+<p>From <a href="../internal/fingerprint/cargo_graph.go">cargo_graph.go</a>:</p>
+<pre><code class="language-go">if seen[id] {
+	continue
+}
+seen[id] = true</code></pre>
+<p>When the second arrow reaches C, this check skips its repeated visit. A slice could also store completed IDs, but each membership check could require scanning that slice. A map gives direct lookup at the cost of extra memory. Pending work is removed from the end of its slice; no concurrent queue is needed.</p>
+<!-- review-figure:figure-7-cargo-graph:start -->
+<figure class="review-figure" id="figure-7-cargo-graph" aria-labelledby="figure-7-cargo-graph-caption">
+<figcaption id="figure-7-cargo-graph-caption">Figure 7.1 · Two arrows can lead to one dependency</figcaption>
+<p class="rv-watch">Follow both branches down to C. A map of visited IDs prevents repeated inspection; a pending slice holds the remaining packages. This graph is illustrative, not regex-syntax’s actual dependency graph.</p>
+<div class="rv-view" tabindex="0" role="region" aria-label="Scrollable illustration"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 405" role="img" aria-labelledby="cargo-graph-title cargo-graph-desc">
+<title id="cargo-graph-title">One selected crate can reach the same dependency through two branches</title>
+<desc id="cargo-graph-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="30" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">ILLUSTRATIVE PACKAGE GRAPH · ARROWS MEAN “NEEDS”</text>
+<rect x="270" y="60" width="180" height="48" rx="6" fill="#edf5ef" stroke="#167767"/>
+<text x="360" y="90" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="middle">Selected crate</text>
+<rect x="80" y="175" width="180" height="48" rx="6" fill="#edf5ef" stroke="#167767"/>
+<text x="170" y="205" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="middle">Library A</text>
+<rect x="460" y="175" width="180" height="48" rx="6" fill="#edf5ef" stroke="#167767"/>
+<text x="550" y="205" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="middle">Test helper B</text>
+<rect x="270" y="285" width="180" height="48" rx="6" fill="#edf5ef" stroke="#167767"/>
+<text x="360" y="315" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="middle">Common C</text>
+<path d="M300 108 L170 175" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M175.4 167.8 L170 175 L179.0 174.8" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M420 108 L550 175" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M541.0 174.8 L550 175 L544.6 167.8" fill="none" stroke="#236ba0" stroke-width="2"/>
+<text x="25" y="143" font-family="system-ui, sans-serif" font-size="14" fill="#236ba0" text-anchor="start">normal dependency</text>
+<text x="530" y="143" font-family="system-ui, sans-serif" font-size="14" fill="#236ba0" text-anchor="start">test dependency</text>
+<path d="M170 223 L300 285" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M291.0 285.0 L300 285 L294.4 278.0" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M550 223 L420 285" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M425.6 278.0 L420 285 L429.0 285.0" fill="none" stroke="#236ba0" stroke-width="2"/>
+<text x="360" y="362" font-family="system-ui, sans-serif" font-size="16" fill="#167767" text-anchor="middle">First visit to C: inspect it. Second visit: already seen → skip.</text>
+<text x="360" y="389" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="middle">A and B’s own test-only dependencies are not needed here.</text>
+</svg></div>
+<p class="rv-hint">Swipe the illustration sideways to read it at full size.</p>
+<details><summary>Text explanation and implementation source</summary><div class="rv-original">
+<p>Illustrative graph: the selected crate needs A and test helper B; both need C. C is inspected once. The selected crate&#x27;s test dependencies count, but we do not run A&#x27;s or B&#x27;s own test suites, so their test-only dependencies are excluded. Source: <a href="../internal/fingerprint/cargo_graph.go">cargoClosure</a>.</p>
+</div><!-- rv-original:end --></details>
+</figure>
+<!-- review-figure:figure-7-cargo-graph:end -->
+<h3>2. What is the architecture and extension boundary?</h3>
+<p>The existing command path still builds a fingerprint, looks up a result and either replays or executes. The Cargo adapter supplies additional input records before lookup. It accepts a small command grammar, refuses unsupported settings, resolves installed tools, asks Cargo for frozen metadata, follows the selected dependency graph and reads supported source files.</p>
+<p>Cargo&#x27;s metadata is its description of packages and their resolved connections. The same manifest and feature options are supplied to the metadata probe. Receipt records the exact original test arguments too; it does not rewrite the test command. <code>Cargo.lock</code> is read even when ignored by Git. Resolved tool bytes, version output, raw metadata and a list of source hashes receive separate, versioned input names. Only their digests enter the manifest, not raw metadata.</p>
+<p>This stays inside fingerprinting. A probe failure uses the existing uncached execution path, not a new storage path. Other runners retain their probes. Supporting another Cargo option requires specifying what it changes in selection and inputs; adding its name to the parser is not sufficient.</p>
+<h3>3. What concurrency, networking and fundamental primitives are used?</h3>
+<p>No new goroutine or network service was added. Subprocesses query Rustup and the three Rust tools, then Cargo metadata. A shared context bounds the probe sequence; each output buffer has a byte limit. Registry files are read and hashed sequentially. A hash is a compact content-derived identifier, not proof that the file is trustworthy or the test deterministic.</p>
+<p>Metadata uses <code>--frozen</code>: Cargo cannot fetch missing dependencies or change the lockfile during that probe. Tools and dependencies must already be installed. Rustup must resolve an installed toolchain. Actual tests are not sandboxed and may still use files, processes or networking; Receipt&#x27;s existing contract applies.</p>
+<h3>4. What are the pitfalls and debugging challenges?</h3>
+<p>A root crate without a build script may depend on a crate that has one. Checking only the root would miss code that runs during compilation. The adapter visits the selected dependency graph and refuses custom-build or procedural-macro targets before considering a cached success. It also refuses custom Cargo configuration, compiler overrides and path dependencies outside the Git root.</p>
+<!-- review-figure:figure-7-cargo-refusal:start -->
+<figure class="review-figure" id="figure-7-cargo-refusal" aria-labelledby="figure-7-cargo-refusal-caption">
+<figcaption id="figure-7-cargo-refusal-caption">Figure 7.2 · Refusal happens before cache lookup</figcaption>
+<p class="rv-watch">The red branch does not reach the saved-result lookup. A transitive dependency with a build script is enough to take it. This protects the refusal policy; it is not a sandbox for the command that runs.</p>
+<div class="rv-view" tabindex="0" role="region" aria-label="Scrollable illustration"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" role="img" aria-labelledby="cargo-refusal-title cargo-refusal-desc">
+<title id="cargo-refusal-title">Unsupported compilation code branches to execution before lookup</title>
+<desc id="cargo-refusal-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="30" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">POLICY CHECK BEFORE ANY SAVED RESULT IS USED</text>
+<rect x="230" y="55" width="260" height="55" rx="6" fill="#e8f2f5" stroke="#236ba0"/>
+<text x="360" y="89" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="middle">Inspect selected packages</text>
+<path d="M290 110 L175 175" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M180.1 167.6 L175 175 L184.0 174.4" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M430 110 L545 175" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<path d="M536.0 174.4 L545 175 L539.9 167.6" fill="none" stroke="#ac3c43" stroke-width="2"/>
+<text x="100" y="148" font-family="system-ui, sans-serif" font-size="15" fill="#167767" text-anchor="start">supported</text>
+<text x="545" y="145" font-family="system-ui, sans-serif" font-size="15" fill="#ac3c43" text-anchor="start">build.rs / macro</text>
+<rect x="50" y="175" width="250" height="65" rx="6" fill="#edf5ef" stroke="#167767"/>
+<text x="175" y="213" font-family="system-ui, sans-serif" font-size="18" fill="#167767" text-anchor="middle">Hash declared inputs</text>
+<rect x="420" y="175" width="250" height="65" rx="6" fill="#faeeee" stroke="#ac3c43"/>
+<text x="545" y="204" font-family="system-ui, sans-serif" font-size="18" fill="#ac3c43" text-anchor="middle">Run Cargo uncached</text>
+<text x="545" y="226" font-family="system-ui, sans-serif" font-size="14" fill="#ac3c43" text-anchor="middle">No lookup. No publication.</text>
+<path d="M175 240 L175 282" fill="none" stroke="#167767" stroke-width="2"/>
+<path d="M171.1 273.9 L175 282 L178.9 273.9" fill="none" stroke="#167767" stroke-width="2"/>
+<rect x="50" y="282" width="250" height="55" rx="6" fill="#edf5ef" stroke="#167767"/>
+<text x="175" y="316" font-family="system-ui, sans-serif" font-size="18" fill="#167767" text-anchor="middle">Look up this input key</text>
+<text x="420" y="295" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Even a saved success</text>
+<text x="420" y="322" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">cannot override this branch.</text>
+<text x="360" y="366" font-family="system-ui, sans-serif" font-size="15" fill="#24394b" text-anchor="middle">The actual Cargo command and its exit code remain unchanged.</text>
+</svg></div>
+<p class="rv-hint">Swipe the illustration sideways to read it at full size.</p>
+<details><summary>Text explanation and implementation source</summary><div class="rv-original">
+<p>A supported graph proceeds to input hashing and lookup. A graph containing a build script takes a different branch: Receipt executes Cargo without lookup or publication. An existing saved success cannot override that refusal, and <code>--allow-generic</code> cannot override it either. The command&#x27;s exit code still wins. Source: <a href="../internal/fingerprint/cargo.go">cargoInputs</a> and <a href="../internal/fingerprint/manifest.go">executionInputs</a>.</p>
+</div><!-- rv-original:end --></details>
+</figure>
+<!-- review-figure:figure-7-cargo-refusal:end -->
+<p>Another trap is confusing a passing command with a cache hit. Read the diagnostic and execution timing: unsupported commands can pass after running uncached. Frozen metadata can fail because a dependency has not been downloaded. That should lead to preparation or normal execution, not an invented empty graph. Cargo can over-approximate features across a workspace, so conservatively refusing a command is possible even when a narrower build would not need the flagged code.</p>
+<h3>5. What are the hot/cold paths and costs?</h3>
+<p>Every hit still resolves tools, reads executable bytes, obtains metadata and reads the selected registry source files. A miss normally performs these checks both before and after test execution. Following arrows is roughly linear in the inspected packages and dependency links; reading bytes can cost more than the graph traversal. Maps hold the metadata, pending IDs and visited IDs; source hashing streams file contents rather than keeping all registry files in RAM.</p>
+<!-- review-figure:figure-7-cargo-cost:start -->
+<figure class="review-figure" id="figure-7-cargo-cost" aria-labelledby="figure-7-cargo-cost-caption">
+<figcaption id="figure-7-cargo-cost-caption">Figure 7.3 · A real hit can still be slower than a direct run</figcaption>
+<p class="rv-watch">A hit skipped the tests but still paid for tool and input checks. For these short tests, that was more work than running Cargo directly. The small, partly overlapping sample does not establish typical latency or a general slowdown.</p>
+<div class="rv-view" tabindex="0" role="region" aria-label="Scrollable illustration"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 335" role="img" aria-labelledby="cargo-cost-title cargo-cost-desc">
+<title id="cargo-cost-title">A small warm Rust suite ran faster directly than through a Receipt hit</title>
+<desc id="cargo-cost-desc">Measured local observations, not a general performance guarantee. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="32" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">REGEX-SYNTAX · 147 TESTS · WARM BUILD CACHE</text>
+<text x="25" y="100" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Direct (2 runs)</text>
+<rect x="195" y="75" width="60.26885375" height="36" rx="2" fill="#edf3ef" stroke="#236ba0"/>
+<text x="265.26885375" y="100" font-family="system-ui, sans-serif" font-size="15" fill="#236ba0" text-anchor="start">140 ms</text>
+<text x="25" y="180" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Miss (1 run)</text>
+<rect x="195" y="155" width="427.48962431" height="36" rx="2" fill="#edf3ef" stroke="#97650d"/>
+<text x="632.48962431" y="180" font-family="system-ui, sans-serif" font-size="15" fill="#97650d" text-anchor="start">994 ms</text>
+<text x="25" y="260" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Hit (2 runs)</text>
+<rect x="195" y="235" width="238.88832749999995" height="36" rx="2" fill="#edf3ef" stroke="#167767"/>
+<text x="443.88832749999995" y="260" font-family="system-ui, sans-serif" font-size="15" fill="#167767" text-anchor="start">556 ms</text>
+<text x="25" y="311" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">Means, one scale. Other verification overlapped; not a benchmark distribution.</text>
+</svg></div>
+<p class="rv-hint">Swipe the illustration sideways to read it at full size.</p>
+<details><summary>Text explanation and implementation source</summary><div class="rv-original">
+<p>Two direct warm runs averaged about 140 ms, one miss took 994 ms, and two hits averaged about 556 ms for regex-syntax&#x27;s 147 library tests. All passed; the hits did not execute tests. The checks outweighed this small suite&#x27;s runtime. Other verification work overlapped; this five-sample experiment is not a performance distribution. Source: <a href="measurements/phase-7-cargo-2026-10-09.json">raw observations</a>.</p>
+</div><!-- rv-original:end --></details>
+</figure>
+<!-- review-figure:figure-7-cargo-cost:end -->
+<p>There is no new maintenance path. The extra scan&#x27;s file/byte budgets bound that scan, not all fingerprint memory, tool reads or the test command. Cold toolchain installation and dependency downloads are preparation, not hidden hit costs.</p>
+<h3>6. What are the guarantees, assumptions and non-goals?</h3>
+<p>For accepted commands, changes to the recorded source, feature arguments, lockfile, selected executable bytes or scanned registry bytes change the key. Guard/probe failures prevent both lookup and publication. A failed test is still not cached. Output is compared exactly as before; variable timing text can still cause a verification mismatch.</p>
+<p>Local source discovery retains the Git/extra-input contract. Ignored helper files and external services are not discovered automatically. We do not hash the entire Rust sysroot, shared compiler libraries or system linker; installed toolchain contents beyond the recorded executables/version reports are assumed stable. Trusted directory access and no hostile concurrent mutation remain assumptions. Two matching scans cannot prove nothing changed and changed back between them. This is bounded reuse, not hermetic execution or complete toolchain attestation.</p>
+<h3>7. What alternatives were considered, and why?</h3>
+<p>Hashing only Cargo.lock would be cheaper, but modifying an extracted dependency file would leave that lockfile unchanged. Reading reachable registry bytes catches that case. Reading the entire Cargo cache would also include unrelated projects and increase cost, so the scan follows selected dependencies instead.</p>
+<p>Trusting build scripts&#x27; declared inputs was deferred: declarations can be incomplete, and collecting/validating them requires a separate design. Rejecting every package in the entire workspace was also avoided; an unused member&#x27;s build script need not prevent a simple selected crate&#x27;s tests. These are decisions made for this adapter, not retrospective claims about earlier phases. Parsing every Cargo configuration option was deferred in favour of a clear refusal boundary.</p>
+<h3>8. What evidence supports the claims, and what risks remain?</h3>
+<p>The real regex checkout at <code>72d650cb0a880a01ab6dc2137c0888e8f89740f7</code> passed 147 regex-syntax library tests, saved and replayed. Changing feature arguments forced a miss. The main package&#x27;s seven library tests passed after the adapter refused reuse because of build scripts. This is a narrower workload than the earlier full regex test command, not a replacement claim for that suite. Selecting the separately named installed <code>1.92.0</code> Rustup toolchain also forced a miss; both selections reported the same Rust release, so this was a selection check, not an upgrade test. Enabling the <code>arbitrary</code> feature introduced unsupported compilation code: Receipt refused reuse and the 147 tests passed uncached.</p>
+<p>The opt-in local Cargo fixture checks a miss and hit, changed features, a failing source edit, a changed local dependency, restoration, an ignored lockfile change, build-script refusal and the inability of generic opt-in to bypass that refusal. Unit tests cover dependency traversal, duplicate/missing nodes, unsupported kinds, outside paths, config/override checks, modified registry bytes, symlinks, budgets, cancellation and tool-selection checks. A tool-byte change is tested locally; that is not evidence of a successful upgrade to a different Rust release.</p>
+<p>Verification used macOS arm64, Receipt built with Go 1.22.1 and installed Rust 1.92.0. Lint, unit tests, the opt-in Cargo fixture, race checks and the build passed. PostgreSQL integration was not run; storage/authentication code did not change. Windows/Linux execution, hostile mutation, large dependency graphs and production performance remain unestablished. No full Rust source sandbox was added.</p>
+<p>Eight documentation checks pass. The three new SVG diagrams were rendered and inspected, including their labels and arrows. Full HTML browser interactions and phone layout remain unverified under the previously recorded local-file browser restriction. Diagram inspection is not a beginner comprehension study.</p>
+<h3>9. What would make us revisit these decisions?</h3>
+<p>Repeated real-project refusals should guide the next supported options, not a blanket relaxation. Build scripts need a defensible input-tracking or isolation design before admission. A dominant hashing cost could justify verified immutable dependency snapshots, with rules for detecting mutation. New Cargo metadata kinds or configuration behaviour require compatibility tests. Larger slow suites and repeated sequential measurements are needed before claiming practical speedups.</p>
+<h3>Cargo hardening amendment: 9 October 2026</h3>
+<p>This follow-up strengthens the bounded adapter, not its accepted command set. The original Phase 7 observations above remain historical. New observations below come from sequential runs after the earlier verification work finished.</p>
+<h3>1. What changed in the data structures?</h3>
+<p>Cargo&#x27;s package record now includes its name so a refusal can identify the package to inspect. A package ID can contain a private registry URL, so we do not print it. Names must fit a short letters/digits/underscore/hyphen alphabet; other names become <code>&lt;unnamed&gt;</code>. The dependency maps and pending-work slice are unchanged. Timing uses the existing fixed-size recorder, with three additional stage names, not a growing map of every package encountered.</p>
+<h3>2. What is the flow and extension boundary?</h3>
+<p>Suppose a saved test used the downloaded memchr library. Editing that library without changing Cargo.lock must not let Receipt replay the earlier success. The new offline fixture copies prepared registry data into a temporary Cargo home, saves a passing run, then adds a compiler error to that copy. Receipt detects different source bytes and executes; the compiler failure reaches the caller. Restoring the bytes restores the earlier hit.</p>
+<!-- review-figure:figure-7-cargo-mutation:start -->
+<figure class="review-figure" id="figure-7-cargo-mutation" aria-labelledby="figure-7-cargo-mutation-caption">
+<figcaption id="figure-7-cargo-mutation-caption">Figure 7.4 · The lockfile stays the same; the dependency does not</figcaption>
+<p class="rv-watch">The middle state cannot reuse key A. The test keeps the lockfile unchanged and edits only an isolated dependency copy. Restoring the original bytes brings key A back. Clearing temporary build artifacts makes Cargo compile the deliberate error; Receipt does not automatically clean Cargo builds.</p>
+<div class="rv-view" tabindex="0" role="region" aria-label="Scrollable illustration"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 355" role="img" aria-labelledby="cargo-mutation-title cargo-mutation-desc">
+<title id="cargo-mutation-title">Changing a copied dependency prevents reuse despite an unchanged lockfile</title>
+<desc id="cargo-mutation-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="30" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">REGRESSION SEQUENCE · KEYS A AND B ARE ILLUSTRATIVE</text>
+<text x="25" y="65" font-family="system-ui, sans-serif" font-size="17" fill="#24394b" text-anchor="start">Cargo.lock is unchanged throughout.</text>
+<rect x="25" y="95" width="190" height="160" rx="6" fill="#f7f8f4" stroke="#167767"/>
+<text x="120" y="125" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="middle">Original dependency</text>
+<text x="120" y="157" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="middle">Valid source</text>
+<text x="120" y="195" font-family="system-ui, sans-serif" font-size="20" fill="#167767" text-anchor="middle">Key A</text>
+<text x="120" y="230" font-family="system-ui, sans-serif" font-size="14" fill="#167767" text-anchor="middle">Execute → save success</text>
+<rect x="265" y="95" width="190" height="160" rx="6" fill="#f7f8f4" stroke="#ac3c43"/>
+<text x="360" y="125" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="middle">Edited copy</text>
+<text x="360" y="157" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="middle">Compiler error added</text>
+<text x="360" y="195" font-family="system-ui, sans-serif" font-size="20" fill="#ac3c43" text-anchor="middle">Key B</text>
+<text x="360" y="230" font-family="system-ui, sans-serif" font-size="14" fill="#ac3c43" text-anchor="middle">Execute → fail; no save</text>
+<rect x="505" y="95" width="190" height="160" rx="6" fill="#f7f8f4" stroke="#167767"/>
+<text x="600" y="125" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="middle">Restored copy</text>
+<text x="600" y="157" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="middle">Original bytes again</text>
+<text x="600" y="195" font-family="system-ui, sans-serif" font-size="20" fill="#167767" text-anchor="middle">Key A</text>
+<text x="600" y="230" font-family="system-ui, sans-serif" font-size="14" fill="#167767" text-anchor="middle">Replay saved success</text>
+<path d="M215 178 L265 178" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M256.9 181.9 L265 178 L256.9 174.1" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M455 178 L505 178" fill="none" stroke="#236ba0" stroke-width="2"/>
+<path d="M496.9 181.9 L505 178 L496.9 174.1" fill="none" stroke="#236ba0" stroke-width="2"/>
+<text x="25" y="290" font-family="system-ui, sans-serif" font-size="15" fill="#24394b" text-anchor="start">Before the edited run: clear only the fixture’s compiled dependency files.</text>
+<text x="25" y="319" font-family="system-ui, sans-serif" font-size="15" fill="#24394b" text-anchor="start">Otherwise Cargo may reuse its own build output even when Receipt executes.</text>
+</svg></div>
+<p class="rv-hint">Swipe the illustration sideways to read it at full size.</p>
+<details><summary>Text explanation and implementation source</summary><div class="rv-original">
+<p>The three states are a real regression-test sequence, with illustrative key labels A and B. The dependency edit changes Receipt&#x27;s key even though the lockfile is identical. The fixture also clears its isolated compiled dependency files before the failure run; it does not change the user&#x27;s Cargo cache. Source: <a href="../internal/app/cargo_registry_test.go">cargo_registry_test.go</a>.</p>
+</div><!-- rv-original:end --></details>
+</figure>
+<!-- review-figure:figure-7-cargo-mutation:end -->
+<h3>3. What primitives were added?</h3>
+<p>Only timing boundaries were added to production execution; no new concurrency, network service or lock. From <a href="../internal/fingerprint/cargo_policy.go">cargo_policy.go</a>:</p>
+<pre><code class="language-go">defer observe.Measure(ctx, observe.CargoTools)()</code></pre>
+<p>The first call starts a timer. Go&#x27;s <code>defer</code> runs its returned completion function when the enclosing function returns, including on failure. This timer covers tool resolution, executable reads and version queries. Separate timers cover Cargo&#x27;s dependency query and extra source reads. All three sit inside the existing fingerprint timer: adding them to it would count their work twice.</p>
+<h3>4. What was tricky?</h3>
+<p>Cargo itself assumes downloaded dependency sources do not change. Even if Receipt correctly chooses execution, Cargo may reuse previously compiled code. The fixture therefore clears only its temporary dependency build files before running the edited source. This makes the expected compiler failure observable; it does not introduce automatic Cargo cleaning into Receipt. Registry mutation is a deliberate test disturbance, not a recommended development workflow.</p>
+<p>The refusal tests also exclude their new config/build-script files and compiler flag from ordinary input recording. That prevents an ordinary changed key from masking a broken policy check. The earlier success exists, but the refusal must stop before any cache lookup. A procedural-macro dependency is checked too.</p>
+<h3>5. What do the frequent paths cost now?</h3>
+<p>Five direct runs, one Receipt miss and five hits were measured for each command, with warm compiled artifacts and no concurrent agent test/build work. The median direct regex-syntax run took 139 ms; the median hit took 434 ms. The longer-running unicode-width suite took 3,049 ms directly and 392 ms on a hit. Its 39 tests are fewer but slower, illustrating why test count alone does not predict benefit. The single misses took 1,066 ms and 3,884 ms respectively.</p>
+<!-- review-figure:figure-7-cargo-hardening-cost:start -->
+<figure class="review-figure" id="figure-7-cargo-hardening-cost" aria-labelledby="figure-7-cargo-hardening-cost-caption">
+<figcaption id="figure-7-cargo-hardening-cost-caption">Figure 7.5 · The same checks can hurt a short suite and help a longer one</figcaption>
+<p class="rv-watch">Regex-syntax was quicker directly: 139 ms versus a 434 ms hit. Unicode-width took 3,049 ms directly versus a 392 ms hit. Each hit still checks inputs, so the benefit depends on how much execution it skips. Source: the linked raw sequential measurement record.</p>
+<div class="rv-view" tabindex="0" role="region" aria-label="Scrollable illustration"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 390" role="img" aria-labelledby="cargo-hardening-cost-title cargo-hardening-cost-desc">
+<title id="cargo-hardening-cost-title">Sequential measurements show a benefit only for the longer-running selected suite</title>
+<desc id="cargo-hardening-cost-desc">Measured local observations, not a general performance guarantee. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="30" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">MEDIAN CLIENT TIME · FIVE DIRECT RUNS AND FIVE HITS PER SUITE</text>
+<text x="25" y="70" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="start">regex-syntax</text>
+<text x="25" y="108" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Direct</text>
+<rect x="125" y="85" width="22.206680000000002" height="30" rx="2" fill="#edf3ef" stroke="#236ba0"/>
+<text x="157.20668" y="106" font-family="system-ui, sans-serif" font-size="15" fill="#236ba0" text-anchor="start">139 ms</text>
+<text x="25" y="155" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Hit</text>
+<rect x="125" y="132" width="69.51648672" height="30" rx="2" fill="#edf3ef" stroke="#167767"/>
+<text x="204.51648672" y="153" font-family="system-ui, sans-serif" font-size="15" fill="#167767" text-anchor="start">434 ms</text>
+<text x="25" y="215" font-family="system-ui, sans-serif" font-size="18" fill="#24394b" text-anchor="start">unicode-width</text>
+<text x="25" y="253" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Direct</text>
+<rect x="125" y="230" width="487.91711327999997" height="30" rx="2" fill="#edf3ef" stroke="#236ba0"/>
+<text x="622.91711328" y="251" font-family="system-ui, sans-serif" font-size="15" fill="#236ba0" text-anchor="start">3,049 ms</text>
+<text x="25" y="300" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Hit</text>
+<rect x="125" y="277" width="62.728586560000004" height="30" rx="2" fill="#edf3ef" stroke="#167767"/>
+<text x="197.72858656" y="298" font-family="system-ui, sans-serif" font-size="15" fill="#167767" text-anchor="start">392 ms</text>
+<text x="25" y="345" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">One scale. Warm builds; sequential runs; no overlapping agent test work.</text>
+<text x="25" y="373" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">Not randomized or machine-isolated. No remote-cache measurement.</text>
+</svg></div>
+<p class="rv-hint">Swipe the illustration sideways to read it at full size.</p>
+<details><summary>Text explanation and implementation source</summary><div class="rv-original">
+<p>Both pairs use one scale and show median client durations. Each hit avoided test execution but still checked tools and inputs. The raw record retains every sample, including the first regex direct run at 332 ms; it was not discarded. Source: <a href="measurements/cargo-hardening-2026-10-09.json">sequential measurements</a>.</p>
+</div><!-- rv-original:end --></details>
+</figure>
+<!-- review-figure:figure-7-cargo-hardening-cost:end -->
+<p>Median tool-check time was about 270 ms for regex-syntax and 267 ms for unicode-width; metadata took about 60 ms and 46 ms. Extra source scanning took less than 1 ms for both. These selected workloads have little extra source data; this does not establish scanning cost for large registry dependency sets. There is still no new maintenance path.</p>
+<h3>6. What is guaranteed, assumed or excluded?</h3>
+<p>Refusals still run the original command without Receipt lookup or publication. The compiler-override test deliberately ignores that variable for general hashing and still observes refusal. The registry fixture demonstrates changed dependency bytes preventing an old hit while Cargo.lock remains unchanged. It does not prove all dependencies are captured or make Cargo&#x27;s own build cache understand source mutation. Installed compiler-library stability, declared local inputs and trusted directory access remain assumptions from the original review.</p>
+<h3>7. What alternatives did we consider?</h3>
+<p>Copying prepared registry data keeps automated tests offline and avoids editing the user&#x27;s dependencies. Downloading on every test run was rejected because it would make tests depend on network availability. Parsing arbitrary Cargo stderr to guess an exact failure cause was also avoided: it can contain private data and its wording can change. The diagnostic names the failed stage and suggests what to check, without claiming every metadata failure means a missing download. Skipping executable reads might be faster but was deferred rather than weakening input checks during a hardening pass. These are decisions for this follow-up.</p>
+<h3>8. What evidence and gaps remain?</h3>
+<p>Normal and uncached race-enabled Go suites passed with both Cargo fixtures enabled, along with lint and the build, on macOS arm64 with Go 1.22.1 and Rust 1.92.0. The new fixture reads prepared memchr 2.8.3 data but modifies only copies. Checks cover restoration, missing offline data, guarded settings after a saved success, diagnostic redaction and recording a failed metadata query&#x27;s duration. The timing experiment&#x27;s ten hits all skipped execution and all commands exited successfully. Upstream source files were not edited.</p>
+<p>The cloned aho-corasick and glob candidates are refused because selected dependencies contain build scripts. That is useful compatibility evidence, not support for those workloads. The <a href="REAL-REPO-LAB.md">lab record</a> gives exact revisions. The timing order was not randomized, other desktop activity was not isolated, and no remote-cache or production throughput claim follows. PostgreSQL integration and other operating systems were not exercised in this follow-up. Full HTML browser/phone verification remains incomplete; rendered SVG inspection and structural checks are distinct from a beginner comprehension study. All eight documentation checks passed, and both new diagrams were rendered and inspected for label collisions and reading order. Aho-corasick&#x27;s 150 library tests passed uncached. Glob&#x27;s final test scans from the filesystem root; it was stopped after the other 16 tests finished, and Cargo returned 101. That run is incomplete, not a passing suite or a cache performance measurement.</p>
+<h3>9. When should we revisit the decisions?</h3>
+<p>The tool timer gives us a concrete optimization target if it remains dominant on useful workloads. Any remembered tool fingerprint needs rules for detecting toolchain changes first. Frequent real-project refusals justify a separate build-script design, not deleting the guard. This pass is enough to move next to the single-server remote-cache milestone; it does not require adding more runner flags or more languages beforehand.</p>
 
 <h2 id="documentation-revamp-verification-9-october-2026">Documentation revamp verification: 9 October 2026</h2>
 <p>The current teaching guide now lives in WORKING-DOC.md and its generated HTML reader. The existing review content from Phase 1 onward was compared with the pre-revamp documents and preserved exactly in both reference formats before this verification entry was appended. The earlier runtime results above are historical evidence, not tests rerun for this rewrite.</p>

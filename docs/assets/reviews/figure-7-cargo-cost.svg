@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 335" role="img" aria-labelledby="cargo-cost-title cargo-cost-desc">
+<title id="cargo-cost-title">A small warm Rust suite ran faster directly than through a Receipt hit</title>
+<desc id="cargo-cost-desc">Measured local observations, not a general performance guarantee. Read the text explanation below for details.</desc>
+<rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
+<text x="25" y="32" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">REGEX-SYNTAX · 147 TESTS · WARM BUILD CACHE</text>
+<text x="25" y="100" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Direct (2 runs)</text>
+<rect x="195" y="75" width="60.26885375" height="36" rx="2" fill="#edf3ef" stroke="#236ba0"/>
+<text x="265.26885375" y="100" font-family="system-ui, sans-serif" font-size="15" fill="#236ba0" text-anchor="start">140 ms</text>
+<text x="25" y="180" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Miss (1 run)</text>
+<rect x="195" y="155" width="427.48962431" height="36" rx="2" fill="#edf3ef" stroke="#97650d"/>
+<text x="632.48962431" y="180" font-family="system-ui, sans-serif" font-size="15" fill="#97650d" text-anchor="start">994 ms</text>
+<text x="25" y="260" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Hit (2 runs)</text>
+<rect x="195" y="235" width="238.88832749999995" height="36" rx="2" fill="#edf3ef" stroke="#167767"/>
+<text x="443.88832749999995" y="260" font-family="system-ui, sans-serif" font-size="15" fill="#167767" text-anchor="start">556 ms</text>
+<text x="25" y="311" font-family="system-ui, sans-serif" font-size="14" fill="#24394b" text-anchor="start">Means, one scale. Other verification overlapped; not a benchmark distribution.</text>
+</svg>

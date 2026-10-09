@@ -48,6 +48,7 @@ func parseCommand(raw string) (commandName, error) {
 const help = `Receipt — reuse successful test results for identical declared inputs.
 
   receipt run [options] -- uv run pytest [pytest options]
+  receipt run [options] -- cargo test --frozen [bounded options; see docs/CARGO.md]
   receipt explain [options] -- uv run pytest [pytest options]
   receipt cache list [--cache-dir DIR]
   receipt cache prune [--cache-dir DIR] [--max-bytes N]
