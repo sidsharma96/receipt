@@ -132,23 +132,24 @@ func settings(ctx context.Context, dir string) (string, Config, error) {
 		return "", Config{}, e
 	}
 	cfg := Config{MaxBytes: 1 << 30}
-	b, e := os.ReadFile(filepath.Join(root, ".receipt.json"))
+	f, e := os.Open(filepath.Join(root, ".receipt.json"))
 	if os.IsNotExist(e) {
 		return root, cfg, nil
 	}
 	if e != nil {
 		return root, cfg, e
 	}
-	d := json.NewDecoder(strings.NewReader(string(b)))
-	d.DisallowUnknownFields()
-	if e = d.Decode(&cfg); e != nil {
+	defer f.Close() //nolint:errcheck // Read-only resource cleanup; read failures are returned below.
+	const maxConfigBytes = 1 << 20
+	b, e := io.ReadAll(io.LimitReader(f, maxConfigBytes+1))
+	if e != nil {
+		return root, cfg, e
+	}
+	if len(b) > maxConfigBytes {
+		return root, cfg, fmt.Errorf(".receipt.json exceeds byte limit")
+	}
+	if e = json.Unmarshal(b, &cfg); e != nil {
 		return root, cfg, fmt.Errorf(".receipt.json: %w", e)
-	}
-	if e = d.Decode(new(any)); !errors.Is(e, io.EOF) {
-		return root, cfg, fmt.Errorf(".receipt.json must contain one JSON object")
-	}
-	if cfg.MaxBytes < 0 {
-		return root, cfg, fmt.Errorf("max_bytes must be nonnegative")
 	}
 	return root, cfg, nil
 }

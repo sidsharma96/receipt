@@ -50,10 +50,26 @@ type envelope struct {
 
 // Validate checks the reusable-result contract and manifest/key agreement.
 func Validate(r Result) error {
-	if r.Version != 1 || r.Manifest.Version != 1 || !validKey.MatchString(r.Key) || r.Key != r.Manifest.Key() || r.ExitCode != 0 {
-		return fmt.Errorf("invalid result contract")
+	var errs []error
+	if r.Version != 1 {
+		errs = append(errs, fmt.Errorf("result.version: expected 1"))
 	}
-	return nil
+	if err := r.Manifest.Validate(); err != nil {
+		errs = append(errs, err)
+	}
+	if !validKey.MatchString(r.Key) || r.Key != r.Manifest.Key() {
+		errs = append(errs, fmt.Errorf("result.key: does not match manifest"))
+	}
+	if r.ExitCode != 0 {
+		errs = append(errs, fmt.Errorf("result.exit_code: reusable results require success"))
+	}
+	if r.DurationNS < 0 {
+		errs = append(errs, fmt.Errorf("result.duration_ns: must be nonnegative"))
+	}
+	if len(r.Stdout) > MaxBlobBytes || len(r.Stderr) > MaxBlobBytes {
+		errs = append(errs, fmt.Errorf("result output exceeds stream limit"))
+	}
+	return errors.Join(errs...)
 }
 
 // Encode validates a result and wraps its JSON in a checksummed envelope.
@@ -76,8 +92,17 @@ func Encode(r Result) ([]byte, error) {
 func Decode(b []byte) (Result, error) {
 	var env envelope
 	var r Result
-	if len(b) > MaxEntryBytes || json.Unmarshal(b, &env) != nil || fingerprint.Hash(env.Payload) != env.Digest || json.Unmarshal(env.Payload, &r) != nil || Validate(r) != nil {
-		return r, ErrCorrupt
+	if len(b) > MaxEntryBytes {
+		return Result{}, fmt.Errorf("%w: entry exceeds byte limit", ErrCorrupt)
+	}
+	if err := json.Unmarshal(b, &env); err != nil {
+		return Result{}, fmt.Errorf("%w: envelope: %w", ErrCorrupt, err)
+	}
+	if fingerprint.Hash(env.Payload) != env.Digest {
+		return Result{}, fmt.Errorf("%w: payload checksum mismatch", ErrCorrupt)
+	}
+	if err := json.Unmarshal(env.Payload, &r); err != nil {
+		return Result{}, fmt.Errorf("%w: %w", ErrCorrupt, err)
 	}
 	return r, nil
 }
@@ -156,7 +181,10 @@ func (d Disk) Put(ctx context.Context, r Result) error {
 	}
 	e = os.Link(tmp, p)
 	if os.IsExist(e) {
-		return nil
+		// First publication wins only if the existing entry is actually reusable.
+		// A directory or corrupt file at the destination is not a successful Put.
+		_, e = d.Get(ctx, r.Key)
+		return e
 	}
 	if e != nil {
 		return e

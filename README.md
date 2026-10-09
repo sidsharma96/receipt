@@ -104,6 +104,12 @@ Ignoring an environment variable is a correctness decision: only ignore it if
 it cannot affect the test. The config file itself is always fingerprinted,
 including when Git-ignored.
 
+Configuration is limited to 1 MiB. JSON names are exact and case-sensitive;
+duplicate names, unknown fields and null scalar settings are rejected. The same
+strict-shape checks apply to stored results and shared requests. See the
+[JSON input contract](docs/JSON-INPUT-CONTRACT.md) for required fields, permitted
+nulls, compatibility and size limits. Existing v1 writer/key encoding is unchanged.
+
 The local cache has a 1 GiB default entry limit. Hits touch entry modification
 times; pruning evicts least recently touched entries. This disk LRU is an
 approximation across processes, with a soft size bound during concurrent runs.

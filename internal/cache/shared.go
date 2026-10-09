@@ -31,10 +31,20 @@ func ReportFor(r Result) ConflictReport {
 }
 
 func (r ConflictReport) validate() error {
-	if !validKey.MatchString(r.Key) || r.Manifest.Version != 1 || r.Key != r.Manifest.Key() || !validKey.MatchString(r.StdoutHash) || !validKey.MatchString(r.StderrHash) || r.ExitCode < 0 || r.ExitCode > 255 {
-		return fmt.Errorf("invalid conflict report")
+	var errs []error
+	if err := r.Manifest.Validate(); err != nil {
+		errs = append(errs, err)
 	}
-	return nil
+	if !validKey.MatchString(r.Key) || r.Key != r.Manifest.Key() {
+		errs = append(errs, fmt.Errorf("report.key: does not match manifest"))
+	}
+	if !validKey.MatchString(r.StdoutHash) || !validKey.MatchString(r.StderrHash) {
+		errs = append(errs, fmt.Errorf("report output hashes: expected lowercase SHA-256"))
+	}
+	if r.ExitCode < 0 || r.ExitCode > 255 {
+		errs = append(errs, fmt.Errorf("report.exit_code: expected 0..255"))
+	}
+	return errors.Join(errs...)
 }
 
 func (r ConflictReport) digest() string {

@@ -1,6 +1,6 @@
 # Receipt: how it works, and why
 
-Updated 2026-10-08. This is an explanation of the code at commit ff45e74. The update changes documentation, not Receipt's behaviour.
+Updated 2026-10-08. Phases 1–3 describe the implementation at ff45e74. The appended Phase 4 review records the new input-validation rules and failure tests; its amendments take precedence where earlier reviews describe decoding or local publication.
 
 Suppose you run the same Python tests twice without editing anything. Running them again may repeat work you have already done. Receipt tries to save that work: it remembers a successful run and can print its saved output the next time the recorded inputs match.
 
@@ -8,7 +8,7 @@ That sounds simple. The interesting questions begin when a test reads something 
 
 ## How to read this guide
 
-Start with Phase 1. It explains how Receipt describes a command and remembers its result. Phase 2 adds a server so several clients can share results. Phase 3 adds limits and cleanup.
+Start with Phase 1. It explains how Receipt describes a command and remembers its result. Phase 2 adds a server so several clients can share results. Phase 3 adds limits and cleanup. Phase 4 checks the incoming data and deliberately interrupts storage operations to inspect what remains.
 
 Each phase answers the same nine review questions. The answers explain the current code, including later changes where they affect an earlier phase. This is not a claim that earlier implementations already had every current safeguard. Earlier committed document versions are available through Git history.
 
@@ -20,15 +20,16 @@ The writing rules are in [PROSE-STYLE-GUIDE.md](PROSE-STYLE-GUIDE.md). In short:
 
 ## What exists now?
 
-Receipt has three implemented parts:
+Receipt has four implemented parts:
 
 - Phase 1 saves successful command results on the user's computer, explains input changes, reruns results for verification and prunes old local entries.
 - Phase 2 shares results through HTTP, stores result descriptions in PostgreSQL, stores output in content-named files and remembers conflicting observations.
 - Phase 3 limits selected storage quantities and provides maintenance commands that coordinate with readers and writers.
+- Phase 4 defines accepted JSON fields and values, rejects malformed entries and reports before storage, and tests selected interrupted storage operations.
 
 The code also has typed command names, automated lint checks and selected error-handling helpers. These are implementation conventions, not another product phase.
 
-There are still important unfinished areas. Receipt does not discover every dependency a test might read. Its shared server trusts the holders of one access token; it does not give different users separate roles or private tenants. Multi-machine output storage, fully strict JSON decoding and production deployment measurements remain future work.
+There are still important unfinished areas. Receipt does not discover every dependency a test might read. Its shared server trusts the holders of one access token; it does not give different users separate roles or private tenants. Multi-machine output storage and production deployment measurements remain future work. Phase 4 implements the documented JSON contract, not a universal guarantee about every input source or reported observation.
 
 ## One command, from the user's perspective
 
@@ -739,3 +740,151 @@ This revision follows [the prose style guide](PROSE-STYLE-GUIDE.md). Future phas
 Redundant document snapshots were removed from the repository at the user's request on 2026-10-08. Keep the current HTML and Markdown guides in agreement; use Git history for earlier committed versions.
 
 A future handoff should let the user find both the explanation and its evidence. It should not describe a document as beginner-friendly simply because it has a glossary or because its links pass a check.
+
+## Phase 4 review: checking incoming data and interrupted writes
+
+Implemented and reviewed 2026-10-08. This is a behaviour change after e80950e, not another prose-only rewrite. It implements the validation/failure-testing phase agreed in chat. Identity, roles and multi-machine storage are not part of this phase.
+
+Imagine Alice uploads a successful pytest result. Her request says exit_code is zero, but repeats that field later with the value one. Which value should Receipt believe? It now rejects the request. The client must supply one clear value rather than depend on how a decoder handles repeated names.
+
+The exact acceptance rules are in [JSON-INPUT-CONTRACT.md](JSON-INPUT-CONTRACT.md). The review explains how those rules are applied and what the failure tests show.
+
+### 1. What data structures are used, and why?
+
+The decoder needs two small collections. One records which field names the type permits. Another records which names have already appeared in this object. Actual lines from [internal/strictjson/object.go](../internal/strictjson/object.go):
+
+```go
+allowed := make(map[string]Field, len(fields))
+for _, field := range fields {
+	allowed[field.Name] = field
+}
+seen := make(map[string]bool, len(fields))
+```
+
+For Alice's result, allowed contains exit_code and its presence/null policy. After reading the first exit_code, seen records true for that name. Reading it again produces a duplicate-field error. A map lets the decoder ask about a name directly. These maps belong to one decode call; one request cannot add names to another request's map.
+
+Field is a small struct describing a name and whether it is optional, nullable, a string or a string array. Most result fields are required and cannot be null. Empty output streams are an intentional exception: earlier Go writers used null for nil byte slices, so that spelling remains accepted. The output itself must otherwise be a base64 string—a text encoding of bytes—not a numeric JSON array.
+
+A slice of field descriptions keeps required-field checks in a stable order. A slice alone could also track encountered names, but would need repeated searches. Reflection could discover struct tags automatically, but required/null rules would still need additional metadata. This phase chooses explicit declarations because a reader can inspect the contract beside the type's hook. These are comparisons made during this phase, not invented earlier decision history.
+
+### 2. What is the architecture and flow? Where can it extend?
+
+Alice's HTTP entry follows this sequence: bound the body size, check the envelope's fields, compare the checksum with the payload bytes, decode and validate the result, compare its key with the requested key, then call storage. A checksum catches changed bytes; it does not decide whether those bytes describe a valid result.
+
+Each important type has an UnmarshalJSON method. Go calls this method when decoding that type. The method first reads into a temporary value and assigns the real receiver only after its checks pass. These actual lines from Result.UnmarshalJSON in [internal/cache/json.go](../internal/cache/json.go) show the final steps:
+
+```go
+if err := Validate(Result(next)); err != nil {
+	return err
+}
+*r = Result(next)
+return nil
+```
+
+Here next is the temporary decoded result. Validate checks its values and relationships. The assignment to r happens only after success, so a failed decode cannot leave a partly updated result that a caller might reuse.
+
+Nested types have their own checks: Result contains Manifest, Manifest contains Input records, and shared metadata contains BlobRefs. The helper checks object shape; the owning type checks meaning. For example, a known input kind and a matching manifest/key are semantic rules—rules about what values mean—not just JSON syntax.
+
+Direct Go struct construction does not invoke a JSON hook. Disk.Put, Postgres.Put and Postgres.Report therefore still validate values before storage. Configuration has optional fields and preserves defaults. It copies existing slices before decoding so even a late type error cannot mutate the caller's old list through a shared backing array.
+
+To add a future report type, declare its fields and semantic rules without adding storage work to the decoder. Adding fields to an existing strict version is a compatibility change: old readers reject unknown names. That needs a version or migration decision rather than just a new Go field.
+
+### 3. What concurrency, networking and fundamental primitives are used?
+
+No new locks, goroutines or endpoints were needed for validation. The decoder's maps and temporary values belong to one request. Concurrent requests do not share that state. The existing HTTP body limits, admission slots and storage locks continue to do their separate jobs.
+
+The shape check reads JSON tokens: names, delimiters and values in their received order. Reading names before converting the object to a map matters. If we first decoded Alice's repeated fields into a normal map, the earlier value could already have been replaced. Actual code from readField in [internal/strictjson/object.go](../internal/strictjson/object.go):
+
+```go
+if seen[name] {
+	return fmt.Errorf("duplicate field %q", name)
+}
+seen[name] = true
+```
+
+name is the decoded JSON field name, so an escaped spelling of the same name also counts as a repeat. Required names use exact case; Exit_Code is not treated as exit_code.
+
+Independent semantic errors use errors.Join: checking a negative duration does not require the manifest to be valid first. Dependent operations still stop on failure. We do not continue writing files after a failed file operation merely to collect more errors. Existing shared-storage locks still make cleanup wait while an upload is publishing files and metadata; JSON validation does not replace that coordination.
+
+### 4. What is tricky to implement or debug?
+
+Missing, zero and null are different inputs. A success exit code of zero is valid; a missing exit_code is rejected. A null output stream remains valid; null duration_ns is rejected. A null member of a command array is rejected even though ordinary Go decoding can otherwise turn it into an empty string. An explicit empty string argument after the executable remains valid.
+
+A hook calling json.Unmarshal directly into its own type would call itself again. Each hook uses a local named wire type with the same fields but without that outer method. Nested field types retain their own methods. This avoids recursion without turning off validation for nested inputs.
+
+PostgreSQL JSONB keeps normalized JSON rather than the original text. Duplicate names from a manually inserted row are already gone by the time Receipt reads it. That is why incoming JSON must be checked before persistence. Read-time checks can reject an unknown field still present in a row; they cannot reconstruct erased information.
+
+The local publication failure test found a real bug. Disk.Put used to treat an existing destination as success without reading it. A directory or corrupt file was therefore enough to produce a false acknowledgement. The changed branch in [internal/cache/store.go](../internal/cache/store.go) now reads the existing result:
+
+```go
+if os.IsExist(e) {
+	// First publication wins only if the existing entry is actually reusable.
+	// A directory or corrupt file at the destination is not a successful Put.
+	_, e = d.Get(ctx, r.Key)
+	return e
+}
+```
+
+This does not overwrite or repair a damaged destination. It reports the failure, removes the temporary file through existing cleanup, and lets the caller decide what to do next. A valid earlier result still wins even if a later local observation differs; shared conflict handling remains a separate policy.
+
+### 5. What are the hot and cold paths? What do they cost?
+
+Result decoding is frequent work on a cache hit or upload, so it is a hot path. Each object is inspected once for its field rules and decoded again into typed values. Nested values are inspected by their hooks too. This adds CPU work and temporary allocations; it is not a speed optimization.
+
+The helper temporarily holds the current field's raw bytes. Decoding output strings also allocates their byte slices. The existing 32 MiB entry/body limit and 8 MiB stream limits bound selected quantities, not total process memory across many requests. Configuration now has a separate 1 MiB read limit. Previous-manifest history and arbitrary operator-written database rows do not gain a new read-size limit from this helper.
+
+For a manifest with many inputs, validation checks each record and remembers each kind/name pair to detect repeats. The work and memory grow with the number of inputs. A duplicate local publication now reads and validates the existing entry before returning success, adding disk and checksum work to that less common path.
+
+Failure tests and fuzzing are development-time work, not production request handlers. Fuzzing generates and mutates many inputs to explore decoder behaviour. Its run count is evidence about that test session, not a requests-per-second benchmark. No production latency or memory distributions were measured in this phase. Shared write accounting and cleanup retain the store-size costs described in Phase 3.
+
+### 6. What are the guarantees, assumptions and non-goals?
+
+Under the documented schema, malformed HTTP entries/reports fail before storage is called. Direct invalid result/report writes fail before publication. Decode returns an empty Result and an error matching ErrCorrupt on failure. Metadata readers check the typed record before opening its output files; collection checks all inspected records before beginning deletion.
+
+Those checks do not prove Alice's tests actually ran. A holder of the trusted-team token can still invent a structurally valid observation. Identity, permissions and execution evidence remain separate questions. Recorded keys still do not prove deterministic output.
+
+The failure tests make the two storage systems visible. Suppose stdout file X is published, then saving stderr fails. No database result becomes visible, but X remains. Suppose both files are published and the database insert fails. SQL rollback removes the attempted database changes, not the files. Collection can remove those unreferenced files later. A failed operation is therefore not a promise that nothing changed on disk.
+
+If cleanup deletes one orphan and the next deletion fails, the first deletion stays done. The next cleanup recomputes the surviving references and remaining files. This phase tests that retry and checks that live output stays readable. It does not introduce a transaction covering SQL and filesystem changes.
+
+Valid v1 writer encoding and key calculation remain unchanged. Required zero fields, zero timestamps, null output/input slices and empty context strings remain accepted where documented. Previously tolerated malformed records are intentionally rejected, not automatically repaired. The helper uses the standard decoder's remaining Unicode-escape and base64 behaviour; it is not a replacement JSON implementation.
+
+### 7. What alternatives were considered?
+
+Using only DisallowUnknownFields would be shorter, but would not distinguish all our required cases: repeated names and omitted zero-valued fields still need rules. Decoding into an arbitrary map first would lose repeats. Adding checks only in the HTTP handler would leave local files, shared metadata and direct storage calls with different acceptance rules.
+
+We chose small type hooks plus semantic validation. The hooks cover serialized boundaries; direct-write validation covers Go values. Pointer-only wire structs could distinguish omission from zero, but would add another representation for every field and would not solve duplicate names by themselves.
+
+A full JSON Schema engine could become useful if external clients need generated contracts or many independently evolving message types. Today it would add a dependency and still need tests for key/checksum relationships and storage behaviour. It is deferred, not inherently wrong.
+
+For failure tests, a large fake filesystem would allow every write/sync/close operation to be injected. We instead exercised the actual local file code with an occupied destination, wrapped the real BlobStore for selected failures, and used a real PostgreSQL constraint failure after file publication. This keeps the tests close to actual storage, but leaves low-level sync/disk-full faults untested. These choices were made in this phase.
+
+### 8. What evidence supports the claims? What remains untested?
+
+TestTypedJSONBoundaries removes, repeats, changes case and supplies disallowed nulls for every declared field of results, reports, references, shared records and envelopes. Separate manifest/input tests cover unknown kinds, bad hashes, repeated input identities and null command members. TestHTTPInvalidInputNeverCallsStorage uses a store that counts calls; all tested malformed requests returned 400 without a write/report call.
+
+TestVersionOneEncodingUnchanged compares the current writer with the previous field representation and decodes the resulting envelope. The existing input-kind/key compatibility fixture still passes. Configuration tests check optional defaults, explicit zero, invalid names, bounded reads and preservation of existing slices after failure. These tests do not cover every historical third-party client.
+
+The local tests check temporary-file cleanup after an occupied-destination failure and rejection of a corrupt existing entry. PostgreSQL tests check failure on the second blob, a real database constraint failure after both blobs, cleanup failing on its second removal, malformed stored metadata and invalid direct writes. They inspect files, database rows and later reads/retries, not only returned errors.
+
+Verification on macOS arm64 with Go 1.22.1 and a fresh disposable PostgreSQL 14.17 database: make check, make race, make build, and an uncached race-enabled full suite with the database configured passed. The database tests created isolated schemas. Two 15-second fuzz sessions with two workers completed without a failure: 378,575 executions for FuzzDecode and 390,885 for FuzzResultJSON. The latter directly explores result payloads without first needing to pass the envelope checksum. These are exploratory evidence, not exhaustive coverage or performance measurements.
+
+Power loss, disk-full errors, individual file write/sync/close failures, database commit-acknowledgement loss and arbitrary operating-system/filesystem behaviour were not established by these new tests. Existing cancellation and terminated-database-session tests also passed in the full integration run. Network filesystem and hostile local path changes remain outside the stated assumptions.
+
+The Markdown and HTML reviews are kept in agreement, with local links, headings and source excerpts checked separately from runtime tests. Editorial checks use the prose guide's actor/sequence/example questions; they are not a study proving beginner comprehension.
+
+### 9. When should we revisit these decisions?
+
+If external clients need additional fields or kinds, decide how versions coexist before modifying the schema. If legitimate old records fail, retain a representative fixture and decide whether to migrate or adjust a specific compatibility rule. Do not broadly ignore unknown data just to hide the failure.
+
+If parsing appears in CPU or allocation measurements for representative workloads, measure the shape pass and typed pass separately before replacing them. A different decoder must preserve the same malformed-input and compatibility tests. If manifests become large, measure the repeated-identity map and source-size bounds too.
+
+If operations must promise that no files remain after a failed upload, the current orphan-and-collect policy is insufficient; it needs a different publication/recovery protocol. If orphan accumulation routinely exhausts budgets, revisit collection scheduling and observability. If hardware/commit failures matter for deployment, add controlled fault or process-crash tests before claiming recovery under those conditions.
+
+If Receipt moves beyond trusted token holders, add identity and per-operation authorization rather than asking JSON validation to establish trust. The next learning phase can separate permission to read, publish, report conflicts and administer storage. That work is proposed, not implemented here.
+
+### Amendments to earlier reviews and decisions
+
+Phase 1's first-publication explanation now includes verification of an existing local destination; corruption or an occupied directory is not acknowledged as a successful Put. Phases 1–3 and the coding-quality section previously described stronger schema validation as future work. Phase 4 implements the contract above while retaining checksum, key, lifecycle-lock and authorization responsibilities separately.
+
+Phase 4 decisions: keep existing v1 writer/key bytes; explicitly preserve documented null/zero compatibility; place object-shape rules in a small shared helper and value rules with their owning types; validate direct writes; retain orphan-and-collect recovery and test selected interruptions. Making ManagedBlobs an explicit constructor requirement, identity/permissions, multi-machine storage and performance measurement remain unfinished work.

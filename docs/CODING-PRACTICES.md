@@ -52,9 +52,10 @@ this file records how to apply those decisions in future code.
   a newly added enum member. Keep rejection of unknown runtime input.
 - `goconst` detects repeated literals, not domain meaning. Do not couple unrelated
   concepts or convert open-ended paths, arguments, hashes or labels into enums.
-- InputKind retains the existing JSON strings. The type is not a schema firewall:
-  strict validation of decoded input kinds and other payload fields is deferred.
-  Never silently change fingerprint serialization or key version.
+- InputKind retains the existing JSON strings. Manifest/Input decoding hooks now
+  reject unknown kinds; Manifest.Validate also checks directly constructed values.
+  Typed constants alone are still not validation. Never silently change
+  fingerprint serialization or key version.
 
 ## Function design and abstractions
 
@@ -75,12 +76,20 @@ this file records how to apply those decisions in future code.
 
 - Prefer typed payloads and explicit semantic validation over arbitrary JSON maps.
   Bound bodies before decoding; verify checksums and key relationships afterward.
-- Proposed strict-decoding/unmarshal-hook work is NOT implemented by this refactor.
-  Existing result/report decoding can accept unknown/duplicate fields and omitted
-  zero-valued fields. Do not claim complete schema validation.
-- A future strict decoder must define required fields, nulls, duplicates, unknown
-  fields and case handling, with malformed-input tests and compatibility policy.
-  Type hooks cannot replace authorization, byte limits or transaction invariants.
+- Phase 4 (2026-10-08) implements typed decoding hooks for Config, Manifest,
+  Input, Result, ConflictReport, BlobRef, blobRecord and the result envelope.
+  internal/strictjson only checks declared object shape; each type owns its
+  semantic rules. Check JSON-INPUT-CONTRACT.md before changing them.
+- Reject unknown/duplicate/wrong-case names, missing required fields, disallowed
+  nulls and wrong types. Reject null string-array members and non-string output
+  encodings. Preserve documented null-list/output compatibility and optional
+  configuration defaults. Decode into a temporary value and assign only on success;
+  clone any existing slices before decoding optional settings into that temporary.
+- Invoke semantic validation on direct storage writes too. Hooks do not run on
+  Go struct literals. Structural validation cannot replace authorization,
+  request byte limits, checksum/key checks or transaction invariants.
+- JSONB normalizes duplicate names before reading; validate incoming JSON before
+  storing it. Hooks cannot recover distinctions already erased by the database.
 - Do not trim filenames or secrets indiscriminately. Empty and whitespace-only
   strings can have different meanings.
 - Retain filesystem safety checks when extracting helpers. Enumeration must
