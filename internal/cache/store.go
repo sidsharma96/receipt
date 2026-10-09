@@ -14,12 +14,18 @@ import (
 	"time"
 )
 
+// MaxEntryBytes bounds a serialized local entry or HTTP payload.
 const MaxEntryBytes = 32 << 20
 
-var ErrMiss = errors.New("cache miss")
-var ErrCorrupt = errors.New("corrupt cache entry")
-var validKey = regexp.MustCompile(`^[a-f0-9]{64}$`)
+var (
+	// ErrMiss indicates that no reusable entry was found.
+	ErrMiss = errors.New("cache miss")
+	// ErrCorrupt indicates an invalid or damaged persisted result.
+	ErrCorrupt = errors.New("corrupt cache entry")
+	validKey   = regexp.MustCompile(`^[a-f0-9]{64}$`)
+)
 
+// Result records an observation and the declared inputs used to identify it.
 type Result struct {
 	Version    int                  `json:"version"`
 	Key        string               `json:"key"`
@@ -31,6 +37,7 @@ type Result struct {
 	CreatedAt  time.Time            `json:"created_at"`
 }
 
+// Store provides lookup and publication of validated successful results.
 type Store interface {
 	Get(context.Context, string) (Result, error)
 	Put(context.Context, Result) error
@@ -41,12 +48,15 @@ type envelope struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
+// Validate checks the reusable-result contract and manifest/key agreement.
 func Validate(r Result) error {
 	if r.Version != 1 || r.Manifest.Version != 1 || !validKey.MatchString(r.Key) || r.Key != r.Manifest.Key() || r.ExitCode != 0 {
 		return fmt.Errorf("invalid result contract")
 	}
 	return nil
 }
+
+// Encode validates a result and wraps its JSON in a checksummed envelope.
 func Encode(r Result) ([]byte, error) {
 	if e := Validate(r); e != nil {
 		return nil, e
@@ -61,6 +71,8 @@ func Encode(r Result) ([]byte, error) {
 	}
 	return out, e
 }
+
+// Decode verifies the envelope checksum and reusable-result contract.
 func Decode(b []byte) (Result, error) {
 	var env envelope
 	var r Result
@@ -70,6 +82,7 @@ func Decode(b []byte) (Result, error) {
 	return r, nil
 }
 
+// Disk stores version-one result envelopes in local files.
 type Disk struct{ Dir string }
 
 func (d Disk) path(key string) (string, error) {
@@ -78,6 +91,8 @@ func (d Disk) path(key string) (string, error) {
 	}
 	return filepath.Join(d.Dir, "entries", key+".json"), nil
 }
+
+// Get reads a bounded entry and validates its checksum and requested key.
 func (d Disk) Get(ctx context.Context, key string) (Result, error) {
 	var r Result
 	if e := ctx.Err(); e != nil {
@@ -94,7 +109,7 @@ func (d Disk) Get(ctx context.Context, key string) (Result, error) {
 	if e != nil {
 		return r, e
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
 	b, e := io.ReadAll(io.LimitReader(f, MaxEntryBytes+1))
 	if e != nil {
 		return r, e
@@ -120,7 +135,7 @@ func (d Disk) Put(ctx context.Context, r Result) error {
 	if e != nil {
 		return e
 	}
-	if e = os.MkdirAll(filepath.Dir(p), 0700); e != nil {
+	if e = os.MkdirAll(filepath.Dir(p), 0o700); e != nil {
 		return e
 	}
 	f, e := os.CreateTemp(filepath.Dir(p), ".pending-")
@@ -128,7 +143,7 @@ func (d Disk) Put(ctx context.Context, r Result) error {
 		return e
 	}
 	tmp := f.Name()
-	defer os.Remove(tmp)
+	defer os.Remove(tmp) //nolint:errcheck // Best-effort temp cleanup; publication errors are checked separately.
 	if _, e = f.Write(b); e == nil {
 		e = f.Sync()
 	}
@@ -150,9 +165,11 @@ func (d Disk) Put(ctx context.Context, r Result) error {
 	if e != nil {
 		return e
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
 	return dir.Sync()
 }
+
+// Remove deletes an entry if it exists.
 func (d Disk) Remove(key string) error {
 	p, e := d.path(key)
 	if e != nil {
@@ -164,6 +181,8 @@ func (d Disk) Remove(key string) error {
 	}
 	return e
 }
+
+// List returns valid local entries sorted by creation time.
 func (d Disk) List() ([]Result, error) {
 	paths, e := filepath.Glob(filepath.Join(d.Dir, "entries", "*.json"))
 	if e != nil {

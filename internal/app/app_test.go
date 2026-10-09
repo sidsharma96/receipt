@@ -3,6 +3,8 @@ package app
 import (
 	"bytes"
 	"context"
+	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +12,25 @@ import (
 	"strings"
 	"testing"
 )
+
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) { return 0, io.ErrClosedPipe }
+
+func TestCommandOutputFailureIsReturned(t *testing.T) {
+	var diagnostics bytes.Buffer
+	_, err := execute(context.Background(), []string{"help"}, failingWriter{}, &diagnostics)
+	if !errors.Is(err, io.ErrClosedPipe) {
+		t.Fatalf("output failure was lost: %v", err)
+	}
+}
+
+func TestDiagnosticFailurePreservesExitStatus(t *testing.T) {
+	var output bytes.Buffer
+	if code := Main([]string{"unknown"}, &output, failingWriter{}); code != 2 {
+		t.Fatalf("diagnostic failure changed error exit status: %d", code)
+	}
+}
 
 func setup(t *testing.T) (string, string) {
 	t.Helper()
@@ -27,6 +48,7 @@ func setup(t *testing.T) (string, string) {
 	t.Cleanup(func() { os.Chdir(old) })
 	return dir, t.TempDir()
 }
+
 func invoke(t *testing.T, args ...string) (int, string, string) {
 	t.Helper()
 	var out, errOut bytes.Buffer
@@ -36,6 +58,7 @@ func invoke(t *testing.T, args ...string) (int, string, string) {
 	}
 	return code, out.String(), errOut.String()
 }
+
 func TestHitInvalidateFailureAndExplain(t *testing.T) {
 	dir, external := setup(t)
 	counter := filepath.Join(external, "calls")
@@ -53,7 +76,7 @@ func TestHitInvalidateFailureAndExplain(t *testing.T) {
 	if strings.Count(string(b), "called") != 1 {
 		t.Fatal("hit executed tests")
 	}
-	os.WriteFile(filepath.Join(dir, "input.py"), []byte("changed"), 0600)
+	os.WriteFile(filepath.Join(dir, "input.py"), []byte("changed"), 0o600)
 	explain := append([]string{"explain"}, args[1:]...)
 	_, explanation, _ := invoke(t, explain...)
 	if !strings.Contains(explanation, "added file:") {
@@ -68,6 +91,7 @@ func TestHitInvalidateFailureAndExplain(t *testing.T) {
 		t.Fatalf("%d %q", code, status)
 	}
 }
+
 func TestChangedInputsNotStored(t *testing.T) {
 	dir, _ := setup(t)
 	args := []string{"run", "--allow-generic", "--", "/bin/sh", "-c", "echo changed > input.txt"}
@@ -80,14 +104,15 @@ func TestChangedInputsNotStored(t *testing.T) {
 		t.Fatal("changing-input run cached")
 	}
 }
+
 func TestVerificationQuarantines(t *testing.T) {
 	dir, external := setup(t)
 	file := filepath.Join(external, "state")
-	os.WriteFile(file, []byte("a"), 0600)
+	os.WriteFile(file, []byte("a"), 0o600)
 	script := "cat '" + file + "'"
 	args := []string{"run", "--allow-generic", "--", "/bin/sh", "-c", script}
 	invoke(t, args...)
-	os.WriteFile(file, []byte("b"), 0600)
+	os.WriteFile(file, []byte("b"), 0o600)
 	verify := []string{"run", "--verify", "--allow-generic", "--", "/bin/sh", "-c", script}
 	code, _, status := invoke(t, verify...)
 	if code != 1 || !strings.Contains(status, "quarantined") {
@@ -102,6 +127,7 @@ func TestVerificationQuarantines(t *testing.T) {
 		t.Fatal("quarantined result re-published")
 	}
 }
+
 func TestPruneAndBypass(t *testing.T) {
 	dir, _ := setup(t)
 	invoke(t, "run", "--allow-generic", "--", "/bin/sh", "-c", "printf hello")

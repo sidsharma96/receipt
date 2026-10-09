@@ -14,6 +14,7 @@ func TestStreamsAndExit(t *testing.T) {
 		t.Fatalf("%+v %v %q %q", r, e, out.String(), errOut.String())
 	}
 }
+
 func TestCancellation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
@@ -24,6 +25,7 @@ func TestCancellation(t *testing.T) {
 		t.Fatal("cancellation stalled")
 	}
 }
+
 func TestCaptureLimit(t *testing.T) {
 	b := limitedBuffer{limit: 3}
 	n, e := b.Write([]byte("abcdef"))

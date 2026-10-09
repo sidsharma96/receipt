@@ -26,6 +26,7 @@ func (b *limitedBuffer) Write(p []byte) (int, error) {
 	return n, nil
 }
 
+// Output contains the process outcome, bounded captured streams and elapsed duration.
 type Output struct {
 	Stdout, Stderr []byte
 	ExitCode       int
@@ -33,6 +34,7 @@ type Output struct {
 	TooLarge       bool
 }
 
+// Run executes a command directly and streams its output while capturing bounded copies.
 func Run(ctx context.Context, dir string, args []string, out, errOut io.Writer) (Output, error) {
 	if len(args) == 0 {
 		return Output{}, errors.New("missing command")

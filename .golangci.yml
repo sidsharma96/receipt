@@ -1,0 +1,74 @@
+version: "2"
+
+run:
+  timeout: 5m
+  go: "1.22"
+
+linters:
+  default: none
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - goconst
+    - revive
+    - depguard
+    - ineffassign
+    - unused
+    - nolintlint
+    - exhaustive
+    - gocognit
+    - nestif
+    - errorlint
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: false
+    gocognit:
+      min-complexity: 30
+    nestif:
+      min-complexity: 5
+    errcheck:
+      check-blank: true
+      check-type-assertions: true
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+      ignore-tests: true
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    depguard:
+      rules:
+        dependencies:
+          list-mode: strict
+          allow:
+            - $gostd
+            - receipt/
+            - github.com/lib/pq$
+        domain:
+          files:
+            - "**/internal/fingerprint/*.go"
+            - "**/internal/runner/*.go"
+          deny:
+            - pkg: receipt/internal/app
+              desc: Domain/process packages must not depend on CLI orchestration.
+            - pkg: receipt/internal/cache
+              desc: Domain/process packages must not depend on storage/HTTP.
+            - pkg: github.com/lib/pq
+              desc: The SQL driver belongs at the persistence boundary.
+  exclusions:
+    presets: []
+    rules:
+      # Test setup/cleanup remains checked for vet/staticcheck; production error
+      # handling is strict. Fixtures deliberately perform raw corruption writes.
+      - path: _test\.go$
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofumpt
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

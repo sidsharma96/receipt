@@ -3,7 +3,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -23,6 +22,27 @@ import (
 	"time"
 )
 
+type commandName string
+
+const (
+	commandRun     commandName = "run"
+	commandExplain commandName = "explain"
+	commandCache   commandName = "cache"
+	commandServe   commandName = "serve"
+	commandShared  commandName = "shared"
+	commandPrune               = "prune"
+)
+
+func parseCommand(raw string) (commandName, error) {
+	mode := commandName(raw)
+	switch mode {
+	case commandRun, commandExplain, commandCache, commandServe, commandShared:
+		return mode, nil
+	default:
+		return "", fmt.Errorf("unknown command %q; use receipt help", raw)
+	}
+}
+
 const help = `Receipt — reuse successful test results for identical declared inputs.
 
   receipt run [options] -- uv run pytest [pytest options]
@@ -31,6 +51,13 @@ const help = `Receipt — reuse successful test results for identical declared i
   receipt cache prune [--cache-dir DIR] [--max-bytes N]
   receipt serve [--cache-dir DIR] [--listen 127.0.0.1:7777]
                 [--postgres] [--max-inflight 16]
+  receipt shared stats --cache-dir DIR
+  receipt shared limits --cache-dir DIR [--max-blob-bytes N] [--max-metadata-bytes N]
+                        [--max-entries N] [--max-evidence N] [--apply]
+  receipt shared gc --cache-dir DIR [--apply]
+  receipt shared prune --cache-dir DIR [--older-than 720h] [--apply]
+
+Shared maintenance requires RECEIPT_DATABASE_URL. Changes default to dry-run.
 
 Run options:
   --bypass          Run directly; do not read or write the cache.
@@ -45,6 +72,7 @@ Ignored files, external services, random input and editable dependencies are
 not automatically fingerprinted. Declare extra_inputs or use --bypass.
 `
 
+// Config describes repository-local CLI settings.
 type Config struct {
 	ExtraInputs       []string `json:"extra_inputs"`
 	IgnoreEnvironment []string `json:"ignore_environment"`
@@ -56,28 +84,43 @@ type options struct {
 	bypass, refresh, verify, generic bool
 }
 
+// Main runs the CLI and returns the process exit status.
 func Main(args []string, out, errOut io.Writer) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	code, err := execute(ctx, args, out, errOut)
 	if err != nil {
-		fmt.Fprintln(errOut, "receipt:", err)
+		diagnostic(errOut, "receipt:", err)
 		return 2
 	}
 	return code
 }
+
+// diagnostic is best-effort: a broken diagnostic stream must not change a test outcome.
+func diagnostic(out io.Writer, args ...any) {
+	fmt.Fprintln(out, args...) //nolint:errcheck // No fallback output channel is available for diagnostics.
+}
+
 func execute(ctx context.Context, args []string, out, errOut io.Writer) (int, error) {
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
-		fmt.Fprint(out, help)
+		if _, err := fmt.Fprint(out, help); err != nil {
+			return 0, err
+		}
 		return 0, nil
 	}
-	switch args[0] {
-	case "run", "explain":
-		return run(ctx, args[0], args[1:], out, errOut)
-	case "cache":
+	mode, err := parseCommand(args[0])
+	if err != nil {
+		return 0, err
+	}
+	switch mode {
+	case commandRun, commandExplain:
+		return run(ctx, mode, args[1:], out, errOut)
+	case commandCache:
 		return 0, cacheCommand(ctx, args[1:], out, errOut)
-	case "serve":
+	case commandServe:
 		return 0, serve(ctx, args[1:], errOut)
+	case commandShared:
+		return 0, sharedCommand(ctx, args[1:], out, errOut)
 	default:
 		return 0, fmt.Errorf("unknown command %q; use receipt help", args[0])
 	}
@@ -101,7 +144,7 @@ func settings(ctx context.Context, dir string) (string, Config, error) {
 	if e = d.Decode(&cfg); e != nil {
 		return root, cfg, fmt.Errorf(".receipt.json: %w", e)
 	}
-	if e = d.Decode(new(any)); e != io.EOF {
+	if e = d.Decode(new(any)); !errors.Is(e, io.EOF) {
 		return root, cfg, fmt.Errorf(".receipt.json must contain one JSON object")
 	}
 	if cfg.MaxBytes < 0 {
@@ -109,6 +152,7 @@ func settings(ctx context.Context, dir string) (string, Config, error) {
 	}
 	return root, cfg, nil
 }
+
 func cacheDirectory(root, override string) (string, error) {
 	p := override
 	if p == "" {
@@ -128,15 +172,16 @@ func cacheDirectory(root, override string) (string, error) {
 	}
 	return p, nil
 }
+
 func atomically(path string, b []byte) error {
-	if e := os.MkdirAll(filepath.Dir(path), 0700); e != nil {
+	if e := os.MkdirAll(filepath.Dir(path), 0o700); e != nil {
 		return e
 	}
 	f, e := os.CreateTemp(filepath.Dir(path), ".tmp-")
 	if e != nil {
 		return e
 	}
-	defer os.Remove(f.Name())
+	defer os.Remove(f.Name()) //nolint:errcheck // Best-effort temp cleanup; publication errors are checked separately.
 	if _, e = f.Write(b); e == nil {
 		e = f.Sync()
 	}
@@ -149,16 +194,18 @@ func atomically(path string, b []byte) error {
 	}
 	return os.Rename(f.Name(), path)
 }
+
 func quarantined(dir, key string) bool {
 	_, e := os.Stat(filepath.Join(dir, "quarantine", key))
 	return e == nil
 }
+
 func quarantine(dir, key string) error {
 	return atomically(filepath.Join(dir, "quarantine", key), []byte("conflicting observation; do not reuse\n"))
 }
 
-func run(ctx context.Context, mode string, args []string, out, errOut io.Writer) (int, error) {
-	f := flag.NewFlagSet(mode, flag.ContinueOnError)
+func run(ctx context.Context, mode commandName, args []string, out, errOut io.Writer) (int, error) {
+	f := flag.NewFlagSet(string(mode), flag.ContinueOnError)
 	f.SetOutput(errOut)
 	var o options
 	f.StringVar(&o.cacheDir, "cache-dir", "", "cache directory")
@@ -168,7 +215,7 @@ func run(ctx context.Context, mode string, args []string, out, errOut io.Writer)
 	f.BoolVar(&o.verify, "verify", false, "verify a hit by running again")
 	f.BoolVar(&o.generic, "allow-generic", false, "allow arbitrary commands")
 	if e := f.Parse(args); e != nil {
-		if e == flag.ErrHelp {
+		if errors.Is(e, flag.ErrHelp) {
 			return 0, nil
 		}
 		return 0, e
@@ -209,103 +256,30 @@ func run(ctx context.Context, mode string, args []string, out, errOut io.Writer)
 	remote := cache.Remote{URL: o.remote, Token: os.Getenv("RECEIPT_TOKEN")}
 	m, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
 	if e != nil {
-		if mode == "explain" {
+		if mode == commandExplain {
 			return 0, e
 		}
-		fmt.Fprintln(errOut, "receipt: inputs unavailable; running uncached:", e)
+		diagnostic(errOut, "receipt: inputs unavailable; running uncached:", e)
 		r, e := runner.Run(ctx, dir, command, out, errOut)
 		return r.ExitCode, e
 	}
 	key := m.Key()
 	history := filepath.Join(cacheDir, "history", fingerprint.Hash([]byte(dir))+".json")
-	if mode == "explain" {
-		fmt.Fprintln(out, "key:", key)
-		if quarantined(cacheDir, key) {
-			fmt.Fprintln(out, "quarantined: conflicting observations")
-		}
-		if _, e := disk.Get(ctx, key); e == nil {
-			fmt.Fprintln(out, "local cache: hit")
-		} else {
-			fmt.Fprintln(out, "local cache: miss")
-		}
-		var old fingerprint.Manifest
-		b, e := os.ReadFile(history)
-		if e != nil || json.Unmarshal(b, &old) != nil {
-			fmt.Fprintln(out, "no previous manifest")
-			return 0, nil
-		}
-		changes := fingerprint.Diff(old, m)
-		if len(changes) == 0 {
-			fmt.Fprintln(out, "declared inputs unchanged")
-		} else {
-			for _, c := range changes {
-				fmt.Fprintln(out, c)
-			}
-		}
-		return 0, nil
+	s := runSession{options: o, config: cfg, cacheDir: cacheDir, key: key, history: history, disk: disk, remote: remote, manifest: m, out: out, errOut: errOut}
+	if mode == commandExplain {
+		return 0, s.explain(ctx)
 	}
-	var prior cache.Result
-	hit := false
-	if o.refresh {
-		// Refresh still observes the old local result so a failure cannot leave
-		// a known-conflicting success eligible for the next lookup.
-		prior, e = disk.Get(ctx, key)
-	}
-	if !o.refresh && !quarantined(cacheDir, key) {
-		prior, e = disk.Get(ctx, key)
-		if errors.Is(e, cache.ErrCorrupt) {
-			fmt.Fprintln(errOut, "receipt: corrupt local entry; running uncached or fetching remote")
-			_ = disk.Remove(key)
-		}
-		if e == nil {
-			hit = true
-			if o.remote != "" {
-				// A cached local copy is not authoritative for shared quarantine.
-				if statusErr := remote.Check(ctx, key); statusErr != nil {
-					hit = false
-					if errors.Is(statusErr, cache.ErrConflict) {
-						if e = quarantine(cacheDir, key); e != nil {
-							return 0, e
-						}
-						_ = disk.Remove(key)
-					}
-					fmt.Fprintln(errOut, "receipt: shared status unavailable or quarantined; executing instead of local replay:", statusErr)
-				}
-			}
-		} else if o.remote != "" {
-			prior, e = remote.Get(ctx, key)
-			if e == nil {
-				hit = true
-				_ = disk.Put(ctx, prior)
-			} else if !errors.Is(e, cache.ErrMiss) {
-				remoteErr := e
-				if errors.Is(e, cache.ErrConflict) {
-					if e = quarantine(cacheDir, key); e != nil {
-						return 0, e
-					}
-					_ = disk.Remove(key)
-				}
-				fmt.Fprintln(errOut, "receipt: remote unavailable; falling back to execution:", remoteErr)
-			}
-		}
+	prior, hit, e := s.lookup(ctx)
+	if e != nil {
+		return 0, e
 	}
 	if hit && !o.verify {
-		fmt.Fprintf(errOut, "receipt: hit %s (saved test duration %s)\n", key[:12], time.Duration(prior.DurationNS))
-		if _, e = out.Write(prior.Stdout); e != nil {
-			return 0, e
-		}
-		if _, e = errOut.Write(prior.Stderr); e != nil {
-			return 0, e
-		}
-		_ = os.Chtimes(filepath.Join(cacheDir, "entries", key+".json"), time.Now(), time.Now())
-		b, _ := json.Marshal(m)
-		_ = atomically(history, b)
-		return prior.ExitCode, nil
+		return s.replay(prior)
 	}
 	if hit {
-		fmt.Fprintln(errOut, "receipt: verifying", key[:12])
+		diagnostic(errOut, "receipt: verifying", key[:12])
 	} else {
-		fmt.Fprintln(errOut, "receipt: miss", key[:12])
+		diagnostic(errOut, "receipt: miss", key[:12])
 	}
 	r, e := runner.Run(ctx, dir, command, out, errOut)
 	if e != nil {
@@ -316,71 +290,16 @@ func run(ctx context.Context, mode string, args []string, out, errOut io.Writer)
 	}
 	after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
 	stable := e == nil && after.Key() == key
-	b, _ := json.Marshal(m)
-	_ = atomically(history, b)
+	if e = s.recordHistory(); e != nil {
+		return 0, e
+	}
 	if hit && o.verify {
-		if !stable {
-			fmt.Fprintln(errOut, "receipt: verification inconclusive: inputs changed during execution")
-			return 1, nil
-		}
-		if r.TooLarge || r.ExitCode != prior.ExitCode || string(r.Stdout) != string(prior.Stdout) || string(r.Stderr) != string(prior.Stderr) {
-			if e = quarantine(cacheDir, key); e != nil {
-				return 0, e
-			}
-			_ = disk.Remove(key)
-			reportConflict(ctx, remote, cache.Result{Version: 1, Key: key, Manifest: m, Stdout: r.Stdout, Stderr: r.Stderr, ExitCode: r.ExitCode}, errOut)
-			fmt.Fprintln(errOut, "receipt: verification mismatch; key quarantined locally (output differences may be timing text)")
-			if r.ExitCode != 0 {
-				return r.ExitCode, nil
-			}
-			return 1, nil
-		}
-		fmt.Fprintln(errOut, "receipt: verification matched byte-for-byte")
-		return 0, nil
+		return s.verify(ctx, prior, r, stable)
 	}
 	if r.ExitCode != 0 {
-		if o.refresh && prior.Key == key && stable {
-			if e = quarantine(cacheDir, key); e != nil {
-				return 0, e
-			}
-			_ = disk.Remove(key)
-			fmt.Fprintln(errOut, "receipt: refresh contradicted cached success; key quarantined locally")
-			reportConflict(ctx, remote, cache.Result{Version: 1, Key: key, Manifest: m, Stdout: r.Stdout, Stderr: r.Stderr, ExitCode: r.ExitCode}, errOut)
-		}
-		fmt.Fprintln(errOut, "receipt: failed results are not cached")
-		return r.ExitCode, nil
+		return s.failed(ctx, prior, r, stable)
 	}
-	if !stable || r.TooLarge || quarantined(cacheDir, key) {
-		fmt.Fprintln(errOut, "receipt: result not stored (inputs changed, output exceeded limit, or key quarantined)")
-		return 0, nil
-	}
-	result := cache.Result{Version: 1, Key: key, Manifest: m, Stdout: r.Stdout, Stderr: r.Stderr, ExitCode: r.ExitCode, DurationNS: int64(r.Duration), CreatedAt: time.Now().UTC()}
-	if o.refresh {
-		if e = disk.Remove(key); e != nil {
-			fmt.Fprintln(errOut, "receipt: cache refresh failed:", e)
-			return 0, nil
-		}
-	}
-	if e = disk.Put(ctx, result); e != nil {
-		fmt.Fprintln(errOut, "receipt: could not store result:", e)
-	}
-	if o.remote != "" {
-		if e = remote.Put(ctx, result); e != nil {
-			uploadErr := e
-			if errors.Is(e, cache.ErrConflict) {
-				if e = quarantine(cacheDir, key); e != nil {
-					return 0, e
-				}
-				_ = disk.Remove(key)
-				fmt.Fprintln(errOut, "receipt: shared conflict; key quarantined locally")
-			}
-			fmt.Fprintln(errOut, "receipt: remote upload skipped:", uploadErr)
-		}
-	}
-	if e = prune(disk, cfg.MaxBytes, outDiscard{}); e != nil {
-		fmt.Fprintln(errOut, "receipt: pruning failed:", e)
-	}
-	return 0, nil
+	return s.publish(ctx, r, stable)
 }
 
 type outDiscard struct{}
@@ -390,14 +309,14 @@ func reportConflict(ctx context.Context, remote cache.Remote, result cache.Resul
 		return
 	}
 	if err := remote.Report(ctx, cache.ReportFor(result)); err != nil {
-		fmt.Fprintln(errOut, "receipt: shared conflict report failed (local quarantine retained):", err)
+		diagnostic(errOut, "receipt: shared conflict report failed (local quarantine retained):", err)
 	}
 }
 
 func (outDiscard) Write(b []byte) (int, error) { return len(b), nil }
 
-func prune(d cache.Disk, max int64, out io.Writer) error {
-	if max < 0 {
+func prune(d cache.Disk, maxBytes int64, out io.Writer) error {
+	if maxBytes < 0 {
 		return fmt.Errorf("negative size limit")
 	}
 	entries, e := os.ReadDir(filepath.Join(d.Dir, "entries"))
@@ -429,14 +348,16 @@ func prune(d cache.Disk, max int64, out io.Writer) error {
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].at.Before(items[j].at) })
 	for _, i := range items {
-		if total <= max {
+		if total <= maxBytes {
 			break
 		}
 		if e = d.Remove(i.key); e != nil {
 			return e
 		}
 		total -= i.size
-		fmt.Fprintln(out, "evicted", i.key)
+		if _, err := fmt.Fprintln(out, "evicted", i.key); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -448,9 +369,9 @@ func cacheCommand(ctx context.Context, args []string, out, errOut io.Writer) err
 	f := flag.NewFlagSet("cache", flag.ContinueOnError)
 	f.SetOutput(errOut)
 	dir := f.String("cache-dir", "", "cache directory")
-	max := f.Int64("max-bytes", 1<<30, "maximum retained bytes")
+	maxBytes := f.Int64("max-bytes", 1<<30, "maximum retained bytes")
 	if e := f.Parse(args[1:]); e != nil {
-		if e == flag.ErrHelp {
+		if errors.Is(e, flag.ErrHelp) {
 			return nil
 		}
 		return e
@@ -471,19 +392,24 @@ func cacheCommand(ctx context.Context, args []string, out, errOut io.Writer) err
 		return e
 	}
 	disk := cache.Disk{Dir: p}
-	switch args[0] {
-	case "list":
+	mode, err := parseCacheMode(args[0])
+	if err != nil {
+		return err
+	}
+	switch mode {
+	case cacheList:
 		entries, e := disk.List()
 		if e != nil {
 			return e
 		}
+		p := printer{out: out}
 		for _, r := range entries {
-			fmt.Fprintf(out, "%s  %s  %s  %s\n", r.Key[:12], r.CreatedAt.Format(time.RFC3339), time.Duration(r.DurationNS), strings.Join(r.Manifest.Command, " "))
+			p.printf("%s  %s  %s  %s\n", r.Key[:12], r.CreatedAt.Format(time.RFC3339), time.Duration(r.DurationNS), strings.Join(r.Manifest.Command, " "))
 		}
-		fmt.Fprintf(out, "%d entries\n", len(entries))
-		return nil
-	case "prune":
-		return prune(disk, *max, out)
+		p.printf("%d entries\n", len(entries))
+		return p.err
+	case cachePrune:
+		return prune(disk, *maxBytes, out)
 	default:
 		return fmt.Errorf("unknown cache command %q", args[0])
 	}
@@ -497,7 +423,7 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 	postgres := f.Bool("postgres", false, "use RECEIPT_DATABASE_URL for shared metadata")
 	maxInflight := f.Int("max-inflight", 16, "maximum active API requests")
 	if e := f.Parse(args); e != nil {
-		if e == flag.ErrHelp {
+		if errors.Is(e, flag.ErrHelp) {
 			return nil
 		}
 		return e
@@ -518,31 +444,20 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 	}
 	var store cache.Store = cache.Disk{Dir: *dir}
 	if *postgres {
-		dsn := os.Getenv("RECEIPT_DATABASE_URL")
-		if dsn == "" {
-			return fmt.Errorf("--postgres requires RECEIPT_DATABASE_URL")
-		}
-		db, e := sql.Open("postgres", dsn)
-		if e != nil {
-			return fmt.Errorf("open metadata database failed")
-		}
-		defer db.Close()
-		db.SetMaxOpenConns(16)
-		db.SetMaxIdleConns(4)
-		db.SetConnMaxLifetime(5 * time.Minute)
 		startup, cancel := context.WithTimeout(ctx, 15*time.Second)
 		defer cancel()
-		shared := cache.Postgres{DB: db, Blobs: cache.FileBlobs{Dir: filepath.Join(*dir, "blobs")}}
-		if e = shared.Migrate(startup); e != nil {
-			return fmt.Errorf("metadata migration failed (check database connectivity and permissions)")
+		shared, e := openShared(startup, *dir)
+		if e != nil {
+			return e
 		}
+		defer shared.DB.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
 		store = shared
 	}
 	ln, e := net.Listen("tcp", *addr)
 	if e != nil {
 		return e
 	}
-	defer ln.Close()
+	defer ln.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
 	srv := &http.Server{Handler: cache.HandlerLimit(store, token, *maxInflight), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	finished := make(chan struct{})
 	defer close(finished)
@@ -551,11 +466,13 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 		case <-ctx.Done():
 			shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			_ = srv.Shutdown(shutdown)
+			if shutdownErr := srv.Shutdown(shutdown); shutdownErr != nil {
+				diagnostic(errOut, "receipt: graceful shutdown failed:", shutdownErr)
+			}
 		case <-finished:
 		}
 	}()
-	fmt.Fprintln(errOut, "receipt: shared cache listening on", ln.Addr(), "(trusted-client API; use TLS reverse proxy off loopback)")
+	diagnostic(errOut, "receipt: shared cache listening on", ln.Addr(), "(trusted-client API; use TLS reverse proxy off loopback)")
 	e = srv.Serve(ln)
 	if errors.Is(e, http.ErrServerClosed) {
 		return nil

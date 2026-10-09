@@ -16,6 +16,7 @@ func repo(t *testing.T) string {
 	}
 	return p
 }
+
 func TestCanonicalKey(t *testing.T) {
 	a := Manifest{Version: 1, Command: []string{"pytest"}, Inputs: []Input{{"file", "b", "2"}, {"file", "a", "1"}}}
 	b := a
@@ -28,17 +29,18 @@ func TestCanonicalKey(t *testing.T) {
 		t.Fatal("command not fingerprinted")
 	}
 }
+
 func TestWorkingTreeAndEnvironment(t *testing.T) {
 	dir := repo(t)
 	path := filepath.Join(dir, "test.py")
-	os.WriteFile(path, []byte("one"), 0600)
+	os.WriteFile(path, []byte("one"), 0o600)
 	args := []string{"/bin/sh", "-c", "true"}
 	ctx := context.Background()
 	a, e := Build(ctx, dir, args, nil, nil, true)
 	if e != nil {
 		t.Fatal(e)
 	}
-	os.WriteFile(path, []byte("two"), 0600)
+	os.WriteFile(path, []byte("two"), 0o600)
 	b, e := Build(ctx, dir, args, nil, nil, true)
 	if e != nil {
 		t.Fatal(e)
@@ -60,16 +62,17 @@ func TestWorkingTreeAndEnvironment(t *testing.T) {
 		}
 	}
 }
+
 func TestIgnoredExtraAndSymlink(t *testing.T) {
 	dir := repo(t)
-	os.WriteFile(filepath.Join(dir, ".gitignore"), []byte("secret.txt\n"), 0600)
-	os.WriteFile(filepath.Join(dir, "secret.txt"), []byte("one"), 0600)
+	os.WriteFile(filepath.Join(dir, ".gitignore"), []byte("secret.txt\n"), 0o600)
+	os.WriteFile(filepath.Join(dir, "secret.txt"), []byte("one"), 0o600)
 	args := []string{"/bin/sh", "-c", "true"}
 	a, e := Build(context.Background(), dir, args, []string{"secret.txt"}, nil, true)
 	if e != nil {
 		t.Fatal(e)
 	}
-	os.WriteFile(filepath.Join(dir, "secret.txt"), []byte("two"), 0600)
+	os.WriteFile(filepath.Join(dir, "secret.txt"), []byte("two"), 0o600)
 	b, e := Build(context.Background(), dir, args, []string{"secret.txt"}, nil, true)
 	if e != nil {
 		t.Fatal(e)
@@ -82,6 +85,7 @@ func TestIgnoredExtraAndSymlink(t *testing.T) {
 		t.Fatal("symlink was accepted")
 	}
 }
+
 func TestDiff(t *testing.T) {
 	a := Manifest{Inputs: []Input{{"file", "a", "1"}}}
 	b := Manifest{Inputs: []Input{{"file", "a", "2"}, {"file", "b", "3"}}}

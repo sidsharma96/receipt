@@ -128,7 +128,7 @@ tenant isolation, per-client role model, or anonymous access. The legacy disk
 server has no shared quarantine; Phase 2's Postgres backend does.
 Do not expose this service to untrusted writers. Without `--postgres`, server
 storage uses the Phase 1 disk implementation and is pruned explicitly with
-`cache prune --cache-dir ...`. Phase 2 shared storage has no GC/quota yet.
+`cache prune --cache-dir ...`. Shared maintenance/quotas are now available below.
 
 ## Phase 2: Postgres metadata + content-addressed blobs
 
@@ -175,8 +175,8 @@ or a substitute for reverse-proxy connection limits and disk quotas.
 
 Missing blobs are rejected; re-uploading their original bytes restores them.
 Corrupt blobs are rejected and never silently overwritten. Metadata failure can
-leave orphan blobs: garbage collection, automatic corruption repair, retention,
-cloud/S3 storage and multi-node blob availability remain deferred. `cache prune`
+leave orphan blobs: the maintenance commands below collect them. Automatic
+corruption repair, cloud/S3 storage and multi-node blob availability remain deferred. `cache prune`
 is for legacy/local entries only; it does not prune Postgres or blob references.
 Multiple servers must share the same verified blob storage as well as Postgres.
 
@@ -190,13 +190,97 @@ Integration tests create/drop only uniquely named test schemas. Database tests
 skip when the variable is absent; `make integration` requires it and disables
 test-result caching. Read the nine-question Phase 2 review in the working doc.
 
+## Shared storage maintenance
+
+Stop all older server versions before upgrading. Every reader/writer/collector
+must use the lifecycle protocol; direct blob writes or mixed-version servers can
+break GC safety. This implementation supports private local Unix filesystems
+with `flock` (tested on macOS), not arbitrary distributed filesystems or cloud
+objects. Writers/maintenance serialize; concurrent readers share locks.
+
+Postgres stores common limits: 1 GiB blob payloads (including orphan/pending
+bytes), 64 MiB logical JSON metadata/evidence, 10,000 action rows and 100,000
+distinct evidence rows. Repeated blob bytes are charged once; rejected uploads
+return HTTP 507 and clients still return their test command's outcome. These
+are not hard disk/RSS quotas: filesystem blocks/inodes, temporary duplication,
+indexes, WAL, database bookkeeping and lock/identity files are outside the byte
+accounting. Use filesystem/database resource controls as well.
+
+```sh
+# RECEIPT_DATABASE_URL selects your dedicated shared metadata database.
+receipt shared stats --cache-dir /absolute/private/receipt-shared
+receipt shared limits --cache-dir /absolute/private/receipt-shared --max-blob-bytes 2147483648
+receipt shared limits --cache-dir /absolute/private/receipt-shared --max-blob-bytes 2147483648 --apply
+receipt shared prune --cache-dir /absolute/private/receipt-shared --older-than 720h
+receipt shared prune --cache-dir /absolute/private/receipt-shared --older-than 720h --apply
+receipt shared gc --cache-dir /absolute/private/receipt-shared
+receipt shared gc --cache-dir /absolute/private/receipt-shared --apply
+```
+
+Changes default to dry-run; `--apply` is required to update limits, expire
+metadata or remove objects. Initial connection can still create/migrate schema
+and policy/identity files. An explicit cache directory is required. Limit changes
+below current usage are rejected. `--timeout` defaults to 5 minutes.
+
+Pruning removes old **nonquarantined** server metadata and its evidence. It does
+not enforce result freshness or delete client copies. Quarantine tombstones,
+their evidence and referenced original logs are retained. Run GC afterward to
+remove unreferenced blobs and stale known temporary files. GC checks all stored
+references before deleting anything and refuses malformed metadata, unknown
+paths and symlinks. Completed deletions are permanent; interrupted GC can be
+retried, but does not roll filesystem deletions back. Back up before applying
+retention or GC to important data.
+
+A database store ID binds it to `.store-id` in the blob directory, preventing
+GC through the wrong metadata store. `.lifecycle.lock` protects filesystem work
+even on SQL cancellation/session loss. Never replace/delete these marker files
+while running servers. Restore matching database and blob backups together at
+the configured path. Binding failures require inspection, not automatic adoption
+of an existing directory. A crash during first-time binding may require manual
+recovery; unsupported filesystems/path moves are not automatically migrated.
+
+At an evidence limit, an existing-key conflict still commits quarantine and sets
+`evidence_capped`, without storing the new report. Stats expose capped entries.
+At an action-row limit, a report for a previously unknown key can be rejected;
+clients retain local quarantine but shared propagation has no durable retry
+queue. No automatic quarantine deletion or periodic maintenance is scheduled.
+
+The Phase 3 review is recorded in the HTML and phone-readable working documents.
+
 ## Development and phases
 
 ```sh
+make lint-install  # checksum-verified, pinned project-local golangci-lint
+make fmt           # apply gofumpt formatting
+make lint          # formatting check and configured analyzers
+make check         # lint plus unit tests
 make test
 make race
 make vet
 ```
+
+Linting uses golangci-lint v2.14.0 with govet, staticcheck, errcheck, goconst,
+revive, depguard, ineffassign, unused, nolintlint, exhaustive, gocognit, nestif
+and errorlint. In v2, gofumpt runs as
+a formatter; `make lint` checks formatting without changing files. The tool
+lives in ignored `.tools/bin/`; it does not change the project's Go version.
+The installer needs network access on first use and supports macOS/Linux on
+arm64/amd64. Re-run `make lint-install` to restore the pinned binary.
+
+Depguard permits the standard library, Receipt packages and the pinned SQL
+driver; fingerprint/runner packages may not import orchestration or storage.
+Errcheck applies to production code, including blank assignments. Test fixtures
+are currently exempt from errcheck (not other analyzers); some deliberately
+write corrupt data. Narrow, explained suppressions cover best-effort resource
+cleanup and concrete JSON types that cannot currently fail to marshal.
+Diagnostic output is best-effort; command output and replayed test streams
+propagate write failures. Linting is static evidence, not a substitute for
+PostgreSQL integration, race tests or crash-recovery testing.
+
+Implementation conventions are in [docs/CODING-PRACTICES.md](docs/CODING-PRACTICES.md),
+required reading for code changes by AGENTS.md. Enum switches must be exhaustive;
+cognitive complexity and nested-condition checks guide responsibility-based
+refactoring, not removal of necessary error checks.
 
 `make` selects the system linker and refreshes the local ad-hoc binary signature
 on macOS because this machine's Go 1.22 internal linker triggers a `missing
@@ -212,7 +296,8 @@ Next phases:
    output-only differences, lookup cost and fingerprint overhead.
 2. Phase 2 local shared-storage milestone implemented: content-addressed file
    blobs, Postgres metadata, conformance tests, shared quarantine and counters.
-   Cloud object storage, GC/retention and deployment remain follow-up milestones.
+   Shared quotas, retention and orphan GC now implemented; cloud object storage
+   and deployment remain follow-up milestones. The maintenance phase review is recorded.
 3. Portable input policy, sandboxed execution, dependency selection and the shared
    identity/networking learning track, each with explicit correctness gates.
 

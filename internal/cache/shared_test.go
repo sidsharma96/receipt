@@ -194,7 +194,7 @@ func TestPostgresMissingBlobAndHTTP(t *testing.T) {
 	if err := remote.Put(ctx, v); err != nil {
 		t.Fatal("missing blob not restored", err)
 	}
-	if err := os.WriteFile(p, []byte("corrupt"), 0600); err != nil {
+	if err := os.WriteFile(p, []byte("corrupt"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := remote.Get(ctx, v.Key); err == nil {

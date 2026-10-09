@@ -2,6 +2,12 @@
 
 Preserve existing user changes. Keep implementation status distinct from roadmap plans.
 
+Before implementing or reviewing Go code, read `docs/CODING-PRACTICES.md`.
+It records this repository's error handling, enum, abstraction, validation and
+verification conventions. Follow its enforced rules; distinguish suggestions
+and deferred work from implemented guarantees. Update it when an agreed coding
+decision changes, rather than silently introducing a conflicting convention.
+
 After every implemented phase:
 
 1. Append a dated review to `docs/WORKING-DOC.html` and its phone-readable companion `docs/WORKING-DOC.md`.

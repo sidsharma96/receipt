@@ -1,3 +1,4 @@
+// Package main is the Receipt command-line entry point.
 package main
 
 import (

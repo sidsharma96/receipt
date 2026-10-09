@@ -1,4 +1,26 @@
-.PHONY: build test race vet integration
+.PHONY: build test race vet integration lint lint-install fmt fmt-check check
+.DEFAULT_GOAL := build
+
+GOLANGCI_LINT_VERSION := v2.14.0
+GOLANGCI_LINT_BIN := .tools/bin/golangci-lint
+
+$(GOLANGCI_LINT_BIN): scripts/install-golangci-lint.sh Makefile
+	bash scripts/install-golangci-lint.sh $(GOLANGCI_LINT_VERSION) $(GOLANGCI_LINT_BIN)
+
+lint-install:
+	bash scripts/install-golangci-lint.sh $(GOLANGCI_LINT_VERSION) $(GOLANGCI_LINT_BIN)
+
+fmt: $(GOLANGCI_LINT_BIN)
+	$(GOLANGCI_LINT_BIN) fmt
+
+fmt-check: $(GOLANGCI_LINT_BIN)
+	@lint_format_diff="$$($(GOLANGCI_LINT_BIN) fmt --diff)" || exit $$?; if test -n "$$lint_format_diff"; then printf '%s\n' "$$lint_format_diff"; exit 1; fi
+
+lint: fmt-check
+	$(GOLANGCI_LINT_BIN) config verify
+	$(GOLANGCI_LINT_BIN) run
+
+check: lint test
 
 # Go 1.22's internal Mach-O linker is incompatible with this machine's newer
 # macOS loader. The system linker avoids the missing LC_UUID error.

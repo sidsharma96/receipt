@@ -16,6 +16,7 @@ func example() Result {
 	m := fingerprint.Manifest{Version: 1, Command: []string{"pytest"}, Inputs: []fingerprint.Input{}}
 	return Result{Version: 1, Key: m.Key(), Manifest: m, Stdout: []byte("pass\n")}
 }
+
 func TestDiskAtomicConcurrent(t *testing.T) {
 	d := Disk{t.TempDir()}
 	v := example()
@@ -50,12 +51,13 @@ func TestDiskAtomicConcurrent(t *testing.T) {
 		t.Fatal("temporary files leaked")
 	}
 }
+
 func TestCorruptionAndInvalidKey(t *testing.T) {
 	d := Disk{t.TempDir()}
 	v := example()
 	d.Put(context.Background(), v)
 	p, _ := d.path(v.Key)
-	os.WriteFile(p, []byte(`{"payload":`), 0600)
+	os.WriteFile(p, []byte(`{"payload":`), 0o600)
 	if _, e := d.Get(context.Background(), v.Key); !errors.Is(e, ErrCorrupt) {
 		t.Fatal(e)
 	}
@@ -67,6 +69,7 @@ func TestCorruptionAndInvalidKey(t *testing.T) {
 		t.Fatal("failed result stored")
 	}
 }
+
 func TestEnvelopeTamper(t *testing.T) {
 	b, _ := Encode(example())
 	for i := range b {
@@ -79,6 +82,7 @@ func TestEnvelopeTamper(t *testing.T) {
 		t.Fatal("tamper not detected")
 	}
 }
+
 func TestHTTPConformance(t *testing.T) {
 	d := Disk{t.TempDir()}
 	token := "test-token-at-least-24-characters"
@@ -110,6 +114,7 @@ func TestHTTPConformance(t *testing.T) {
 		t.Fatal(resp.StatusCode)
 	}
 }
+
 func TestRemoteRejectsPlaintextNonLoopback(t *testing.T) {
 	r := Remote{URL: "http://example.com", Token: "secret"}
 	if _, e := r.Get(context.Background(), example().Key); e == nil {

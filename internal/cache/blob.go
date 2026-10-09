@@ -1,3 +1,4 @@
+// Package cache implements local and shared result storage and its trusted-team HTTP API.
 package cache
 
 import (
@@ -16,13 +17,16 @@ type BlobStore interface {
 	Put(context.Context, []byte) (BlobRef, error)
 }
 
+// BlobRef identifies immutable bytes by their SHA-256 hash and expected length.
 type BlobRef struct {
 	Hash string `json:"hash"`
 	Size int    `json:"size"`
 }
 
+// MaxBlobBytes bounds a single captured output stream.
 const MaxBlobBytes = 8 << 20
 
+// FileBlobs stores content-addressed objects in a local directory.
 type FileBlobs struct{ Dir string }
 
 func (s FileBlobs) path(hash string) (string, error) {
@@ -32,6 +36,7 @@ func (s FileBlobs) path(hash string) (string, error) {
 	return filepath.Join(s.Dir, hash[:2], hash), nil
 }
 
+// Get verifies the length and hash before returning an object's bytes.
 func (s FileBlobs) Get(ctx context.Context, ref BlobRef) ([]byte, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -50,7 +55,7 @@ func (s FileBlobs) Get(ctx context.Context, ref BlobRef) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
 	b, err := io.ReadAll(io.LimitReader(f, MaxBlobBytes+1))
 	if err != nil {
 		return nil, err
@@ -61,6 +66,7 @@ func (s FileBlobs) Get(ctx context.Context, ref BlobRef) ([]byte, error) {
 	return b, nil
 }
 
+// Put durably publishes immutable bytes without overwriting an existing object.
 func (s FileBlobs) Put(ctx context.Context, b []byte) (BlobRef, error) {
 	ref := BlobRef{Hash: fingerprint.Hash(b), Size: len(b)}
 	if len(b) > MaxBlobBytes {
@@ -69,15 +75,18 @@ func (s FileBlobs) Put(ctx context.Context, b []byte) (BlobRef, error) {
 	if err := ctx.Err(); err != nil {
 		return ref, err
 	}
-	p, _ := s.path(ref.Hash)
-	if err := os.MkdirAll(filepath.Dir(p), 0700); err != nil {
+	p, err := s.path(ref.Hash)
+	if err != nil {
+		return ref, err
+	}
+	if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
 		return ref, err
 	}
 	f, err := os.CreateTemp(filepath.Dir(p), ".pending-")
 	if err != nil {
 		return ref, err
 	}
-	defer os.Remove(f.Name())
+	defer os.Remove(f.Name()) //nolint:errcheck // Best-effort temp cleanup; publication errors are checked separately.
 	_, err = f.Write(b)
 	if err == nil {
 		err = f.Sync()
@@ -100,6 +109,6 @@ func (s FileBlobs) Put(ctx context.Context, b []byte) (BlobRef, error) {
 	if err != nil {
 		return ref, err
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
 	return ref, dir.Sync()
 }

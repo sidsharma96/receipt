@@ -21,12 +21,14 @@ func (s *fakeShared) Report(context.Context, cache.ConflictReport) error {
 	s.q.Store(true)
 	return cache.ErrConflict
 }
+
 func (s *fakeShared) Get(ctx context.Context, key string) (cache.Result, error) {
 	if s.q.Load() {
 		return cache.Result{}, cache.ErrConflict
 	}
 	return s.Disk.Get(ctx, key)
 }
+
 func (s *fakeShared) Put(ctx context.Context, r cache.Result) error {
 	if s.q.Load() {
 		return cache.ErrConflict
@@ -59,7 +61,7 @@ func TestVerificationReportsSharedFailure(t *testing.T) {
 	token := "a-test-token-of-at-least-24-characters"
 	t.Setenv("RECEIPT_TOKEN", token)
 	state := filepath.Join(external, "state")
-	if err := os.WriteFile(state, []byte("0"), 0600); err != nil {
+	if err := os.WriteFile(state, []byte("0"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	store := &fakeShared{Disk: cache.Disk{Dir: filepath.Join(external, "server")}}
@@ -68,7 +70,7 @@ func TestVerificationReportsSharedFailure(t *testing.T) {
 	command := "exit $(cat '" + state + "')"
 	args := []string{"run", "--remote", server.URL, "--allow-generic", "--", "/bin/sh", "-c", command}
 	invoke(t, args...)
-	if err := os.WriteFile(state, []byte("7"), 0600); err != nil {
+	if err := os.WriteFile(state, []byte("7"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	verify := append([]string{"run", "--verify"}, args[1:]...)

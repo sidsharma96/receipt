@@ -49,7 +49,7 @@ func TestCorruptEntryFallsBack(t *testing.T) {
 	if len(entries) != 1 {
 		t.Fatal(entries)
 	}
-	os.WriteFile(filepath.Join(d.Dir, "entries", entries[0].Key+".json"), []byte("partial"), 0600)
+	os.WriteFile(filepath.Join(d.Dir, "entries", entries[0].Key+".json"), []byte("partial"), 0o600)
 	_, out, status := invoke(t, args...)
 	if out != "pass" || !strings.Contains(status, "corrupt") {
 		t.Fatalf("%q %q", out, status)

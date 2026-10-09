@@ -504,3 +504,328 @@ These do not prove power-loss durability, sustained-load performance, production
 - Add richer latency metrics when aggregate counters cannot explain measured delays.
 
 The defense is not “Postgres plus blobs is scalable.” It is: “Each component owns a clear responsibility, the failure rules are explicit, and the evidence has a stated boundary.”
+
+## 2026-10-08 — Coding-quality amendment, not a new product phase
+
+Implemented: responsibility-based refactoring, enum coverage checks, complexity
+checks, wrapped-error checks, a sticky printer and independent limit validation.
+The full quotas/retention/GC phase review remains deferred at the user's request.
+Historical reviews above are preserved. See [CODING-PRACTICES.md](CODING-PRACTICES.md),
+now required reading through AGENTS.md.
+
+### 1. Data structures: what and why?
+
+Root/cache/shared commands use named string types and typed constants. InputKind
+retains the version-one wire strings. runSession groups one invocation's inputs
+and dependencies; cacheAPI holds the existing handler's shared counters and
+admission channel. Neither is a generic workflow framework.
+A printer stores an io.Writer and the first write error.
+
+Actual excerpt from internal/app/printer.go:
+
+```go
+func (p *printer) println(args ...any) {
+    if p.err == nil {
+        _, p.err = fmt.Fprintln(p.out, args...)
+    }
+}
+```
+
+### 2. Architecture and extension boundaries
+
+The CLI now separates explanation, lookup, replay, verification, failed-result
+handling and publication in internal/app/run_session.go. HTTP authentication,
+admission and timing wrap separate routing/endpoint methods in internal/cache/http.go.
+Fingerprint discovery, file hashing, environment hashing and toolchain probing
+are separate helpers. Blob inventory separates walking from layout classification.
+These are named responsibility boundaries, not guarantees of free future reuse.
+
+Actual excerpt from internal/app/app.go:
+
+```go
+if hit && o.verify {
+    return s.verify(ctx, prior, r, stable)
+}
+if r.ExitCode != 0 {
+    return s.failed(ctx, prior, r, stable)
+}
+return s.publish(ctx, r, stable)
+```
+
+### 3. Concurrency, networking and fundamental primitives
+
+No new goroutines, network endpoints or lock protocols were added. Existing
+contexts, HTTP timeouts, admission slots, SQL transactions and filesystem locks
+remain. The printer is per-command and not concurrency-safe. errors.Is preserves
+sentinel classification through wrapping; errors.Join combines independent
+validation failures without performing database work.
+
+Actual excerpt from internal/cache/maintenance.go, Limits.validate:
+
+```go
+if field.value < 0 {
+    errs = append(errs, fmt.Errorf("%s: limits must be nonnegative", field.name))
+}
+```
+
+After checking the four fields, that function returns errors.Join(errs...).
+
+### 4. Pitfalls and debugging challenges
+
+Always check the printer's final error: suppressed later writes do not undo
+earlier output or stop non-printing computations. Do not put cleanup behind
+sticky errors. A chain runner would stop on failure but would not roll back
+side effects. Typed string values still require boundary validation; exhaustive
+checks switches, not arbitrary if comparisons or every invalid cast.
+Metadata publication and lifecycle cleanup remain explicit.
+
+### 5. Hot/cold paths and costs
+
+Lookup/execution/publication remain the run-time paths; explanation/listing are
+read-only user commands. The printer skips subsequent underlying writes after
+failure. Limits validation is four independent checks before accessing the
+database. Helper extraction is a maintainability change, not a measured speedup.
+No latency, allocation, throughput or production-load benchmark was performed.
+
+### 6. Guarantees, assumptions and non-goals
+
+Configured lint checks pass with gocognit threshold 30 and nestif threshold 5.
+An enum default does not excuse missing known values. Version-one encoding is
+covered by a regression fixture; this is not proof of deterministic test output.
+HTTP now classifies wrapped miss/conflict/quota errors with errors.Is.
+Negative limit diagnostics include all failing field names in stable order.
+No general Must abstraction, closure-chain framework or strict JSON firewall
+was introduced. Operational startup errors remain returned errors.
+Existing cleanup suppressions and test errcheck exemptions remain explicit.
+
+### 7. Alternatives and decisions
+
+The alternatives were discussed with the user before this amendment:
+use a sticky printer for repeated homogeneous output; use errors.Join for
+independent validation; keep ordinary early returns for dependent storage work.
+Defer generic closure pipelines because branching workflow state and resource
+ownership would become less visible. Keep MustCompile for fixed programmer-owned
+regexes, not user config or database availability. Cognitive/nesting checks were
+selected instead of adding overlapping raw branch-count gates.
+
+### 8. Evidence, untested failures and remaining risk
+
+Verified: make check (format/config/lint/unit tests), make race, make build, and
+the full PostgreSQL suite with race detection against the disposable local
+PostgreSQL 14 cluster. A temporary extra sharedMode caused exhaustive to flag
+both parser and dispatcher, then was removed.
+New regression tests cover first-output-error/no-op behavior, root command parsing,
+wrapped HTTP storage errors, aggregate negative limits before DB access, and
+version-one input-kind encoding/key compatibility.
+Existing replay/refresh/quarantine, inventory safety, concurrency and session-loss
+tests also passed. These are local tests, not exhaustive proof of crash safety,
+network faults, filesystem portability or scalability.
+Strict unknown/duplicate/missing/null JSON handling and explicit Postgres
+maintenance-capability typing remain deferred.
+
+### 9. Revisit conditions
+
+Revisit printer design if partial-write progress, concurrent output or structured
+output requires a different contract. Consider a pipeline only when a real
+linear workflow can keep results/cleanup explicit. Revisit complexity thresholds
+when concrete false positives arise, not to conceal tangled responsibilities.
+Version and migrate encoding before changing key bytes. Make maintenance
+capabilities explicit before new blob backends. Tighten JSON boundaries with
+compatibility and malformed-input tests before treating payloads as strict schemas.
+
+## 2026-10-08 — Phase 3 review: bounded shared storage and safe maintenance
+
+Implementation status: quotas, usage statistics, storage retention, orphan
+collection, directory/store binding and maintenance CLI are implemented locally.
+This review includes the subsequent coding-quality refactor. It does not claim
+cloud deployment, high-throughput operation or strict schema-firewall completion.
+
+### 1. What data structures are used, and why?
+
+Limits and Usage are typed structs: they give budgets and measurements explicit
+names and units. BlobRef identifies bytes by hash and expected length. SQL stores
+action rows and distinct observation evidence; files store output bytes. This
+lets identical output share a blob rather than consume its size repeatedly.
+GC uses a map as a set of live hashes. A set answers whether a blob is referenced
+without rescanning every metadata record for every file.
+
+Actual excerpt from internal/cache/maintenance.go, Collect:
+
+```go
+live := map[string]bool{}
+// After validating each record and its references:
+live[ref.Hash] = true
+```
+
+The in-memory inventory/live set grows with storage size; it is not an
+unbounded-scale solution. BlobBytes includes recognized pending files as well
+as complete blobs; MetadataBytes measures JSONB text size, not database disk
+pages, indexes, WAL or backups.
+
+### 2. What is the architecture/flow, and where can it extend?
+
+Write flow: validate the result, acquire lifecycle locks, check blob capacity,
+write immutable blobs, then publish metadata/evidence and commit. A metadata
+rejection can leave orphan files; GC later removes unreferenced bytes.
+Retention and GC deliberately have different jobs. Retention deletes eligible
+metadata references; GC deletes files with no remaining reference.
+CLI orchestration uses named lookup/replay/verify/publish operations. HTTP
+authentication/admission wraps endpoint handlers rather than being duplicated.
+
+Actual excerpt from internal/cache/shared.go, Put:
+
+```go
+if err = s.checkBlobQuota(ctx, tx, r); err != nil {
+    return err
+}
+stdout, err := s.Blobs.Put(ctx, r.Stdout)
+```
+
+Store/ConflictStore isolate lookup and quarantine capabilities. ManagedBlobs
+is filesystem-specific. Postgres currently accepts BlobStore but discovers the
+managed capability at runtime: that mismatch should be made explicit before
+adding another backend. Object storage requires a new lifecycle design, not
+just a drop-in interface implementation.
+
+### 3. What concurrency/networking/fundamental primitives are used?
+
+A shared lock permits overlapping readers; an exclusive lock excludes readers
+and writers during publication or destructive maintenance. We combine SQL
+transaction-scoped advisory locks with a local filesystem flock. The filesystem
+lock continues protecting byte operations if a SQL session loses its lock.
+HTTP still has bearer authentication, bounded payloads, request timeouts and
+admission slots. No tenant identity model was added.
+
+Actual excerpt from internal/cache/lifecycle_unix.go:
+
+```go
+operation := syscall.LOCK_SH | syscall.LOCK_NB
+if exclusive {
+    operation = syscall.LOCK_EX | syscall.LOCK_NB
+}
+```
+
+LOCK_NB means try without blocking inside the syscall; a cancellation-aware loop
+retries. This is emphatically not lock-free operation. All participating servers
+must use the protocol and the same managed local filesystem.
+
+### 4. What is tricky to implement or debug?
+
+Database rollback cannot restore deleted filesystem files. GC therefore checks
+all metadata and inventory first, then deletes only unreferenced recognized
+objects. Interrupted deletion may make partial progress; retrying is supported.
+A database rollback after blob creation similarly cannot remove those blobs
+automatically. Treat them as quota-consuming orphans, not visible cached results.
+The directory's .store-id prevents a different marked metadata store from
+collecting its files. It is an ownership check, not authentication, and a
+first-time unmarked directory still depends on the operator selecting the
+correct trusted directory.
+
+Actual excerpt from internal/cache/blob_binding.go, Bind:
+
+```go
+if string(b) != id+"\n" {
+    return fmt.Errorf("blob directory belongs to another metadata store")
+}
+```
+
+context.WithoutCancel is used for transaction lifetime so cancellation cannot
+automatically release the SQL lock during filesystem work; queries and lock
+acquisition still receive the caller's cancelable context. That does not make
+every filesystem syscall interruptible. Closing/rollback/unlock ordering is
+significant; sticky errors must not suppress cleanup.
+
+### 5. What are the hot/cold paths and their costs?
+
+Hot paths are shared lookup and publication. Lookup reads metadata plus two
+bounded blobs and validates their bytes under read locks. Publication hashes
+the streams and scans inventory/metadata to enforce budgets. Those scans can
+be roughly proportional to stored files/action/evidence rows, rather than
+constant-time updates. Writers are globally serialized within this store.
+Cold paths are admin stats, limits, retention and GC; stats also scans storage.
+GC builds an in-memory live set, inventories files and performs selected
+deletions. It holds exclusive locks, so a large run can delay normal requests.
+No throughput/latency benchmark was performed. Race/concurrency tests establish
+specific behavior under tested schedules, not acceptable production latency.
+
+### 6. What are the guarantees, assumptions and non-goals?
+
+Cooperating shared writes check capacity before publication. Quota rejection
+does not convert a successful test execution into a failing test outcome.
+GC preserves every validated referenced blob, including those retained by
+quarantined winning records. Unrecognized layout, unsafe files or corrupt
+metadata make collection fail closed rather than guess.
+Retention deletes only old nonquarantined metadata/evidence.
+
+Actual excerpt from internal/cache/maintenance.go, Expire:
+
+```go
+_, err = tx.ExecContext(ctx,
+    "DELETE FROM receipt_entries_v2 WHERE NOT quarantined AND created_at<$1",
+    before)
+```
+
+Storage retention is not result freshness or revocation: local copies may still
+be replayed. Quarantine records do not expire automatically. At an evidence
+budget, an existing-key conflict can still quarantine the key while marking
+evidence_capped; an unknown key may be rejected at the action-row limit.
+Dry-run does not apply requested maintenance changes, but opening the admin
+backend can initialize/migrate schema and binding.
+Assumptions include trusted writers and filesystem permissions, cooperating
+lock-aware processes and compatible local Unix filesystem semantics.
+Non-goals include hostile-local-user safety, cloud/network-filesystem support,
+multi-tenancy, lock freedom and a complete strict JSON schema firewall.
+
+### 7. What alternatives were considered?
+
+Retrospective comparison where no earlier decision record exists:
+per-object locks/reference counters could reduce full scans and permit more
+parallel writes, but introduce more bookkeeping and deletion races. They are
+deferred until measurements justify their complexity.
+Age-only blob deletion was rejected for this implementation: a referenced blob
+can be old and still necessary. Reference-based collection keeps that distinction.
+Immediate blob deletion with retention was deferred because blobs are shared;
+separate GC sees the remaining references.
+Automatic quarantine expiry was not added because it would forget known
+contradictory evidence without a defined trust-restoration policy.
+For coding quality, the recorded user discussion selected sticky output and
+independent aggregation, not generic chain/Must wrappers for operational errors.
+
+### 8. What evidence supports the claims, and what is still untested?
+
+Verification for this commit: make check, make race, make build, diff whitespace
+checks and a fresh full PostgreSQL integration run with race detection against
+the disposable local PostgreSQL 14 cluster.
+Named tests include TestSharedQuotaAndDedup,
+TestEvidenceLimitStillQuarantines, TestMetadataQuotaAndOrphanCollection,
+TestStorageRetentionPreservesQuarantine,
+TestGCFailsClosedOnCorruptMetadataAndSymlinks,
+TestStorageBindingRejectsWrongMetadataStore,
+TestLifecycleCancellationKeepsFilesystemExclusion,
+TestDatabaseConnectionLossKeepsFilesystemExclusion,
+TestConcurrentUploadsAndCollection and TestRetentionWaitsForReaders.
+Quality regressions cover wrapped HTTP errors, aggregate validation, sticky
+output, command parsing and version-one encoding compatibility.
+Not tested exhaustively: power loss at each syscall, real disk-full/I/O failures,
+network filesystem locking semantics, heterogeneous server versions, large
+datasets, adversarial filesystem mutation or production load.
+Strict JSON decoding, durable conflict-report retry and explicit backend
+capability typing remain open. Lint and race success do not close those risks.
+
+### 9. What would make us revisit the decisions?
+
+- Slow uploads/GC blocking reads: measure first, then evaluate incremental
+  accounting, smaller locking scopes or an explicit concurrent-GC protocol.
+- Multiple hosts/cloud storage: redesign object lifecycle/ownership and run
+  backend conformance tests; native flock does not coordinate separate disks.
+- Evidence/quarantine growth: add an audited retention/trust-restoration policy
+  rather than silently dropping contradiction markers.
+- Untrusted users: implement identity, tenant-scoped authorization and stricter
+  input boundaries before exposing shared access.
+- Offline conflicts: add durable reporting/retry when local-only quarantine
+  cannot meet the desired shared correctness policy.
+- Cleanup failures or ambiguous recovery: strengthen error reporting and
+  fault-injection evidence, not merely hide errors behind helpers.
+- Key/schema changes: define a versioned compatibility/migration contract.
+- Demonstrated lint false positives: adjust rules with examples and readable
+  alternatives, rather than increasing thresholds to hide tangled workflows.

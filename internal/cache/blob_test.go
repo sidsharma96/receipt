@@ -88,7 +88,7 @@ func TestFileBlobs(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ := s.path(ref.Hash)
-	if err = os.WriteFile(p, []byte("damaged"), 0600); err != nil {
+	if err = os.WriteFile(p, []byte("damaged"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.Get(ctx, ref); !errors.Is(err, ErrCorrupt) {
