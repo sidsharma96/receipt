@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"receipt/internal/auth"
+	"receipt/internal/observe"
 	"strings"
 	"time"
 )
@@ -39,6 +40,7 @@ func (a *cacheAPI) serveScoped(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *cacheAPI) authenticate(w http.ResponseWriter, r *http.Request) (auth.Principal, bool) {
+	defer observe.Measure(r.Context(), observe.Authentication)()
 	values := r.Header.Values("Authorization")
 	if len(values) != 1 || !strings.HasPrefix(values[0], "Bearer ") || len(values[0]) != len("Bearer ")+auth.TokenLength {
 		a.unauthorized(w)

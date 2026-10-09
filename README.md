@@ -12,6 +12,11 @@ alternatives, and verification evidence.
 
 ## Start
 
+Phase 6 adds opt-in diagnostics: `receipt run --timings -- ...` prints a timing
+summary to stderr, and `receipt serve --request-log ...` emits one redacted JSON
+summary per request with an `X-Receipt-Request-ID` response header. See
+[measurement instructions and limits](docs/MEASUREMENTS.md) for repeatable experiments.
+
 ```sh
 make build
 ./receipt help

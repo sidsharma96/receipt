@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"receipt/internal/observe"
 	"runtime"
 	"slices"
 	"sort"
@@ -88,6 +89,7 @@ func Root(ctx context.Context, dir string) (string, error) {
 // identity, environment value hashes, and explicitly declared extra inputs.
 // Environment values are never persisted in plaintext.
 func Build(ctx context.Context, dir string, args, extra, ignoredEnv []string, generic bool) (Manifest, error) {
+	defer observe.Measure(ctx, observe.Fingerprint)()
 	if len(args) == 0 {
 		return Manifest{}, fmt.Errorf("missing test command")
 	}

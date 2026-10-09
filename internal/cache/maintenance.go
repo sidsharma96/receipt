@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"receipt/internal/fingerprint"
+	"receipt/internal/observe"
 	"sync"
 	"time"
 )
@@ -71,7 +72,9 @@ func (tx *storageTx) Commit() error   { err := tx.Tx.Commit(); tx.close(); retur
 func (s Postgres) lifecycle(ctx context.Context, exclusive bool) (*storageTx, error) {
 	// Do not let database/sql release the lock automatically on cancellation
 	// while a filesystem operation is still in progress. Release on return.
+	poolDone := observe.Measure(ctx, observe.Pool)
 	conn, err := s.DB.Conn(ctx)
+	poolDone()
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +88,10 @@ func (s Postgres) lifecycle(ctx context.Context, exclusive bool) (*storageTx, er
 	if exclusive {
 		function = "pg_advisory_xact_lock"
 	}
-	if _, err = tx.ExecContext(ctx, "SELECT "+function+"($1)", lifecycleLock); err != nil {
+	lockDone := observe.Measure(ctx, observe.DatabaseLock)
+	_, err = tx.ExecContext(ctx, "SELECT "+function+"($1)", lifecycleLock)
+	lockDone()
+	if err != nil {
 		tx.Rollback() //nolint:errcheck // Preserve the primary error; rollback also releases lifecycle resources.
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
@@ -102,7 +108,9 @@ func (s Postgres) lifecycle(ctx context.Context, exclusive bool) (*storageTx, er
 		tx.Rollback() //nolint:errcheck // Preserve the primary error; rollback also releases lifecycle resources.
 		return nil, err
 	}
+	fileLockDone := observe.Measure(ctx, observe.FilesystemLock)
 	tx.unlock, err = lockBlobDirectory(ctx, root, exclusive)
+	fileLockDone()
 	if err != nil {
 		tx.Rollback() //nolint:errcheck // Preserve the primary error; rollback also releases lifecycle resources.
 		return nil, err
@@ -182,6 +190,7 @@ func (s Postgres) policy(ctx context.Context, tx *storageTx) (Limits, error) {
 }
 
 func metadataUsage(ctx context.Context, tx *storageTx) (Usage, error) {
+	defer observe.Measure(ctx, observe.SQL)()
 	var u Usage
 	err := tx.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(octet_length(record::text)),0), count(*) FILTER(WHERE evidence_capped) FROM receipt_entries_v2`).Scan(&u.Entries, &u.MetadataBytes, &u.EvidenceCapped)
 	if err != nil {
@@ -203,6 +212,7 @@ func jsonBytes(ctx context.Context, tx *storageTx, b []byte) (int64, error) {
 }
 
 func (s Postgres) inventory(ctx context.Context, tx *storageTx) (Usage, []BlobObject, error) {
+	defer observe.Measure(ctx, observe.Inventory)()
 	u, err := metadataUsage(ctx, tx)
 	if err != nil {
 		return u, nil, err

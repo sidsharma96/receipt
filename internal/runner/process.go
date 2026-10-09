@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"receipt/internal/observe"
 	"time"
 )
 
@@ -36,6 +37,7 @@ type Output struct {
 
 // Run executes a command directly and streams its output while capturing bounded copies.
 func Run(ctx context.Context, dir string, args []string, out, errOut io.Writer) (Output, error) {
+	defer observe.Measure(ctx, observe.Execution)()
 	if len(args) == 0 {
 		return Output{}, errors.New("missing command")
 	}

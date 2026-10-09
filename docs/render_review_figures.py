@@ -7,6 +7,8 @@ from html import escape
 from pathlib import Path
 import re
 import sys
+import json
+import statistics
 
 ROOT = Path(__file__).resolve().parent
 INK = '#24394b'
@@ -423,7 +425,38 @@ def issuance_failure():
     return d.finish(), ['Issuance commits the credential row before printing its secret.', 'Printing fails. The row remains even if the operator never receives a usable token.', 'Use the public ID to revoke that row, then issue a replacement.'], 'Watch which side succeeded. Failure to deliver the secret does not undo the committed credential. This is why issuance errors need recovery steps, not just a retry with no inspection.'
 
 
+def local_measurements():
+    record = json.loads((ROOT/'measurements/phase-6-2026-10-09.json').read_text())
+    d = Drawing('local-measurements', 330, 'A measured CodeCraft hit was faster, but still did input work')
+    d.text(25, 32, 'ONE CODECRAFT SELECTION · 15 PASSING TESTS', 14)
+    for y, kind, label, color in [(100,'direct','Direct pytest',BLUE),(180,'miss','First Receipt run',GOLD),(260,'hit','Receipt hit',GREEN)]:
+        samples = [s['client_ns']/1e6 for s in record['local']['samples'] if s['kind']==kind]
+        value = statistics.median(samples)
+        d.text(25,y,label,16)
+        d.rect(205,y-25,value*.66,36,'#edf3ef',color,2)
+        d.text(213+value*.66,y,f'{value:.0f} ms',15,color)
+    d.text(25,313,'Medians of 5 direct / 5 hit runs; the first Receipt run is one sample.',14)
+    return d.finish(), [], 'Compare the bars on one duration scale. The miss pays for execution and two input scans. The hit avoids pytest but still scans inputs. Ordered local samples with warm OS caches are not a general speedup guarantee.'
+
+
+def measured_wait():
+    record = json.loads((ROOT/'measurements/phase-6-2026-10-09.json').read_text())
+    sample = next(s for s in record['shared'] if s['store_entries']==128 and s['mode']=='write' and s['workers']==4)
+    n=len(sample['sorted_client_ns'])
+    total=statistics.mean(sample['sorted_client_ns'])/1e6
+    wait=sample['server_stage_totals_ns']['db_lock']/n/1e6
+    d=Drawing('measured-wait',315,'Concurrent uploads spent much of their measured time waiting for the database lock')
+    d.text(25,32,'128 ENTRIES · 4 CLIENT WORKERS · 32 REPEATED UPLOADS',14)
+    for y,label,value,color in [(110,'Whole request',total,BLUE),(215,'Database lock call',wait,GOLD)]:
+        d.text(25,y,label,16)
+        d.rect(230,y-28,value*5,40,'#f0f3ef',color,2)
+        d.text(240+value*5,y,f'{value:.1f} ms',15,color)
+    d.text(25,283,'Mean durations, same scale. The lock call is inside the request—not extra.',15)
+    return d.finish(), [], 'The shorter bar measures the advisory-lock call, including its database round trip and wait. Do not add it to the whole-request bar. These were duplicate uploads on one local server; this is evidence of waiting in this experiment, not a production throughput limit.'
+
+
 FIGURES = {
+    'figure-6-local-measurements': local_measurements, 'figure-6-measured-wait': measured_wait,
     'figure-1-scan-gap': scan_gap, 'figure-2-conflict-state': conflict_state,
     'figure-4-failed-save-states': failed_save_states, 'figure-4-cleanup-retry': cleanup_retry,
     'figure-5-issuance-failure': issuance_failure,

@@ -2,7 +2,7 @@
 
 This is the detailed reference record, preserved during the 2026-10-09 documentation revamp. Start with [the working guide](WORKING-DOC.md) for the current explanation, or [open the HTML reader](WORKING-DOC.html). These reviews describe decisions and evidence at their recorded dates; later amendments may supersede earlier behavior. They are not the required reading order for learning Receipt.
 
-Illustrations added 9 October 2026: [A manifest is one record with named fields](#figure-1-manifest) · [An edited file leads to a different lookup](#figure-1-key-change) · [The server joins a database record to output files](#figure-2-storage) · [A failed database save can leave a complete output file](#figure-2-interrupted-write) · [The lock protects the gap before opening the file](#figure-3-reader-cleanup) · [The same upload can require more inspection](#figure-3-upload-cost) · [Two records can share the same “still needed” entries](#figure-3-collection-map) · [Each check answers a different question](#figure-4-validation) · [A valid credential can still be refused an upload](#figure-5-permissions) · [Revocation changes the next credential check](#figure-5-revocation) · [A hit and a miss do different work](#figure-1-local-flow) · [Full slots refuse another request](#figure-2-admission) · [Figure 1.4 · Matching scans can miss a change in between](#figure-1-scan-gap) · [Figure 2.4 · A conflict error must leave a warning behind](#figure-2-conflict-state) · [Figure 4.2 · What remains after a failed save?](#figure-4-failed-save-states) · [Figure 4.3 · Cleanup retries from the state that remains](#figure-4-cleanup-retry) · [Figure 5.3 · Saving a credential and delivering it are separate steps](#figure-5-issuance-failure).
+Illustrations added 9 October 2026: [A manifest is one record with named fields](#figure-1-manifest) · [An edited file leads to a different lookup](#figure-1-key-change) · [The server joins a database record to output files](#figure-2-storage) · [A failed database save can leave a complete output file](#figure-2-interrupted-write) · [The lock protects the gap before opening the file](#figure-3-reader-cleanup) · [The same upload can require more inspection](#figure-3-upload-cost) · [Two records can share the same “still needed” entries](#figure-3-collection-map) · [Each check answers a different question](#figure-4-validation) · [A valid credential can still be refused an upload](#figure-5-permissions) · [Revocation changes the next credential check](#figure-5-revocation) · [A hit and a miss do different work](#figure-1-local-flow) · [Full slots refuse another request](#figure-2-admission) · [Figure 1.4 · Matching scans can miss a change in between](#figure-1-scan-gap) · [Figure 2.4 · A conflict error must leave a warning behind](#figure-2-conflict-state) · [Figure 4.2 · What remains after a failed save?](#figure-4-failed-save-states) · [Figure 4.3 · Cleanup retries from the state that remains](#figure-4-cleanup-retry) · [Figure 5.3 · Saving a credential and delivering it are separate steps](#figure-5-issuance-failure) · [Measured local runs](#figure-6-local-measurements) · [Measured lock waiting](#figure-6-measured-wait).
 
 Updated 2026-10-09. Phases 1–3 describe the implementation at ff45e74; Phase 4 describes validation and failure testing committed in 90564c3. The appended Phase 5 review records scoped service credentials. Later amendments take precedence where earlier reviews describe decoding, local publication or shared-token access.
 
@@ -24,13 +24,14 @@ The writing rules are in [PROSE-STYLE-GUIDE.md](PROSE-STYLE-GUIDE.md). In short:
 
 ## What exists now?
 
-Receipt has five implemented parts:
+Receipt has six implemented parts:
 
 - Phase 1 saves successful command results on the user's computer, explains input changes, reruns results for verification and prunes old local entries.
 - Phase 2 shares results through HTTP, stores result descriptions in PostgreSQL, stores output in content-named files and remembers conflicting observations.
 - Phase 3 limits selected storage quantities and provides maintenance commands that coordinate with readers and writers.
 - Phase 4 defines accepted JSON fields and values, rejects malformed entries and reports before storage, and tests selected interrupted storage operations.
 - Phase 5 adds opt-in scoped service credentials with expiry and revocation, local credential administration and authenticated identity inspection.
+- Phase 6 adds opt-in timing summaries, server-generated request IDs, and repeatable local/shared measurements; it does not add runner adapters or durable caller history.
 
 The code also has typed command names, automated lint checks and selected error-handling helpers. These are implementation conventions, not another product phase.
 
@@ -1455,6 +1456,131 @@ If this becomes a user-facing product, add verified account identity, sessions, 
 Earlier reviews correctly described one shared token as the implemented policy at that time. Phase 5 now adds a separate opt-in credential mode; the old policy remains when --credentials is absent. Phase 4's proposed operation permissions are implemented here, but durable upload attribution, organizations, tenant isolation and browser login are not.
 
 Phase 5 decisions: use random opaque service tokens and persisted hashes; require explicit scopes; use the database clock and fresh row lookup; reject unmapped scoped routes and backend failures; keep local database administration and separate bounded authentication admission; retain at most 1024 credential rows under cooperating issuance locks. Existing key/storage behavior and trusted-directory assumptions are unchanged. Measurement, credential retention/purge and durable actor history are the next concrete design questions, not implemented promises.
+
+## Phase 6 review: find where the time went
+
+Implemented and measured 2026-10-09. This phase adds opt-in diagnostics and small repeatable experiments. It does not change cache keys, wire data, permissions or lock ordering. The experiment commands and raw samples are in [MEASUREMENTS.md](MEASUREMENTS.md).
+
+Imagine Alice uploads a tiny result while three other clients do the same. The file is small, but her request waits. We now measure the wait separately from opening output files, instead of assuming the file size explains the delay.
+
+### 1. What data structures are used, and why?
+
+Each operation owns a Trace. From [internal/observe/observe.go](../internal/observe/observe.go):
+
+```go
+type Trace struct {
+	mu    sync.Mutex
+	times [stageCount]Timing
+}
+```
+
+The array has one slot for each known timing stage. A slot holds a call count and accumulated duration. Repeated file operations update one slot instead of adding an unlimited list of events. The mutex lets overlapping callers update that record safely; it does not protect the cache files or replace their locks.
+
+A map would let callers invent stage names, but we deliberately want a small fixed vocabulary. A growing list would retain individual spans and their order, which we do not need for this summary. A snapshot returns a new slice, so formatting a log cannot modify the live counters. Request summaries are structs with explicitly selected fields, not copies of arbitrary headers.
+
+### 2. What is the architecture and flow? Where can it extend?
+
+With --request-log, an HTTP wrapper creates a server-generated request ID and attaches a Trace to the request context. The context carries that small record through existing function calls, along with cancellation. Authentication and storage record their own boundaries. After the handler returns and releases its locks, the wrapper writes one JSON summary to stderr. The same ID is in the response header.
+
+For a local command, --timings attaches a Trace before input discovery and prints one summary after the command finishes. Child output remains separate from this new summary. The command's arguments, environment values and output are not fields in the summary.
+
+The observe package knows nothing about SQL or HTTP. The cache package owns the HTTP summary; the app package owns CLI reporting. A future exporter could consume these summaries, but a distributed trace with parent/child requests would need additional design. We have not implemented that.
+
+### 3. What concurrency, networking and fundamental primitives are used?
+
+A mutex protects each fixed timing array. Another mutex keeps two handlers from interleaving their JSON writes to the same logger. An atomic counter gives requests different sequence numbers inside a randomly generated logger namespace. The server ignores caller-supplied request IDs, so a caller cannot put arbitrary text into that field.
+
+The context still carries deadlines and cancellation. Timing a database-lock call includes its round trip and waiting; it is not a measurement of CPU work alone. Authentication time includes its database lookup and possible connection-pool wait. The separate db_pool stage covers the shared-storage connection, not every database interaction.
+
+The workload harness uses goroutines for one or four clients and real HTTP over loopback. A start channel lets workers begin together. This is controlled local concurrency, not a model of internet traffic.
+
+### 4. What is tricky to implement or debug?
+
+Nested timers are easy to misread. Inventory includes metadata accounting and file enumeration; those operations may also have their own timers. Adding every stage together double-counts some time. Missing stages mean no measurement was recorded there, not that the work was instantaneous.
+
+The response wrapper must preserve the first final HTTP status. Implicit successful writes, denial, panic and log-write failures need distinct treatment. A panic remains a panic and gets status 0 in the diagnostic record; the logger must not claim a successful response.
+
+The log destination can block. We chose a synchronous write after storage locks are released, with no background queue. This keeps ownership simple, but slow stderr can delay handler completion. The recorded handler duration stops before logging, so client time and that duration can differ. This phase does not hide that cost behind an unlimited queue.
+
+### 5. What are the hot/cold paths and their costs?
+
+Timing and logging are optional work on ordinary requests. Each measured boundary reads the clock and updates one array slot. Disabled measurement does not create a Trace. Enabled logging adds one serialized JSON write per request. The experiments use a memory buffer, so they do not establish real log-collector performance.
+
+CodeCraft's selected 15-test suite passed. The median direct run was 253 ms, the first Receipt run took 592 ms, and the median hit was 127 ms. A miss performs the command plus two input scans; a hit still performs one scan. These are five direct runs, one miss and five hits in a fixed order, not a general speedup guarantee.
+
+<!-- review-figure:figure-6-local-measurements:start -->
+<a id="figure-6-local-measurements"></a>
+
+#### Figure 6.1 · A hit saves work, not all work
+
+<!-- visual-summary:start -->
+![Figure 6.1 · A hit saves work, not all work](assets/reviews/figure-6-local-measurements.svg)
+
+Compare the bars on one duration scale. The miss pays for execution and two input scans. The hit avoids pytest but still scans inputs. Ordered local samples with warm OS caches are not a general speedup guarantee.
+<!-- visual-summary:end -->
+
+The bars use the recorded local samples. Direct execution and hits show medians; the miss is one sample. No exercise implementation or project configuration changed.
+
+Source: [measurement script](../scripts/measure_local.py) and [raw samples](measurements/phase-6-2026-10-09.json).
+<!-- review-figure:figure-6-local-measurements:end -->
+
+Shared experiments used 16 or 128 records, roughly 1 KiB outputs and one or four clients. They covered reads, duplicate writes, mixed reads/writes and reads started alongside dry-run collection. At 128 records and four clients, duplicate writes had a 74.67 ms median; their mean database-lock call took 54.56 ms. Those are different statistics, so the next picture compares means with means.
+
+<!-- review-figure:figure-6-measured-wait:start -->
+<a id="figure-6-measured-wait"></a>
+
+#### Figure 6.2 · A small upload can spend time waiting
+
+<!-- visual-summary:start -->
+![Figure 6.2 · A small upload can spend time waiting](assets/reviews/figure-6-measured-wait.svg)
+
+The shorter bar measures the advisory-lock call, including its database round trip and wait. Do not add it to the whole-request bar. These were duplicate uploads on one local server; this is evidence of waiting in this experiment, not a production throughput limit.
+<!-- visual-summary:end -->
+
+The shorter duration is inside the whole request, not additional time. Collection and other writers use the same coordination rules; more clients do not make an exclusive section run in parallel.
+
+Source: [workload harness](../internal/cache/measurement_test.go) and [raw samples](measurements/phase-6-2026-10-09.json).
+<!-- review-figure:figure-6-measured-wait:end -->
+
+### 6. What are the guarantees, assumptions and non-goals?
+
+New request summaries contain no credential, caller label, input key, raw URL, query string, SQL text, error message or test output. This is a property of the selected summary fields, not a sanitizer for existing CLI messages or child output. Keep protecting the full stderr stream.
+
+A failed diagnostic write does not change the command result or HTTP outcome. It increments the request logger's failure count; a blocked writer can still block. The code does not promise durable logs, authentication audit history or a record for a request rejected by the HTTP server before it reaches the handler.
+
+Storage validation, quarantine and locking still decide whether work may proceed. Observing those operations does not relax them. The measured workloads do not prove production latency, maximum throughput, multi-server safety or complete dependency discovery.
+
+### 7. What alternatives were considered, and why?
+
+These comparisons explain this phase's choices. Per-step log lines would expose sequence more directly, but add writes and require joining many records. One summary gives enough information for this first question: where did this operation spend measured time?
+
+An asynchronous log queue could reduce request delays. It would need a size limit, a rule for dropped records, shutdown handling and tests for a stalled writer. We deferred it and documented synchronous backpressure instead. A full tracing library could provide span trees and exporters; this phase does not yet need an external collector, so no new dependency was added.
+
+We did not remove the global storage lock because waiting became visible. A replacement must still prevent cleanup from deleting a needed file and prevent concurrent writers from spending the same remaining quota.
+
+### 8. What evidence supports the claims, and what remains untested?
+
+Regression tests check concurrent timing accumulation and ID uniqueness, separate request records, redaction, denied requests not touching storage, log-write failure, first-status preservation and panic propagation. A real PostgreSQL test holds the exclusive lifecycle lock, cancels a waiting reader, verifies recorded lock time with no file read, then releases the lock and verifies a successful read.
+
+The workload harness saves every client duration and aggregate server stage totals. The local harness rejects failed commands and supposed hits that execute the child. These checks distinguish an observed hit from simply calling a run fast.
+
+Verification includes make check, make race and make build, with the shared tests pointed at a fresh disposable PostgreSQL instance. The final verification record below distinguishes those runs from documentation checks. Remaining gaps include production networks/TLS, sustained arrivals, large stores, slow logging destinations, host failure and comprehensive performance overhead measurement. The collection workload uses dry-run scans, not actual deletion.
+
+The new diagrams use measured samples and label their scope. They are not illustrations of a hypothetical production distribution. Full local HTML browser/phone checks remain subject to the previously recorded browser restriction.
+
+### 9. What would make us revisit these decisions?
+
+If request logging noticeably delays clients, measure destination behavior and add a bounded delivery policy. If one summary cannot explain overlapping work, consider ordered spans instead of pretending summed durations form a timeline.
+
+If input scanning dominates the useful saved work, investigate which files and probes cost time before narrowing the dependency model. If lock waits dominate representative shared workloads, measure inventory and lock hold time before designing finer coordination.
+
+For runners, Go support already exists with a go env probe. Next, validate that path against toolchain and dependency changes, then add Cargo and Vitest adapters with explicit input rules. Generic command execution is not evidence that their resolved dependencies are covered. LeetCode currently uses inline Python harnesses; CodeCraft is the existing uv/pytest project used here.
+
+Final Phase 6 verification on 9 October 2026: make check passed with zero lint issues; the uncached race-enabled full suite passed against a fresh disposable PostgreSQL 14.17 cluster; make build passed. Sixteen shared workload combinations completed without a failed request, and the selected CodeCraft suite passed all 15 tests. Seven documentation tests passed, including six nine-question reviews and all 20 attributed review excerpts. Generated HTML/figures, local links and git whitespace checks passed. Both new measured SVGs were rendered and inspected. Browser-level HTML/phone checks remain incomplete; no production-load claim is made.
+
+### Amendments to earlier reviews
+
+Earlier requests for measurements now have this limited local evidence. Phase 5's durable caller history, credential purging, private tenants and production deployment remain deferred. Phase 6 adds no runner adapter and no changes to key or result encoding.
 
 ## Documentation revamp verification: 9 October 2026
 

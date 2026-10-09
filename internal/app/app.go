@@ -52,7 +52,7 @@ const help = `Receipt — reuse successful test results for identical declared i
   receipt cache list [--cache-dir DIR]
   receipt cache prune [--cache-dir DIR] [--max-bytes N]
   receipt serve [--cache-dir DIR] [--listen 127.0.0.1:7777]
-                [--postgres] [--credentials] [--max-inflight 16]
+                [--postgres] [--credentials] [--max-inflight 16] [--request-log]
   receipt auth issue --cache-dir DIR --subject LABEL --scopes read,publish,report
                      [--expires-in 24h]
   receipt auth list --cache-dir DIR
@@ -68,6 +68,7 @@ Auth administration requires RECEIPT_DATABASE_URL; issue reveals the secret once
 Credential mode requires --postgres and never accepts the legacy shared token.
 
 Run options:
+  --timings         Write a redacted timing summary to stderr.
   --bypass          Run directly; do not read or write the cache.
   --refresh         Skip lookup; run tests and replace the local observation.
   --verify          Rerun a hit; quarantine the key if outputs or exit code differ.
@@ -215,7 +216,7 @@ func quarantine(dir, key string) error {
 	return atomically(filepath.Join(dir, "quarantine", key), []byte("conflicting observation; do not reuse\n"))
 }
 
-func run(ctx context.Context, mode commandName, args []string, out, errOut io.Writer) (int, error) {
+func run(ctx context.Context, mode commandName, args []string, out, errOut io.Writer) (code int, runErr error) {
 	f := flag.NewFlagSet(string(mode), flag.ContinueOnError)
 	f.SetOutput(errOut)
 	var o options
@@ -225,6 +226,7 @@ func run(ctx context.Context, mode commandName, args []string, out, errOut io.Wr
 	f.BoolVar(&o.refresh, "refresh", false, "skip cache lookup")
 	f.BoolVar(&o.verify, "verify", false, "verify a hit by running again")
 	f.BoolVar(&o.generic, "allow-generic", false, "allow arbitrary commands")
+	timings := f.Bool("timings", false, "write an opt-in timing summary to stderr")
 	if e := f.Parse(args); e != nil {
 		if errors.Is(e, flag.ErrHelp) {
 			return 0, nil
@@ -232,6 +234,11 @@ func run(ctx context.Context, mode commandName, args []string, out, errOut io.Wr
 		return 0, e
 	}
 	command := f.Args()
+	if *timings {
+		var finish func(int, error)
+		ctx, finish = startRunTrace(ctx, errOut)
+		defer func() { finish(code, runErr) }()
+	}
 	if len(command) == 0 {
 		return 0, fmt.Errorf("supply a command after --")
 	}
@@ -433,6 +440,7 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 	addr := f.String("listen", "127.0.0.1:7777", "listen address")
 	postgres := f.Bool("postgres", false, "use RECEIPT_DATABASE_URL for shared metadata")
 	credentials := f.Bool("credentials", false, "use database-backed scoped credentials (requires --postgres)")
+	requestLog := f.Bool("request-log", false, "write redacted request timing summaries to stderr")
 	maxInflight := f.Int("max-inflight", 16, "maximum active API requests")
 	if e := f.Parse(args); e != nil {
 		if errors.Is(e, flag.ErrHelp) {
@@ -487,6 +495,11 @@ func serve(ctx context.Context, args []string, errOut io.Writer) error {
 		handler = cache.HandlerAuthorized(store, authenticator, *maxInflight)
 		authDescription = "scoped credentials"
 	}
+	handler, finishLog, e := requestLogging(handler, *requestLog, errOut)
+	if e != nil {
+		return e
+	}
+	defer finishLog()
 	srv := &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	finished := make(chan struct{})
 	defer close(finished)

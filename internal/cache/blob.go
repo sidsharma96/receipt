@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"receipt/internal/fingerprint"
+	"receipt/internal/observe"
 )
 
 // BlobStore stores immutable bytes by SHA-256. Put must not acknowledge an
@@ -38,6 +39,7 @@ func (s FileBlobs) path(hash string) (string, error) {
 
 // Get verifies the length and hash before returning an object's bytes.
 func (s FileBlobs) Get(ctx context.Context, ref BlobRef) ([]byte, error) {
+	defer observe.Measure(ctx, observe.Files)()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -68,6 +70,7 @@ func (s FileBlobs) Get(ctx context.Context, ref BlobRef) ([]byte, error) {
 
 // Put durably publishes immutable bytes without overwriting an existing object.
 func (s FileBlobs) Put(ctx context.Context, b []byte) (BlobRef, error) {
+	defer observe.Measure(ctx, observe.Files)()
 	ref := BlobRef{Hash: fingerprint.Hash(b), Size: len(b)}
 	if len(b) > MaxBlobBytes {
 		return ref, fmt.Errorf("blob exceeds limit")

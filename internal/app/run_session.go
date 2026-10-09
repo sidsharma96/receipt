@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"receipt/internal/cache"
 	"receipt/internal/fingerprint"
+	"receipt/internal/observe"
 	"receipt/internal/runner"
 	"time"
 )
@@ -65,6 +66,7 @@ func (s runSession) recordHistory() error {
 }
 
 func (s runSession) lookup(ctx context.Context) (cache.Result, bool, error) {
+	defer observe.Measure(ctx, observe.Lookup)()
 	if s.options.refresh {
 		prior, err := s.disk.Get(ctx, s.key)
 		if err != nil && !errors.Is(err, cache.ErrMiss) {

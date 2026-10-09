@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"receipt/internal/fingerprint"
+	"receipt/internal/observe"
 
 	// Register the PostgreSQL driver used by the persistence boundary.
 	_ "github.com/lib/pq"
@@ -123,6 +124,7 @@ func (s Postgres) Migrate(ctx context.Context) error {
 
 // Quarantined reports whether a shared key has been marked unsafe for reuse.
 func (s Postgres) Quarantined(ctx context.Context, key string) (bool, error) {
+	defer observe.Measure(ctx, observe.SQL)()
 	if !validKey.MatchString(key) {
 		return false, fmt.Errorf("invalid key")
 	}
@@ -148,7 +150,9 @@ func (s Postgres) Get(ctx context.Context, key string) (Result, error) {
 	var raw []byte
 	var digest string
 	var q bool
+	sqlDone := observe.Measure(ctx, observe.SQL)
 	err = tx.QueryRowContext(ctx, "SELECT record, digest, quarantined FROM receipt_entries_v2 WHERE key=$1", key).Scan(&raw, &digest, &q)
+	sqlDone()
 	if errors.Is(err, sql.ErrNoRows) {
 		return empty, ErrMiss
 	}
@@ -226,6 +230,7 @@ func (s Postgres) Report(ctx context.Context, report ConflictReport) error {
 }
 
 func (s Postgres) publishTx(ctx context.Context, tx *storageTx, report ConflictReport, raw []byte, force bool) error {
+	defer observe.Measure(ctx, observe.SQL)()
 	if err := report.validate(); err != nil {
 		return err
 	}

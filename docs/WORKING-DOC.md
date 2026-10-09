@@ -6,7 +6,7 @@ Updated 9 October 2026. This guide explains the code that exists now. Phases 1â€
 
 You have a Python project and run its tests with `uv run pytest`. Pytest checks your code. Uv starts it in the project's Python environment. Receipt sits around that command: it can remember a successful run and show its saved output when the recorded inputs match next time.
 
-We will follow that run through five changes to Receipt: saving it locally, sharing it, cleaning up storage, checking incoming data, and limiting what callers may do. The examples use Alice and a continuous integration worker, called CI. CI is a program that runs tests automatically.
+We will follow that run through six changes to Receipt: saving it locally, sharing it, cleaning up storage, checking incoming data, limiting what callers may do, and measuring where time goes. The examples use Alice and a continuous integration worker, called CI. CI is a program that runs tests automatically.
 
 You do not need to understand database locks or Go channels before starting. Each chapter introduces a problem before the code that solves it. Diagrams show sequences, not measured timings. Examples of output and filenames are illustrative.
 
@@ -323,7 +323,80 @@ For permissions, it becomes: a stolen secret must stop working on later checks; 
 
 The full [nine-question reviews](PHASE-REVIEWS.md) cover structures, architecture, coordination, pitfalls, costs, guarantees, alternatives, evidence, and reasons to revisit choices. Read them when you want to inspect a particular decision in depth.
 
+## 7. Find where the time went
+
+Alice uploads a small test result. It takes longer than she expects. Reading a
+small file should be quick, but perhaps the request has not reached the file yet:
+another writer or cleanup may hold the lock it needs.
+
+Run the server with --request-log to give each request a server-generated ID and
+one timing summary. The ID appears in its response header too, so Alice can find
+the matching summary without printing her token or test output into the log.
+
+```diagram
+Figure 6. Reading the request in parts, not guessing from its payload
+Credential check | Receipt checks whether this request may proceed.
+Connection and locks | The request can wait here before opening any output file.
+Metadata and files | Receipt reads and checks the stored result.
+Response, then summary | The response reports its request ID; the handler's summary records measured stages.
+```
+
+### Read one measurement carefully
+
+In our local experiment, four clients repeatedly uploaded already-stored results
+into a store with 128 descriptions. The mean database-lock call took about
+55 milliseconds. That call includes a database round trip and time waiting for
+other work to release the lock. It is inside the full request duration, not extra
+time to add on top. [The measured bars](PHASE-REVIEWS.html#figure-6-measured-wait)
+show both on the same scale.
+
+Some timers contain others: counting storage includes file enumeration, for
+example. Adding every number would count some work twice. These summaries are
+clues about where to investigate, not a complete accounting of every instruction.
+
+### Does Receipt help the real test command?
+
+We ran a CodeCraft selection with 15 passing tests. Five direct runs had a median
+of 253 milliseconds. The first Receipt run took 592 milliseconds; it ran the
+tests and scanned inputs before and afterward. Five saved-result hits had a
+median of 127 milliseconds. They skipped pytest but still inspected inputs.
+
+The median is the middle duration after sorting the samples. These few ordered
+samples, on one machine with warm filesystem caches, are not a promise for every
+project. [The comparison](PHASE-REVIEWS.html#figure-6-local-measurements) and
+[repeatable commands](MEASUREMENTS.md) let you inspect what was measured.
+
+### What do diagnostics cost?
+
+Each enabled timer reads the clock and updates a small record. The server writes
+one summary after the request handler releases its storage locks. We deliberately
+did not add a background queue: a slow destination can therefore delay handler
+completion. The measured handler duration excludes the final log write.
+
+These new summaries omit secrets and captured output. That does not make all
+stderr safe to publish: the test process can still print whatever it normally
+prints. Diagnostics are also not a durable history of who submitted each result.
+
+### Try explaining it
+
+If four simultaneous writes spend much of their time waiting for a lock, why
+would adding more writer goroutines not necessarily make them finish faster?
+
+### Answer: They still need the same exclusive access
+
+More goroutines can wait together, but only one can hold this exclusive lock.
+First measure what happens while it is held. A different locking design would
+still need to protect files from cleanup and enforce the shared storage budget.
+
 ## Updates and documentation records
+
+### 9 October 2026: Phase 6 diagnostics and local measurements
+
+Implemented opt-in CLI timings and redacted request summaries, a fixed-size
+per-operation recorder, and repeatable local/shared experiments. See the
+[nine-question Phase 6 review](PHASE-REVIEWS.html#phase-6-review-find-where-the-time-went)
+and [raw samples](measurements/phase-6-2026-10-09.json). Runner adapters, durable
+caller history and production deployment remain separate future work.
 
 ### 9 October 2026: separate teaching from the review record
 

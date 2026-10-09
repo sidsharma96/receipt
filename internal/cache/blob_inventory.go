@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"receipt/internal/observe"
 	"regexp"
 	"strings"
 )
@@ -46,6 +47,7 @@ func (s FileBlobs) Location() (string, error) {
 
 // Inventory lists recognized regular objects and rejects unsafe directory layouts.
 func (s FileBlobs) Inventory(ctx context.Context) ([]BlobObject, error) {
+	defer observe.Measure(ctx, observe.Files)()
 	root, err := s.Location()
 	if err != nil {
 		return nil, err
@@ -142,6 +144,7 @@ func inventoryRootFile(rel string, d fs.DirEntry) (*BlobObject, error) {
 
 // Remove deletes a validated inventory object; the caller must hold the lifecycle lock.
 func (s FileBlobs) Remove(ctx context.Context, o BlobObject) error {
+	defer observe.Measure(ctx, observe.Files)()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
