@@ -81,8 +81,8 @@ class WorkingGuideTests(unittest.TestCase):
         parser.feed(renderer.OUTPUT.read_text())
         self.assertFalse(parser.tags)
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
-        self.assertEqual(parser.figures, 10)
-        self.assertEqual(parser.answers, 8)
+        self.assertEqual(parser.figures, 14)
+        self.assertEqual(parser.answers, 9)
         for link in parser.links:
             if link.startswith(("http://", "https://")):
                 continue
@@ -98,7 +98,7 @@ class WorkingGuideTests(unittest.TestCase):
         source = renderer.SOURCE.read_text()
         pattern = r"\[([^\]]+\.go)\]\(([^)]+\.go)\):\n\n```go\n(.*?)\n```"
         excerpts = re.findall(pattern, source, re.DOTALL)
-        self.assertEqual(len(excerpts), 5)
+        self.assertEqual(len(excerpts), 9)
         for _, filename, excerpt in excerpts:
             actual = (renderer.ROOT / filename).read_text()
             self.assertIn(re.sub(r"\s+", " ", excerpt).strip(),

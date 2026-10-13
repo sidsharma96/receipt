@@ -589,7 +589,206 @@ The current CI token expires on 11 November, and renewal is not automated.
 The [full deployment review](PHASE-REVIEWS.html#deployment-review-one-server-over-https-13-october-2026)
 answers all nine questions, including alternatives, evidence and revisit conditions.
 
+## 10. Final walkthrough: miss, hit, conflict and recovery
+
+Follow one command through four situations:
+
+```sh
+receipt run -- uv run pytest
+```
+
+Assume the Python environment already works and Receipt is configured to use
+your remote cache. The question is: do we have a saved successful result for
+these recorded inputs, and are we still allowed to reuse it?
+
+### A miss: run the tests
+
+You run the command for the first time. Receipt builds a manifest: a description
+of the inputs it knows about. This includes project files, command arguments,
+environment-value hashes and Python environment information. It hashes that
+description into a cache key, which is the name used to look up the result.
+Call our example key `K`.
+
+Watch where pytest runs in the diagram: on the client, not the cache server.
+
+![A miss runs pytest on the client, then checks whether its result can be saved.](assets/reviews/walkthrough-miss.svg)
+
+Text equivalent: recorded inputs produce K. Neither the local nor remote cache
+has a reusable result, so the client runs pytest. A successful run with stable
+recorded inputs, bounded output and no local quarantine can be saved locally
+and uploaded. Otherwise Receipt does not save a reusable result. Storage or
+network failures can still prevent a save.
+
+Receipt records the inputs again after execution. Actual excerpt from
+[app.go](../internal/app/app.go):
+
+```go
+after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
+stable := e == nil && after.Key() == key
+```
+
+`key` describes the inputs before execution; `after.Key()` describes them
+afterwards. If you edit a source file while tests run, Receipt should not save
+the result under the old description. Two matching scans cannot detect a file
+changed and changed back between scans, or discover every external dependency.
+
+The saved result contains the command description, stdout, stderr and exit code.
+Stdout is normal command output; stderr is its separate diagnostic output.
+An exit code of zero means the command reported success. Editing a tracked
+test file before the next invocation normally produces a different key, rather
+than reusing K.
+
+### A hit: replay without execution
+
+Run the same command with unchanged recorded inputs. Receipt calculates K again
+and finds the local result. When a remote cache is configured, it also checks
+the server's quarantine status before trusting that local copy.
+
+![A local hit checks the remote quarantine status before replaying saved output.](assets/reviews/walkthrough-hit.svg)
+
+Text equivalent: Receipt loads K locally, asks the server about quarantine,
+and replays the output and exit code if the check allows it. Pytest does not
+start. If status is unavailable or the key is quarantined, Receipt executes
+instead. With no local copy, a remote hit can supply the saved result.
+
+Actual decision from [app.go](../internal/app/app.go):
+
+```go
+if hit && !o.verify {
+    return s.replay(prior)
+}
+```
+
+`prior` is the saved result. Unless verification was requested, this returns
+before reaching the code that starts the tests. The replay function writes the
+saved bytes to the terminal. Actual excerpt from
+[run_session.go](../internal/app/run_session.go):
+
+```go
+if _, e := out.Write(prior.Stdout); e != nil {
+    return 0, e
+}
+if _, e := errOut.Write(prior.Stderr); e != nil {
+    return 0, e
+}
+```
+
+Why contact the server for a local hit? Another client may have discovered a
+conflict. An old local copy should not bypass that warning. This adds a network
+check, and server trouble can force execution even with a local copy available.
+
+A hit reproduces output, not execution. It does not recreate files the tests
+would write, repeat their network requests or preserve the original mixing of
+stdout and stderr. In our experiments, a separate execution marker established
+whether tests really ran; seeing PASS twice would not establish that by itself.
+
+### A conflict: the same key, different observations
+
+Suppose a test prints elapsed time. These outputs are illustrative, not measured:
+
+```text
+Saved run: 48 passed in 0.42s
+Fresh run: 48 passed in 0.51s
+```
+
+Both runs passed, but their output bytes differ. An ordinary hit cannot discover
+this because it does not execute the tests. Ask Receipt to run a hit again:
+
+```sh
+receipt run --verify -- uv run pytest
+```
+
+![Different observed output quarantines K locally; reporting to the server is attempted separately.](assets/reviews/walkthrough-conflict.svg)
+
+Text equivalent: verification compares a fresh execution with the saved exit
+code, stdout and stderr. For this mismatch, Receipt marks K quarantined locally,
+removes the local saved result and attempts a shared conflict report. Future
+local runs execute instead of replaying K. A failed report does not undo the
+local marker, but it can leave other clients unaware of the conflict.
+
+Quarantine means do not reuse this key. It does not mean Receipt has determined
+which run was correct. Actual marker creation from [app.go](../internal/app/app.go):
+
+```go
+func quarantine(dir, key string) error {
+    return atomically(filepath.Join(dir, "quarantine", key), []byte("conflicting observation; do not reuse\n"))
+}
+```
+
+The marker is a file, so it remains after this command ends. A verification
+mismatch returns a nonzero exit code even when the fresh tests passed. If
+recorded inputs change during verification, Receipt instead reports that the
+comparison is inconclusive. Exceeding the output capture limit also prevents
+successful byte-for-byte verification.
+
+Why not replace the old answer? That would hide disagreement. Timing text may
+be harmless, but differing output may also expose randomness, an undeclared
+input or an unreliable test. Two clients publishing different observations
+under the same key are another way the shared store can detect a conflict.
+There is no automatic rule that makes a quarantined key trusted again.
+
+### Recovery: restore stored state, not trust
+
+Now suppose stored server data is lost. This is not conflict resolution:
+restoring a backup recovers earlier state, not proof that a result is correct.
+
+A shared result spans database records and output files. Copying only the
+database can leave records pointing at missing files. Our backup includes both,
+plus the binary and selected configuration. Follow the copy out to R2 and back:
+
+![The downloaded R2 archive is decrypted and restored separately; live data stays in place.](assets/reviews/walkthrough-recovery.svg)
+
+Text equivalent: pause Receipt, copy database and files, restart, encrypt and
+upload. Download the R2 object and decrypt it on the Mac with the private recovery
+key. Verify checksums, restore a separate database and files, then fetch results
+from a test server. The live data is never replaced during this drill.
+
+Actual Python restart cleanup from
+[backup-r2-drill.py](../deploy/digitalocean/backup-r2-drill.py):
+
+```text
+finally:
+    run('systemctl', 'start', 'receipt')
+    run('systemctl', 'is-active', '--quiet', 'receipt')
+    print(f'stop/start interval: {time.monotonic() - start:.3f} seconds', flush=True)
+```
+
+The `finally` block attempts restart even if copying raises an error. It cannot
+run after power loss or a forced kill. Restart happened before encryption and
+upload, so the pause did not include waiting for R2.
+
+In the completed drill, the downloaded encrypted bytes matched the uploaded
+bytes. All four restored database tables matched the live contents checked at
+the time, and all ten saved results were readable. A previously checked result
+also matched its expected checksum. Temporary restored data was removed after
+the test; the encrypted backup remains in R2 and on the Mac.
+
+This proves that particular backup worked on the existing machine. It does not
+prove new-host recovery or recovery without the private key. Changes after the
+backup are absent: a credential revoked later could appear unrevoked after
+restoring the old state. The [recovery record](DIGITALOCEAN-SETUP.md#13-october-one-off-r2-backup-and-restore)
+preserves exact evidence and limitations. No nightly schedule is enabled.
+
+### Check your understanding
+
+Does an unchanged key prove the tests would produce the same output today?
+Would restoring a backup settle a disagreement between two observations?
+
+### Answer: neither is proof of correctness
+
+The key describes recorded inputs, not every possible influence on a test.
+Recovery restores earlier state, including its limitations; it does not decide
+which conflicting observation was right. Receipt's checks, verification mode
+and quarantine expose some problems rather than eliminating every uncertainty.
+
 ## Updates and documentation records
+
+### 13 October 2026: final four-case walkthrough
+
+Chapter 10 follows a miss, hit, verification conflict and backup recovery with
+four offline diagrams, text equivalents and attributed code excerpts. This is
+a teaching update; the recovery evidence comes from the completed drill, not
+a new server operation. Earlier phase reviews remain historical records.
 
 ### 13 October 2026: deployment teaching review
 

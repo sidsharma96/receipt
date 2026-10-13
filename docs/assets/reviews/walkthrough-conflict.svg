@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 505" role="img" aria-labelledby="title desc">
+<title id="title">Verification can quarantine a key even when both tests pass</title><desc id="desc">Illustrative saved and fresh outputs differ only in elapsed time. Byte comparison detects disagreement. The local key is quarantined and its result removed; reporting to the server is attempted, not guaranteed.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#52645a"/></marker></defs><rect width="400" height="505" fill="#fcfcf9"/>
+<g font-family="system-ui,sans-serif" font-size="17" fill="#24332e" text-anchor="middle"><text x="200" y="27" font-weight="600">VERIFY · same key, different output</text><text x="200" y="51" font-size="15">Illustrative timing text, not measurements</text>
+<g fill="#eef4ef" stroke="#a8bbaf"><rect x="10" y="73" width="180" height="83" rx="8"/><rect x="210" y="73" width="180" height="83" rx="8"/></g>
+<text x="100" y="98">Saved for K</text><text x="100" y="125">48 passed</text><text x="100" y="148">in 0.42s</text><text x="300" y="98">Fresh run for K</text><text x="300" y="125">48 passed</text><text x="300" y="148">in 0.51s</text>
+<text x="200" y="213">Output bytes differ</text><rect x="40" y="249" width="320" height="72" rx="8" fill="#fff3df" stroke="#b49d72"/><text x="200" y="275">Quarantine K locally</text><text x="200" y="301">Remove local saved result</text>
+<text x="200" y="369">Attempt shared conflict report</text><text x="200" y="397">Report failure does not undo</text><text x="200" y="421">the local quarantine</text><text x="200" y="471" font-weight="600">Next local run: execute, do not replay K</text></g>
+<g stroke="#52645a" stroke-width="2" fill="none"><path d="M100 156V181H300V156"/><g marker-end="url(#arrow)"><path d="M200 181V197"/><path d="M200 222V245"/><path d="M200 321V346"/></g></g></svg>
