@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from self_test import COMMAND, remote_cache, test_environment
+import cleanup
 
 
 class PolicyTests(unittest.TestCase):
@@ -25,6 +26,12 @@ class PolicyTests(unittest.TestCase):
             with remote_cache() as ready:
                 self.assertFalse(ready)
             ssh.assert_not_called()
+
+    def test_old_experiment_cleanup_cannot_disable_new_key(self):
+        with patch('cleanup.remote', return_value=b'restrict ssh-ed25519 AAAA receipt-self-ci\n') as remote:
+            with self.assertRaises(RuntimeError):
+                cleanup.main()
+            self.assertEqual(remote.call_count, 1)
 
 
 if __name__ == '__main__':

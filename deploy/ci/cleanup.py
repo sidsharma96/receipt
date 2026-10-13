@@ -10,6 +10,11 @@ CLI = ("sudo -u receipt env "
 
 
 def main():
+    active_key = remote("if sudo test -f /home/receipt-ci/.ssh/authorized_keys; then "
+                        "sudo cat /home/receipt-ci/.ssh/authorized_keys; fi").decode().strip()
+    if active_key and (len(active_key.splitlines()) != 1 or
+                       active_key.split()[-1] != "receipt-github-experiment"):
+        raise RuntimeError("refusing to disable an SSH key belonging to another workflow")
     records = json.loads(remote(CLI + "list --cache-dir /var/lib/receipt/cache"))
     for record in records:
         if record["subject"] == "github-actions-experiment":
