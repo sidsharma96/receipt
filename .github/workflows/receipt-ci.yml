@@ -1,7 +1,7 @@
 name: Receipt CI
 on:
   push:
-    branches: [main, codex/receipt-self-ci]
+    branches: [main, codex/receipt-https-ci]
   pull_request:
 permissions:
   contents: read
@@ -36,7 +36,7 @@ jobs:
         run: python3 -m unittest discover -s deploy/ci -p 'test_*.py'
   cached:
     # Never provide private-cache credentials to pull-request code.
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/receipt-self-ci')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/receipt-https-ci')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -51,6 +51,4 @@ jobs:
       - name: Run ordinary tests through Receipt
         run: python3 deploy/ci/self_test.py
         env:
-          RECEIPT_SELF_CI_SSH_KEY: ${{ secrets.RECEIPT_SELF_CI_SSH_KEY }}
-          RECEIPT_SELF_CI_KNOWN_HOSTS: ${{ secrets.RECEIPT_SELF_CI_KNOWN_HOSTS }}
           RECEIPT_SELF_CI_TOKEN: ${{ secrets.RECEIPT_SELF_CI_TOKEN }}

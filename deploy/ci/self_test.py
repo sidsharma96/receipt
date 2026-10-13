@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
-import tempfile
 import time
 import urllib.request
 
@@ -13,6 +12,7 @@ ROOT = Path('/tmp/receipt-self-checkout')
 HOME = Path('/tmp/receipt-self-home')
 CLIENT = '/tmp/receipt-self-client'
 COMMAND = ['go', 'test', '-count=1', './...']
+REMOTE = 'https://receipt.sidsharma.dev'
 
 
 def test_environment(go_directory, image_version):
@@ -28,48 +28,30 @@ def test_environment(go_directory, image_version):
 
 @contextlib.contextmanager
 def remote_cache():
-    names = ['RECEIPT_SELF_CI_' + suffix for suffix in ('SSH_KEY', 'KNOWN_HOSTS', 'TOKEN')]
-    if not all(os.environ.get(name) for name in names):
+    token = os.environ.get('RECEIPT_SELF_CI_TOKEN')
+    if not token:
         print('Cache credentials unavailable; running local tests.', flush=True)
         yield False
         return
-    with tempfile.TemporaryDirectory(prefix='receipt-self-ssh-') as directory:
-        key = Path(directory) / 'key'
-        key.write_text(os.environ[names[0]] + '\n')
-        key.chmod(0o600)
-        hosts = Path(directory) / 'hosts'
-        hosts.write_text(os.environ[names[1]] + '\n')
-        tunnel = subprocess.Popen(['ssh', '-N', '-i', str(key), '-o', 'BatchMode=yes',
-            '-o', 'IdentitiesOnly=yes', '-o', 'StrictHostKeyChecking=yes',
-            '-o', 'UserKnownHostsFile=' + str(hosts), '-o', 'ExitOnForwardFailure=yes',
-            '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=15',
-            '-o', 'ServerAliveCountMax=2', '-L', '127.0.0.1:18777:127.0.0.1:7777',
-            'receipt-ci@104.248.183.112'])
-        ready = False
-        try:
-            for _ in range(12):
-                if tunnel.poll() is not None:
-                    break
-                try:
-                    request = urllib.request.Request('http://127.0.0.1:18777/v1/identity',
-                        headers={'Authorization': 'Bearer ' + os.environ[names[2]]})
-                    with urllib.request.urlopen(request, timeout=2) as response:
-                        identity = json.load(response)
-                    ready = identity['subject'] == 'receipt-self-ci'
-                    break
-                except OSError:
-                    time.sleep(1)
-            if not ready:
-                print('Private cache unavailable; running local tests.', flush=True)
-            yield ready
-        finally:
-            if tunnel.poll() is None:
-                tunnel.terminate()
-                try:
-                    tunnel.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    tunnel.kill()
-                    tunnel.wait()
+    ready = False
+    try:
+        request = urllib.request.Request(REMOTE + '/v1/identity',
+            headers={'Authorization': 'Bearer ' + token})
+        # Reject redirects: never forward the bearer token to another destination.
+        opener = urllib.request.build_opener(NoRedirect)
+        with opener.open(request, timeout=10) as response:
+            identity = json.load(response)
+        ready = isinstance(identity, dict) and identity.get('subject') == 'receipt-self-ci'
+    except (OSError, ValueError):
+        pass
+    if not ready:
+        print('HTTPS cache unavailable; running local tests.', flush=True)
+    yield ready
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 def main():
@@ -99,7 +81,7 @@ def main():
             env['RECEIPT_TOKEN'] = os.environ['RECEIPT_SELF_CI_TOKEN']
         args = [CLIENT, 'run', '--cache-dir', str(HOME / 'receipt')]
         if ready:
-            args += ['--remote', 'http://127.0.0.1:18777']
+            args += ['--remote', REMOTE]
         started = time.monotonic()
         result = subprocess.run(args + ['--'] + COMMAND, cwd=ROOT, env=env)
         print(f'Receipt invocation: {time.monotonic() - started:.2f}s; exit={result.returncode}', flush=True)
