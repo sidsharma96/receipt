@@ -11,7 +11,7 @@ independent check.
 
 ```text
 Trusted push
-    ├─ Cached job ── SSH ──▶ private Receipt server
+    ├─ Cached job ── HTTPS ──▶ Caddy ──▶ Receipt on the same droplet
     │      ├─ saved result found → replay it
     │      └─ no result or no connection → run Go tests locally
     │
@@ -63,17 +63,18 @@ rule has been changed to make either job a required merge check.
 
 ## Secrets and renewal
 
-Only pushes to `main` and the rollout branch `codex/receipt-self-ci` receive
-the three `RECEIPT_SELF_CI_*` repository secrets. Pull-request jobs do not receive
+Only pushes to `main` and the rollout branch `codex/receipt-https-ci` receive
+the `RECEIPT_SELF_CI_TOKEN` repository secret. Pull-request jobs do not receive
 them. Repository writers who can change workflows remain trusted; a condition
 inside a workflow is not protection against a malicious repository writer.
 
-The SSH key uses the existing tunnel-only `receipt-ci` account. It cannot open
-a shell or reach the database. Receipt's token allows read, publish and report
+CI connects directly to `https://receipt.sidsharma.dev`. Caddy provides the
+encrypted public connection and forwards requests to Receipt's loopback listener.
+CI needs no SSH key or server shell. Receipt's token allows read, publish and report
 against the shared cache; it is not restricted to one project's entries.
 Trusted child tests can read the token from their environment.
 
-The new SSH authorization and token expire on **11 November 2026 at about
+The existing token expires on **11 November 2026 at about
 7:28 p.m. Pacific** (12 November 03:28 UTC). There is no automatic renewal.
 After expiry, the cached job reports that the cache is unavailable and runs
 tests locally. It does not silently extend credentials or turn test failures
@@ -82,10 +83,29 @@ into successes.
 Operator enrollment is [enroll_self_ci.py](../deploy/ci/enroll_self_ci.py).
 It refuses existing keys/secrets instead of overwriting them. Before renewing,
 finish active jobs, revoke credential `a985da859dd9a7440452f1a0cc4cfc47`,
-disable the matching `receipt-self-ci` authorized key, and remove only the
-three `RECEIPT_SELF_CI_*` secrets. Then enroll again. Partial enrollment failures
+and remove only `RECEIPT_SELF_CI_TOKEN`. Then enroll again. Partial enrollment failures
 need operator inspection; the script is not a transactional deployment system.
 Do not run the old synthetic experiment's cleanup script on these credentials.
+
+## 13 October: moving the connection to HTTPS
+
+The original 12 October rollout used a restricted SSH tunnel. The updated helper
+contacts the HTTPS identity endpoint first. A valid response for `receipt-self-ci`
+enables remote caching; a missing token, failed connection, rejected credential or
+invalid response selects local execution. Certificate verification stays enabled,
+and redirects are rejected so a server cannot redirect the token elsewhere.
+Failure after that initial check still uses Receipt's existing execution fallback.
+
+Before changing CI, a fresh Go fixture on the Mac uploaded through HTTPS.
+A second invocation used an empty local cache and replayed the saved result;
+an independent marker confirmed the test had executed only once. Changing the
+source made it execute again and fail. The temporary credential was revoked.
+This establishes one controlled upload/replay sequence, not a throughput claim.
+
+The application token is unchanged: changing transport neither broadens its
+permissions nor renews its expiry. Seven local helper-policy tests pass. Live
+GitHub verification and removal of the retired SSH credentials are recorded
+below after rollout; the older evidence remains historical.
 
 ## Limits and reasons to revisit
 
