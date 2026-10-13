@@ -1,0 +1,45 @@
+name: Private remote cache experiment
+on:
+  push:
+    branches: [codex/ci-tunnel-experiment]
+permissions:
+  contents: read
+concurrency:
+  group: receipt-private-experiment
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.22.12'
+          cache: false
+      - run: go build -o /tmp/receipt-ci-client ./cmd/receipt
+      - run: python3 deploy/ci/experiment.py publish
+        env:
+          RECEIPT_CI_SSH_KEY: ${{ secrets.RECEIPT_CI_SSH_KEY }}
+          RECEIPT_CI_KNOWN_HOSTS: ${{ secrets.RECEIPT_CI_KNOWN_HOSTS }}
+          RECEIPT_TOKEN: ${{ secrets.RECEIPT_CI_TOKEN }}
+  replay-and-failures:
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.22.12'
+          cache: false
+      - run: go build -o /tmp/receipt-ci-client ./cmd/receipt
+      - run: python3 deploy/ci/experiment.py replay
+        env:
+          RECEIPT_CI_SSH_KEY: ${{ secrets.RECEIPT_CI_SSH_KEY }}
+          RECEIPT_CI_KNOWN_HOSTS: ${{ secrets.RECEIPT_CI_KNOWN_HOSTS }}
+          RECEIPT_TOKEN: ${{ secrets.RECEIPT_CI_TOKEN }}
