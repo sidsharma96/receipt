@@ -115,6 +115,19 @@ PostgreSQL/race job passed both times. These are individual observations, not
 an estimate of typical latency; real-suite non-execution is identified by
 Receipt's diagnostic, while the separate local fixture supplied marker evidence.
 
+PR #2 was merged as `3f21e77`. [Main run 38429805089](https://github.com/sidsharma96/receipt/actions/runs/38429805089)
+passed both jobs, first with a miss (20.81 seconds). The CI-only SSH authorization
+was then moved to `/home/receipt-ci/.ssh/authorized_keys.retired-20261013`, which
+sshd does not use as an authorized-key file. The public key remains recoverable;
+the GitHub secrets `RECEIPT_SELF_CI_SSH_KEY` and `RECEIPT_SELF_CI_KNOWN_HOSTS`
+were deleted. Their former values cannot be retrieved from GitHub. Only
+`RECEIPT_SELF_CI_TOKEN` remains; administrator SSH access was not changed.
+
+After that cleanup, attempt 2 of the main run passed both jobs again and reported
+a remote hit for `3fc8bbae451b` (0.49 seconds). This verifies the current workflow
+without the retired secrets. The old manually dispatched synthetic tunnel
+workflow remains a historical experiment, not an active credentialed workflow.
+
 ## Limits and reasons to revisit
 
 Source files, declared dependencies and selected environment inputs do not
