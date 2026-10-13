@@ -64,5 +64,38 @@ Secret handling follows [GitHub's Actions secret guidance](https://docs.github.c
 ## Evidence
 
 Local Python syntax checks and 11 existing documentation/template tests passed.
-Live GitHub Actions results will be recorded after the run; setup alone is not
-evidence of cross-runner reuse.
+The [first GitHub run](https://github.com/sidsharma96/receipt/actions/runs/38341124737)
+passed both jobs. Its original key began `f6ac282522e4` and its changed-source
+key began `61586fd918db`.
+
+| Check | Expected behavior | Observed actual test executions on that runner |
+| --- | --- | ---: |
+| First runner, original source | Miss, execute, upload | 1 |
+| First runner, another empty local cache | Remote hit | Still 1 |
+| Second runner, empty local cache | Remote hit | 0 |
+| Second runner, source changed to 43 | Miss, execute, fail | 1 |
+| Second runner, original source, tunnel closed | Execute locally, pass | 2 |
+
+Both jobs also rejected shell sessions, forwarding to PostgreSQL and reverse
+forwarding. Connection refusal was the tested network failure; a stalled
+connection, partial response or full Droplet outage was not simulated.
+
+GitHub warned that the first run's actions targeted a deprecated Node runtime.
+The workflow now pins checkout v6 and setup-go v6. The
+[second run](https://github.com/sidsharma96/receipt/actions/runs/38341291956)
+passed the same checks on that revision. Its shared key began `f629bbccd989`;
+the changed-source key began `88f042e959ae`. These checks did not change
+Receipt's production Go code.
+
+The cleanup command is `python3 deploy/ci/cleanup.py`, run by the operator after
+jobs finish. It revokes the experiment's Receipt credentials, moves the public
+SSH authorization file into root-only storage and deletes the three GitHub
+secrets. It leaves the restricted Linux account, SSH policy and cached results
+in place. Re-running requires deliberately provisioning new credentials; do not
+put the administrator key into the workflow to bypass that step.
+
+Cleanup was performed after the second successful run: the credential is
+revoked, the authorized SSH key is disabled, and GitHub lists none of the
+experiment secrets. The public key remains recoverable in root-only storage;
+the temporary private key was removed when provisioning finished. The workflow
+is intentionally not ready to rerun until access is provisioned again.
