@@ -100,6 +100,15 @@ def render(source):
                 current.append('<h3 id="' + identifier + '">'
                                + inline(heading) + '</h3>')
             i += 1
+        elif line.startswith("!["):
+            match = re.fullmatch(r"!\[([^\]]+)\]\((assets/[a-zA-Z0-9_./-]+\.svg)\)", line)
+            if not match or '..' in match[2].split('/'):
+                raise ValueError("Unsupported image: " + line)
+            current.append('<figure><img src="' + html.escape(match[2], quote=True)
+                           + '" alt="' + html.escape(match[1], quote=True)
+                           + '" style="display:block;width:100%;max-width:480px;height:auto;margin:auto">'
+                           + '<figcaption>' + inline(match[1]) + '</figcaption></figure>')
+            i += 1
         elif line.startswith("```"):
             kind = line[3:]
             if kind not in {"go", "sh", "text", "diagram", "timeline"}:
@@ -125,7 +134,7 @@ def render(source):
             current.append("<ul>" + "".join(items) + "</ul>")
         else:
             paragraph = []
-            while i < len(lines) and lines[i].strip() and not lines[i].startswith(("#", "```", "- ")):
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith(("#", "```", "- ", "![")):
                 paragraph.append(lines[i])
                 i += 1
             if not paragraph:
@@ -162,7 +171,7 @@ def render(source):
             + '<p class="sidebar-note">Follow a run. Read the code. Explain the choice.</p></aside>'
             + '<main id="reading" tabindex="-1"><h1>' + inline(title) + '</h1>'
             + "\n".join(intro) + "\n" + "\n".join(pages) + '</main></div>\n'
-            + '<footer>Updated 9 October 2026. Generated from WORKING-DOC.md. '
+            + '<footer>Updated 13 October 2026. Generated from WORKING-DOC.md. '
             + 'No network connection required.</footer>\n<script>\n' + JS
             + '\n</script>\n</body>\n</html>\n')
 

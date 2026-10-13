@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="640" viewBox="0 0 760 640" role="img" aria-labelledby="title desc">
+<title id="title">Receipt's first Fly deployment</title>
+<desc id="desc">A laptop runs tests and sends results over HTTPS through Fly to one Receipt server. Receipt saves output on its own persistent disk and result descriptions in a private PostgreSQL server with another disk. Existing apps are not used.</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#475569" stroke-width="1.5"/></marker></defs>
+<rect width="760" height="640" rx="18" fill="#f8fafc"/>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="36" font-size="22" font-weight="700">Your tests stay on your laptop</text>
+<rect x="30" y="60" width="700" height="90" rx="12" fill="#fff" stroke="#94a3b8"/>
+<text x="52" y="92" font-size="19" font-weight="600">Laptop · Receipt client</text>
+<text x="52" y="122" font-size="17">Runs tests → sends or fetches saved results</text>
+<path d="M380 150 V222" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="400" y="185" font-size="16">HTTPS through Fly's proxy</text>
+<text x="400" y="206" font-size="15" fill="#475569">TLS ends at the proxy</text>
+<rect x="30" y="228" width="700" height="116" rx="12" fill="#dbeafe" stroke="#2563eb"/>
+<text x="52" y="261" font-size="19" font-weight="600">One Receipt server · 512 MB</text>
+<text x="52" y="290" font-size="17">Checks credentials; receives and returns results</text>
+<text x="52" y="319" font-size="16">Does not run the test suite</text>
+<path d="M196 344 V413" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="50" y="382" font-size="16">Output bytes</text>
+<path d="M710 344 V413" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="395" y="370" font-size="16">Descriptions + credentials</text>
+<text x="395" y="394" font-size="15" fill="#475569">Private network + DB password</text>
+<rect x="30" y="420" width="326" height="100" rx="12" fill="#dcfce7" stroke="#15803d"/>
+<text x="49" y="451" font-size="18" font-weight="600">Receipt disk · 3 GB</text>
+<text x="49" y="481" font-size="16">stdout / stderr files</text>
+<text x="49" y="505" font-size="15">Mounted at /data</text>
+<rect x="384" y="420" width="346" height="76" rx="12" fill="#ede9fe" stroke="#7c3aed"/>
+<text x="403" y="450" font-size="18" font-weight="600">PostgreSQL server · 1 GB RAM</text>
+<text x="403" y="477" font-size="16">No public database service</text>
+<path d="M557 496 V525" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="384" y="532" width="346" height="52" rx="10" fill="#dcfce7" stroke="#15803d"/>
+<text x="403" y="564" font-size="18">Database disk · 3 GB</text>
+<text x="30" y="615" font-size="16" fill="#475569">Two new servers. Two separate disks. Existing apps stay untouched.</text>
+</g></svg>

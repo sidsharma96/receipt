@@ -1991,3 +1991,262 @@ Regenerate with `python3 docs/render_review_figures.py`; use `--check` to detect
 ### Failure-state illustrations: 9 October 2026
 
 Added five illustrations of state changes previously left in prose: Phase 1's scan gap, Phase 2's conflict warning, Phase 4's failed saves and cleanup retry, and Phase 5's committed credential with failed secret delivery. Phase 3 now links the specific shared-reference and retry diagrams where those mechanisms arise. Phase 4's guarantees explanation also gives a concrete invented-result example to distinguish format validation from proof of execution. Historical conclusions and runtime evidence are unchanged. The new SVGs were rendered and inspected. Browser-level layout and interactions remain unverified under the previously recorded local-file restriction.
+
+## Deployment review: one server over HTTPS — 13 October 2026
+
+This reviews the deployment completed on 12–13 October, not a new cache algorithm.
+Follow one example: a CI worker asks whether its test command has already passed.
+A worker is simply a temporary computer that GitHub starts for a job. It starts
+with a fresh local Receipt cache, so any reused result must come from elsewhere.
+
+### 1. What data structures are used, and why?
+
+Three different records answer three different questions. A DNS record maps
+`receipt.sidsharma.dev` to the droplet's IP address. A credential record lets
+Receipt check a presented token's digest, expiry, revocation and permissions.
+A result record connects an input key to saved output. Knowing the address does
+not grant permission, and having permission does not mean a result exists.
+
+PostgreSQL holds the result descriptions, credentials and conflict records.
+Output bytes live in files on the same droplet. Think of a result description
+as a reference to file X, not a second copy of X. This separation lets different
+results refer to identical stored bytes. It also means we have two places to
+consider during failure and recovery; a database backup alone is not enough.
+
+A single table containing both descriptions and output could simplify some
+failure handling. Separate files keep large output outside database rows, but
+require explicit coordination. This comparison is retrospective; deployment
+reuses the storage design already reviewed in Phase 3 rather than choosing it anew.
+
+### 2. What is the flow, and where can it grow?
+
+First the worker asks DNS where the hostname lives. DNS is the internet's
+name-to-address lookup system. Cloudflare answers with our droplet's address.
+Because this record is set to DNS only, the worker then connects directly to
+the droplet—not through Cloudflare's web proxy.
+
+![A request crosses the internet once; storage stays inside the droplet.](assets/reviews/deployment-request.svg)
+
+Text equivalent: the worker asks Cloudflare DNS for the address, opens HTTPS
+to Caddy on that address, and Caddy forwards the request to Receipt locally.
+Receipt checks the token and required permission before an allowed operation
+uses PostgreSQL and output files. The response travels back through Caddy.
+
+HTTPS protects bytes in transit and lets the client verify the server's
+certificate for this hostname. Caddy handles that connection, obtains the
+certificate and schedules renewal. It is a reverse proxy: a server that accepts
+a request and passes it to another server. Receipt still owns cache behavior
+and access decisions.
+
+Actual [Caddy configuration](../deploy/digitalocean/Caddyfile):
+
+```text
+receipt.sidsharma.dev {
+	reverse_proxy 127.0.0.1:7777
+}
+```
+
+The first line names the public site. The second sends requests to Receipt.
+`127.0.0.1` means this same computer. HTTP on that short local connection does
+not send plaintext across the internet; Caddy can nevertheless see the decrypted
+request, so Caddy and the host administrator remain trusted.
+
+We can change the hostname or proxy without changing stored result keys. Moving
+output to S3/R2 is different: it changes publication, deletion and failure rules.
+The current filesystem interface does not make that migration automatic.
+
+### 3. Which networking and concurrency primitives matter?
+
+A port identifies which service receives a connection at an address. Caddy
+accepts public HTTPS on TCP port 443. TCP supplies an ordered byte stream;
+TLS adds encryption and server authentication. Port 80 redirects ordinary HTTP
+requests to HTTPS. Clients must begin with HTTPS: a redirect cannot erase a
+token already sent over plaintext HTTP.
+
+Receipt listens only on loopback port 7777. PostgreSQL's network listeners are
+also local, and Receipt connects to it through a Unix socket—a communication
+endpoint inside Linux rather than an internet connection. The firewall allows
+SSH and TCP 80/443, not public database or Receipt ports. These are separate
+checks: a loopback listener is private even before the firewall is considered.
+
+Suppose a reader is about to open file X when cleanup wants to delete it.
+The existing storage locks make cleanup wait for participating readers.
+Writers and cleanup also coordinate so cleanup cannot remove a newly published
+file before its result description is saved. HTTPS changes none of those rules.
+One VM still handles overlapping requests; one machine does not mean one
+operation at a time.
+
+The service manager, systemd, starts Receipt and Caddy and can restart them
+after failures. Actual lines from [receipt.service](../deploy/digitalocean/receipt.service):
+
+```text
+User=receipt
+Group=receipt
+```
+
+```text
+Restart=on-failure
+```
+
+The dedicated account separates normal service work from the administrator.
+Restarting can recover a crashed process, but cannot repair bad data or a full
+disk. It is not a backup.
+
+### 4. What can be tricky to implement or debug?
+
+An HTTPS problem has several possible locations. If DNS returns no address,
+the request never reaches Caddy. If certificate verification fails, the client
+must refuse the connection. If Caddy is running but Receipt is stopped, the
+proxy cannot complete the request. If Receipt returns 401, the network may be
+working perfectly: the credential was absent or rejected. Check these layers
+in order instead of turning off certificate checks to make an error disappear.
+
+A successful connection is also not a successful save. Here is one possible
+partial failure, inherited from the storage design:
+
+![After a database failure, an output file can remain without a usable result.](assets/reviews/deployment-partial-save.svg)
+
+Text equivalent: start with neither result K nor file X. Publishing X succeeds.
+Saving K in PostgreSQL fails, leaving X but no K. A later cleanup checks all
+surviving references and may remove X if it is still unused. A retry must
+establish a complete result; finding X alone is not enough to replay K.
+
+There is no transaction that rolls back both SQL and filesystem work together.
+A lost network response adds another ambiguity: the server may have finished
+before the client lost its connection. Do not infer server state solely from
+the client's timeout. This deployment did not add a durable upload retry queue.
+
+The local checkout has uncommitted deployment work and remains on the older
+branch. The HTTPS CI migration was merged separately as
+[PR #2](https://github.com/sidsharma96/receipt/pull/2).
+When debugging CI, read that deployed revision, not the older tunnel helper
+in this checkout. We have not silently overwritten the user's local work.
+
+### 5. What are the hot and cold paths, and their costs?
+
+A cache lookup is frequent work—the hot path. Before using a remote result,
+the client still has to inspect its inputs and calculate the key. Then there
+is network waiting, authentication, storage reading and output checking.
+A hit avoids running the test command; it does not avoid all work.
+
+![A fresh local cache replays shared output while the execution marker stays unchanged.](assets/reviews/deployment-replay.svg)
+
+Text equivalent: first client asks for K, misses, runs tests and uploads success.
+A second client with an empty local cache asks for the same K, receives the
+saved output and prints it without starting tests. In the local experiment,
+a separate execution marker stayed at one after replay.
+
+Uploading adds output transfer and storage work. Current shared writes inspect
+existing inventory for accounting and take exclusive coordination; their cost
+can grow with stored data, not just the new upload. Cleanup can make requests
+wait. HTTPS does not remove these existing small-store limitations.
+
+Certificate renewal, credential renewal, retention and backups are occasional
+work—the cold paths. Occasional does not mean unimportant: an expired credential
+can disable CI caching, and a missing recovery key can make a backup useless.
+The observed main CI invocation changed from 20.81 seconds on a miss to 0.49
+seconds on a hit. That excludes job setup and is not a representative benchmark.
+
+### 6. What do we guarantee, assume and deliberately not provide?
+
+The checked deployment encrypts the public connection and rejects missing,
+invalid and revoked credentials on the identity endpoint. Storage ports stay
+private. The CI-only SSH key is retired. The existing application token is
+still trusted-team access: read, publish and report permissions are not
+project-by-project isolation. A stolen valid token is still a problem.
+
+A certificate proves the connection is to the named server under the client's
+trust rules. It does not prove uploaded test results are honest. Similarly,
+matching input keys do not prove tests always produce the same output.
+This is why Receipt's own CI keeps an independent uncached test job.
+
+A single droplet is a shared failure point for proxy, application, database
+and files. If it goes away, remote caching is unavailable. CI's helper selects
+local execution when its HTTPS readiness check fails; ordinary test failures
+must still fail the job. Fallback needs a usable runner and dependencies and
+may wait for network timeouts first.
+
+We assume trusted host administration and cooperating storage processes.
+We have not established resistance to sustained hostile traffic, automatic
+failover, automatic token renewal or scheduled recoverable backups.
+Caddy is configured for automatic certificate renewal; a future renewal has
+not yet been observed. Those are real remaining obligations, not hidden features.
+
+### 7. What alternatives could work, and why this choice?
+
+The following is a retrospective comparison unless the deployment record
+already documents the earlier decision.
+
+An SSH tunnel was useful first: we could test the server without exposing an
+HTTP API. It required CI to manage both an SSH key and a Receipt token.
+HTTPS replaces that tunnel setup with the familiar public server connection;
+we retain the application token because encryption is not access permission.
+The cost is that unauthenticated internet traffic can now reach Caddy and Receipt.
+
+Caddy takes certificate handling out of our Go application. Nginx plus a
+certificate-renewal tool could also work, but would give this small deployment
+another integration to maintain. Putting TLS directly in Receipt would make
+the application responsible for more certificate lifecycle work. Neither
+alternative is inherently wrong; Caddy keeps the present setup short and readable.
+
+One VM keeps the existing database/file coordination local and gives us a small
+system to learn to operate. Multiple VMs would need a shared-storage design and
+a plan for failure between them. S3/R2 could separate output from the VM, but
+would not by itself protect PostgreSQL, credentials or configuration. We chose
+not to introduce that next storage problem during the HTTPS migration.
+
+Cloudflare DNS only avoids another HTTP intermediary while we establish the
+basic path. Cloudflare proxying may be useful later, but we would need to review
+upload limits, timeouts and cache rules for authenticated responses first.
+
+### 8. What evidence supports this, and what remains untested?
+
+The 13 October local fixture used normal DNS and verified HTTPS. It began with
+a new input key. First invocation: miss, execute and upload. Second invocation:
+another empty local cache, hit, execution marker unchanged. Changed source:
+miss, execute and fail. The temporary credential was revoked. That is stronger
+evidence of replay than merely seeing old PASS output.
+
+[The main CI run](https://github.com/sidsharma96/receipt/actions/runs/38429805089)
+passed both jobs. After removing the SSH secrets and disabling the CI-only key,
+its second attempt passed again and reported a remote hit. The real suite had
+no separate execution marker, so its hit claim comes from Receipt's diagnostic.
+The independent job ran PostgreSQL tests with race detection on both attempts.
+This documentation work does not rerun or expand those historical tests.
+
+Earlier smoke checks verified the certificate, HTTP redirect and rejection
+after credential revocation. The manual restore drill recovered the saved
+result from an encrypted copy using isolated restore storage, but reused the
+existing machine's roles; it was not a brand-new-host recovery test.
+See the [deployment record](DIGITALOCEAN-SETUP.md) for commands, hashes and limits.
+
+We still need external monitoring, scheduled backups, separate custody of the
+recovery key, a renewal procedure for the November CI token, and restore drills.
+We have not measured sustained load or tested Caddy certificate renewal or a
+post-Caddy reboot. The small tests are not evidence for those claims.
+
+Documentation checks for this review: all 12 documentation tests passed, both
+HTML generators passed their stale-output checks, and Git's whitespace check
+passed. The three SVG diagrams were rendered as static images and inspected;
+an arrow crossing a DNS label was corrected. The in-app browser blocked the
+local HTML URL. Desktop/phone browser layout and interaction checks therefore
+remain unverified. Static pictures and structure tests are not a beginner
+comprehension study. No server settings, CI workflow or application code changed
+during this review, and no runtime suite was rerun.
+
+### 9. What would make us revisit each major decision?
+
+If waiting behind writes or cleanup becomes common, measure that waiting before
+adding machines. If output capacity or host replacement becomes the problem,
+evaluate object storage and its failure rules. If downtime is unacceptable,
+design recovery or failover for both the database and files—not just a second
+proxy.
+
+If unrelated users need the service, add explicit tenant boundaries before
+issuing more trusted-team tokens. If public traffic creates resource pressure,
+review admission limits and protective proxying using measured traffic.
+If certificate or token expiry causes incidents, improve renewal and alerting;
+switching proxies alone would not address every expiry problem.
+
+For now, the next milestone is operational: notice failures and recover data.
+Monitoring and automated backups are planned, not implemented by this review.

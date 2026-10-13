@@ -10,6 +10,7 @@ import sys
 import json
 import statistics
 from render_cargo_review import update_review
+from render_deployment_review import update_deployment
 
 ROOT = Path(__file__).resolve().parent
 INK = '#24394b'
@@ -618,6 +619,7 @@ document.querySelectorAll('.review-figure[data-steps]').forEach(figure => {
 
 def render(html):
     html = update_review(html, (ROOT / 'PHASE-REVIEWS.md').read_text())
+    html = update_deployment(html, (ROOT / 'PHASE-REVIEWS.md').read_text())
     assets = {}
     for name, draw in FIGURES.items():
         svg, steps, watch = draw()

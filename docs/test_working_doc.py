@@ -38,6 +38,21 @@ class ReaderParser(HTMLParser):
 
 
 class WorkingGuideTests(unittest.TestCase):
+    def test_deployment_review_and_assets(self):
+        source = (renderer.ROOT / 'PHASE-REVIEWS.md').read_text()
+        deployment = source.split('## Deployment review:', 1)[1]
+        self.assertEqual(re.findall(r'(?m)^### ([1-9])\. ', deployment), list('123456789'))
+        images = re.findall(r'!\[[^\]]+\]\((assets/[^)]+\.svg)\)', deployment)
+        self.assertEqual(len(images), 3)
+        import xml.etree.ElementTree as ET
+        for image in images:
+            ET.parse(renderer.ROOT / image)
+        config = (renderer.ROOT.parent / 'deploy/digitalocean/Caddyfile').read_text().strip()
+        self.assertIn(config, deployment)
+        for bad in ('![bad](https://external.example/a.svg)', '![bad](assets/../secret.svg)'):
+            with self.assertRaises(ValueError):
+                renderer.render('# Title\n\n## Chapter\n\n' + bad)
+
     def test_review_rendering_and_links(self):
         path = renderer.ROOT / "PHASE-REVIEWS.html"
         html = path.read_text()
@@ -46,7 +61,7 @@ class WorkingGuideTests(unittest.TestCase):
         parser.feed(html)
         self.assertFalse(parser.tags)
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
-        self.assertEqual(parser.figures, 24)
+        self.assertEqual(parser.figures, 27)
         for link in parser.links:
             if link.startswith(("http://", "https://")):
                 continue
@@ -66,8 +81,8 @@ class WorkingGuideTests(unittest.TestCase):
         parser.feed(renderer.OUTPUT.read_text())
         self.assertFalse(parser.tags)
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
-        self.assertEqual(parser.figures, 7)
-        self.assertEqual(parser.answers, 7)
+        self.assertEqual(parser.figures, 10)
+        self.assertEqual(parser.answers, 8)
         for link in parser.links:
             if link.startswith(("http://", "https://")):
                 continue

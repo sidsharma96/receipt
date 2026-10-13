@@ -1,0 +1,30 @@
+[Unit]
+Description=Receipt private cache server
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+User=receipt
+Group=receipt
+StateDirectory=receipt
+StateDirectoryMode=0700
+WorkingDirectory=/var/lib/receipt
+Environment="RECEIPT_DATABASE_URL=host=/var/run/postgresql user=receipt dbname=receipt sslmode=disable"
+Environment=GOMEMLIMIT=320MiB
+ExecStart=/usr/local/bin/receipt serve --postgres --credentials --listen 127.0.0.1:7777 --cache-dir /var/lib/receipt/cache --max-inflight 2 --request-log
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=15s
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/receipt
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+
+[Install]
+WantedBy=multi-user.target

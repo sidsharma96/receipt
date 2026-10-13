@@ -1,0 +1,33 @@
+# New dedicated database app. Never substitute an existing project's app name.
+app = "replace-with-new-receipt-db-name"
+primary_region = "sjc"
+kill_signal = "SIGINT"
+kill_timeout = 60
+
+[build]
+  dockerfile = "deploy/fly/Postgres.Dockerfile"
+
+[deploy]
+  strategy = "rolling"
+
+[env]
+  PGDATA = "/data/pgdata"
+  POSTGRES_DB = "receipt"
+  POSTGRES_INITDB_ARGS = "--auth-host=scram-sha-256"
+  # POSTGRES_PASSWORD is a runtime secret. Do not set HOST_AUTH_METHOD=trust.
+
+[[mounts]]
+  source = "receipt_pg"
+  destination = "/data"
+  initial_size = "3gb"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "1gb"
+
+# No services/http_service or public database IP: connect through private IPv6.
+# With no Fly Proxy service, this database has no request-triggered autostop.
+[[restart]]
+  policy = "on-failure"
+  retries = 5

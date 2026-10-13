@@ -1,6 +1,6 @@
 # Receipt: follow one test run
 
-Updated 9 October 2026. This guide explains the code that exists now: Phases 1–7, including the Go probe correction and Cargo hardening. Git history records committed revisions. No public deployment is implied.
+Updated 13 October 2026. This guide explains Phases 1–7 and the single-server HTTPS deployment. Git history records committed revisions. Chapter 9 follows the deployed connection; monitoring and automated backups remain planned.
 
 ## Start here
 
@@ -472,7 +472,109 @@ external files or services, so passing this check is not proof that all inputs
 have been captured. See the [command contract](CARGO.md) and
 [full Phase 7 review](PHASE-REVIEWS.html#phase-7-review-bounded-cargo-support).
 
+## 9. Follow a request to the deployed server
+
+Suppose GitHub starts a fresh computer to run Receipt's tests. That computer has
+no local saved result. Instead of asking you to open an SSH tunnel, it can now
+contact `https://receipt.sidsharma.dev` directly. Follow the arrows: finding
+the address and fetching the result are different conversations.
+
+![DNS finds the droplet; HTTPS carries the request to Caddy.](assets/reviews/deployment-request.svg)
+
+The worker first asks DNS for the address of `receipt.sidsharma.dev`. DNS maps
+names to addresses. Cloudflare answers with our droplet's IP. In our DNS-only
+setup, Cloudflare does not carry the subsequent cache request.
+
+Next the worker opens an HTTPS connection to Caddy on the droplet. HTTPS encrypts
+the public connection and checks a certificate for the hostname. Caddy passes
+the request to Receipt inside the same machine. This forwarding role is called
+a reverse proxy. It lets Receipt concentrate on cache behavior while Caddy
+handles certificates and their renewal.
+
+Actual [Caddy configuration](../deploy/digitalocean/Caddyfile):
+
+```text
+receipt.sidsharma.dev {
+	reverse_proxy 127.0.0.1:7777
+}
+```
+
+The hostname identifies the public site. `127.0.0.1:7777` identifies Receipt
+on this same machine; `7777` is its port, the number used to select the service.
+Only Caddy's web ports are public alongside SSH. Receipt's own port and
+PostgreSQL stay private. Local HTTP avoids another certificate between processes
+on the same host; it also means Caddy and the administrator can see requests.
+
+### Encryption is not permission
+
+Anyone can know the hostname and make an HTTPS connection. Receipt still asks
+for a token and checks whether it permits the requested operation. A token is
+a secret the client presents, not something supplied by DNS or by the site's
+certificate. A rejected token means the connection may be working but access
+was refused. We must not disable HTTPS checks to fix that kind of error.
+
+We chose HTTPS after proving the earlier private tunnel. CI now needs only the
+Receipt token, not an additional SSH key. That simplifies each job, but exposes
+the API to internet traffic. It does not make the server resistant to every
+kind of overload. Monitoring is still a next step.
+
+### Watch the test, not the old PASS message
+
+![A second empty local cache can reuse the first client's saved result.](assets/reviews/deployment-replay.svg)
+
+First the client misses, runs its tests and uploads success. A second invocation
+starts with another empty local cache, fetches that success and prints the saved
+output. Both display PASS. To tell whether the test actually ran, our small
+fixture appended to a separate execution marker. The marker stayed at one after
+replay. Changing the source made the test execute again and fail.
+
+Receipt's own CI also keeps a separate job that always executes its tests with
+a disposable PostgreSQL database and race detection. A cached answer from the
+program under test must not be the only evidence that the program works.
+If the HTTPS readiness check fails, the cached job chooses local execution;
+it does not declare the tests passed just because the cache is unavailable.
+
+### One server is simple, but can still fail halfway
+
+One droplet keeps the proxy, application, database and files close together.
+We can learn to operate that arrangement before adding communication between
+several storage machines. It also means a droplet failure affects all four.
+
+![A failed database save does not undo a file already written.](assets/reviews/deployment-partial-save.svg)
+
+Suppose output file X was saved, then its database record failed. X remains,
+but there is no usable result pointing to it. Cleanup may later remove it if
+still unreferenced. A database rollback cannot undo a filesystem write.
+HTTPS protects the connection; it does not make these two saves one operation.
+
+This is also why recovery must include database records and output files.
+We tested one encrypted backup and isolated restore manually. We have not yet
+scheduled backups or arranged monitoring. Adding S3/R2 would change where files
+live, not automatically solve recovery for the database or credentials.
+
+### Check your understanding
+
+The HTTPS connection succeeds, but Receipt rejects an expired CI token. Should
+we replace the certificate or open PostgreSQL's port to the internet?
+
+### Answer: fix the credential, not the network boundary
+
+Neither. The request reached Receipt; it needs a valid credential with the
+right permissions. Keep the database private and certificate verification on.
+The current CI token expires on 11 November, and renewal is not automated.
+The [full deployment review](PHASE-REVIEWS.html#deployment-review-one-server-over-https-13-october-2026)
+answers all nine questions, including alternatives, evidence and revisit conditions.
+
 ## Updates and documentation records
+
+### 13 October 2026: deployment teaching review
+
+Chapter 9 now follows a request through DNS, HTTPS, access checks and storage.
+Three diagrams show the public/private boundary, actual execution versus replay,
+and a save that fails between two stores. The dated
+[nine-question review](PHASE-REVIEWS.html#deployment-review-one-server-over-https-13-october-2026)
+preserves the evidence and limits. This update changes documentation, not the
+server or CI. Monitoring and automated backups are next.
 
 ### 9 October 2026: harden Cargo before remote deployment
 
@@ -563,6 +665,119 @@ failing source change forced execution; restoring the source restored the hit.
 The [dated correction review](REAL-REPO-LAB.md#9-october-2026-go-scratch-path-correction)
 explains the comparison, alternatives, evidence and remaining limits. This is
 a small maintenance fix, not completed Cargo/Vitest/Zig support.
+
+### 9 October 2026: prepare a first Fly deployment
+
+The [deployment proposal](FLY-DEPLOYMENT.md) adds templates for one Receipt
+server and a separate, private PostgreSQL server, each with its own disk. Its
+picture follows a result from the laptop to both stores. Existing Fly apps are
+not part of this proposal and have not been changed.
+
+The proposed planning budget is $20/month, pending San Jose pricing and account
+allowance checks. Local configuration checks and Linux cross-compilation do not
+establish a working cloud deployment. Container startup, Fly validation, live
+reuse and backup recovery remain to be checked. This is preparation, not a
+completed remote-deployment phase.
+
+### 12 October 2026: initial private DigitalOcean setup
+
+The single Ubuntu Droplet now has a separate administrator account, an SSH-only
+firewall, and a localhost-only Receipt service backed by local PostgreSQL.
+Without a domain, the first client connection will use an encrypted SSH tunnel.
+The [setup record](DIGITALOCEAN-SETUP.md) explains the connection and checks.
+This is not a completed deployment phase: real workload reuse, backup recovery,
+public HTTPS and CI validation remain outstanding.
+
+### 12 October 2026: remote-cache experiment passed
+
+A small Go test ran on the Mac and saved its result on the Droplet. A second
+invocation with an empty local cache fetched that result without running the
+test again. Changing the function from 42 to 43 forced a new execution and
+returned the expected failure instead of yesterday's success. An external
+execution counter distinguished replay from actual execution.
+
+The [experiment record](DIGITALOCEAN-SETUP.md#12-october-amendment-first-remote-cache-experiment-passed)
+contains the three outcomes and limits. The short-lived credential was revoked
+and the SSH tunnel closed. This validates one controlled laptop workflow, not
+cross-job CI reuse or production readiness.
+
+### 12 October 2026: update, reboot and recovery drill
+
+The Droplet's pending Ubuntu updates were installed and it rebooted into the
+new kernel. Receipt and PostgreSQL started automatically, and the saved result
+remained readable. Before updating, we paused writes and copied both stores into
+an encrypted backup on the Mac. Decrypting that actual copy and restoring into
+a separate database/file view returned exactly the same saved-result bytes.
+
+The [recovery record](DIGITALOCEAN-SETUP.md#12-october-amendment-encrypted-backup-and-isolated-restore)
+explains what was backed up, the isolated test, and the remaining limits. This
+was one manual backup and a same-host isolated restore, not a scheduled backup
+system or a full rebuild on a new machine. The recovery key still needs separate
+secure custody. Public HTTPS and CI validation remain outstanding.
+
+### 12 October 2026: two CI runners share a cached result
+
+The first GitHub Actions job ran a small Go test and saved its result through
+an SSH tunnel. The second job used a fresh runner and an empty local cache:
+it fetched the saved result, and the test's execution marker stayed absent.
+Changing the function from 42 to 43 made the test run and fail. Restoring 42
+and closing the tunnel made it run locally and pass.
+
+Follow the [CI experiment](CI-EXPERIMENT.md) for the sequence, evidence and
+access restrictions. CI uses its own restricted SSH account, not the owner's
+administrator key. This is a controlled Linux fixture with matching paths,
+toolchains and environment—not automatic reuse across arbitrary CI projects.
+No public Receipt port or new VM was added.
+Both CI runs passed. Afterwards the experiment credential was revoked, its SSH
+key disabled and the GitHub secrets removed. The workflow remains as a tested
+example; another run requires fresh access rather than the administrator key.
+
+### 12 October 2026: Receipt's own CI suite
+
+Receipt now has a workflow for its actual Go tests, alongside an independent
+uncached job. The cached job skips the opt-in database tests; the independent
+job runs against disposable PostgreSQL and enables Go's race detector. A saved
+success therefore cannot be the only evidence that Receipt itself still works.
+
+The [Receipt CI guide](RECEIPT-CI.md) explains the two paths and the 30-day
+credentials. Pull requests receive no private-cache credentials. The initial
+live run passed both jobs. A same-commit rerun fetched the result on another
+runner, while the independent PostgreSQL/race suite passed again. CodeCraft
+has not been configured yet.
+
+### 13 October 2026: HTTPS without an SSH tunnel
+
+A client can now use `https://receipt.sidsharma.dev`. Its encrypted connection
+ends at Caddy on the droplet; Caddy forwards the request to Receipt inside that
+same machine. Receipt still checks the caller's credential before allowing
+protected operations. PostgreSQL and Receipt's internal port remain private.
+
+An authenticated request from the Mac fetched the saved result unchanged.
+Missing, invalid and revoked credentials were rejected. The certificate and
+normal DNS lookup passed verification. This checks reading and authentication,
+not a fresh upload/replay sequence or performance under internet traffic.
+At this initial HTTPS check, CI still used its SSH tunnel. The follow-up below
+records its migration.
+
+See the [HTTPS deployment record](DIGITALOCEAN-SETUP.md#13-october-amendment-public-https-with-caddy)
+for the connection diagram, configuration, checks, rollback and remaining work.
+
+### 13 October 2026: CI connects directly over HTTPS
+
+A fresh Go fixture uploaded a result and replayed it from a second empty local
+cache. Its execution marker stayed at one; changing the source made it execute
+again and fail. The temporary credential was revoked afterwards.
+
+[PR #2](https://github.com/sidsharma96/receipt/pull/2) moved Receipt's CI to
+HTTPS and was merged after fresh runners demonstrated a miss followed by a
+remote hit. The independent PostgreSQL/race job passed both attempts and again
+on main. The old CI tunnel key was disabled and its two GitHub secrets removed;
+the application token and its November expiry remain unchanged.
+
+Your administrator SSH access is unaffected. These CI changes were made in
+`/tmp/receipt-https-ci-20261013`, preserving this checkout's uncommitted work.
+See the [deployment record](DIGITALOCEAN-SETUP.md#13-october-follow-up-fresh-https-upload-and-replay)
+for the fixture evidence and the linked PR for the current CI guide.
 
 ### 13 October 2026: CI connects over HTTPS
 
