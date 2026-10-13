@@ -1,4 +1,4 @@
-"""Operator-only enrollment after the one-day experiment was cleaned up.
+"""Operator-only HTTPS token enrollment; does not create SSH access for CI.
 
 Refuses existing credentials. Renewal requires explicit revocation/removal first.
 """

@@ -564,6 +564,24 @@ The [dated correction review](REAL-REPO-LAB.md#9-october-2026-go-scratch-path-co
 explains the comparison, alternatives, evidence and remaining limits. This is
 a small maintenance fix, not completed Cargo/Vitest/Zig support.
 
+### 13 October 2026: CI connects over HTTPS
+
+Receipt's CI now connects to `https://receipt.sidsharma.dev` instead of creating
+an SSH tunnel. Caddy accepts the encrypted connection and forwards the request
+to Receipt on the same droplet. Receipt still checks the caller's token and
+permissions; its internal port and PostgreSQL remain private.
+
+A fresh local test uploaded a result, then replayed it from an empty local cache.
+An execution marker stayed at one, showing that the second invocation did not
+run the test. Changing the source made it run again and fail. Next, fresh GitHub
+runners demonstrated a miss followed by a same-commit remote hit over HTTPS.
+The independent PostgreSQL/race suite passed on both attempts.
+
+The [CI guide](RECEIPT-CI.md#13-october-moving-the-connection-to-https) records
+the checks and limitations. This changes the connection, not the rules for
+deciding whether a saved result can be reused. The existing token retains its
+November expiry, and unavailable caching still falls back to local execution.
+
 ### Maintaining these documents
 
 Edit this Markdown source and regenerate the offline HTML with `python3 docs/render_working_doc.py`. Check for stale output with `python3 docs/render_working_doc.py --check`. Update the relevant teaching chapter when behavior changes, then append the dated nine-question review and evidence to both review-reference formats. Preserve historical amendments.

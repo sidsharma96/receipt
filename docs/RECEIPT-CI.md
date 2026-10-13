@@ -105,7 +105,15 @@ This establishes one controlled upload/replay sequence, not a throughput claim.
 The application token is unchanged: changing transport neither broadens its
 permissions nor renews its expiry. Seven local helper-policy tests pass. Live
 GitHub verification and removal of the retired SSH credentials are recorded
-below after rollout; the older evidence remains historical.
+below; the older evidence remains historical.
+
+[HTTPS run 38429263439](https://github.com/sidsharma96/receipt/actions/runs/38429263439)
+tested commit `e95dcc0` twice on fresh runners. Attempt 1 missed and ran the
+ordinary suite (22.30 seconds for the Receipt invocation). Attempt 2 reported a
+remote hit for the same key `ff32a661f97a` (0.51 seconds). The independent
+PostgreSQL/race job passed both times. These are individual observations, not
+an estimate of typical latency; real-suite non-execution is identified by
+Receipt's diagnostic, while the separate local fixture supplied marker evidence.
 
 ## Limits and reasons to revisit
 
