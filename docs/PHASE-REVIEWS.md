@@ -2250,3 +2250,92 @@ switching proxies alone would not address every expiry problem.
 
 For now, the next milestone is operational: notice failures and recover data.
 Monitoring and automated backups are planned, not implemented by this review.
+
+### R2 drill — 1. Data structures
+
+Amendment, 13 October 2026: one manual recovery exercise, not a new cache backend.
+For example, a saved test result needs both its database description and its
+output files. A tar archive groups these with the binary and selected settings.
+A small JSON map associates each inner filename with its expected checksum,
+so the restore can detect changed bytes before loading them.
+
+### R2 drill — 2. Flow and boundaries
+
+The sequence was: pause Receipt, copy the database and files, restart Receipt,
+encrypt the copy, upload it to R2, download it, decrypt on the Mac, and restore
+into a separate database and directory. The live files were never replaced.
+Chapter 9 shows this sequence. R2 is a backup destination; live cache reads
+still use the droplet's files. These one-off scripts are not a backup platform.
+
+### R2 drill — 3. Primitives
+
+The Python [snapshot script](../deploy/digitalocean/backup-r2-drill.py) uses a `finally`
+block so ordinary snapshot failures still attempt to restart the service:
+
+```text
+finally:
+    run('systemctl', 'start', 'receipt')
+    run('systemctl', 'is-active', '--quiet', 'receipt')
+    print(f'stop/start interval: {time.monotonic() - start:.3f} seconds', flush=True)
+```
+
+That block runs whether copying succeeded or raised an error; it cannot run
+after power loss or a forced kill. PostgreSQL's dump produces the database copy.
+OpenSSL encrypts the archive with the public certificate; the private key is
+needed to decrypt it. HTTPS protects the upload connection. A separate Linux
+mount namespace lets the restored server see copied files at the original paths
+without changing what the live server sees.
+
+### R2 drill — 4. Pitfalls
+
+Copying only the database can leave records pointing at missing output files.
+Copying both while cleanup is running can have the same problem. We stopped the
+server and checked for other Receipt processes; this assumes the operator does
+not start a separate writer during copying. The restore uses a new database name
+and refuses to replace an existing database. The private recovery key stayed off
+the droplet, but losing its only verified copy on the Mac would prevent recovery.
+
+### R2 drill — 5. Costs
+
+Backup and restoration are occasional maintenance, not part of every cache
+request. Copying paused Receipt for a measured 1.306-second stop/start interval.
+Encryption, upload and download happened while Receipt was running. The object
+was 5,796,416 bytes. Larger stores require more copying and transfer work; the
+one-off transfer helper deliberately refuses archives larger than 64 MiB.
+
+### R2 drill — 6. Guarantees and limits
+
+The archive downloaded from R2—not a leftover original—was decrypted and restored.
+Production data was not overwritten. This tests recovery on the existing machine
+with existing PostgreSQL and Linux roles, not rebuilding a lost machine. Backups
+also preserve credential state at the moment of copying: a real later recovery
+would need a review of revocations made after that point.
+
+### R2 drill — 7. Alternatives
+
+We explicitly chose one exercise instead of scheduling nightly backups: current
+usage did not justify that operational work. Most cached results can be replaced
+by running tests again. Retrospective comparison: copying without stopping the
+server would reduce interruption but require a tested way to keep database and
+file copies consistent. Keeping the backup only on the droplet would not protect
+against losing the droplet.
+
+### R2 drill — 8. Evidence and remaining risks
+
+All four restored tables matched live contents before test-token issuance. All
+10 nonquarantined saved results could be fetched; the known 2,076-byte result
+matched its earlier checksum. The test server, temporary database and decrypted
+files were removed. The encrypted archive remains in R2 and on the Mac.
+New-host recovery, lost-key recovery and deletion-resistant storage were not
+tested or implemented. The [full record](DIGITALOCEAN-SETUP.md#13-october-one-off-r2-backup-and-restore)
+contains paths, checksums and script links. No schedule or monitoring was enabled.
+
+### R2 drill — 9. When to revisit
+
+Add scheduling when regular usage or irreplaceable records make manual copies
+insufficient. Revisit the brief pause when someone depends on availability.
+Revisit the transfer helper when archive size approaches its limit. Before
+calling this a disaster-recovery plan, restore onto a new machine and arrange a
+separately protected recovery-key copy. If backup deletion becomes a concern,
+design retention protection and narrower credentials rather than assuming
+encryption prevents deletion.

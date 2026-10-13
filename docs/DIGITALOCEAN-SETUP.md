@@ -336,3 +336,76 @@ accepted), and the two GitHub SSH secrets were deleted. Only the application
 token remains. Administrator SSH access was unchanged. A second main run after
 cleanup passed both jobs and replayed key `3fc8bbae451b` over HTTPS in a 0.49-second
 Receipt invocation. This is one observed invocation, not a general speed claim.
+
+### 13 October: one-off R2 backup and restore
+
+The user chose one recovery exercise instead of nightly backups. No schedule,
+retention deletion policy or monitoring workflow was installed.
+
+The [snapshot script](../deploy/digitalocean/backup-r2-drill.py) stopped Receipt,
+checked that no other Receipt process was running, dumped PostgreSQL, and copied
+the output files, binary, service definition, Caddy configuration and selected
+SSH/sudo configuration. It restarted Receipt before encryption and upload.
+The observed stop/start interval was **1.306 seconds**. This is not continuous
+measurement of the public endpoint's outage or a future downtime bound.
+No independent CLI writers were started during the snapshot.
+
+OpenSSL CMS encrypted the archive with AES-256-GCM using the existing public
+recovery certificate. Only the certificate went to the droplet; its matching
+private key stayed on the Mac. R2 credentials were excluded from the archive.
+The roles dump excludes PostgreSQL role passwords. Caddy certificate state was
+not backed up; a replacement host would need certificate issuance again.
+
+The [one-off transfer helper](../deploy/digitalocean/r2_backup_object.py) uploaded
+and then downloaded the object over verified HTTPS. It refuses redirects and
+uses a conditional upload to avoid replacing an existing object. Its credentials
+come from `/etc/receipt/backup.env`, owned by root with mode 600. It has no delete
+operation, multipart support, schedule or automatic retry. It reads at most
+64 MiB into memory; this is a small-drill helper, not a general backup service.
+
+Retained recovery material:
+
+- Bucket/object: `receipt-backups/drills/receipt-20261013-3fr7fj87.cms`.
+- Encrypted local copy: `/Users/siddharthsharma/receipt-r2-recovery-20261013.y0PxWL/from-r2.cms`.
+- Private key: `/Users/siddharthsharma/receipt-backup-2026-10-12.sa69ap/recovery-key.pem`.
+- Public certificate: the adjacent `recovery-cert.pem`.
+- Object size: 5,796,416 bytes.
+- SHA-256: `d5db44f21d608fd701c2d0dfc33c92fb22c5b5fd0ab130bda8c1381205931815`.
+
+To decrypt a retrieved copy, use OpenSSL CMS with `-decrypt -binary -inform DER`,
+the private key via `-inkey`, and public certificate via `-recip`. Write its output
+to a new file inside a mode-700 directory. The decrypted tar contains
+`receipt.dump`, `roles.sql`, `server.tar.gz` and `checksums.json`. Verify the
+checksums before restoring. Never restore directly over live data for a drill.
+The private key is essential: R2 access alone cannot decrypt the archive.
+
+The [restore script](../deploy/digitalocean/restore-r2-drill.py) records this
+specific drill's paths and database name; it is not a generic recovery installer.
+The downloaded archive was decrypted on the Mac, then sent through SSH for the
+isolated test. A private Linux mount namespace gave the test server its own view
+of the restored paths while the live server kept its original files. The test
+server listened only on loopback port 17779, with a separate PostgreSQL database.
+
+Evidence:
+
+- Upload and download returned HTTP 200; ciphertext matched byte for byte.
+- Decryption succeeded and all three inner-file checksums matched.
+- Restored table contents matched live contents before issuing a test token:
+  10 entries, 10 evidence rows, one storage-policy row and nine credential rows.
+- All 10 nonquarantined entries returned HTTP 200 from the restored server.
+- The known result had 2,076 bytes and SHA-256
+  `71d261af226f705a24f34fc7e2c316d7717aade5c068e3b85260588f9bb8222a`.
+- The test credential was revoked, the test server stopped, and temporary
+  database `receipt_restore_r2_20261013` was dropped. This drill's plaintext
+  staging files and restored directory were removed, including the Mac's
+  decrypted tar. Earlier manual backup directories were not removed.
+- Live Receipt remained active after cleanup; unauthenticated public HTTPS
+  identity returned the expected 401. No listener remained on port 17779.
+
+Limits: existing Linux/PostgreSQL roles were reused, rather than rebuilt from
+`roles.sql`. This does not establish new-host recovery, all credential behaviours
+after recovery, or recovery from a corrupted archive or lost key. Ordinary file
+removal is not secure erasure from SSDs or provider snapshots. Keep a separately
+protected recovery-key copy; the current Mac is its only verified location.
+The uploader's write-capable credentials are not protection against deletion
+by a compromised administrator. No immutable retention policy was configured.

@@ -1,6 +1,6 @@
 # Receipt: follow one test run
 
-Updated 13 October 2026. This guide explains Phases 1–7 and the single-server HTTPS deployment. Git history records committed revisions. Chapter 9 follows the deployed connection; monitoring and automated backups remain planned.
+Updated 13 October 2026. This guide explains Phases 1–7 and the single-server HTTPS deployment. Git history records committed revisions. Chapter 9 follows the deployed connection and a one-off R2 recovery exercise. Monitoring remains deferred; no backup schedule is enabled.
 
 ## Start here
 
@@ -548,9 +548,33 @@ still unreferenced. A database rollback cannot undo a filesystem write.
 HTTPS protects the connection; it does not make these two saves one operation.
 
 This is also why recovery must include database records and output files.
-We tested one encrypted backup and isolated restore manually. We have not yet
-scheduled backups or arranged monitoring. Adding S3/R2 would change where files
-live, not automatically solve recovery for the database or credentials.
+We tested an encrypted backup by uploading it to R2, downloading that actual
+object, and restoring it into a separate test database and directory. R2 holds
+the backup, not Receipt's live output files.
+
+Imagine the droplet disappears. A backup kept only on that droplet disappears
+with it. The R2 copy gives us the data elsewhere; the private recovery key on
+the Mac lets us decrypt it. Losing that key would make the copy unusable.
+
+```text
+Droplet: pause → copy database + files → restart → encrypt → R2
+                                                           │
+Mac:                     private key + downloaded copy ←────┘
+                                      │ decrypt
+Test on droplet: separate database + copied files → fetch saved results
+Live Receipt:   original database + original files stay in place
+```
+
+The pause kept the database and files from changing while we copied them.
+The measured stop/start interval was 1.306 seconds, not a promise about future
+backups. Uploading happened after restart. All ten saved results could be read
+from the restored server. We then removed the temporary restored data.
+
+This exercise reused the existing machine and its PostgreSQL setup. It did not
+test rebuilding a new machine. For this small learning deployment, we chose one
+recovery exercise rather than a nightly schedule. Monitoring is also deferred.
+See the [recovery record](DIGITALOCEAN-SETUP.md#13-october-one-off-r2-backup-and-restore)
+for the archive location, recovery steps and remaining limits.
 
 ### Check your understanding
 
@@ -796,6 +820,18 @@ The [CI guide](RECEIPT-CI.md#13-october-moving-the-connection-to-https) records
 the checks and limitations. This changes the connection, not the rules for
 deciding whether a saved result can be reused. The existing token retains its
 November expiry, and unavailable caching still falls back to local execution.
+
+### 13 October 2026: one-off R2 recovery exercise
+
+One encrypted backup was uploaded to the private `receipt-backups` bucket,
+downloaded, decrypted on the Mac, and restored into isolated storage on the
+droplet. The live database was not replaced. The temporary restored database and
+decrypted files were removed afterwards. The encrypted archive remains in R2
+and on the Mac; the private recovery key stayed on the Mac throughout.
+
+The [dated deployment review amendment](PHASE-REVIEWS.html#deployment-review-one-server-over-https-13-october-2026--r2-drill-1-data-structures)
+records the nine review questions. No nightly schedule or monitoring workflow
+was enabled. This supersedes the earlier plan to do automated backups next.
 
 ### Maintaining these documents
 
