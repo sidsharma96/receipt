@@ -91,7 +91,7 @@ Nothing makes the key usable again. There is no command to clear quarantine, `sh
 
 **Common wrong answer.** "The second upload overwrites the first, or is ignored because both passed." Receipt compares bytes, not test verdicts, and treats any disagreement as a broken input contract.
 
-**Learn more:** [D11. What happens when two clients publish the same key?](../DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key) · [G15. Quarantine cannot be undone](../DESIGN-DEFENSE.md#g15-quarantine-cannot-be-undone) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L232-L314)
+**Learn more:** [D11. What happens when two clients publish the same key?](../DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key) · [G15. Quarantine cannot be undone](../DESIGN-DEFENSE.md#g15-quarantine-cannot-be-undone) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
 
 </details>
 
@@ -105,11 +105,11 @@ What does one shared upload cost as the store grows, what serialises, and what t
 <details>
 <summary>Answer</summary>
 
-Each `Postgres.Put` holds the global exclusive lifecycle lock for its whole duration. Under it, Receipt reads the policy row and the `.store-id` marker, walks every output file to check the blob budget, writes and syncs two output files, and runs `metadataUsage`, which scans every result and evidence row and casts each JSON record to text, three times in total. With B output files, M results and E evidence rows, one upload costs O(B + M + E) time and O(B) memory. Reads take the shared lock, so they wait behind any upload.
+Each `Postgres.Put` holds the global exclusive lifecycle lock for its whole duration. Under it, Receipt reads the policy row and the `.store-id` marker, reads one row of running totals, checks with at most two `lstat` calls whether the output files already exist, inserts the record and evidence and updates the totals in `publishTx`, writes and syncs the two output files, adds their bytes to the totals and commits. None of that depends on the store's size. Reads take the shared lock, so they wait behind any upload.
 
-Measured on 15 October 2026 with small manifests, the median upload grew from 23.0 ms on an empty store to 111.5 ms at about 4,045 results, roughly 22 µs per stored result. Because uploads run one at a time, throughput is at most one divided by that latency. The extrapolation, not measured, is about 240 ms and four uploads per second at the default 10,000-result limit. The code says so directly: it deliberately serialises writers for a small deployment. The proposed fix is running totals kept in the same transaction plus an index of output files.
+Before 15 October 2026 each upload instead walked every output file and ran `metadataUsage`, which scans every result and evidence row, three times: O(B + M + E) time. On one laptop the median upload grew from 33.4 ms on an empty store to 131.8 ms at about 4,045 results. With running totals, the same test gave 19 to 24 ms at every size. Because uploads run one at a time, throughput is still at most one divided by that latency, about 50 uploads per second on that laptop. The code says so directly: it deliberately serialises writers for a small deployment. The totals cost a recount at every server start and CLI command, and a crash after file writes can leave orphan files uncounted until that recount or the next `shared gc --apply`.
 
-**Learn more:** [D15. What does one upload cost, and how does that grow?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [G3](../DESIGN-DEFENSE.md#g3-uploads-cost-ostore-size-under-a-global-lock) · [`metadataUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L192-L203)
+**Learn more:** [D15. What does one upload cost, and how does that grow?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L208-L215) · [`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L226-L237)
 
 </details>
 
@@ -237,7 +237,7 @@ Both commands are dry runs unless given `--apply`, and both take the exclusive l
 
 **Common wrong answer.** "Retention is least recently used." That is true of the local cache only.
 
-**Learn more:** [D16. How does cleanup avoid deleting a file that is still needed?](../DESIGN-DEFENSE.md#d16-how-does-cleanup-avoid-deleting-a-file-that-is-still-needed) · [G14. Retention ignores use](../DESIGN-DEFENSE.md#g14-retention-ignores-use) · [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L411-L442)
+**Learn more:** [D16. How does cleanup avoid deleting a file that is still needed?](../DESIGN-DEFENSE.md#d16-how-does-cleanup-avoid-deleting-a-file-that-is-still-needed) · [G14. Retention ignores use](../DESIGN-DEFENSE.md#g14-retention-ignores-use) · [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509)
 
 </details>
 
@@ -272,7 +272,7 @@ The storage policy row in the restored database records the absolute blob direct
 
 So the drill makes the restored files appear at the original path without changing what the live server sees. It runs under `unshare --mount --propagation private`, refuses to continue unless its mount namespace differs from PID 1's, and bind-mounts the restored directory there. It also uses a separate restored database and another loopback port, so production rows and the production port are never touched. The cost is that recovery onto a new machine must restore the files to the same absolute path, or the policy row must be edited by hand.
 
-**Learn more:** [D21. How is the server deployed, and how would we recover it?](../DESIGN-DEFENSE.md#d21-how-is-the-server-deployed-and-how-would-we-recover-it) · [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L168-L190) · [`mount --bind`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-check-20261012.sh#L7-L8)
+**Learn more:** [D21. How is the server deployed, and how would we recover it?](../DESIGN-DEFENSE.md#d21-how-is-the-server-deployed-and-how-would-we-recover-it) · [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L171-L193) · [`mount --bind`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-check-20261012.sh#L7-L8)
 
 </details>
 
@@ -379,7 +379,7 @@ Every writer and every maintenance operation holds the exclusive lifecycle lock 
 
 With per-key locks, two uploads for different keys would run together. Both could pass the budget check and overshoot it, and a collector could decide output file X was unreferenced while an upload for another key was about to reference it. SERIALIZABLE would catch the database half of that, but it cannot see the filesystem, so it does not protect output files from the collector.
 
-**Learn more:** [D14. Why is READ COMMITTED enough?](../DESIGN-DEFENSE.md#d14-why-is-read-committed-enough) · [D12](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L232-L314)
+**Learn more:** [D14. Why is READ COMMITTED enough?](../DESIGN-DEFENSE.md#d14-why-is-read-committed-enough) · [D12](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
 
 </details>
 
@@ -444,11 +444,11 @@ You may make three changes to Receipt before a second team starts using the shar
 
 A defensible choice, ordered by how soon it hurts:
 
-1. Replace per-upload scans with running totals of output bytes, metadata bytes and rows, kept in the same transaction as each insert, expiry and collection, plus an index table of output files. This removes the O(store) work under the global lock. The cost is a new crash-safety argument: every counter must stay correct across interrupted writes, which is why it was deferred.
+1. Record a last-used time and expire by it instead of by `created_at`. Today a result used every day still expires 30 days after it was first stored, so the busiest results are deleted on schedule. The cost is a write on the read path, done outside the read lock or in batches, and a new crash argument for that timestamp.
 2. Size the database pool from `--max-inflight`, or reject values above 16. Today the pool silently caps storage concurrency at 16 connections while the flag accepts 128, and authentication competes for the same connections. The cost is one more limit to configure and explain.
 3. Add a scheduled, tested backup with a second copy of the recovery key. Today the only off-machine copy is a one-off archive from 13 October, and only one private key on one Mac can decrypt it. The cost is an operating task to schedule, monitor and rehearse.
 
-(Keeping `RECEIPT_TOKEN` out of keys and giving credential issuance its own lock key were on this list until they were done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
+(Keeping `RECEIPT_TOKEN` out of keys, giving credential issuance its own lock key and replacing per-upload scans with running totals were on this list until they were done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason and a purge command for expired credential rows before the 1,024 cap. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
 
 **Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [G21. Operations](../DESIGN-DEFENSE.md#g21-operations)
 

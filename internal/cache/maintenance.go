@@ -162,6 +162,9 @@ func (s Postgres) initializePolicy(ctx context.Context) error {
 	if _, err = s.policy(ctx, tx); err != nil {
 		return err
 	}
+	if err = s.reconcileUsage(ctx, tx); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -200,6 +203,37 @@ func metadataUsage(ctx context.Context, tx *storageTx) (Usage, error) {
 	err = tx.QueryRowContext(ctx, `SELECT count(*),COALESCE(sum(octet_length(report::text)),0) FROM receipt_evidence_v2`).Scan(&u.Evidence, &evidenceBytes)
 	u.MetadataBytes += evidenceBytes
 	return u, err
+}
+
+// readUsage returns the running totals that uploads check their quotas against.
+// Every writer updates them in the transaction that changes what they count, so
+// an upload never has to scan the tables or walk the output directory.
+func readUsage(ctx context.Context, tx *storageTx) (Usage, error) {
+	var u Usage
+	err := tx.QueryRowContext(ctx, "SELECT blob_bytes,metadata_bytes,entries,evidence FROM receipt_storage_usage_v6 WHERE singleton=TRUE").Scan(&u.BlobBytes, &u.MetadataBytes, &u.Entries, &u.Evidence)
+	return u, err
+}
+
+// addUsage applies a change to the running totals inside the caller's transaction.
+func addUsage(ctx context.Context, tx *storageTx, d Usage) error {
+	if d == (Usage{}) {
+		return nil
+	}
+	_, err := tx.ExecContext(ctx, `UPDATE receipt_storage_usage_v6 SET blob_bytes=blob_bytes+$1,metadata_bytes=metadata_bytes+$2,entries=entries+$3,evidence=evidence+$4 WHERE singleton=TRUE`, d.BlobBytes, d.MetadataBytes, d.Entries, d.Evidence)
+	return err
+}
+
+// reconcileUsage recounts everything and replaces the running totals. It runs
+// at every startup, so totals left wrong by a crash after file writes, an older
+// build or a restored backup are corrected the next time a process opens the store.
+func (s Postgres) reconcileUsage(ctx context.Context, tx *storageTx) error {
+	u, _, err := s.inventory(ctx, tx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO receipt_storage_usage_v6(singleton,blob_bytes,metadata_bytes,entries,evidence) VALUES(TRUE,$1,$2,$3,$4)
+ ON CONFLICT(singleton) DO UPDATE SET blob_bytes=EXCLUDED.blob_bytes,metadata_bytes=EXCLUDED.metadata_bytes,entries=EXCLUDED.entries,evidence=EXCLUDED.evidence`, u.BlobBytes, u.MetadataBytes, u.Entries, u.Evidence)
+	return err
 }
 
 func jsonBytes(ctx context.Context, tx *storageTx, b []byte) (int64, error) {
@@ -300,41 +334,49 @@ func (l Limits) validate() error {
 	return errors.Join(errs...)
 }
 
-func (s Postgres) checkBlobQuota(ctx context.Context, tx *storageTx, r Result) error {
+// checkBlobQuota returns the bytes this upload adds to the output directory.
+// It checks only this result's two files, not the whole store.
+func (s Postgres) checkBlobQuota(ctx context.Context, tx *storageTx, r Result) (int64, error) {
 	l, err := s.policy(ctx, tx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var q bool
 	err = tx.QueryRowContext(ctx, "SELECT quarantined FROM receipt_entries_v2 WHERE key=$1", r.Key).Scan(&q)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
+		return 0, err
 	}
 	if q {
-		return ErrConflict
+		return 0, ErrConflict
 	}
-	u, objects, err := s.inventory(ctx, tx)
+	u, err := readUsage(ctx, tx)
 	if err != nil {
-		return err
+		return 0, err
+	}
+	blobs, err := s.managed()
+	if err != nil {
+		return 0, err
 	}
 	present := map[string]bool{}
-	for _, o := range objects {
-		if !o.Pending {
-			present[o.Hash] = true
-		}
-	}
 	additional := int64(0)
 	for _, b := range [][]byte{r.Stdout, r.Stderr} {
 		ref := fingerprint.Hash(b)
-		if !present[ref] {
+		if present[ref] {
+			continue
+		}
+		present[ref] = true
+		stored, err := blobs.Contains(ctx, ref)
+		if err != nil {
+			return 0, err
+		}
+		if !stored {
 			additional += int64(len(b))
-			present[ref] = true
 		}
 	}
 	if additional > l.MaxBlobBytes-u.BlobBytes {
-		return ErrQuota
+		return 0, ErrQuota
 	}
-	return nil
+	return additional, nil
 }
 
 // Collect only removes unreferenced objects. It does not mutate metadata;
@@ -405,7 +447,24 @@ func (s Postgres) Collect(ctx context.Context, apply bool) (MaintenanceResult, e
 		result.Files++
 		result.Bytes += o.Size
 	}
-	return result, nil
+	return result, resetBlobUsage(ctx, tx, apply, objects, result.Bytes)
+}
+
+// resetBlobUsage sets the output total to what a completed collection left and
+// commits; a dry run changes nothing. The walk saw every file, so the total is
+// exact, including files that a failed upload wrote but never counted.
+func resetBlobUsage(ctx context.Context, tx *storageTx, apply bool, objects []BlobObject, removed int64) error {
+	if !apply {
+		return nil
+	}
+	remaining := -removed
+	for _, o := range objects {
+		remaining += o.Size
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE receipt_storage_usage_v6 SET blob_bytes=$1 WHERE singleton=TRUE", remaining); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // Expire is storage retention, not test-result freshness. It preserves all
@@ -430,12 +489,20 @@ func (s Postgres) Expire(ctx context.Context, before time.Time, apply bool) (Mai
 	if !apply {
 		return result, nil
 	}
-	_, err = tx.ExecContext(ctx, `DELETE FROM receipt_evidence_v2 WHERE key IN (SELECT key FROM receipt_entries_v2 WHERE NOT quarantined AND created_at<$1)`, before)
+	var removed Usage
+	var evidenceBytes int64
+	err = tx.QueryRowContext(ctx, `WITH d AS (DELETE FROM receipt_evidence_v2 WHERE key IN (SELECT key FROM receipt_entries_v2 WHERE NOT quarantined AND created_at<$1) RETURNING octet_length(report::text) AS n)
+ SELECT count(*),COALESCE(sum(n),0) FROM d`, before).Scan(&removed.Evidence, &evidenceBytes)
 	if err != nil {
 		return result, err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM receipt_entries_v2 WHERE NOT quarantined AND created_at<$1", before)
+	err = tx.QueryRowContext(ctx, `WITH d AS (DELETE FROM receipt_entries_v2 WHERE NOT quarantined AND created_at<$1 RETURNING octet_length(record::text) AS n)
+ SELECT count(*),COALESCE(sum(n),0) FROM d`, before).Scan(&removed.Entries, &removed.MetadataBytes)
 	if err != nil {
+		return result, err
+	}
+	removed.MetadataBytes += evidenceBytes
+	if err = addUsage(ctx, tx, Usage{MetadataBytes: -removed.MetadataBytes, Entries: -removed.Entries, Evidence: -removed.Evidence}); err != nil {
 		return result, err
 	}
 	return result, tx.Commit()

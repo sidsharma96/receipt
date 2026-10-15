@@ -54,9 +54,9 @@ A reviewer asks: "Two uploads for different keys arrive together. Why does the s
 
 Both uploads may add files to the one shared blob directory, and both draw on the same storage budget. Two keys can also refer to the same blob, because identical output is stored once. The quota check must see a total that no other upload is changing at the same time, and `shared gc` must not delete a blob that an upload is about to reference. A lock per key coordinates neither of those decisions, since the shared quantities span keys.
 
-Receipt meets both needs with one exclusive lifecycle lock for every upload. The cost is that uploads run one at a time and each does work that grows with the store. That is a deliberate choice for a small deployment, not a high-throughput design.
+Receipt meets both needs with one exclusive lifecycle lock for every upload. The cost is that uploads run one at a time. Each upload's own work no longer grows with the store, because it checks running totals instead of recounting (since 15 October 2026), but the throughput ceiling is still one upload at a time. That is a deliberate choice for a small deployment, not a high-throughput design.
 
-**Learn more:** [11. Defending the design](../guide/11-defending-the-design.md#11-defending-the-design) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L303-L338)
+**Learn more:** [11. Defending the design](../guide/11-defending-the-design.md#11-defending-the-design) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L337-L380)
 
 </details>
 
@@ -73,7 +73,7 @@ Every writer and every maintenance operation holds the exclusive lifecycle lock 
 
 With per-key locks, two uploads for different keys would run together. Both could pass the budget check and overshoot it, and a collector could decide output file X was unreferenced while an upload for another key was about to reference it. SERIALIZABLE would catch the database half of that, but it cannot see the filesystem, so it does not protect output files from the collector.
 
-**Learn more:** [D14. Why is READ COMMITTED enough?](../DESIGN-DEFENSE.md#d14-why-is-read-committed-enough) · [D12](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L232-L314)
+**Learn more:** [D14. Why is READ COMMITTED enough?](../DESIGN-DEFENSE.md#d14-why-is-read-committed-enough) · [D12](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
 
 </details>
 

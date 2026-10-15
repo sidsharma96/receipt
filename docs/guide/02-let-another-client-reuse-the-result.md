@@ -16,10 +16,10 @@ Those output files are named by hashes of their content. Receipt calls them [blo
 |---|---|
 | Client | The client sends a successful result to the Receipt server. |
 | Output files | The server writes complete output files, named by their content hashes. |
-| Database record | The server saves the result description and references to those files. |
+| Database record | The server commits the result description and references to those files. |
 | Another client | The server loads the record, checks the output files, and returns the result. |
 
-The files come before the database record. Otherwise another client could find a record whose output has not been written yet. But the file write can succeed and the database save can fail. That leaves an unreferenced file, which later cleanup can remove. There is no single undo operation covering both storage systems.
+The files are saved before the database record is committed. Otherwise another client could find a record whose output has not been written yet. But the file write can succeed and the database commit can fail. That leaves an unreferenced file, which later cleanup can remove. There is no single undo operation covering both storage systems.
 
 ## A local copy still needs a shared trust check
 
@@ -66,7 +66,7 @@ PostgreSQL, a database, holds the small records: each key's result description, 
 
 </details>
 
-### Blobs first, then the database record
+### Blobs before the commit
 
 **Level:** Practitioner
 
@@ -75,13 +75,13 @@ In what order does a shared upload write output files and the database record, a
 <details>
 <summary>Answer</summary>
 
-`Postgres.Put` validates the result, takes the exclusive lifecycle lock, checks the blob quota and refuses a key that is already quarantined. It then writes the stdout blob and the stderr blob, each with a temporary file, `fsync`, a hard link that refuses to overwrite and a directory `fsync`. Last, `publishTx` inserts the record that points at those blobs and commits.
+`Postgres.Put` validates the result, takes the exclusive lifecycle lock, checks the blob quota and refuses a key that is already quarantined. `publishTx` then inserts the record that points at the blobs, inside the still-open transaction, and checks the metadata quotas. Next `Put` writes the stdout blob and the stderr blob, each with a temporary file, `fsync`, a hard link that refuses to overwrite and a directory `fsync`. Last, it commits.
 
-Writing blobs first means committed metadata never points at missing bytes. The reverse order would let another client find a record whose output does not exist yet. The cost is that a crash or a failed commit can leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
+The blobs are durable before the commit, and the record becomes visible only at the commit, so committed metadata never points at missing bytes. Committing the record before writing the blobs would let another client find a record whose output does not exist yet. Inserting the record before the blob writes, but committing after them, means a quota refusal writes no files. The cost is that a crash or a failed commit can still leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
 
 `Postgres.Get` takes the shared lock, reads the record, digest and quarantine flag, and returns a conflict if the key is quarantined. It checks the record's version and key, fetches each blob while verifying its length and hash, and recomputes the output digest. A digest mismatch is reported as corruption; a missing blob is treated as a miss.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L184-L217) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L140-L182)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L146-L189)
 
 </details>
 

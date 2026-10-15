@@ -51,6 +51,17 @@ original wording.
   keys. Phase 5's statement that the token is fingerprinted and passed to tests
   is superseded. Tests: `TestClientTokenIsNotAnInput`,
   `TestChildDoesNotInheritClientToken`.
+- Uploads check quotas against running totals in a new table,
+  `receipt_storage_usage_v6`, instead of walking every output file and
+  scanning every result and evidence row. Every insert, expiry and collection
+  updates the totals in its own transaction; every startup and CLI command
+  recounts. `Put` now inserts the record before writing the output files and
+  commits after them, so a quota refusal writes no files. Phase 3's description
+  of write admission as O(B + M) is superseded. Measured on one laptop, the
+  median upload at about 4,045 results fell from 131.8 ms to 19.9 ms (see
+  [D15](DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow)).
+  Tests: `TestUploadDoesNotWalkTheStore`, `TestUsageCountersFollowEveryChange`,
+  `TestRejectedUploadWritesNoFiles`.
 
 ## How to read this guide
 

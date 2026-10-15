@@ -39,7 +39,7 @@ took zero time. These are elapsed durations, not CPU-only times.
 | fs_lock | Opening and acquiring the filesystem lifecycle lock |
 | sql | Selected metadata reads/accounting/publication; publication includes validation, policy/binding checks and commit, not pure SQL engine time |
 | files | FileBlobs Get/Put/Inventory/Remove, including applicable hashing and filesystem work |
-| inventory | Combined metadata usage and file inventory during write admission/stats |
+| inventory | Combined metadata usage and file inventory during stats, limit changes and startup recounts (write admission before 15 October 2026) |
 | fingerprint | Input discovery, content hashing and runtime probes |
 | execution | Child execution and output handling |
 | lookup | CLI lookup, including any remote fetch/status request |

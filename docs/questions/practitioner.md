@@ -156,11 +156,11 @@ PostgreSQL holds what must change together under a transaction: which keys are v
 
 Output can be up to 8 MiB per stream. Keeping it out of database rows keeps the metadata small and lets the metadata quota count only JSON records. Content addressing stores identical output once, and the quota check counts only bytes whose hash is not already present. Every read verifies a blob's length and hash. Files alone would lose the transactional decisions about conflicts and visibility. Object storage is not supported: maintenance needs a `ManagedBlobs` store that can be locked with `flock`, inventoried and safely deleted from, and the deployment is one small server.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L303-L338)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L337-L380)
 
 </details>
 
-### Blobs first, then the database record
+### Blobs before the commit
 <!-- check: guide/02-let-another-client-reuse-the-result.md -->
 
 **Level:** Practitioner
@@ -170,13 +170,13 @@ In what order does a shared upload write output files and the database record, a
 <details>
 <summary>Answer</summary>
 
-`Postgres.Put` validates the result, takes the exclusive lifecycle lock, checks the blob quota and refuses a key that is already quarantined. It then writes the stdout blob and the stderr blob, each with a temporary file, `fsync`, a hard link that refuses to overwrite and a directory `fsync`. Last, `publishTx` inserts the record that points at those blobs and commits.
+`Postgres.Put` validates the result, takes the exclusive lifecycle lock, checks the blob quota and refuses a key that is already quarantined. `publishTx` then inserts the record that points at the blobs, inside the still-open transaction, and checks the metadata quotas. Next `Put` writes the stdout blob and the stderr blob, each with a temporary file, `fsync`, a hard link that refuses to overwrite and a directory `fsync`. Last, it commits.
 
-Writing blobs first means committed metadata never points at missing bytes. The reverse order would let another client find a record whose output does not exist yet. The cost is that a crash or a failed commit can leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
+The blobs are durable before the commit, and the record becomes visible only at the commit, so committed metadata never points at missing bytes. Committing the record before writing the blobs would let another client find a record whose output does not exist yet. Inserting the record before the blob writes, but committing after them, means a quota refusal writes no files. The cost is that a crash or a failed commit can still leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
 
 `Postgres.Get` takes the shared lock, reads the record, digest and quarantine flag, and returns a conflict if the key is quarantined. It checks the record's version and key, fetches each blob while verifying its length and hash, and recomputes the output digest. A digest mismatch is reported as corruption; a missing blob is treated as a miss.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L184-L217) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L140-L182)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L146-L189)
 
 </details>
 
@@ -211,7 +211,7 @@ The server compares a digest: the SHA-256 of a JSON object holding the stdout ha
 
 `publishTx` checks the entry and metadata quotas only when the key is new, then runs `INSERT ... ON CONFLICT(key) DO NOTHING` and reads the stored digest and quarantine flag with `SELECT ... FOR UPDATE`. It records an evidence row for this (key, digest) pair unless the evidence quota is full. A conflict means the key was already quarantined, the call is a conflict report, or the stored digest differs from the new one. On a conflict it sets `quarantined = TRUE`, marks `evidence_capped` if evidence was dropped, commits, and returns a conflict, which HTTP turns into status 409. The first record stays in place but can no longer be read. A full evidence quota never prevents quarantine.
 
-**Learn more:** [What if the clients disagree?](../guide/02-let-another-client-reuse-the-result.md#what-if-the-clients-disagree) · [D11. What happens when two clients publish the same key?](../DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key) · [`ConflictReport.digest`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L51-L58) · [`Postgres.publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L232-L314)
+**Learn more:** [What if the clients disagree?](../guide/02-let-another-client-reuse-the-result.md#what-if-the-clients-disagree) · [D11. What happens when two clients publish the same key?](../DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key) · [`ConflictReport.digest`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L51-L58) · [`Postgres.publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
 
 </details>
 
@@ -391,8 +391,8 @@ A reviewer asks: "Two uploads for different keys arrive together. Why does the s
 
 Both uploads may add files to the one shared blob directory, and both draw on the same storage budget. Two keys can also refer to the same blob, because identical output is stored once. The quota check must see a total that no other upload is changing at the same time, and `shared gc` must not delete a blob that an upload is about to reference. A lock per key coordinates neither of those decisions, since the shared quantities span keys.
 
-Receipt meets both needs with one exclusive lifecycle lock for every upload. The cost is that uploads run one at a time and each does work that grows with the store. That is a deliberate choice for a small deployment, not a high-throughput design.
+Receipt meets both needs with one exclusive lifecycle lock for every upload. The cost is that uploads run one at a time. Each upload's own work no longer grows with the store, because it checks running totals instead of recounting (since 15 October 2026), but the throughput ceiling is still one upload at a time. That is a deliberate choice for a small deployment, not a high-throughput design.
 
-**Learn more:** [11. Defending the design](../guide/11-defending-the-design.md#11-defending-the-design) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L303-L338)
+**Learn more:** [11. Defending the design](../guide/11-defending-the-design.md#11-defending-the-design) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L337-L380)
 
 </details>

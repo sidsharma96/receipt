@@ -645,7 +645,7 @@ so no client learns about the disagreement either.
 files (a `blobRecord`), and stores output bytes as content-addressed files under
 `blobs/<first two hex chars>/<hash>`. See
 [`Postgres`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L73-L79)
-and the schema in [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L81-L123).
+and the schema in [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L81-L130).
 
 **Alternatives.**
 
@@ -660,16 +660,20 @@ and the schema in [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/bl
   design such as reference counts or epoch-based collection.
 
 **Invariant.** A reader never sees a database record whose output files were
-not yet durable. [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L184-L217)
-writes both output files, with `fsync`, before it inserts the record.
+not yet durable. [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242)
+inserts the record inside its transaction, then writes both output files with
+`fsync`, then commits. The record becomes visible only at commit, so the files
+are durable first. Since 15 October 2026 the insert comes before the file
+writes, so that a quota refusal writes no files; before that, the files were
+written first.
 
-**Failure.** If the insert or commit fails after the files were written, they
-remain as orphans that nothing references. `shared gc` removes them later. No
+**Failure.** If the commit fails after the files were written, they remain as
+orphans that nothing references. `shared gc` removes them later. No
 single rollback covers both stores.
 
 ### D11. What happens when two clients publish the same key?
 
-**Decision.** [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L232-L314)
+**Decision.** [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
 runs `INSERT … ON CONFLICT (key) DO NOTHING`, reads back the stored digest and
 compares. The digest is the SHA-256 of the stdout hash, stderr hash and exit code
 ([`ConflictReport.digest`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L51-L58)).
@@ -712,16 +716,16 @@ the connection and close the lock file, which releases the `flock`.
 
 | Operation | Mode | Code |
 | --- | --- | --- |
-| Read a result | shared | [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L139-L149) |
-| `shared stats` | shared | [`Postgres.Stats`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L239-L252) |
-| Upload a result | exclusive | [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L184-L200) |
-| Report a conflict | exclusive | [`Postgres.Report`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L219-L230) |
-| `shared gc` | exclusive | [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L340-L349) |
-| `shared prune` | exclusive | [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L411-L422) |
-| `shared limits` | exclusive | [`Postgres.SetLimits`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L254-L263) |
-| Binding check at every startup and every CLI command | exclusive | [`initializePolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L129-L142) |
+| Read a result | shared | [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L146-L189) |
+| `shared stats` | shared | [`Postgres.Stats`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L273-L286) |
+| Upload a result | exclusive | [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242) |
+| Report a conflict | exclusive | [`Postgres.Report`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L244-L265) |
+| `shared gc` | exclusive | [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L382-L451) |
+| `shared prune` | exclusive | [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509) |
+| `shared limits` | exclusive | [`Postgres.SetLimits`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L288-L316) |
+| Binding check and usage recount at every startup and every CLI command | exclusive | [`initializePolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L129-L169) |
 
-The status check, [`Postgres.Quarantined`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L125-L137),
+The status check, [`Postgres.Quarantined`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L132-L144),
 is one single-row query and takes no lifecycle lock.
 
 **Why global and not per key.** Two keys can reference one output file, and all
@@ -802,7 +806,7 @@ hexadecimal) written as decimal digits, plus a small offset: 0, 1 or 2.
 
 | Key | Taken by | Mode | Guards |
 | --- | --- | --- | --- |
-| `72656365697074` | [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L81-L90) | exclusive | Concurrent `CREATE TABLE IF NOT EXISTS` at startup |
+| `72656365697074` | [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L81-L130) | exclusive | Concurrent `CREATE TABLE IF NOT EXISTS` at startup |
 | `72656365697075` | [`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L20-L22) through `Postgres.lifecycle` | shared or exclusive | Shared metadata, output files, quotas and collection (D12) |
 | `72656365697076` | [`credentialLock`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L15-L18), taken by [`Postgres.Migrate` in internal/auth](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L24-L34) | exclusive | Creating the credential table |
 | `72656365697076` | [`credentialLock`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L15-L18), taken by [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L74) | exclusive | Counting rows and inserting a credential |
@@ -868,34 +872,72 @@ evidence rows.
 
 | Step | Work | Code |
 | --- | --- | --- |
-| Read the policy row and the `.store-id` marker | constant | [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L168-L190) |
-| Check whether the key is quarantined | one index lookup | [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L303-L315) |
-| Sum metadata usage | two full-table scans, casting every JSON record to text: O(M + E) rows and their bytes | [`metadataUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L192-L203) |
-| Walk every output file | O(B) directory reads and `lstat` calls, O(B) memory | [`FileBlobs.Inventory`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_inventory.go#L48-L83) |
+| Read the policy row and the `.store-id` marker | constant | [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L171-L193) |
+| Check whether the key is quarantined | one index lookup | [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L337-L380) |
+| Read the running totals | one row | [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L208-L215) |
+| Check whether each output file is already stored | at most two `lstat` calls | [`FileBlobs.Contains`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_inventory.go#L146-L165) |
+| Insert the record and evidence, update the totals | policy again, a few index lookups and inserts | [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351) |
 | Write two output files | two hashes, writes, `fsync`s and directory `fsync`s | [`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L71-L117) |
-| Publish the record | policy again, `metadataUsage` twice more, inserts and commit | [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L232-L290) |
+| Add the new files' bytes to the totals and commit | one update and a commit | [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242) |
 
-So one upload costs O(B + M + E) time, plus the metadata bytes scanned three
-times, and O(B) memory. Because uploads are serialized, throughput is at most
-one divided by this latency.
+None of these steps depends on B, M or E, apart from the logarithmic cost of
+an index lookup. Because uploads are serialized, throughput is at most one
+divided by this latency.
 
-**Measured.** On 15 October 2026, sequential uploads of new keys with 1 KiB
-outputs, on an Apple M1 laptop with PostgreSQL 14.17 over loopback TCP, gave:
+**Running totals.** The table `receipt_storage_usage_v6` holds one row with four
+numbers: output bytes, metadata bytes, result rows and evidence rows. Every
+change to what they count updates them in the same transaction:
+[`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
+adds the record and evidence it inserted, `Put` adds the bytes of output files
+that were not stored before, [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509)
+subtracts the rows it deletes, and [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L382-L451)
+replaces the output total with the exact sum from its own walk. A rollback
+undoes the update together with the change, so the database totals stay exact.
 
-| Results already stored (about) | Median upload | Fastest | Slowest |
-| ---: | ---: | ---: | ---: |
-| 0 | 23.0 ms | 20.7 ms | 32.4 ms |
-| 265 | 35.6 ms | 31.9 ms | 41.1 ms |
-| 1,030 | 51.4 ms | 48.0 ms | 59.4 ms |
-| 4,045 | 111.5 ms | 108.3 ms | 116.5 ms |
+The output total can still drift, because files live outside the transaction.
+If an upload writes its files and then its commit fails, the files stay as
+orphans and the total does not include them. To keep that rare, `Put` now runs
+`publishTx` before writing any file, so a quota refusal writes nothing; only a
+database failure after the file writes, or a crash, leaves uncounted orphans.
+Readers still never see a record without its files, because the record becomes
+visible only at commit, after the files are synced
+([D10](#d10-why-postgresql-for-metadata-and-files-for-output)). Totals can also
+be wrong after a restore from backup, or after an older build that does not
+know about them changed the store. Two mechanisms correct them:
+[`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L226-L237)
+recounts everything at every server start and every CLI command, and
+`shared gc --apply` resets the output total. Older servers must not run beside
+a newer one (the README's upgrade rule), so an older build can only be an older
+maintenance command, and those only delete rows or files that the newer build
+counted. Between corrections the totals then err high, which makes quotas
+stricter, not looser. `shared stats` and
+`shared limits` still walk the store, so what they print is always exact.
 
-Each size had 15 samples. Each stored result had one distinct output file and
-shared one empty stderr file. The [appendix](#appendix-how-the-upload-cost-numbers-were-measured)
-has the code. At an empty store the time goes to fixed work: four file flushes
-and 19 SQL statements, counting the transaction's start, lock and commit. This run did not split those
-apart. Growth is close to linear, about 22 µs per stored result. Extrapolating that
-line, which was not measured, gives roughly 240 ms per upload at the default
-limit of 10,000 results, or about four uploads per second for the whole server.
+**Cost of the change.** Startup reconciliation does the O(B + M + E) work that
+every upload used to do, once per process start and once per `receipt shared`
+or `receipt auth` command, under the exclusive lock. Before 15 October 2026 the
+same work ran on every upload. Existing stores need no migration step: the
+first start of the new build creates the table and fills it by recounting.
+
+**Measured.** On 15 October 2026, the same test ran before and after the change
+on the same laptop (Apple M1, PostgreSQL 14.17 over loopback TCP): sequential
+uploads of new keys with 1 KiB outputs, 15 samples per size.
+
+| Results already stored (about) | Median before | Median after | Fastest after | Slowest after |
+| ---: | ---: | ---: | ---: | ---: |
+| 0 | 33.4 ms | 19.1 ms | 15.7 ms | 43.3 ms |
+| 265 | 37.4 ms | 18.8 ms | 16.6 ms | 44.6 ms |
+| 1,030 | 54.8 ms | 24.2 ms | 18.2 ms | 30.0 ms |
+| 4,045 | 131.8 ms | 19.9 ms | 17.5 ms | 40.2 ms |
+
+The median no longer grows with the store. At an empty store the time goes to
+fixed work: four file flushes and the SQL statements, counting the
+transaction's start, lock and commit. This run did not split those apart. The
+[appendix](#appendix-how-the-upload-cost-numbers-were-measured) has the code.
+An earlier run of the old code on the same laptop, also on 15 October 2026,
+gave medians of 23.0, 35.6, 51.4 and 111.5 ms for the same sizes. The two runs
+of the old code differ by up to 45 percent at the empty store, so read the
+table as the shape of the growth, not as precise figures.
 
 These were small manifests. Real manifests are larger: this repository's is
 29,612 bytes. With the default 64 MiB metadata budget, that size allows roughly
@@ -903,25 +945,19 @@ These were small manifests. Real manifests are larger: this repository's is
 That estimate divides the budget by one measured manifest and ignores the
 record's other fields.
 
-A read is cheaper. [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L139-L182)
+A read is cheaper. [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L146-L189)
 does one index lookup, decodes one record and reads and hashes two output files.
 It does not scan the store. Single reads in the same run took 1 to 2 ms.
-
-**Proposed fix.** Keep running totals of output bytes, metadata bytes and row
-counts in the policy row, updated in the same transaction as each insert,
-expiry and collection, and keep an index table of output files so that the
-quota check need not walk the directory. The crash-safety argument must then
-cover the counters, which is why it was deferred.
 
 ### D16. How does cleanup avoid deleting a file that is still needed?
 
 **Decision.** Two separate commands.
 
-- [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L411-L442)
+- [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509)
   (`shared prune`) deletes non-quarantined rows older than a cutoff, 720 hours by
   default, and their evidence. It never touches files and always keeps
   quarantined keys.
-- [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L340-L409)
+- [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L382-L451)
   (`shared gc`) builds a map of every output hash still referenced, walks the
   output directory and deletes any file not in the map, plus leftover
   `.pending-*` files. It validates every record first. One malformed record
@@ -943,8 +979,11 @@ least recently used entry ([D8](#d8-how-does-the-local-cache-stay-bounded-and-wh
 
 **Cost.** Collection reads and validates every record, which recomputes every
 manifest's key, and walks every file: O(M + B) time and O(live hashes) memory,
-all under the exclusive lock. Deletions are permanent. An interrupted run can be
-repeated safely.
+all under the exclusive lock. With `--apply` it also replaces the running output
+total ([D15](#d15-what-does-one-upload-cost-and-how-does-that-grow)) with the
+exact sum of the files that remain, and commits. Deletions are permanent. An
+interrupted run can be repeated safely. It commits nothing, so the total keeps
+counting files it already deleted until the next run or restart.
 
 ### D17. How does the server bound concurrent work?
 
@@ -1130,7 +1169,7 @@ missing files. Details are in [DIGITALOCEAN-SETUP.md](DIGITALOCEAN-SETUP.md#13-o
 scratch directory such as `/var/backups/receipt-restore.yCuUL5/extracted/var/lib/receipt`,
 but the restored database says its blobs live at `/var/lib/receipt/cache/blobs`.
 The storage policy row records that absolute path and a random store identity,
-and every storage operation checks both: [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L168-L190)
+and every storage operation checks both: [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L171-L193)
 compares the server's blob directory with the recorded path, and `Bind` compares
 the `.store-id` file with the recorded identity. A server started against the
 scratch directory would refuse every request with "blob directory does not match
@@ -1206,12 +1245,6 @@ lifecycle lock once. A `receipt auth` command therefore still waits for the
 slowest in-flight storage operation before it starts. Fix: open only the
 database connection in `authCommand`, without initialising storage.
 
-### G3. Uploads cost O(store size) under a global lock
-
-See [D15](#d15-what-does-one-upload-cost-and-how-does-that-grow). Measured
-111.5 ms median at about 4,000 results. Fix: transactional usage counters and an
-output-file index.
-
 ### G4. The connection pool silently caps storage concurrency at 16
 
 [`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L26-L33)
@@ -1283,14 +1316,14 @@ match each whitespace-separated flag on its own.
 
 ### G14. Retention ignores use
 
-[`created_at` in `Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L413-L437)
+[`created_at` in `Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509)
 deletes by `created_at`, which hits never refresh. Fix: record a last-used time,
 updated outside the read lock or in batches.
 
 ### G15. Quarantine cannot be undone
 
 There is no command to clear `quarantined` for a key, and
-[`quarantined=TRUE`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L298-L306) in `publishTx`
+[`quarantined=TRUE`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L346-L346) in `publishTx`
 lets a report create a quarantined row for a key that was never stored. Fix: an
 administrator command that clears quarantine with a recorded reason.
 
@@ -1349,9 +1382,11 @@ certificate renewal. See [DIGITALOCEAN-SETUP.md](DIGITALOCEAN-SETUP.md).
 
 ## Appendix. How the upload-cost numbers were measured
 
-The numbers in D15 came from a temporary test file added to a copy of the
-repository at `5f5794f`, outside the repository, and run against a disposable
-PostgreSQL 14.17 cluster on `127.0.0.1`:
+The numbers in D15 came from a temporary test file, never committed, run
+against a disposable PostgreSQL 14.17 cluster on `127.0.0.1`. The first run
+used a copy of the repository at `5f5794f`. The before-and-after pair used the
+same file in this repository at `45090db` and then with the running totals
+added:
 
 ```sh
 RECEIPT_PUTCOST=1 RECEIPT_TEST_DATABASE_URL='postgres://receipt_test@127.0.0.1:54339/receipt_test?sslmode=disable' \
@@ -1420,9 +1455,10 @@ func TestPutCostByStoreSize(t *testing.T) {
 
 </details>
 
-The store sizes in the D15 table include the 15 samples that each earlier
+Each run takes about two to six minutes, most of it filling the store. The
+store sizes in the D15 table include the 15 samples that each earlier
 round left behind, so they are 0, 265, 1,030 and 4,045 rather than the round
 targets 0, 250, 1,000 and 4,000. The single `Get` timing per round is the
 source of the 1 to 2 ms read figure. One client uploaded sequentially, so the
-numbers contain no lock waiting. They are one run on one laptop, not a
+numbers contain no lock waiting. Each column is one run on one laptop, not a
 confidence interval.

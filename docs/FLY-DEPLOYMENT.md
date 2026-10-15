@@ -43,7 +43,7 @@ make this design safely serve requests from both places.
 Each Fly Machine gets its own volume, so a second Receipt Machine mounts a new,
 empty disk at the same path, `/data`. Follow one result through both Machines.
 
-1. Machine A starts first. [`initializePolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L129-L165)
+1. Machine A starts first. [`initializePolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L129-L169)
    records the blob directory `/data/cache/blobs` and a random store identity in
    PostgreSQL, and [`FileBlobs.Bind`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_binding.go#L13-L71)
    writes that identity into a `.store-id` file on A's volume.
@@ -57,7 +57,7 @@ empty disk at the same path, `/data`. Follow one result through both Machines.
    volume and the record lands in the shared database.
 4. Another client asks for result A, and Fly routes the request to Machine B.
    B finds the record, then fails to open X on its own disk.
-   [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L140-L183)
+   [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L146-L189)
    returns a wrapped cache miss, and [`getEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L319-L325)
    answers HTTP 404.
 5. The client treats the 404 as an ordinary miss: it runs the tests and uploads
@@ -68,9 +68,10 @@ empty disk at the same path, `/data`. Follow one result through both Machines.
 
 Other parts degrade in the same way. A status check (`GET /v1/status/<key>`)
 reads only the database, so it answers the same on both Machines. The upload
-quota check in [`checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L303-L337)
-counts only the files on the local volume. `shared gc` on either Machine
-([`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L340-L342))
+quota check in [`checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L337-L380)
+reads one running total in the shared database, but each Machine's startup
+recount sets that total to the files on its own volume only. `shared gc` on either Machine
+([`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L382-L451))
 deletes only local files that no record references, so it does not delete the
 other Machine's output. The PostgreSQL advisory lock still serializes writers
 across both Machines, because the database is shared. The `flock` on the

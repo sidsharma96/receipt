@@ -281,7 +281,10 @@ objects. Writers/maintenance serialize; concurrent readers share locks.
 
 Postgres stores common limits: 1 GiB blob payloads (including orphan/pending
 bytes), 64 MiB logical JSON metadata/evidence, 10,000 action rows and 100,000
-distinct evidence rows. Repeated blob bytes are charged once; rejected uploads
+distinct evidence rows. Uploads check them against running totals kept in
+`receipt_storage_usage_v6`; each server start, CLI command and `shared gc --apply`
+recounts, so orphan files left by a failed commit are charged from the next
+recount. Repeated blob bytes are charged once; rejected uploads
 return HTTP 507 and clients still return their test command's outcome. These
 are not hard disk/RSS quotas: filesystem blocks/inodes, temporary duplication,
 indexes, WAL, database bookkeeping and lock/identity files are outside the byte
@@ -390,8 +393,7 @@ Next steps, none of them started:
 1. Renew the CI token before 12 November 2026 03:28 UTC. Since 15 October 2026
    the client no longer hashes `RECEIPT_TOKEN` into keys, so renewal keeps them.
 2. Scheduled backups with a second copy of the recovery key, and monitoring.
-3. Cheaper upload accounting, so that an upload no longer scans the whole store.
-4. Portable input policy, sandboxed execution, dependency selection, and object
+3. Portable input policy, sandboxed execution, dependency selection, and object
    storage, each with explicit correctness gates.
 
 The [design defense](docs/DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls)

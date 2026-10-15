@@ -111,8 +111,14 @@ func TestMetadataQuotaAndOrphanCollection(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, u, err := s.Stats(ctx)
-	if err != nil || u.Entries != 0 || u.Evidence != 0 || u.BlobFiles != 2 {
-		t.Fatalf("%+v %v", u, err)
+	if err != nil || u.Entries != 0 || u.Evidence != 0 || u.BlobFiles != 0 {
+		t.Fatalf("a refused upload wrote files: %+v %v", u, err)
+	}
+	// Orphans now come only from failures after the files are written; make two directly.
+	for _, b := range []string{"orphan one", "orphan two"} {
+		if _, err = s.Blobs.Put(ctx, []byte(b)); err != nil {
+			t.Fatal(err)
+		}
 	}
 	preview, err := s.Collect(ctx, false)
 	if err != nil || preview.Files != 2 {

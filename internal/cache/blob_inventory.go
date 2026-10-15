@@ -24,6 +24,7 @@ type ManagedBlobs interface {
 	BlobStore
 	Location() (string, error)
 	Inventory(context.Context) ([]BlobObject, error)
+	Contains(context.Context, string) (bool, error)
 	Remove(context.Context, BlobObject) error
 	Bind(context.Context, string, bool) error
 }
@@ -140,6 +141,27 @@ func inventoryRootFile(rel string, d fs.DirEntry) (*BlobObject, error) {
 		return nil, fmt.Errorf("invalid store identity marker")
 	}
 	return nil, nil
+}
+
+// Contains reports whether a complete object for hash is stored, without
+// reading it. A non-regular file at that name is an error, as in Inventory.
+func (s FileBlobs) Contains(ctx context.Context, hash string) (bool, error) {
+	defer observe.Measure(ctx, observe.Files)()
+	p, err := s.path(hash)
+	if err != nil {
+		return false, err
+	}
+	info, err := os.Lstat(p)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !info.Mode().IsRegular() {
+		return false, fmt.Errorf("nonregular blob object")
+	}
+	return true, nil
 }
 
 // Remove deletes a validated inventory object; the caller must hold the lifecycle lock.

@@ -126,9 +126,10 @@ func TestPostgresMetadataFailureLeavesCollectableBlobs(t *testing.T) {
 	s := postgresFixture(t)
 	v := example()
 	ctx := context.Background()
-	// A real PostgreSQL constraint fails the metadata insert after both files
+	// A real PostgreSQL deferred trigger fails the commit after both files
 	// were published. This is not a mock transaction or a simulated rollback.
-	if _, err := s.DB.Exec("ALTER TABLE receipt_entries_v2 ADD CONSTRAINT phase4_injected_failure CHECK (false)"); err != nil {
+	if _, err := s.DB.Exec(`CREATE FUNCTION phase4_injected_failure() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'injected commit failure'; END$$;
+ CREATE CONSTRAINT TRIGGER phase4_injected_failure AFTER INSERT ON receipt_entries_v2 DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION phase4_injected_failure()`); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.Put(ctx, v); err == nil {
@@ -143,7 +144,7 @@ func TestPostgresMetadataFailureLeavesCollectableBlobs(t *testing.T) {
 	if err != nil || result.Files != 2 {
 		t.Fatal(result, err)
 	}
-	if _, err := s.DB.Exec("ALTER TABLE receipt_entries_v2 DROP CONSTRAINT phase4_injected_failure"); err != nil {
+	if _, err := s.DB.Exec("DROP TRIGGER phase4_injected_failure ON receipt_entries_v2"); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.Put(ctx, v); err != nil {

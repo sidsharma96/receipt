@@ -7,7 +7,9 @@ fixed in code, each with a regression test. Credential issuance now has its own
 advisory lock key, so renewing a token no longer pauses cache traffic. The
 client no longer hashes its own `RECEIPT_TOKEN` into cache keys or passes it to
 tests, so renewing a token no longer empties CI's effective cache. That change
-alters, once, the key of every run made with the token set. The
+alters, once, the key of every run made with the token set. Uploads now check
+quotas against running totals instead of scanning the whole store, so an
+upload's cost no longer grows with the number of stored results. The
 [review reference](../PHASE-REVIEWS.md#known-gap-fixes-15-october-2026) lists
 each fix and its test.
 

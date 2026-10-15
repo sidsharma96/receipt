@@ -26,9 +26,9 @@ These rules depend on every participant using the protocol. They do not defend a
 
 ## The simple choice has a cost
 
-Before saving new shared data, Receipt inspects existing storage to check the selected limits. A tiny upload can therefore do more work as the store grows. Collection also scans records and files, and it can make reads and writes wait while it runs.
+Collection scans every record and file, and it can make reads and writes wait while it runs. Until 15 October 2026 every upload also inspected all existing storage to check the limits, so a tiny upload did more work as the store grew.
 
-We chose this understandable approach for a small store. Keeping continuously updated usage counts could reduce scans, but every interrupted or retried update would need to keep those counts correct. That is a possible later design, not a free optimization.
+Uploads now check the limits against running totals: one database row that every upload, expiry and collection updates in the same transaction as its own change. The cost is keeping those totals correct when a write is interrupted. A rollback undoes the total together with the change, but output files live outside the database, so a failed commit can leave files the total does not count. Receipt recounts everything each time a server or command starts, and collection resets the file total, so such errors last only until then. [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) has the details and the before-and-after measurements.
 
 The limits do not cap every byte PostgreSQL or the operating system might use. Database overhead and temporary files need operational attention too. Maintenance defaults to a [dry run](../GLOSSARY.md#dry-run) so an operator can inspect planned changes before applying them.
 

@@ -79,11 +79,11 @@ You may make three changes to Receipt before a second team starts using the shar
 
 A defensible choice, ordered by how soon it hurts:
 
-1. Replace per-upload scans with running totals of output bytes, metadata bytes and rows, kept in the same transaction as each insert, expiry and collection, plus an index table of output files. This removes the O(store) work under the global lock. The cost is a new crash-safety argument: every counter must stay correct across interrupted writes, which is why it was deferred.
+1. Record a last-used time and expire by it instead of by `created_at`. Today a result used every day still expires 30 days after it was first stored, so the busiest results are deleted on schedule. The cost is a write on the read path, done outside the read lock or in batches, and a new crash argument for that timestamp.
 2. Size the database pool from `--max-inflight`, or reject values above 16. Today the pool silently caps storage concurrency at 16 connections while the flag accepts 128, and authentication competes for the same connections. The cost is one more limit to configure and explain.
 3. Add a scheduled, tested backup with a second copy of the recovery key. Today the only off-machine copy is a one-off archive from 13 October, and only one private key on one Mac can decrypt it. The cost is an operating task to schedule, monitor and rehearse.
 
-(Keeping `RECEIPT_TOKEN` out of keys and giving credential issuance its own lock key were on this list until they were done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
+(Keeping `RECEIPT_TOKEN` out of keys, giving credential issuance its own lock key and replacing per-upload scans with running totals were on this list until they were done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason and a purge command for expired credential rows before the 1,024 cap. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
 
 **Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [G21. Operations](../DESIGN-DEFENSE.md#g21-operations)
 

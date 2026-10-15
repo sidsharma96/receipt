@@ -112,6 +112,13 @@ func (s Postgres) Migrate(ctx context.Context) error {
  max_metadata_bytes BIGINT NOT NULL CHECK(max_metadata_bytes >= 0),
  max_entries BIGINT NOT NULL CHECK(max_entries >= 0),
  max_evidence BIGINT NOT NULL CHECK(max_evidence >= 0)
+ );
+ CREATE TABLE IF NOT EXISTS receipt_storage_usage_v6 (
+ singleton BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK(singleton),
+ blob_bytes BIGINT NOT NULL,
+ metadata_bytes BIGINT NOT NULL,
+ entries BIGINT NOT NULL,
+ evidence BIGINT NOT NULL
  );`)
 	if err != nil {
 		return err
@@ -195,25 +202,43 @@ func (s Postgres) Put(ctx context.Context, r Result) error {
 		return err
 	}
 	defer tx.Rollback() //nolint:errcheck // Preserve the primary error; rollback also releases lifecycle resources.
-	if err = s.checkBlobQuota(ctx, tx, r); err != nil {
-		return err
-	}
-	stdout, err := s.Blobs.Put(ctx, r.Stdout)
-	if err != nil {
-		return err
-	}
-	stderr, err := s.Blobs.Put(ctx, r.Stderr)
+	additional, err := s.checkBlobQuota(ctx, tx, r)
 	if err != nil {
 		return err
 	}
 	head := r
 	head.Stdout = nil
 	head.Stderr = nil
-	raw, err := json.Marshal(blobRecord{2, head, stdout, stderr})
+	refs := [2]BlobRef{{fingerprint.Hash(r.Stdout), len(r.Stdout)}, {fingerprint.Hash(r.Stderr), len(r.Stderr)}}
+	raw, err := json.Marshal(blobRecord{2, head, refs[0], refs[1]})
 	if err != nil {
 		return err
 	}
-	return s.publishTx(ctx, tx, ReportFor(r), raw, false)
+	// Admit the metadata first, so a quota refusal writes no files. Nothing is
+	// visible to readers until Commit, and the files are written before it.
+	conflict, err := s.publishTx(ctx, tx, ReportFor(r), raw, false)
+	if err != nil {
+		return err
+	}
+	for i, b := range [][]byte{r.Stdout, r.Stderr} {
+		ref, err := s.Blobs.Put(ctx, b)
+		if err != nil {
+			return err
+		}
+		if ref != refs[i] {
+			return fmt.Errorf("blob store returned an unexpected reference")
+		}
+	}
+	if err = addUsage(ctx, tx, Usage{BlobBytes: additional}); err != nil {
+		return err
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	if conflict {
+		return ErrConflict
+	}
+	return nil
 }
 
 // Report records conflict evidence and marks its key unsafe for reuse.
@@ -226,83 +251,9 @@ func (s Postgres) Report(ctx context.Context, report ConflictReport) error {
 		return err
 	}
 	defer tx.Rollback() //nolint:errcheck // Preserve the primary error; rollback also releases lifecycle resources.
-	return s.publishTx(ctx, tx, report, nil, true)
-}
-
-func (s Postgres) publishTx(ctx context.Context, tx *storageTx, report ConflictReport, raw []byte, force bool) error {
-	defer observe.Measure(ctx, observe.SQL)()
-	if err := report.validate(); err != nil {
-		return err
-	}
-	digest := report.digest()
-	limits, err := s.policy(ctx, tx)
+	conflict, err := s.publishTx(ctx, tx, report, nil, true)
 	if err != nil {
 		return err
-	}
-	usage, err := metadataUsage(ctx, tx)
-	if err != nil {
-		return err
-	}
-	var exists bool
-	if err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM receipt_entries_v2 WHERE key=$1)", report.Key).Scan(&exists); err != nil {
-		return err
-	}
-	if !exists {
-		bytes, err := jsonBytes(ctx, tx, raw)
-		if err != nil {
-			return err
-		}
-		if usage.Entries >= limits.MaxEntries || bytes > limits.MaxMetadataBytes-usage.MetadataBytes {
-			return ErrQuota
-		}
-	}
-	var record any
-	if raw != nil {
-		record = string(raw)
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO receipt_entries_v2(key,digest,record,quarantined)
- VALUES($1,$2,$3,$4) ON CONFLICT(key) DO NOTHING`, report.Key, digest, record, force)
-	if err != nil {
-		return err
-	}
-	var existing string
-	var q bool
-	err = tx.QueryRowContext(ctx, "SELECT digest,quarantined FROM receipt_entries_v2 WHERE key=$1 FOR UPDATE", report.Key).Scan(&existing, &q)
-	if err != nil {
-		return err
-	}
-	evidence, err := json.Marshal(report)
-	if err != nil {
-		return err
-	}
-	var known bool
-	if err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM receipt_evidence_v2 WHERE key=$1 AND digest=$2)", report.Key, digest).Scan(&known); err != nil {
-		return err
-	}
-	usage, err = metadataUsage(ctx, tx)
-	if err != nil {
-		return err
-	}
-	bytes, err := jsonBytes(ctx, tx, evidence)
-	if err != nil {
-		return err
-	}
-	full := !known && (usage.Evidence >= limits.MaxEvidence || bytes > limits.MaxMetadataBytes-usage.MetadataBytes)
-	if !full {
-		_, err = tx.ExecContext(ctx, `INSERT INTO receipt_evidence_v2(key,digest,report) VALUES($1,$2,$3)
- ON CONFLICT(key,digest) DO NOTHING`, report.Key, digest, string(evidence))
-	}
-	if err != nil {
-		return err
-	}
-	conflict := q || force || existing != digest
-	if full && !conflict {
-		return ErrQuota
-	}
-	if conflict {
-		if _, err = tx.ExecContext(ctx, "UPDATE receipt_entries_v2 SET quarantined=TRUE,evidence_capped=evidence_capped OR $2 WHERE key=$1", report.Key, full); err != nil {
-			return err
-		}
 	}
 	if err = tx.Commit(); err != nil {
 		return err
@@ -311,4 +262,100 @@ func (s Postgres) publishTx(ctx context.Context, tx *storageTx, report ConflictR
 		return ErrConflict
 	}
 	return nil
+}
+
+// publishTx inserts the record and its evidence and updates the running totals.
+// It reports whether the key is now quarantined; the caller commits.
+func (s Postgres) publishTx(ctx context.Context, tx *storageTx, report ConflictReport, raw []byte, force bool) (bool, error) {
+	defer observe.Measure(ctx, observe.SQL)()
+	if err := report.validate(); err != nil {
+		return false, err
+	}
+	digest := report.digest()
+	limits, err := s.policy(ctx, tx)
+	if err != nil {
+		return false, err
+	}
+	usage, err := readUsage(ctx, tx)
+	if err != nil {
+		return false, err
+	}
+	var exists bool
+	if err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM receipt_entries_v2 WHERE key=$1)", report.Key).Scan(&exists); err != nil {
+		return false, err
+	}
+	var added Usage
+	var recordBytes int64
+	if !exists {
+		recordBytes, err = jsonBytes(ctx, tx, raw)
+		if err != nil {
+			return false, err
+		}
+		if usage.Entries >= limits.MaxEntries || recordBytes > limits.MaxMetadataBytes-usage.MetadataBytes {
+			return false, ErrQuota
+		}
+	}
+	var record any
+	if raw != nil {
+		record = string(raw)
+	}
+	inserted, err := execInserted(ctx, tx, `INSERT INTO receipt_entries_v2(key,digest,record,quarantined)
+ VALUES($1,$2,$3,$4) ON CONFLICT(key) DO NOTHING`, report.Key, digest, record, force)
+	if err != nil {
+		return false, err
+	}
+	if inserted {
+		added.Entries, added.MetadataBytes = 1, recordBytes
+	}
+	var existing string
+	var q bool
+	err = tx.QueryRowContext(ctx, "SELECT digest,quarantined FROM receipt_entries_v2 WHERE key=$1 FOR UPDATE", report.Key).Scan(&existing, &q)
+	if err != nil {
+		return false, err
+	}
+	evidence, err := json.Marshal(report)
+	if err != nil {
+		return false, err
+	}
+	var known bool
+	if err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM receipt_evidence_v2 WHERE key=$1 AND digest=$2)", report.Key, digest).Scan(&known); err != nil {
+		return false, err
+	}
+	usage.Entries += added.Entries
+	usage.MetadataBytes += added.MetadataBytes
+	bytes, err := jsonBytes(ctx, tx, evidence)
+	if err != nil {
+		return false, err
+	}
+	full := !known && (usage.Evidence >= limits.MaxEvidence || bytes > limits.MaxMetadataBytes-usage.MetadataBytes)
+	if !full {
+		stored, err := execInserted(ctx, tx, `INSERT INTO receipt_evidence_v2(key,digest,report) VALUES($1,$2,$3)
+ ON CONFLICT(key,digest) DO NOTHING`, report.Key, digest, string(evidence))
+		if err != nil {
+			return false, err
+		}
+		if stored {
+			added.Evidence, added.MetadataBytes = 1, added.MetadataBytes+bytes
+		}
+	}
+	conflict := q || force || existing != digest
+	if full && !conflict {
+		return false, ErrQuota
+	}
+	if conflict {
+		if _, err = tx.ExecContext(ctx, "UPDATE receipt_entries_v2 SET quarantined=TRUE,evidence_capped=evidence_capped OR $2 WHERE key=$1", report.Key, full); err != nil {
+			return false, err
+		}
+	}
+	return conflict, addUsage(ctx, tx, added)
+}
+
+// execInserted runs an INSERT … ON CONFLICT DO NOTHING and reports whether it added a row.
+func execInserted(ctx context.Context, tx *storageTx, query string, args ...any) (bool, error) {
+	result, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return false, err
+	}
+	n, err := result.RowsAffected()
+	return n == 1, err
 }
