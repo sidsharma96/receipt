@@ -5,8 +5,8 @@ The chapters explain behavior. To follow a change in the source, start with the 
 ## The main responsibilities
 
 - internal/app reads the command and combines lookup, execution, verification, and publication. Start at [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L220-L322).
-- internal/fingerprint describes inputs and calculates their key. Start at [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L95-L129) and [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L60-L71).
-- internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L38-L67).
+- internal/fingerprint describes inputs and calculates their key. Start at [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L134) and [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76).
+- internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L79).
 - internal/cache stores results. Start at the [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L40-L44) interface; its other files implement HTTP, shared storage, and maintenance.
 - internal/strictjson checks the declared JSON structure in [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61). Each decoded type owns its value rules.
 - internal/auth defines service credentials and permissions in [`Principal`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L51-L60). Its PostgreSQL implementation, starting at [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L88), manages their lifetime.
@@ -47,7 +47,7 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 `internal/fingerprint` describes the inputs and calculates the key, starting at `Build` and `Manifest.Key`. `internal/app` reads the command line and combines lookup, execution, verification and publication, starting at `run`. `internal/runner` starts the test command and captures its output. `internal/cache` stores results locally, over HTTP and in shared storage. `internal/strictjson` checks JSON structure, and `internal/auth` defines credentials and permissions. All of these packages run inside one client or server process; a package is not a separate service.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L95-L129)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L134)
 
 </details>
 
@@ -79,13 +79,13 @@ You may make three changes to Receipt before a second team starts using the shar
 
 A defensible choice, ordered by how soon it hurts:
 
-1. Stop recording `RECEIPT_TOKEN` in manifests, or ignore it in the CI configuration. Today each 30-day renewal empties CI's effective cache and links every result to its credential. The cost is a one-time change of every existing key.
+1. Replace per-upload scans with running totals of output bytes, metadata bytes and rows, kept in the same transaction as each insert, expiry and collection, plus an index table of output files. This removes the O(store) work under the global lock. The cost is a new crash-safety argument: every counter must stay correct across interrupted writes, which is why it was deferred.
 2. Size the database pool from `--max-inflight`, or reject values above 16. Today the pool silently caps storage concurrency at 16 connections while the flag accepts 128, and authentication competes for the same connections. The cost is one more limit to configure and explain.
-3. Replace per-upload scans with running totals of output bytes, metadata bytes and rows, kept in the same transaction as each insert, expiry and collection, plus an index table of output files. This removes the O(store) work under the global lock. The cost is a new crash-safety argument: every counter must stay correct across interrupted writes, which is why it was deferred.
+3. Add a scheduled, tested backup with a second copy of the recovery key. Today the only off-machine copy is a one-off archive from 13 October, and only one private key on one Mac can decrypt it. The cost is an operating task to schedule, monitor and rehearse.
 
-(Giving credential issuance its own lock key was on this list until it was done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
+(Keeping `RECEIPT_TOKEN` out of keys and giving credential issuance its own lock key were on this list until they were done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
 
-**Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L20-L22)
+**Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [G21. Operations](../DESIGN-DEFENSE.md#g21-operations)
 
 </details>
 

@@ -148,9 +148,9 @@ Learn more: [The simple choice has a cost](guide/03-delete-old-data-without-brea
 
 ### Environment variable
 
-An environment variable is a named text setting a process inherits, such as `PATH` or `LANG`. Receipt records every environment variable of its own process as a SHA-256 of the value, except names listed in `ignore_environment`.
+An environment variable is a named text setting a process inherits, such as `PATH` or `LANG`. Receipt records every environment variable of its own process as a SHA-256 of the value, except its own `RECEIPT_TOKEN` and names listed in `ignore_environment`.
 
-Learn more: [D4. Why is the hash of `RECEIPT_TOKEN` in the key a problem?](DESIGN-DEFENSE.md#d4-why-is-the-hash-of-receipt_token-in-the-key-a-problem)
+Learn more: [D4. Why is `RECEIPT_TOKEN` kept out of the key?](DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key)
 
 ### Envelope
 

@@ -89,9 +89,10 @@ Do not run the old synthetic experiment's cleanup script on these credentials.
 
 Two side effects of renewal, added 15 October 2026:
 
-- The cached job does not ignore `RECEIPT_TOKEN`, so the token's SHA-256 is part
-  of every CI cache key. The first run after renewal is a miss, and every result
-  stored under the old token becomes unreachable until `shared prune` removes it.
+- Clients built before 15 October 2026 hash `RECEIPT_TOKEN` into every key, so
+  with such a client the first run after renewal is a miss and every result
+  stored under the old token becomes unreachable until `shared prune` removes
+  it. Later clients leave the token out of keys, and renewal keeps them.
 - Enrollment runs `receipt auth issue` on the droplet. That command takes the
   storage lifecycle lock exclusively once while it opens the store, so it waits
   for in-flight reads and uploads. Builds before 15 October 2026 also issued

@@ -5,6 +5,9 @@
 Several [known gaps](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) were
 fixed in code, each with a regression test. Credential issuance now has its own
 advisory lock key, so renewing a token no longer pauses cache traffic. The
+client no longer hashes its own `RECEIPT_TOKEN` into cache keys or passes it to
+tests, so renewing a token no longer empties CI's effective cache. That change
+alters, once, the key of every run made with the token set. The
 [review reference](../PHASE-REVIEWS.md#known-gap-fixes-15-october-2026) lists
 each fix and its test.
 

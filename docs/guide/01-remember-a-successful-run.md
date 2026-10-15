@@ -22,7 +22,7 @@ Finding a usable saved result is a [cache hit](../GLOSSARY.md#cache-hit). Having
 
 ## Why use a struct and slices?
 
-The manifest groups different pieces of information in named fields. This is the actual type, [`Manifest` in internal/fingerprint/manifest.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L48-L55):
+The manifest groups different pieces of information in named fields. This is the actual type, [`Manifest` in internal/fingerprint/manifest.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L53-L60):
 
 ```go
 type Manifest struct {
@@ -89,11 +89,11 @@ Receipt builds a manifest and hashes it into the input key. What does the manife
 <details>
 <summary>Answer</summary>
 
-The manifest records a format version, the absolute Git root, the absolute working directory, the platform as `GOOS/GOARCH`, the command arguments in order, and a list of inputs. Each input has a kind, a name and a SHA-256 hash. There are four kinds: `file` for discovered repository files and declared extra inputs, `environment` for each environment variable, `executable` for the bytes of the resolved command binary, and `toolchain` for a runner probe such as the Python package list or `go env -json`.
+The manifest records a format version, the absolute Git root, the absolute working directory, the platform as `GOOS/GOARCH`, the command arguments in order, and a list of inputs. Each input has a kind, a name and a SHA-256 hash. There are four kinds: `file` for discovered repository files and declared extra inputs, `environment` for each environment variable except Receipt's own `RECEIPT_TOKEN`, `executable` for the bytes of the resolved command binary, and `toolchain` for a runner probe such as the Python package list or `go env -json`.
 
 The key is the SHA-256 of the manifest encoded as JSON. Inputs are discovered by walking a Go map, whose iteration order is random, so `Manifest.Key` sorts a copy of the inputs by kind and then by name before encoding. Go's JSON encoder writes struct fields in declaration order, so the rest of the encoding is fixed. The command keeps its original order because reordering arguments can change what the command does. The copy matters: sorting the caller's slice in place would rearrange inputs the caller still holds.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L60-L71)
+**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76)
 
 </details>
 

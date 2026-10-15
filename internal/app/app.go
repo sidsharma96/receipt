@@ -272,7 +272,7 @@ func run(ctx context.Context, mode commandName, args []string, out, errOut io.Wr
 		o.remote = cfg.Remote
 	}
 	disk := cache.Disk{Dir: cacheDir}
-	remote := cache.Remote{URL: o.remote, Token: os.Getenv("RECEIPT_TOKEN")}
+	remote := cache.Remote{URL: o.remote, Token: os.Getenv(fingerprint.TokenEnvironment)}
 	m, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
 	if e != nil {
 		if mode == commandExplain {

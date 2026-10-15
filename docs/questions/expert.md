@@ -6,18 +6,18 @@ These questions probe what breaks Receipt, what an attacker or a crash can do, w
 
 **Level:** Expert
 
-Receipt's own CI renews its `RECEIPT_TOKEN` before the old one expires. Nothing else changes. What happens to the CI cache hit rate, and why?
+Receipt's own CI renews its `RECEIPT_TOKEN` before the old one expires. Nothing else changes. What happens to the CI cache hit rate, and why? What happened before 15 October 2026?
 
 <details>
 <summary>Answer</summary>
 
-Every earlier CI result becomes unreachable. Receipt hashes every environment variable of the `receipt run` process into the manifest, except those listed in `ignore_environment`. The CI helper sets `RECEIPT_TOKEN` in that environment and does not ignore it, so the manifest contains SHA-256 of the token. A new token gives a new hash, a new manifest and a new key for every test run. The old results stay on the server and use quota until `shared prune` removes them. The same effect splits keys between a run with the token and a run without it, so a local hit made offline never matches one made with a remote.
+Today nothing happens to the hit rate. Receipt hashes every environment variable of the `receipt run` process into the manifest except `RECEIPT_TOKEN` and the names in `ignore_environment`. `environmentInputs` always skips the token, and `Run` removes it from the test's environment so that a test cannot depend on a value the key does not record. A new token therefore gives the same manifest and the same keys.
 
-The fix is to add `"ignore_environment": ["RECEIPT_TOKEN"]` to the configuration the CI helper writes, or to stop recording Receipt's own variable by default. Either change alters every existing key once.
+Before 15 October 2026 the token was hashed like any other variable. The manifest then contained SHA-256 of the token, which is exactly the `token_hash` the credential table stores, so each renewal changed every CI key and made every earlier result unreachable. Removing it changed, once, the key of every run made with the token set; runs without it kept their keys.
 
-**Common wrong answer.** "The token only authenticates the transport, so rotating it cannot affect cache keys." That is true of HTTP caches, but Receipt treats its whole process environment as test input, and its own token is part of that environment.
+**Common wrong answer.** "Ignoring the token in the key is enough." Then a test that reads the token could behave differently under one key, so the child must lose the variable too.
 
-**Learn more:** [D4. Why is the hash of `RECEIPT_TOKEN` in the key a problem?](../DESIGN-DEFENSE.md#d4-why-is-the-hash-of-receipt_token-in-the-key-a-problem) · [G2](../DESIGN-DEFENSE.md#g2-the-ci-tokens-hash-is-in-every-ci-cache-key) · [`env['RECEIPT_TOKEN']`](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py#L79-L82)
+**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L207-L220) · [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
 
 </details>
 
@@ -197,11 +197,11 @@ A caller holds only `read`. What can it learn from the manifests it fetches? Is 
 <details>
 <summary>Answer</summary>
 
-Each fetched result carries the full manifest: the absolute repository and working-directory paths, which reveal user names and layout; the full command line; every input file path; the executable path; and the name of every environment variable with an unsalted SHA-256 of its value. An unsalted hash of a guessable value, such as `TZ=UTC`, a locale, an internal host name or a short password, can be confirmed offline by hashing candidates. The SHA-256 of `RECEIPT_TOKEN` in a manifest is exactly the `token_hash` stored in the credential table. The token cannot be recovered from it, because its secret part has 256 random bits, but it links every result to one credential.
+Each fetched result carries the full manifest: the absolute repository and working-directory paths, which reveal user names and layout; the full command line; every input file path; the executable path; and the name of every environment variable with an unsalted SHA-256 of its value. An unsalted hash of a guessable value, such as `TZ=UTC`, a locale, an internal host name or a short password, can be confirmed offline by hashing candidates. Manifests made before 15 October 2026 also contain the SHA-256 of `RECEIPT_TOKEN`, which is exactly the `token_hash` stored in the credential table. The token cannot be recovered from it, because its secret part has 256 random bits, but it links those results to one credential. Newer manifests leave the token out.
 
 So "never plaintext" means "not stored verbatim". It is not confidentiality for low-entropy values. The mitigations are `ignore_environment` and running tests in a small, explicit environment. There is no listing endpoint, so a reader must already know a key.
 
-**Learn more:** [D4. Why is the hash of `RECEIPT_TOKEN` in the key a problem?](../DESIGN-DEFENSE.md#d4-why-is-the-hash-of-receipt_token-in-the-key-a-problem) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L202-L215) · [`digest`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L158-L161)
+**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L207-L220) · [`digest`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L158-L161)
 
 </details>
 
@@ -444,12 +444,12 @@ You may make three changes to Receipt before a second team starts using the shar
 
 A defensible choice, ordered by how soon it hurts:
 
-1. Stop recording `RECEIPT_TOKEN` in manifests, or ignore it in the CI configuration. Today each 30-day renewal empties CI's effective cache and links every result to its credential. The cost is a one-time change of every existing key.
+1. Replace per-upload scans with running totals of output bytes, metadata bytes and rows, kept in the same transaction as each insert, expiry and collection, plus an index table of output files. This removes the O(store) work under the global lock. The cost is a new crash-safety argument: every counter must stay correct across interrupted writes, which is why it was deferred.
 2. Size the database pool from `--max-inflight`, or reject values above 16. Today the pool silently caps storage concurrency at 16 connections while the flag accepts 128, and authentication competes for the same connections. The cost is one more limit to configure and explain.
-3. Replace per-upload scans with running totals of output bytes, metadata bytes and rows, kept in the same transaction as each insert, expiry and collection, plus an index table of output files. This removes the O(store) work under the global lock. The cost is a new crash-safety argument: every counter must stay correct across interrupted writes, which is why it was deferred.
+3. Add a scheduled, tested backup with a second copy of the recovery key. Today the only off-machine copy is a one-off archive from 13 October, and only one private key on one Mac can decrypt it. The cost is an operating task to schedule, monitor and rehearse.
 
-(Giving credential issuance its own lock key was on this list until it was done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
+(Keeping `RECEIPT_TOKEN` out of keys and giving credential issuance its own lock key were on this list until they were done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
 
-**Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L20-L22)
+**Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [G21. Operations](../DESIGN-DEFENSE.md#g21-operations)
 
 </details>

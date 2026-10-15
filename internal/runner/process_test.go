@@ -33,3 +33,13 @@ func TestCaptureLimit(t *testing.T) {
 		t.Fatalf("%+v", b)
 	}
 }
+
+func TestChildDoesNotInheritClientToken(t *testing.T) {
+	t.Setenv("RECEIPT_TOKEN", "rcpt_secret")
+	t.Setenv("RECEIPT_OTHER", "kept")
+	var out, errOut bytes.Buffer
+	r, e := Run(context.Background(), t.TempDir(), []string{"/bin/sh", "-c", `printf '%s %s' "${RECEIPT_TOKEN-unset}" "$RECEIPT_OTHER"`}, &out, &errOut)
+	if e != nil || r.ExitCode != 0 || out.String() != "unset kept" {
+		t.Fatalf("%+v %v %q", r, e, out.String())
+	}
+}

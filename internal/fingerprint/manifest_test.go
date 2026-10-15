@@ -93,3 +93,33 @@ func TestDiff(t *testing.T) {
 		t.Fatal(Diff(a, b))
 	}
 }
+
+func TestClientTokenIsNotAnInput(t *testing.T) {
+	dir := repo(t)
+	args := []string{"/bin/sh", "-c", "true"}
+	ctx := context.Background()
+	t.Setenv("RECEIPT_TOKEN", "")
+	os.Unsetenv("RECEIPT_TOKEN")
+	without, err := Build(ctx, dir, args, nil, nil, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("RECEIPT_TOKEN", "rcpt_first")
+	first, err := Build(ctx, dir, args, nil, nil, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("RECEIPT_TOKEN", "rcpt_second")
+	second, err := Build(ctx, dir, args, nil, nil, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Key() != without.Key() || second.Key() != without.Key() {
+		t.Fatal("the client's own token changed the key")
+	}
+	for _, in := range second.Inputs {
+		if in.Name == "RECEIPT_TOKEN" {
+			t.Fatal("token digest recorded in manifest")
+		}
+	}
+}

@@ -44,6 +44,13 @@ original wording.
   reads and uploads. Test: `TestCredentialIssuanceDoesNotWaitForStorageLock`.
   `receipt auth` commands still take the storage lock once while opening the
   store (G1 now records that).
+- The client leaves `RECEIPT_TOKEN` out of every manifest and removes it from
+  the test command's environment. Renewing a credential no longer changes keys,
+  and manifests no longer carry the credential's stored digest. This changed,
+  once, the key of every run made with the token set; runs without it kept their
+  keys. Phase 5's statement that the token is fingerprinted and passed to tests
+  is superseded. Tests: `TestClientTokenIsNotAnInput`,
+  `TestChildDoesNotInheritClientToken`.
 
 ## How to read this guide
 
@@ -250,13 +257,14 @@ From Run in [internal/runner/process.go](https://github.com/sidsharma96/receipt/
 stdout, stderr := &limitedBuffer{limit: 8 << 20}, &limitedBuffer{limit: 8 << 20}
 c := exec.CommandContext(ctx, args[0], args[1:]...)
 c.Dir = dir
+c.Env = withoutToken(c.Environ())
 configureProcess(c)
 // Stdin is closed: a cached run cannot replay interactive input.
 c.Stdout = io.MultiWriter(out, stdout)
 c.Stderr = io.MultiWriter(errOut, stderr)
 ~~~
 
-args[0] is the executable; the remaining arguments are passed to it. Dir selects the working directory. stdout and stderr are buffers for the command's normal-output and error-output streams.
+args[0] is the executable; the remaining arguments are passed to it. Dir selects the working directory. Env, added on 15 October 2026, is the caller's environment without `RECEIPT_TOKEN`; see [the known-gap fixes](#known-gap-fixes-15-october-2026). stdout and stderr are buffers for the command's normal-output and error-output streams.
 
 MultiWriter copies each stream to two destinations: the user's output writer and the capture buffer. You see a miss's output as it arrives rather than waiting until the command finishes.
 

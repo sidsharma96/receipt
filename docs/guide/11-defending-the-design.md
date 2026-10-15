@@ -16,10 +16,11 @@ the threat model and the deployment. Each section names the alternatives, the
 cost with measured numbers where they exist, the failure behaviour and links
 to the exact lines of code.
 
-It also lists the known gaps honestly. For example, the CI token's hash is part
-of every CI cache key, so renewing the token makes every earlier CI result
-unreachable. Gaps fixed since the list was written, such as credential issuance
-sharing the storage lock's key, are recorded with their dates and tests.
+It also lists the known gaps honestly. For example, cached results expire 30
+days after they were first stored, however often they are used, and a
+quarantined key cannot be cleared. Gaps fixed since the list was written, such
+as the CI token's hash being part of every CI cache key, are recorded with
+their dates and tests.
 
 ## Check your understanding
 
@@ -38,7 +39,7 @@ No. The key describes the inputs Receipt records, not every influence on a test.
 
 **Common wrong answer.** "Yes, the key covers all the inputs." It covers the declared inputs only.
 
-**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L47-L55)
+**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
 
 </details>
 

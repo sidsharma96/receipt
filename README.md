@@ -155,7 +155,8 @@ Optional `.receipt.json` at the workload's repository root:
 Extra input paths are relative to the repository root; absolute files and
 directories are also allowed. Missing extra inputs cause an uncached run.
 Ignoring an environment variable is a correctness decision: only ignore it if
-it cannot affect the test. The config file itself is always fingerprinted,
+it cannot affect the test. Receipt's own `RECEIPT_TOKEN` is never fingerprinted
+and is removed from the test command's environment. The config file itself is always fingerprinted,
 including when Git-ignored.
 
 Configuration is limited to 1 MiB. JSON names are exact and case-sensitive;
@@ -386,8 +387,8 @@ Deployed: one DigitalOcean droplet behind Caddy and HTTPS, used by Receipt's CI
 
 Next steps, none of them started:
 
-1. Renew the CI token before 12 November 2026 03:28 UTC, and decide whether CI
-   should stop hashing `RECEIPT_TOKEN` into its keys.
+1. Renew the CI token before 12 November 2026 03:28 UTC. Since 15 October 2026
+   the client no longer hashes `RECEIPT_TOKEN` into keys, so renewal keeps them.
 2. Scheduled backups with a second copy of the recovery key, and monitoring.
 3. Cheaper upload accounting, so that an upload no longer scans the whole store.
 4. Portable input policy, sandboxed execution, dependency selection, and object

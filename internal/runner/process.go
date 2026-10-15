@@ -6,7 +6,10 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"receipt/internal/fingerprint"
 	"receipt/internal/observe"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -35,6 +38,14 @@ type Output struct {
 	TooLarge       bool
 }
 
+// withoutToken removes Receipt's own bearer token. The manifest does not record
+// it, so the command must not be able to read it either.
+func withoutToken(env []string) []string {
+	return slices.DeleteFunc(env, func(entry string) bool {
+		return strings.HasPrefix(entry, fingerprint.TokenEnvironment+"=")
+	})
+}
+
 // Run executes a command directly and streams its output while capturing bounded copies.
 func Run(ctx context.Context, dir string, args []string, out, errOut io.Writer) (Output, error) {
 	defer observe.Measure(ctx, observe.Execution)()
@@ -44,6 +55,7 @@ func Run(ctx context.Context, dir string, args []string, out, errOut io.Writer) 
 	stdout, stderr := &limitedBuffer{limit: 8 << 20}, &limitedBuffer{limit: 8 << 20}
 	c := exec.CommandContext(ctx, args[0], args[1:]...)
 	c.Dir = dir
+	c.Env = withoutToken(c.Environ())
 	configureProcess(c)
 	// Stdin is closed: a cached run cannot replay interactive input.
 	c.Stdout = io.MultiWriter(out, stdout)

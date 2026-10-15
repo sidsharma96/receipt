@@ -29,7 +29,7 @@ Receipt calls its description of a run a manifest. Which kinds of information do
 
 A manifest is a Go struct with six fields: a format version, the Git repository root, the working directory, the platform (operating system and CPU architecture, such as `darwin/arm64`), the command arguments in order, and a list of inputs. Each input has a kind, a name and a content hash. There are four kinds of input: files from the repository, environment variables, the executable that runs the command, and toolchain information such as the installed Python packages or Go's settings. Environment values are stored only as hashes, never as plain text.
 
-**Learn more:** [Why use a struct and slices?](../guide/01-remember-a-successful-run.md#why-use-a-struct-and-slices) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L48-L55)
+**Learn more:** [Why use a struct and slices?](../guide/01-remember-a-successful-run.md#why-use-a-struct-and-slices) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L53-L60)
 
 </details>
 
@@ -44,7 +44,7 @@ The guide says Receipt hashes the manifest to get an input key. What is a hash, 
 
 A hash is a short, fixed-length value calculated from some bytes. Receipt uses SHA-256, which always produces 32 bytes, written as 64 hexadecimal characters. The same bytes always give the same hash, and in practice different bytes give different hashes. Receipt encodes the manifest as JSON, with the inputs sorted by kind and then name, and hashes that JSON. The result is the input key: the name under which Receipt looks for a saved result. Any change to a recorded input changes the key, so an edited file leads to a lookup under a different name. A hash is not encryption: it hides nothing and cannot be reversed into a key you could decrypt.
 
-**Learn more:** [F1. Cryptographic hashes and content addressing](../DESIGN-DEFENSE.md#f1-cryptographic-hashes-and-content-addressing) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L60-L71)
+**Learn more:** [F1. Cryptographic hashes and content addressing](../DESIGN-DEFENSE.md#f1-cryptographic-hashes-and-content-addressing) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76)
 
 </details>
 
@@ -262,7 +262,7 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 `internal/fingerprint` describes the inputs and calculates the key, starting at `Build` and `Manifest.Key`. `internal/app` reads the command line and combines lookup, execution, verification and publication, starting at `run`. `internal/runner` starts the test command and captures its output. `internal/cache` stores results locally, over HTTP and in shared storage. `internal/strictjson` checks JSON structure, and `internal/auth` defines credentials and permissions. All of these packages run inside one client or server process; a package is not a separate service.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L95-L129)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L134)
 
 </details>
 
@@ -343,6 +343,6 @@ No. The key describes the inputs Receipt records, not every influence on a test.
 
 **Common wrong answer.** "Yes, the key covers all the inputs." It covers the declared inputs only.
 
-**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L47-L55)
+**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
 
 </details>

@@ -247,8 +247,8 @@ The decisions are ordered so that each one depends only on earlier ones.
 
 **Decision.** The key is the SHA-256 of a manifest: a JSON record of everything
 Receipt knows to record about one test invocation. The
-[`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L47-L55)
-type has these fields, and [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L92-L129)
+[`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
+type has these fields, and [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L97-L134)
 fills them.
 
 | Field or input kind | Contents |
@@ -258,20 +258,20 @@ fills them.
 | `platform` | Go's `GOOS/GOARCH` of the client binary, for example `darwin/arm64`. |
 | `command` | The exact argument list after `--`. |
 | `file` inputs | Every file from `git ls-files --cached --others --exclude-standard`, plus `.receipt.json` even if ignored, plus `extra_inputs`. The `.receipt/` cache directory is excluded. |
-| `environment` inputs | Every environment variable except those in `ignore_environment`, as name plus SHA-256 of the value. |
+| `environment` inputs | Every environment variable except `RECEIPT_TOKEN` and those in `ignore_environment`, as name plus SHA-256 of the value. |
 | `executable` input | The absolute path of the resolved command and the SHA-256 of its bytes. |
 | `toolchain` inputs | A runtime probe: Python version and installed distributions, `go env -json`, or the Cargo tool, metadata and source hashes. |
 
-[`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L131-L176)
-collects the paths. [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L178-L200)
+[`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L136-L181)
+collects the paths. [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L183-L205)
 hashes each one as `SHA-256(octal permission bits + NUL byte + file bytes)`, so
 `chmod +x` changes the key. A tracked file that was deleted hashes as
 `SHA-256("deleted")`. That marker cannot equal a real file's hash except by a
 SHA-256 collision, because every real preimage contains a NUL byte after the
 permission digits and the string `deleted` contains none. Symlinks, submodules
 and other non-regular files make `Build` fail, and Receipt then runs the command
-uncached. [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L202-L215)
-hashes the environment, and [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L262-L285)
+uncached. [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L207-L220)
+hashes the environment, and [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L267-L290)
 selects the runtime probe.
 
 **Alternatives.**
@@ -326,7 +326,7 @@ call of its helper, for this reason.
 
 ### D2. How does the manifest become a key every time the same way?
 
-**Decision.** [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L60-L71)
+**Decision.** [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76)
 copies the inputs, sorts them by kind and then by name, encodes the manifest
 with Go's `json.Marshal`, and returns `Hash` of those bytes.
 
@@ -376,7 +376,7 @@ record it validates during garbage collection.
 ### D3. Why SHA-256?
 
 **Decision.** SHA-256 for keys, output files, envelope checksums and token
-digests, through [`Hash`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L57-L58).
+digests, through [`Hash`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L62-L63).
 
 **Alternatives.**
 
@@ -398,45 +398,62 @@ both.
 **Revisit if** fingerprinting large repositories becomes the dominant cost and
 measurements show hashing, not reading, is the bottleneck.
 
-### D4. Why is the hash of `RECEIPT_TOKEN` in the key a problem?
+### D4. Why is `RECEIPT_TOKEN` kept out of the key?
 
-**What happens.** The client reads its bearer token from the `RECEIPT_TOKEN`
-environment variable, through [`os.Getenv("RECEIPT_TOKEN")`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L274-L276) in `run`.
-Because every environment variable is hashed into the manifest, the manifest
-contains `SHA-256(token)`. The credential table stores exactly the same value
-as `token_hash`, computed by [`digest`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L158-L161).
-Receipt's CI sets the variable in [`env['RECEIPT_TOKEN']`](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py#L79-L82)
-and does not list it in `ignore_environment`.
+**Decision.** Since 15 October 2026, Receipt's own bearer-token variable,
+[`TokenEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L40-L43),
+is never an environment input, and the test command does not inherit it.
+[`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L207-L220)
+always skips it, and [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
+removes it from the child's environment in `Run`. The client still reads it,
+through [`os.Getenv(fingerprint.TokenEnvironment)`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L274-L276) in `run`,
+to authenticate to the server.
 
-**Consequences.**
+**What happened before.** Every environment variable was hashed into the
+manifest, so the manifest contained `SHA-256(token)`. The credential table
+stores exactly the same value as `token_hash`, computed by
+[`digest`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L158-L161).
+Receipt's CI sets the variable in [`env['RECEIPT_TOKEN']`](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py#L79-L82).
+That had four consequences:
 
-1. Rotating a credential changes every key. Credentials live at most 30 days, so
-   each renewal makes every earlier result unreachable. The old results stay on
-   the server, using quota, until `shared prune` removes them.
-2. Two different credentials never share a result, even with otherwise
-   identical environments. Alice's results cannot serve CI.
-3. The digest that the server treats as private is copied into every manifest.
-   Manifests are uploaded with results and returned to any read-scoped caller
-   who asks for that key. They also sit in local `.receipt/` entries and history
-   files. [SERVICE-CREDENTIALS.md](SERVICE-CREDENTIALS.md) says the database
-   stores only a digest, which is true, but the digest is visible elsewhere. The
-   token cannot be recovered from it: the secret part has 256 random bits
-   ([F1](#f1-cryptographic-hashes-and-content-addressing)). The digest does act
-   as a stable identifier that links every result to one credential.
-4. Unsetting the variable to work offline also changes the key, so local hits
-   with and without a remote never match.
+1. Rotating a credential changed every key. Credentials live at most 30 days,
+   so each renewal made every earlier result unreachable.
+2. Two different credentials never shared a result, even with otherwise
+   identical environments. Alice's results could not serve CI.
+3. The digest that the server treats as private was copied into every
+   manifest. Manifests are uploaded with results, returned to any read-scoped
+   caller who asks for that key, and kept in local `.receipt/` entries and
+   history files. The token cannot be recovered from the digest, because the
+   secret part has 256 random bits
+   ([F1](#f1-cryptographic-hashes-and-content-addressing)), but it linked every
+   result to one credential.
+4. Unsetting the variable to work offline changed the key, so local hits with
+   and without a remote never matched.
 
-**Why it is still this way.** Hashing every variable by default is the safe
-rule for test inputs ([D1](#d1-what-exactly-goes-into-the-cache-key)), and the
-Phase 5 review chose not to special-case Receipt's own variable without a
-decision. The test process also inherits the token, and a test could change its
-behaviour based on it, which is the argument for keeping it in the key.
+**Why the child must lose the token too.** The invariant from
+[D1](#d1-what-exactly-goes-into-the-cache-key) is that everything the test can
+read from its environment is in the key. If the key ignored the token but the
+test could still read it, a test that behaved differently with and without a
+token would get a wrong hit. Removing it from both keeps the invariant. A test
+that needs a credential must receive it under another variable name, which is
+then hashed like any other. This is a guard against accidental use, not a
+security boundary: on Linux, a test running as the same user can still read its
+parent's environment from `/proc/<pid>/environ`.
 
-**Proposed fix.** Remove `RECEIPT_TOKEN` from the manifest by default, because
-Receipt itself consumes it, and stop passing it to the child process unless the
-user asks. Short of a code change, add `"ignore_environment": ["RECEIPT_TOKEN"]`
-to the `.receipt.json` that CI writes. Either change also changes every existing
-key once.
+**Alternatives.** Keeping the token in the key, which is the strict reading of
+"hash everything", was the earlier behaviour and cost a cold cache every 30
+days. Adding `"ignore_environment": ["RECEIPT_TOKEN"]` to the `.receipt.json`
+that CI writes would have fixed CI only, and would still have passed the token
+to tests.
+
+**Cost of the change.** Keys of runs made with `RECEIPT_TOKEN` set change once:
+their manifests lose one environment input. Keys of runs made without it are
+unchanged, because their manifests never had that input. Stored results are
+not touched and remain valid; they are simply no longer looked up, and
+`shared prune` removes them after the retention period. For Receipt's own CI
+this costs nothing extra: CI lists the client binary in `extra_inputs`, so any
+new client build already changes every CI key. No database or store migration
+is needed.
 
 ### D5. Why scan the inputs twice, and what can the two scans miss?
 
@@ -1023,7 +1040,7 @@ purge command, so about 1,000 renewals fill the table.
 
 ### D19. How is a running test stopped?
 
-**Decision.** [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L38-L67)
+**Decision.** [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L79)
 starts the command directly with no shell. [`configureProcess`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_unix.go#L11-L24)
 puts it in a new process group and, on cancellation, sends `SIGKILL` to the whole
 group. `WaitDelay` gives the output pipes 2 seconds to close afterwards.
@@ -1157,9 +1174,9 @@ test run.
 | Unauthenticated internet client | Send requests | Wrong-length headers are refused before any slot. Every protected route needs a valid token. | With `--max-inflight 2`, a stream of well-formed fake tokens can fill both authentication slots and make real callers get 503. Clients then run tests locally. No per-IP or Caddy rate limit exists. |
 | Holder of a `publish` token | Upload any result whose key matches its own manifest | Uploads are validated for shape, size, checksum and key. A different observation for an existing key quarantines it. | Cache poisoning: a fake success for a key nobody has stored yet is accepted and replayed to everyone who computes that key. The independent uncached CI job is the only defence. |
 | Holder of a `report` token | Quarantine any key whose manifest it can supply, even one never stored | Reports are validated and stored as evidence. | Denial of reuse. Quarantine is permanent and has no undo command. |
-| Holder of a `read` token | Fetch any result whose key it knows | No listing endpoint exists. | Each fetched manifest exposes file paths, environment value hashes and the owner's token hash (D4). |
+| Holder of a `read` token | Fetch any result whose key it knows | No listing endpoint exists. | Each fetched manifest exposes file paths and environment value hashes. Manifests made before 15 October 2026 also carry the owner's token hash (D4). |
 | Thief of a token | Use it from anywhere | Expiry at most 30 days. Revocation applies to the next request. | Replay for the rest of the lifetime if nobody revokes it. |
-| Malicious test code run with a token | Read `RECEIPT_TOKEN` from its environment and use it | Pull requests never receive the CI token. | Code on a trusted branch is trusted. |
+| Malicious test code run with a token | Read `RECEIPT_TOKEN` and use it | The test's environment no longer contains it (D4). Pull requests never receive the CI token. | On Linux, a same-user process can still read the parent's environment from `/proc`. Code on a trusted branch is trusted. |
 | Repository writer | Change the workflow to print the token | None in code | Repository writers are trusted. |
 | Host administrator or Caddy | Read requests and tokens, change data | None | Trusted. Root SSH login with a key is still allowed, and `sid` has passwordless sudo. |
 | Database writer | Change credentials, quarantine flags or records | `Postgres.Get` validates records and output hashes before replaying | Trusted. |
@@ -1188,14 +1205,6 @@ in `authCommand` runs the storage migration first, and that takes the exclusive
 lifecycle lock once. A `receipt auth` command therefore still waits for the
 slowest in-flight storage operation before it starts. Fix: open only the
 database connection in `authCommand`, without initialising storage.
-
-### G2. The CI token's hash is in every CI cache key
-
-See [D4](#d4-why-is-the-hash-of-receipt_token-in-the-key-a-problem). Renewing the
-CI token on or before 12 November 2026 will make every earlier CI result
-unreachable. Fix: exclude `RECEIPT_TOKEN` from manifests by default, or add it
-to `ignore_environment` in the CI helper's
-[`config.write_text`](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py#L74-L78) call.
 
 ### G3. Uploads cost O(store size) under a global lock
 
@@ -1251,13 +1260,13 @@ Fix: open with `O_NOFOLLOW` and check the opened file with `fstat`.
 
 ### G10. Every signal death is reported as exit code 130
 
-[`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L54-L61)
+[`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L66-L73)
 maps `ExitCode() == -1` to 130 for every signal, including `SIGSEGV` and
 `SIGKILL`. Fix: report 128 plus the signal number from the wait status.
 
 ### G11. The stdin comment is wrong
 
-The comment [`Stdin is closed`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L45-L49) in `Run`
+The comment [`Stdin is closed`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L56-L61) in `Run`
 says stdin is closed. It is `/dev/null`. Fix: correct the comment.
 
 ### G12. Cancellation gives tests no grace period
@@ -1318,7 +1327,7 @@ development Mac now defaults to 1.27.2. Fix: pin one version, or add a
 - [`commandPrune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L28-L36)
   is an untyped constant inside the typed `commandName` block.
 - The comment above the `extra_inputs` loop in
-  [`range extra` loop in `discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L131-L148)
+  [`range extra` loop in `discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L136-L153)
   describes `.gitignore` and matches nothing there.
 
 ### G21. Operations

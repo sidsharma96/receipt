@@ -37,6 +37,11 @@ const (
 	ToolchainInput InputKind = "toolchain"
 )
 
+// TokenEnvironment names the client's bearer-token variable. Receipt consumes
+// it itself and withholds it from the test command, so it is not a test input
+// and never enters a manifest, whatever ignore_environment says.
+const TokenEnvironment = "RECEIPT_TOKEN"
+
 // Input describes one declared input and its content hash.
 type Input struct {
 	Kind InputKind `json:"kind"`
@@ -200,7 +205,7 @@ func fileInput(path string) (Input, error) {
 }
 
 func environmentInputs(env, ignored []string) []Input {
-	skip := map[string]bool{}
+	skip := map[string]bool{TokenEnvironment: true}
 	for _, name := range ignored {
 		skip[name] = true
 	}

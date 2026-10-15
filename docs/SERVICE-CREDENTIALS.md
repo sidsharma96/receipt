@@ -64,12 +64,13 @@ without report permission; report controls the explicit report endpoint, not eve
 possible reason quarantine can occur. Scope holders retain access to all keys in
 this one shared store. There are no per-user private keys or organizations.
 
-Receipt still fingerprints environment values by default, including RECEIPT_TOKEN.
-Different or rotated credentials therefore change input keys. Ignore that variable
-in .receipt.json only if it cannot affect the tests; this phase does not silently
-remove it from fingerprints or from the child process's environment. Tests run with
-the caller's environment and can read the token. Only run trusted code with these
-credentials. Existing absolute paths and other environment differences also still
+Receipt fingerprints environment values by default, except RECEIPT_TOKEN. Since
+15 October 2026 the client leaves that variable out of every manifest and removes
+it from the test command's environment, so different or rotated credentials no
+longer change input keys. Before that, every renewal changed every key. Removing
+the variable stops accidental use, not a hostile test: on Linux a same-user
+process can read its parent's environment from /proc. Only run trusted code with
+these credentials. Existing absolute paths and other environment differences also still
 limit cross-client reuse. Authentication does not make keys portable.
 
 ## Token storage, expiry and rotation
@@ -77,11 +78,10 @@ limit cross-client reuse. Authentication does not make keys portable.
 A token contains a public random 128-bit ID and a random 256-bit secret, encoded
 as rcpt_ID_SECRET in lowercase hexadecimal. crypto/rand supplies those random bytes.
 The database stores a SHA-256 digest of the full token, not the bearer token.
-The same digest also appears outside the database whenever the client has
-RECEIPT_TOKEN set and does not ignore it: environment values are hashed into
-every manifest, so each uploaded result carries SHA-256 of the caller's token.
-The digest cannot be turned back into the token, but it links results to one
-credential. See [the design defense](DESIGN-DEFENSE.md#d4-why-is-the-hash-of-receipt_token-in-the-key-a-problem).
+Results uploaded before 15 October 2026 by a client with RECEIPT_TOKEN set also
+carry that digest in their manifests, because environment values were hashed
+into every manifest. The digest cannot be turned back into the token, but it
+links those results to one credential. Newer clients leave the token out. See [the design defense](DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key).
 Verification looks up the ID and compares fixed-length digests using Go's
 constant-time comparison. This does not make the entire SQL/network request
 constant-time. This hashing choice is for generated high-entropy tokens, not for
