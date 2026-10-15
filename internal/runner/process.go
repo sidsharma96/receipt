@@ -57,7 +57,8 @@ func Run(ctx context.Context, dir string, args []string, out, errOut io.Writer) 
 	c.Dir = dir
 	c.Env = withoutToken(c.Environ())
 	configureProcess(c)
-	// Stdin is closed: a cached run cannot replay interactive input.
+	// Stdin is left nil, so os/exec connects it to the null device: reads see
+	// end of file at once, because a cached run cannot replay interactive input.
 	c.Stdout = io.MultiWriter(out, stdout)
 	c.Stderr = io.MultiWriter(errOut, stderr)
 	c.WaitDelay = 2 * time.Second

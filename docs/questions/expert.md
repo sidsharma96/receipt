@@ -411,9 +411,9 @@ Without special handling, every `go test` run would miss. Why, what exactly does
 
 The `go env -json` probe output includes `GOGCCFLAGS`, which contains `-ffile-prefix-map=<tmp>/go-buildNNNN=/tmp/go-build`. The NNNN suffix names a scratch directory that Go creates afresh for each invocation, so the probe, and with it the key, would change every run. `stableGoEnvironment` replaces only the digits after the exact `<GOTMPDIR or temp dir>/go-build` prefix in `-ffile-prefix-map` and `-fdebug-prefix-map` with a fixed placeholder, and stores the result as the `resolved-go-environment-v2` input. Everything else is kept, and an unknown format is left unchanged, which fails towards misses rather than hiding a real input.
 
-The edge case is that the pattern consumes the delimiter after a match, so a second prefix-map flag separated by a single space is not normalised. That causes extra misses, never wrong hits. The fix is to match each whitespace-separated flag on its own.
+The edge case is that the pattern consumes the delimiter after a match, so in one pass a second prefix-map flag separated by a single space is not normalised. Until 15 October 2026 that caused extra misses, never wrong hits. `stableGoEnvironment` now repeats the replacement until nothing changes, so each flag is normalised. Current Go versions print a single such flag, so their keys did not change.
 
-**Learn more:** [G13](../DESIGN-DEFENSE.md#g13-gos-temporary-path-pattern-can-miss-an-adjacent-flag) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L11-L39)
+**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L11-L50)
 
 </details>
 

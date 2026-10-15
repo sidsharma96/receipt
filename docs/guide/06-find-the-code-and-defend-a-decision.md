@@ -6,7 +6,7 @@ The chapters explain behavior. To follow a change in the source, start with the 
 
 - internal/app reads the command and combines lookup, execution, verification, and publication. Start at [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333).
 - internal/fingerprint describes inputs and calculates their key. Start at [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L134) and [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76).
-- internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L86).
+- internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L87).
 - internal/cache stores results. Start at the [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L40-L44) interface; its other files implement HTTP, shared storage, and maintenance.
 - internal/strictjson checks the declared JSON structure in [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61). Each decoded type owns its value rules.
 - internal/auth defines service credentials and permissions in [`Principal`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L51-L60). Its PostgreSQL implementation, starting at [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L88), manages their lifetime.

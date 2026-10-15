@@ -34,6 +34,17 @@ func stableGoEnvironment(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compile Go scratch-path pattern: %w", err)
 	}
-	env["GOGCCFLAGS"] = pattern.ReplaceAllString(flags, `${1}${2}<scratch>${3}${4}`)
+	// Each match consumes the delimiter after it, so a flag that follows another
+	// after a single space is missed by one pass. Repeat until nothing changes;
+	// a normalized flag no longer matches, so this ends after at most one pass
+	// per flag.
+	for {
+		next := pattern.ReplaceAllString(flags, `${1}${2}<scratch>${3}${4}`)
+		if next == flags {
+			break
+		}
+		flags = next
+	}
+	env["GOGCCFLAGS"] = flags
 	return json.Marshal(env)
 }

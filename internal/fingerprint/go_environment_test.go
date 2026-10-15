@@ -121,3 +121,25 @@ func TestGoBuildStableAndInvalidates(t *testing.T) {
 		t.Fatal("compiler setting change lost")
 	}
 }
+
+func TestAdjacentScratchFlagsAreBothNormalized(t *testing.T) {
+	root := t.TempDir()
+	flags := func(a, b string) string {
+		return "-ffile-prefix-map=" + filepath.Join(root, "go-build"+a) + "=/tmp/go-build -fdebug-prefix-map=" + filepath.Join(root, "go-build"+b) + "=/tmp/go-build"
+	}
+	normalize := func(flag string) string {
+		b, err := json.Marshal(map[string]string{"GOGCCFLAGS": flag, "GOTMPDIR": root})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := stableGoEnvironment(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(got)
+	}
+	first, second := normalize(flags("1", "2")), normalize(flags("3", "4"))
+	if first != second || strings.Count(first, "scratch") != 2 {
+		t.Fatalf("second adjacent flag kept its random suffix: %s %s", first, second)
+	}
+}

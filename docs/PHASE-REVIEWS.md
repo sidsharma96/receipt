@@ -14,7 +14,7 @@ That sounds simple. The interesting questions begin when a test reads something 
 
 A documentation audit against `main` at commit `5f5794f` found the factual errors below. The reviews keep their original wording, with a "Corrected on 15 October 2026" link beside each sentence that this section corrects. The [design defense](DESIGN-DEFENSE.md) explains the current behaviour in full.
 
-- Phase 1, question 3, says the command's standard input is closed. Go's `os/exec` connects a nil `Stdin` to `/dev/null`, so a test that reads input gets end of file, not a closed-descriptor error. The code comment inside the excerpt has the same inaccuracy.
+- Phase 1, question 3, says the command's standard input is closed. Go's `os/exec` connects a nil `Stdin` to `/dev/null`, so a test that reads input gets end of file, not a closed-descriptor error. The code comment inside the excerpt had the same inaccuracy until 15 October 2026, when the comment was corrected.
 - Phase 2, question 3, calls the 16-connection pool the maintenance CLI's pool. `receipt serve` opens the same pool through `openShared`. Each storage operation pins one connection, so at most 16 storage operations run at once, whatever `--max-inflight` allows.
 - Phase 2, question 3, says the row-level rules remain useful. Since Phase 3, every caller of that row lock already holds the exclusive lifecycle lock, so `SELECT … FOR UPDATE` never waits. It is defence in depth only.
 - Phase 2, question 6, says the bearer token grants shared read and write access. That describes legacy shared-token mode. Phase 5 added scoped credentials, which the deployed server uses.
@@ -77,6 +77,11 @@ original wording.
   reports 130. Tests: `TestSignalDeathReportsSignalNumber`,
   `TestCancellationReportsInterruptAndAllowsCleanup`,
   `TestCancellationKillsCommandsThatIgnoreTermination`.
+- `stableGoEnvironment` normalises every adjacent prefix-map flag, not only
+  every other one, and the stdin comment in `Run` now says `/dev/null`. Test:
+  `TestAdjacentScratchFlagsAreBothNormalized`. Real `go env -json` output on the
+  development Mac normalises to the same bytes as before, so Go keys did not
+  change.
 
 ## How to read this guide
 
@@ -285,7 +290,8 @@ c := exec.CommandContext(ctx, args[0], args[1:]...)
 c.Dir = dir
 c.Env = withoutToken(c.Environ())
 configureProcess(c)
-// Stdin is closed: a cached run cannot replay interactive input.
+// Stdin is left nil, so os/exec connects it to the null device: reads see
+// end of file at once, because a cached run cannot replay interactive input.
 c.Stdout = io.MultiWriter(out, stdout)
 c.Stderr = io.MultiWriter(errOut, stderr)
 ~~~

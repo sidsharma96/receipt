@@ -316,7 +316,7 @@ can differ even on one laptop.
 
 **Go test coverage.** For `go test`, Receipt hashes the `go` executable and the
 output of `go env -json`, after removing the random suffix of Go's temporary
-build directory in [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L11-L39).
+build directory in [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L11-L50).
 That covers the Go version, `GOFLAGS`, `GOROOT` and the path of any `go.work`
 file. It does not hash the contents of the module cache, a `go.work` file above
 the repository root, or `replace` directories outside the repository. Receipt's
@@ -1095,7 +1095,7 @@ purge command, so about 1,000 renewals fill the table.
 
 ### D19. How is a running test stopped?
 
-**Decision.** [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L86)
+**Decision.** [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L87)
 starts the command directly with no shell. [`configureProcess`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_unix.go#L16-L46)
 puts it in a new process group. On cancellation it sends `SIGTERM` to the whole
 group, checks every 10 ms whether any member is left (signal 0 tests for
@@ -1111,8 +1111,9 @@ group. Grandchildren that stayed in that group die too. A grandchild that
 started its own group escapes.
 
 Standard input is `/dev/null`, so a test that reads input gets end of file at
-once ([F8](#f8-processes-process-groups-signals-and-standard-streams)). The code
-comment and some older documents say "closed stdin", which is inaccurate.
+once ([F8](#f8-processes-process-groups-signals-and-standard-streams)). Some
+older documents, and the code comment until 15 October 2026, say "closed
+stdin", which is inaccurate.
 Output goes through pipes, so tests do not see a terminal, and each captured
 stream stops growing at 8 MiB.
 
@@ -1281,18 +1282,6 @@ pool from `--max-inflight` plus authentication, or reject larger values.
 runs with `--max-inflight 2`, and authentication slots equal that number. A
 third concurrent request gets 503. Fix: separate the authentication slot count
 and add a per-IP rate limit in Caddy.
-
-### G11. The stdin comment is wrong
-
-The comment [`Stdin is closed`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L56-L61) in `Run`
-says stdin is closed. It is `/dev/null`. Fix: correct the comment.
-
-### G13. Go's temporary-path pattern can miss an adjacent flag
-
-The pattern in [`regexp.Compile` in `stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L14-L37)
-consumes the delimiter after a match, so a second prefix-map flag separated by a
-single space is not normalised. That causes extra misses, never wrong hits. Fix:
-match each whitespace-separated flag on its own.
 
 ### G14. Retention ignores use
 
