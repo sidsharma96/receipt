@@ -1,0 +1,12 @@
+**
+!go.mod
+!go.sum
+!cmd/
+!cmd/**
+!internal/
+!internal/**
+!deploy/
+!deploy/fly/
+!deploy/fly/Dockerfile
+!deploy/fly/Postgres.Dockerfile
+!deploy/fly/entrypoint.sh

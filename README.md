@@ -10,6 +10,9 @@ guide](docs/WORKING-DOC.html) or its [phone-readable text](docs/WORKING-DOC.md).
 The [dated phase reviews](docs/PHASE-REVIEWS.html) retain detailed decisions,
 alternatives, and verification evidence.
 
+The [Fly deployment proposal](docs/FLY-DEPLOYMENT.md) includes local templates,
+an architecture picture and a preliminary budget. It is not deployed yet.
+
 ## Start
 
 Phase 6 adds opt-in diagnostics: `receipt run --timings -- ...` prints a timing
