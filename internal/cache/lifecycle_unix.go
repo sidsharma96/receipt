@@ -24,13 +24,7 @@ func lockBlobDirectory(ctx context.Context, root string, exclusive bool) (func()
 	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return nil, fmt.Errorf("unsafe blob root")
 	}
-	path := filepath.Join(root, ".lifecycle.lock")
-	if info, err := os.Lstat(path); err == nil && !info.Mode().IsRegular() {
-		return nil, fmt.Errorf("unsafe lifecycle lock")
-	} else if err != nil && !os.IsNotExist(err) {
-		return nil, err
-	}
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
+	f, err := openLockFile(filepath.Join(root, ".lifecycle.lock"))
 	if err != nil {
 		return nil, err
 	}
@@ -60,4 +54,26 @@ func lockBlobDirectory(ctx context.Context, root string, exclusive bool) (func()
 		case <-ticker.C:
 		}
 	}
+}
+
+// openLockFile refuses a symlink in the open call itself, then checks the file
+// it actually opened. A separate Lstat before the open would leave a window in
+// which a symlink could be swapped in.
+func openLockFile(path string) (*os.File, error) {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR|syscall.O_NOFOLLOW, 0o600)
+	if errors.Is(err, syscall.ELOOP) {
+		return nil, fmt.Errorf("unsafe lifecycle lock")
+	}
+	if err != nil {
+		return nil, err
+	}
+	info, err := f.Stat()
+	if err == nil && !info.Mode().IsRegular() {
+		err = fmt.Errorf("unsafe lifecycle lock")
+	}
+	if err != nil {
+		f.Close() //nolint:errcheck // Resource cleanup must not replace the primary operation error.
+		return nil, err
+	}
+	return f, nil
 }

@@ -95,3 +95,22 @@ func TestInventoryRejectsUnsafeDeletionAndCollectsKnownTemporaries(t *testing.T)
 		t.Fatal("lock removed", err)
 	}
 }
+
+// The Lstat check in lockBlobDirectory runs before the open, so a symlink
+// swapped in between would be followed. Opening must refuse it by itself.
+func TestLockFileOpenRefusesSymlink(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "elsewhere")
+	if err := os.WriteFile(target, []byte("untouched"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, ".lifecycle.lock")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	f, err := openLockFile(link)
+	if err == nil {
+		f.Close()
+		t.Fatal("lock file opened through a symlink")
+	}
+}

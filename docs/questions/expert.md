@@ -127,7 +127,7 @@ Two separate mechanisms. The transaction is begun with `context.WithoutCancel`, 
 
 If the connection itself dies, PostgreSQL releases the advisory lock at once, and a collector could acquire it. But every lifecycle operation also holds a `flock` on `blobs/.lifecycle.lock`, and that lock belongs to the open file, not the database session. The uploading process holds it until it closes the file, so the collector waits for the files. The tests `TestLifecycleCancellationKeepsFilesystemExclusion` and `TestDatabaseConnectionLossKeepsFilesystemExclusion` cover both cases. The limit is that `flock` coordinates one host only.
 
-**Learn more:** [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L72-L119) · [`lockBlobDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/lifecycle_unix.go#L15-L63)
+**Learn more:** [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L72-L119) · [`lockBlobDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/lifecycle_unix.go#L15-L57)
 
 </details>
 

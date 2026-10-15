@@ -719,7 +719,12 @@ lock is ever narrowed.
 3. Take the PostgreSQL advisory lock `lifecycleLock`, shared for reads and
    exclusive for uploads, reports and maintenance.
 4. Take a `flock` on `blobs/.lifecycle.lock` in the same mode, through
-   [`lockBlobDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/lifecycle_unix.go#L15-L63).
+   [`lockBlobDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/lifecycle_unix.go#L15-L57).
+   [`openLockFile`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/lifecycle_unix.go#L59-L79)
+   opens the lock file with `O_NOFOLLOW`, so a symlink at that name makes the
+   open fail, and then checks with `fstat` that it opened a regular file. Before
+   15 October 2026 it checked the name with `Lstat` and then opened it, and a
+   symlink swapped in between would have been followed.
 
 [`storageTx.Rollback`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L61-L70)
 and `Commit` end the transaction, which releases the advisory lock, then return
@@ -1268,13 +1273,6 @@ pool from `--max-inflight` plus authentication, or reject larger values.
 runs with `--max-inflight 2`, and authentication slots equal that number. A
 third concurrent request gets 503. Fix: separate the authentication slot count
 and add a per-IP rate limit in Caddy.
-
-### G9. The lock file is opened without `O_NOFOLLOW`
-
-[`os.Lstat` and then `os.OpenFile` in `lockBlobDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/lifecycle_unix.go#L15-L33)
-checks the path with `Lstat` and then opens it. A symlink swapped in between
-would be followed. Anyone able to do that can already write the blob directory.
-Fix: open with `O_NOFOLLOW` and check the opened file with `fstat`.
 
 ### G10. Every signal death is reported as exit code 130
 

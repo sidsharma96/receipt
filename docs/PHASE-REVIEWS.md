@@ -68,6 +68,9 @@ original wording.
   than an hour. Tests: `TestNewDirectoriesAndRemovalsAreSynced`,
   `TestQuarantineMarkerIsSynced`, `TestPruneRemovesStalePendingEntries`. The
   tests observe which directories are synced; a real power loss was not tested.
+- The blob directory's lock file is opened with `O_NOFOLLOW` and checked with
+  `fstat`, instead of an `Lstat` check followed by an open that would follow a
+  symlink swapped in between. Test: `TestLockFileOpenRefusesSymlink`.
 
 ## How to read this guide
 
