@@ -781,40 +781,49 @@ deadline, the request fails with 500 and the client runs its tests instead.
 ### D13. Which advisory lock keys exist, and what does each guard?
 
 The keys are the ASCII bytes of `receipt` (`72 65 63 65 69 70 74` in
-hexadecimal) written as decimal digits, plus a small offset.
+hexadecimal) written as decimal digits, plus a small offset: 0, 1 or 2.
 
 | Key | Taken by | Mode | Guards |
 | --- | --- | --- | --- |
 | `72656365697074` | [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L81-L90) | exclusive | Concurrent `CREATE TABLE IF NOT EXISTS` at startup |
 | `72656365697075` | [`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L20-L22) through `Postgres.lifecycle` | shared or exclusive | Shared metadata, output files, quotas and collection (D12) |
-| `72656365697075` | [`Postgres.Migrate` in internal/auth](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L19-L29) | exclusive | Creating the credential table |
-| `72656365697075` | [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L69) | exclusive | Counting rows and inserting a credential |
+| `72656365697076` | [`credentialLock`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L15-L18), taken by [`Postgres.Migrate` in internal/auth](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L24-L34) | exclusive | Creating the credential table |
+| `72656365697076` | [`credentialLock`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L15-L18), taken by [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L74) | exclusive | Counting rows and inserting a credential |
 
-The credential code reuses the storage lock's key. Earlier documents described
-it as a separate, dedicated lock. That was wrong, and the dated corrections are
-in [PHASE-REVIEWS.md](PHASE-REVIEWS.md#corrections-15-october-2026).
+Until 15 October 2026 the credential code reused the storage lock's key,
+`72656365697075`. Earlier documents described it as a separate, dedicated lock,
+which was wrong at the time; the dated corrections are in
+[PHASE-REVIEWS.md](PHASE-REVIEWS.md#corrections-15-october-2026). The fix gave
+credentials their own key.
 
 **Consequence.** Issuing a credential, and the credential-table migration that
-runs at server startup and before every `receipt auth` command, takes the
-storage lock exclusively at the database level. It waits until every in-flight
-read, upload and collection finishes. While it waits and while it holds the
-lock, PostgreSQL makes new reads and uploads queue behind it. The hold itself is
-short (one `count(*)` and one insert), so in practice a renewal pauses cache
-traffic for the duration of the slowest in-flight storage operation plus a few
-milliseconds. Authentication does not take this lock, so existing tokens keep
-authenticating. Every `receipt auth` command also calls `openShared`, which runs
-the storage migration and takes the exclusive lifecycle lock, `flock` included,
-once more, through [`openShared` and then `credentials.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/app/auth_command.go#L74-L86) in `authCommand`.
+runs at server startup and before every `receipt auth` command, now wait only
+for each other. They no longer wait for in-flight reads, uploads or collection,
+and reads and uploads no longer queue behind them. The test
+`TestCredentialIssuanceDoesNotWaitForStorageLock` holds a shared storage lock
+and checks that migration and issuance both finish within two seconds.
 
-**What the lock prevents.** [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L69)
+One pause remains. Every `receipt auth` command first calls `openShared`, which
+runs the storage migration, and that migration takes the exclusive lifecycle
+lock, `flock` included, once, through
+[`openShared` and then `credentials.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/app/auth_command.go#L74-L86)
+in `authCommand`. So running `receipt auth issue` on the server still waits for
+in-flight storage work once, before issuance starts
+([G1](#g1-receipt-auth-still-takes-the-storage-lock-once)).
+
+**Is anything lost by separating them?** No code relied on issuance excluding
+storage work. The credential table and the storage tables share no rows, and
+`Postgres.Authenticate` takes no lock at all. The server never issues credentials; only
+`receipt auth issue` does. If an old build and a new build of that command ran
+at the same moment, they would take different keys, and two of them racing for
+the last free slot could leave 1,025 rows. That needs two operators issuing at
+the 1,024-row cap with mixed builds.
+
+**What the lock prevents.** [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L74)
 counts rows and inserts only if the count is below 1,024. Under READ COMMITTED,
 two issuers without a lock could both count 1,023 and both insert, leaving 1,025
 rows. The test `TestCredentialCapacityUnderConcurrentIssuance` runs eight
 concurrent issuers against one free slot.
-
-**Proposed fix.** Give credentials their own key, for example
-`72656365697076`, and add a test asserting that all keys differ. Issuance would
-then no longer pause cache traffic.
 
 ### D14. Why is READ COMMITTED enough?
 
@@ -967,12 +976,12 @@ remaining 32 bytes become the secret. The token is
 
 **Storage.** The database row keeps the ID, `SHA-256(whole token)` in hex, the
 subject label, scopes, creation and expiry times, and an optional revocation
-time. [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L83)
+time. [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L88)
 computes the expiry with the database clock.
 
 **Checking.** [`cacheAPI.authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L42-L77)
 rejects any header that is not one `Bearer` value of the right length before
-taking an authentication slot. [`Postgres.Authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L85-L116)
+taking an authentication slot. [`Postgres.Authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L90-L121)
 then parses the ID, fetches the row by primary key, asks the database whether
 it is unrevoked and unexpired using `clock_timestamp()`, and compares digests
 with `subtle.ConstantTimeCompare`. There is no permissions cache, so a
@@ -1165,15 +1174,20 @@ test run.
 ## Part 4. Known gaps and pitfalls
 
 Each item is a fact about the current code, with a proposed fix. None of the
-fixes were made in this documentation pass.
+fixes were made in the documentation pass that wrote this list. Items fixed
+later are removed or reworded to what remains, and their numbers are not
+reused. [PHASE-REVIEWS.md](PHASE-REVIEWS.md#known-gap-fixes-15-october-2026)
+lists each fix with its date and test.
 
-### G1. Credential issuance takes the storage lock
+### G1. `receipt auth` still takes the storage lock once
 
-[`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L62)
-and the credential migration use key `72656365697075`, the same as
-[`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L20-L22).
-Issuance pauses every cache read and upload ([D13](#d13-which-advisory-lock-keys-exist-and-what-does-each-guard)).
-Fix: use a distinct key and test that the keys differ.
+Issuance itself has its own advisory lock key since 15 October 2026
+([D13](#d13-which-advisory-lock-keys-exist-and-what-does-each-guard)). But
+[`openShared` and then `credentials.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/app/auth_command.go#L74-L86)
+in `authCommand` runs the storage migration first, and that takes the exclusive
+lifecycle lock once. A `receipt auth` command therefore still waits for the
+slowest in-flight storage operation before it starts. Fix: open only the
+database connection in `authCommand`, without initialising storage.
 
 ### G2. The CI token's hash is in every CI cache key
 

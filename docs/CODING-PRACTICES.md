@@ -113,11 +113,11 @@ this file records how to apply those decisions in future code.
 - Do not equate operator-assigned subjects with verified people, scopes with tenant
   isolation, or request identity with a durable upload audit. All are distinct.
 - Issuance and the credential-table migration take PostgreSQL advisory lock
-  72656365697075 exclusively. That is the same key as the storage lifecycle lock
-  (`lifecycleLock` in internal/cache/maintenance.go), not a dedicated lock, so
-  issuing a credential waits for in-flight cache reads and uploads and makes new
-  ones queue behind it. Corrected 15 October 2026; a distinct key is a proposed
-  fix, not current behaviour. The 1024-row retained credential budget includes
+  72656365697076 (`credentialLock` in internal/auth/postgres.go) exclusively.
+  Every advisory lock key must be distinct: until 15 October 2026 credentials
+  reused the storage lifecycle key 72656365697075, so issuing a credential paused
+  all cache traffic. `TestCredentialIssuanceDoesNotWaitForStorageLock` guards
+  this. The 1024-row retained credential budget includes
   expired/revoked rows and is separate from cache quotas. Do not auto-purge
   records or add an administrative network scope without a decision.
 - Authentication work has its own bounded admission and two-second context; storage

@@ -9,7 +9,7 @@ The chapters explain behavior. To follow a change in the source, start with the 
 - internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L38-L67).
 - internal/cache stores results. Start at the [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L40-L44) interface; its other files implement HTTP, shared storage, and maintenance.
 - internal/strictjson checks the declared JSON structure in [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61). Each decoded type owns its value rules.
-- internal/auth defines service credentials and permissions in [`Principal`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L51-L60). Its PostgreSQL implementation, starting at [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L83), manages their lifetime.
+- internal/auth defines service credentials and permissions in [`Principal`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L51-L60). Its PostgreSQL implementation, starting at [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L88), manages their lifetime.
 
 These boundaries keep responsibilities identifiable. They do not make future work automatic. A cloud output store must still solve publication, deletion, and failure handling. Another project may need different permissions and account rules. Receipt's current internal packages are not a ready-made shared identity platform.
 
@@ -80,10 +80,10 @@ You may make three changes to Receipt before a second team starts using the shar
 A defensible choice, ordered by how soon it hurts:
 
 1. Stop recording `RECEIPT_TOKEN` in manifests, or ignore it in the CI configuration. Today each 30-day renewal empties CI's effective cache and links every result to its credential. The cost is a one-time change of every existing key.
-2. Give credential issuance its own advisory lock key, so renewing a token no longer pauses all cache traffic. The cost is one constant and a test that all keys differ.
+2. Size the database pool from `--max-inflight`, or reject values above 16. Today the pool silently caps storage concurrency at 16 connections while the flag accepts 128, and authentication competes for the same connections. The cost is one more limit to configure and explain.
 3. Replace per-upload scans with running totals of output bytes, metadata bytes and rows, kept in the same transaction as each insert, expiry and collection, plus an index table of output files. This removes the O(store) work under the global lock. The cost is a new crash-safety argument: every counter must stay correct across interrupted writes, which is why it was deferred.
 
-Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
+(Giving credential issuance its own lock key was on this list until it was done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
 
 **Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L20-L22)
 

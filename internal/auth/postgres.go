@@ -12,6 +12,11 @@ import (
 	"github.com/lib/pq"
 )
 
+// credentialLock serializes credential-table migration and issuance. It must
+// differ from the shared-storage keys (72656365697074 and 72656365697075) so
+// that issuing a credential never waits for, or pauses, cache traffic.
+const credentialLock int64 = 72656365697076
+
 // Postgres stores credential hashes and authoritative expiry/revocation state.
 // It borrows DB; the caller owns closing the connection pool.
 type Postgres struct{ DB *sql.DB }
@@ -24,7 +29,7 @@ func (s Postgres) Migrate(ctx context.Context) error {
 		return err
 	}
 	defer tx.Rollback() //nolint:errcheck // Preserve the primary operation error; successful work commits explicitly.
-	if _, err := tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(72656365697075)"); err != nil {
+	if _, err := tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock($1)", credentialLock); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS receipt_credentials_v5 (
@@ -57,7 +62,7 @@ func (s Postgres) Issue(ctx context.Context, subject string, scopes []Scope, lif
 		return Issued{}, err
 	}
 	defer tx.Rollback() //nolint:errcheck // Preserve the primary operation error; successful work commits explicitly.
-	if _, err := tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(72656365697075)"); err != nil {
+	if _, err := tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock($1)", credentialLock); err != nil {
 		return Issued{}, err
 	}
 	var count int

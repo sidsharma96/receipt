@@ -97,13 +97,13 @@ An operator issues a new credential while CI is uploading results. Does issuance
 <details>
 <summary>Answer</summary>
 
-Yes. `Postgres.Issue` and the credential-table migration run `pg_advisory_xact_lock(72656365697075)`, which is the same key as the storage `lifecycleLock`, taken exclusively. Issuance waits for every in-flight read, upload and collection to finish, and while it waits and holds the lock PostgreSQL queues new reads and uploads behind it. The hold itself is short, one `count(*)` and one insert, so a renewal pauses cache traffic for the slowest in-flight storage operation plus a few milliseconds. A long `shared gc --apply` can therefore stall `receipt auth issue`. Every `receipt auth` command also runs the storage migration through `openShared`, which takes the lifecycle lock and its `flock` once more. Authentication of existing tokens takes no lock and continues.
+Issuance itself no longer does; one step of the command still does. Since 15 October 2026, `Postgres.Issue` and the credential-table migration take advisory lock `72656365697076`, the constant `credentialLock`, which differs from the storage `lifecycleLock` (`72656365697075`). Issuance therefore neither waits for in-flight reads and uploads nor makes new ones queue. The remaining interaction is earlier in the command: every `receipt auth` command calls `openShared`, which runs the storage migration and takes the exclusive lifecycle lock and its `flock` once. So `receipt auth issue` still waits once for the slowest in-flight storage operation, and a long `shared gc --apply` can still delay it. Authentication of existing tokens takes no lock and continues.
 
-The lock exists so that two concurrent issuers cannot both count 1,023 rows and insert past the 1,024 cap. The fix is a distinct key, such as `72656365697076`, and a test that all keys differ.
+The credential lock exists so that two concurrent issuers cannot both count 1,023 rows and insert past the 1,024 cap. `TestCredentialIssuanceDoesNotWaitForStorageLock` holds a shared storage lock and checks that issuance still finishes.
 
-**Common wrong answer.** "Credentials have their own dedicated lock." Earlier documents claimed this; the code reuses the storage key.
+**Common wrong answer.** "Issuance and storage share one lock, so renewal pauses all cache traffic." That was true until 15 October 2026. Only the storage initialisation in `openShared` still takes the storage lock.
 
-**Learn more:** [D13. Which advisory lock keys exist, and what does each guard?](../DESIGN-DEFENSE.md#d13-which-advisory-lock-keys-exist-and-what-does-each-guard) · [G1](../DESIGN-DEFENSE.md#g1-credential-issuance-takes-the-storage-lock) · [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L69)
+**Learn more:** [D13. Which advisory lock keys exist, and what does each guard?](../DESIGN-DEFENSE.md#d13-which-advisory-lock-keys-exist-and-what-does-each-guard) · [G1](../DESIGN-DEFENSE.md#g1-receipt-auth-still-takes-the-storage-lock-once) · [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L74)
 
 </details>
 

@@ -141,13 +141,13 @@ An operator issues a new credential while CI is uploading results. Does issuance
 <details>
 <summary>Answer</summary>
 
-Yes. `Postgres.Issue` and the credential-table migration run `pg_advisory_xact_lock(72656365697075)`, which is the same key as the storage `lifecycleLock`, taken exclusively. Issuance waits for every in-flight read, upload and collection to finish, and while it waits and holds the lock PostgreSQL queues new reads and uploads behind it. The hold itself is short, one `count(*)` and one insert, so a renewal pauses cache traffic for the slowest in-flight storage operation plus a few milliseconds. A long `shared gc --apply` can therefore stall `receipt auth issue`. Every `receipt auth` command also runs the storage migration through `openShared`, which takes the lifecycle lock and its `flock` once more. Authentication of existing tokens takes no lock and continues.
+Issuance itself no longer does; one step of the command still does. Since 15 October 2026, `Postgres.Issue` and the credential-table migration take advisory lock `72656365697076`, the constant `credentialLock`, which differs from the storage `lifecycleLock` (`72656365697075`). Issuance therefore neither waits for in-flight reads and uploads nor makes new ones queue. The remaining interaction is earlier in the command: every `receipt auth` command calls `openShared`, which runs the storage migration and takes the exclusive lifecycle lock and its `flock` once. So `receipt auth issue` still waits once for the slowest in-flight storage operation, and a long `shared gc --apply` can still delay it. Authentication of existing tokens takes no lock and continues.
 
-The lock exists so that two concurrent issuers cannot both count 1,023 rows and insert past the 1,024 cap. The fix is a distinct key, such as `72656365697076`, and a test that all keys differ.
+The credential lock exists so that two concurrent issuers cannot both count 1,023 rows and insert past the 1,024 cap. `TestCredentialIssuanceDoesNotWaitForStorageLock` holds a shared storage lock and checks that issuance still finishes.
 
-**Common wrong answer.** "Credentials have their own dedicated lock." Earlier documents claimed this; the code reuses the storage key.
+**Common wrong answer.** "Issuance and storage share one lock, so renewal pauses all cache traffic." That was true until 15 October 2026. Only the storage initialisation in `openShared` still takes the storage lock.
 
-**Learn more:** [D13. Which advisory lock keys exist, and what does each guard?](../DESIGN-DEFENSE.md#d13-which-advisory-lock-keys-exist-and-what-does-each-guard) · [G1](../DESIGN-DEFENSE.md#g1-credential-issuance-takes-the-storage-lock) · [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L69)
+**Learn more:** [D13. Which advisory lock keys exist, and what does each guard?](../DESIGN-DEFENSE.md#d13-which-advisory-lock-keys-exist-and-what-does-each-guard) · [G1](../DESIGN-DEFENSE.md#g1-receipt-auth-still-takes-the-storage-lock-once) · [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L74)
 
 </details>
 
@@ -166,7 +166,7 @@ Revocation sets `revoked_at` and is checked when each request authenticates. The
 
 **Common wrong answer.** "Expired and revoked credentials free their slots, and revocation cancels in-flight work." Neither is true here.
 
-**Learn more:** [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [Bounds and operational costs](../SERVICE-CREDENTIALS.md#bounds-and-operational-costs) · [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L69)
+**Learn more:** [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [Bounds and operational costs](../SERVICE-CREDENTIALS.md#bounds-and-operational-costs) · [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L74)
 
 </details>
 
@@ -445,10 +445,10 @@ You may make three changes to Receipt before a second team starts using the shar
 A defensible choice, ordered by how soon it hurts:
 
 1. Stop recording `RECEIPT_TOKEN` in manifests, or ignore it in the CI configuration. Today each 30-day renewal empties CI's effective cache and links every result to its credential. The cost is a one-time change of every existing key.
-2. Give credential issuance its own advisory lock key, so renewing a token no longer pauses all cache traffic. The cost is one constant and a test that all keys differ.
+2. Size the database pool from `--max-inflight`, or reject values above 16. Today the pool silently caps storage concurrency at 16 connections while the flag accepts 128, and authentication competes for the same connections. The cost is one more limit to configure and explain.
 3. Replace per-upload scans with running totals of output bytes, metadata bytes and rows, kept in the same transaction as each insert, expiry and collection, plus an index table of output files. This removes the O(store) work under the global lock. The cost is a new crash-safety argument: every counter must stay correct across interrupted writes, which is why it was deferred.
 
-Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
+(Giving credential issuance its own lock key was on this list until it was done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason, a purge command for expired credential rows before the 1,024 cap, and retention by last use instead of creation time. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
 
 **Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L20-L22)
 

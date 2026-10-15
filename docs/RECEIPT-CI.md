@@ -93,9 +93,10 @@ Two side effects of renewal, added 15 October 2026:
   of every CI cache key. The first run after renewal is a miss, and every result
   stored under the old token becomes unreachable until `shared prune` removes it.
 - Enrollment runs `receipt auth issue` on the droplet. That command takes the
-  storage lifecycle lock exclusively, and issuance itself uses the same lock key,
-  so cache reads and uploads pause until the in-flight ones finish and the new
-  row commits. Renew when no CI job is running.
+  storage lifecycle lock exclusively once while it opens the store, so it waits
+  for in-flight reads and uploads. Builds before 15 October 2026 also issued
+  under the storage lock's key, which paused cache traffic until the new row
+  committed; later builds use a separate key. Renew when no CI job is running.
 
 The [design defense](DESIGN-DEFENSE.md#d13-which-advisory-lock-keys-exist-and-what-does-each-guard)
 explains both effects. There is no automatic reminder. Put the expiry,

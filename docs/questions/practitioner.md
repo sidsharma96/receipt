@@ -302,7 +302,7 @@ On each request the server requires exactly one `Authorization` header of the ex
 
 Slow password hashes exist to make guessing low-entropy passwords expensive. The secret here is 32 random bytes, 256 bits, so guessing is already infeasible and one SHA-256 per request is enough.
 
-**Learn more:** [Why does Receipt ask the database each time?](../guide/05-give-callers-different-permissions.md#why-does-receipt-ask-the-database-each-time) · [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [`generate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L137-L144) · [`Postgres.Authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L84-L116)
+**Learn more:** [Why does Receipt ask the database each time?](../guide/05-give-callers-different-permissions.md#why-does-receipt-ask-the-database-each-time) · [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [`generate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L137-L144) · [`Postgres.Authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L89-L121)
 
 </details>
 

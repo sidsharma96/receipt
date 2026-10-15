@@ -31,6 +31,20 @@ The documentation became an mdBook later on 15 October. This Markdown file is no
 
 Entries below that name `docs/render_working_doc.py`, `docs/render_review_figures.py` or `docs/test_working_doc.py` describe the tooling on their date. Today the figures are drawn by `scripts/docs/review_figures.py`, the checks live in `scripts/docs/test_docs.py`, and `make docs` builds the book and runs them. The 22 attributed Go excerpts are still checked against the source.
 
+## Known-gap fixes, 15 October 2026
+
+These code changes fixed items from the design defense's
+[known gaps](DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls). Each one has a
+regression test that failed before the change. Earlier reviews keep their
+original wording.
+
+- Credential issuance and the credential-table migration take advisory lock
+  72656365697076 (`credentialLock`) instead of the storage lifecycle key
+  72656365697075. Issuing a credential no longer waits for, or pauses, cache
+  reads and uploads. Test: `TestCredentialIssuanceDoesNotWaitForStorageLock`.
+  `receipt auth` commands still take the storage lock once while opening the
+  store (G1 now records that).
+
 ## How to read this guide
 
 Start with Phase 1. It explains how Receipt describes a command and remembers its result. Phase 2 adds a server so several clients can share results. Phase 3 adds limits and cleanup. Phase 4 checks the incoming data and deliberately interrupts storage operations to inspect what remains. Phase 5 separates caller credentials and operation permissions.

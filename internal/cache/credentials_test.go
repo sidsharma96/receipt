@@ -252,3 +252,21 @@ func TestRevocationDoesNotCancelAnAlreadyAuthenticatedUpload(t *testing.T) {
 		t.Fatal("new request ignored revocation", w.Code)
 	}
 }
+
+func TestCredentialIssuanceDoesNotWaitForStorageLock(t *testing.T) {
+	shared, credentials := credentialFixture(t)
+	ctx := context.Background()
+	reader, err := shared.lifecycle(ctx, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Rollback()
+	bounded, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	if err := credentials.Migrate(bounded); err != nil {
+		t.Fatal("credential migration waited for an in-flight storage read", err)
+	}
+	if _, err := credentials.Issue(bounded, "alice", []auth.Scope{auth.Read}, time.Hour); err != nil {
+		t.Fatal("credential issuance waited for an in-flight storage read", err)
+	}
+}

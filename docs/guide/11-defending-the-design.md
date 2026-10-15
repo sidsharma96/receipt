@@ -16,10 +16,10 @@ the threat model and the deployment. Each section names the alternatives, the
 cost with measured numbers where they exist, the failure behaviour and links
 to the exact lines of code.
 
-It also lists the known gaps honestly. For example, the credential-issuance
-lock reuses the storage lock's key, so issuing a credential briefly pauses
-every cache read and upload. And the CI token's hash is part of every CI cache
-key, so renewing the token makes every earlier CI result unreachable.
+It also lists the known gaps honestly. For example, the CI token's hash is part
+of every CI cache key, so renewing the token makes every earlier CI result
+unreachable. Gaps fixed since the list was written, such as credential issuance
+sharing the storage lock's key, are recorded with their dates and tests.
 
 ## Check your understanding
 

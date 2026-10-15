@@ -1,5 +1,13 @@
 # Updates and documentation records
 
+## 15 October 2026: known-gap fixes
+
+Several [known gaps](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) were
+fixed in code, each with a regression test. Credential issuance now has its own
+advisory lock key, so renewing a token no longer pauses cache traffic. The
+[review reference](../PHASE-REVIEWS.md#known-gap-fixes-15-october-2026) lists
+each fix and its test.
+
 ## 15 October 2026: the documentation becomes a book
 
 The docs are now an mdBook with a sidebar, search and next and previous links, built from the Markdown in `docs/` and published privately on Cloudflare Pages. Each chapter of this guide is its own page under `docs/guide/`. A new [Start here](../START-HERE.md) page gives reading paths, the [glossary](../GLOSSARY.md) defines each term with a link to where it is taught, and the [question bank](../questions/question-bank.md) has newcomer, practitioner and expert questions with hidden answers. Each chapter ends with three of them. The generated `WORKING-DOC.html`, the hand-maintained `PHASE-REVIEWS.html` and their renderers were retired; the documentation checks moved to `scripts/docs/` and now also check links and anchors in the built site. No program behaviour changed.

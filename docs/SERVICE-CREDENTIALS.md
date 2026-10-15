@@ -109,12 +109,12 @@ is no idempotent issuance key or secret recovery operation.
 
 All retained credential rows, including revoked/expired rows, count against a
 1024-row issuance limit. A SQL advisory lock serializes issuance and migrations
-so cooperating issuers cannot both claim the last slot. Corrected 15 October
-2026: this is not a separate lock. Issuance uses key 72656365697075, the same
-key as the cache's storage lifecycle lock, so issuing a credential waits for
-in-flight cache reads and uploads and makes new ones queue behind it until it
-commits. Every `receipt auth` command also takes the storage lock exclusively
-once while it opens the store. Plan renewals for a quiet moment. List reads at
+so cooperating issuers cannot both claim the last slot. It uses key
+72656365697076, separate from the cache's storage lifecycle lock since
+15 October 2026; before that, issuance reused the storage key and paused cache
+reads and uploads until it committed. Every `receipt auth` command still takes
+the storage lock exclusively once while it opens the store, so plan renewals
+for a quiet moment. List reads at
 most 1025 rows and errors on over-capacity data. There is no purge command yet;
 the limit makes this a bounded small deployment, not indefinite rotation at scale.
 Credential rows are outside the cache's Phase 3 metadata/evidence budgets.
