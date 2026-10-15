@@ -64,16 +64,23 @@ func Run(ctx context.Context, dir string, args []string, out, errOut io.Writer) 
 	start := time.Now()
 	err := c.Run()
 	r := Output{stdout.data, stderr.data, 0, time.Since(start), stdout.overflow || stderr.overflow}
-	if err != nil {
-		var exit *exec.ExitError
-		if errors.As(err, &exit) {
-			r.ExitCode = exit.ExitCode()
-			if r.ExitCode < 0 {
-				r.ExitCode = 130
-			}
-			return r, nil
-		}
-		return r, err
+	var exit *exec.ExitError
+	if ctx.Err() != nil && (err == nil || errors.Is(err, ctx.Err()) || errors.As(err, &exit)) {
+		// Receipt cancelled the command, after Ctrl-C or SIGTERM. Report an
+		// interrupt, as a shell would, however the command itself ended.
+		r.ExitCode = 130
+		return r, nil
 	}
-	return r, nil
+	if errors.As(err, &exit) {
+		r.ExitCode = exit.ExitCode()
+		if r.ExitCode < 0 {
+			// A signal killed it: 128 plus the signal number, such as 139 for SIGSEGV.
+			r.ExitCode = 128
+			if code, ok := waitSignal(exit.ProcessState); ok {
+				r.ExitCode = code
+			}
+		}
+		return r, nil
+	}
+	return r, err
 }

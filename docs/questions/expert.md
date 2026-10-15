@@ -339,11 +339,11 @@ The user presses Ctrl-C while `receipt run` is executing tests. How are child pr
 <details>
 <summary>Answer</summary>
 
-`Main` cancels its context on SIGINT or SIGTERM. The child was started in its own process group, so Ctrl-C from the terminal reaches only Receipt, and on cancellation Receipt sends SIGKILL to the whole group. Pytest workers and compiled Go test binaries in that group die too; a grandchild that started its own group escapes. `WaitDelay` gives the output pipes 2 seconds to close. After the runner returns, `run` checks the context and returns 130 before scanning the inputs again, recording history or publishing, so nothing is stored. On platforms other than Unix the process-group setup is a no-op and only the direct child is killed.
+`Main` cancels its context on SIGINT or SIGTERM. The child was started in its own process group, so Ctrl-C from the terminal reaches only Receipt. On cancellation Receipt sends SIGTERM to the whole group, waits up to 5 seconds for the group to empty, and then sends SIGKILL to anything left. Pytest workers and compiled Go test binaries in that group get both signals; a grandchild that started its own group escapes. `WaitDelay` then gives the output pipes 2 seconds to close. `Run` reports 130 whenever Receipt cancelled the command, however it ended, and `run` checks the context and returns 130 before scanning the inputs again, recording history or publishing, so nothing is stored. On platforms other than Unix the process-group setup is a no-op and only the direct child is killed.
 
-Two gaps follow. Every signal death, including a `SIGSEGV` crash, is reported as 130 rather than 128 plus the signal number. And SIGKILL gives tests no chance to remove temporary files or stop servers they started. The proposed fixes are to report the real signal and to send SIGTERM first, then SIGKILL after a delay.
+Before 15 October 2026 the group got SIGKILL at once, so tests had no chance to clean up, and every signal death, including a `SIGSEGV` crash, was reported as 130. Now a crash that Receipt did not cause reports 128 plus the signal number, such as 139. The cost is that a test ignoring SIGTERM delays Ctrl-C by up to 5 seconds.
 
-**Learn more:** [D19. How is a running test stopped?](../DESIGN-DEFENSE.md#d19-how-is-a-running-test-stopped) · [G10](../DESIGN-DEFENSE.md#g10-every-signal-death-is-reported-as-exit-code-130) · [`configureProcess`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_unix.go#L11-L24)
+**Learn more:** [D19. How is a running test stopped?](../DESIGN-DEFENSE.md#d19-how-is-a-running-test-stopped) · [`configureProcess`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_unix.go#L16-L46)
 
 </details>
 

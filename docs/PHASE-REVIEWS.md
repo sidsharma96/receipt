@@ -71,6 +71,12 @@ original wording.
 - The blob directory's lock file is opened with `O_NOFOLLOW` and checked with
   `fstat`, instead of an `Lstat` check followed by an open that would follow a
   symlink swapped in between. Test: `TestLockFileOpenRefusesSymlink`.
+- Cancellation sends SIGTERM to the command's process group and SIGKILL only
+  to what remains after 5 seconds. A command killed by a signal that Receipt
+  did not send reports 128 plus the signal number; a command Receipt cancelled
+  reports 130. Tests: `TestSignalDeathReportsSignalNumber`,
+  `TestCancellationReportsInterruptAndAllowsCleanup`,
+  `TestCancellationKillsCommandsThatIgnoreTermination`.
 
 ## How to read this guide
 

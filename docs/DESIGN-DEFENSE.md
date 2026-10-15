@@ -1095,12 +1095,15 @@ purge command, so about 1,000 renewals fill the table.
 
 ### D19. How is a running test stopped?
 
-**Decision.** [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L79)
-starts the command directly with no shell. [`configureProcess`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_unix.go#L11-L24)
-puts it in a new process group and, on cancellation, sends `SIGKILL` to the whole
-group. `WaitDelay` gives the output pipes 2 seconds to close afterwards.
-[`Main`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L97-L107)
-cancels the context on `SIGINT` or `SIGTERM`.
+**Decision.** [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L86)
+starts the command directly with no shell. [`configureProcess`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_unix.go#L16-L46)
+puts it in a new process group. On cancellation it sends `SIGTERM` to the whole
+group, checks every 10 ms whether any member is left (signal 0 tests for
+existence without delivering anything), and after `terminationGrace`, 5
+seconds, sends `SIGKILL` to whatever remains. `WaitDelay` then gives the output
+pipes 2 seconds to close. [`Main`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L97-L107)
+cancels the context on `SIGINT` or `SIGTERM`. Before 15 October 2026 the group
+got `SIGKILL` at once.
 
 Because the child has its own process group, it is not in the terminal's
 foreground group. Ctrl-C reaches only Receipt, which then kills the child's
@@ -1113,15 +1116,20 @@ comment and some older documents say "closed stdin", which is inaccurate.
 Output goes through pipes, so tests do not see a terminal, and each captured
 stream stops growing at 8 MiB.
 
-**Exit codes.** A child killed by any signal reports `ExitCode() == -1`, which
-`Run` turns into 130. A crash from `SIGSEGV` is therefore reported as 130, not
-139. If Receipt's own context was cancelled, `run` returns 130 too
+**Exit codes.** A child killed by a signal it did not expect reports
+`ExitCode() == -1`. `Run` then reads the wait status and reports 128 plus the
+signal number, as a shell does: 139 for a `SIGSEGV` crash, 137 for `SIGKILL`
+from the kernel's out-of-memory killer. If Receipt itself cancelled the command,
+after Ctrl-C or `SIGTERM`, `Run` reports 130 however the command ended, even if
+it caught `SIGTERM` and exited 0, and `run` returns 130 too
 ([`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L314-L320)).
-Interrupted and failed runs are never stored.
+Interrupted and failed runs are never stored. Before 15 October 2026 every
+signal death was reported as 130.
 
-**Cost of `SIGKILL`.** Tests get no chance to remove temporary files or stop
-servers they started. Sending `SIGTERM` first and `SIGKILL` after a delay would
-allow cleanup.
+**Cost of the grace period.** A test that ignores `SIGTERM` keeps running for up
+to 5 seconds after Ctrl-C, so stopping Receipt can take up to 7 seconds,
+counting `WaitDelay`. In exchange, a test that handles `SIGTERM` can remove
+temporary files or stop servers it started.
 
 ### D20. How does the Cargo adapter decide what it can trust?
 
@@ -1274,21 +1282,10 @@ runs with `--max-inflight 2`, and authentication slots equal that number. A
 third concurrent request gets 503. Fix: separate the authentication slot count
 and add a per-IP rate limit in Caddy.
 
-### G10. Every signal death is reported as exit code 130
-
-[`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L66-L73)
-maps `ExitCode() == -1` to 130 for every signal, including `SIGSEGV` and
-`SIGKILL`. Fix: report 128 plus the signal number from the wait status.
-
 ### G11. The stdin comment is wrong
 
 The comment [`Stdin is closed`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L56-L61) in `Run`
 says stdin is closed. It is `/dev/null`. Fix: correct the comment.
-
-### G12. Cancellation gives tests no grace period
-
-[`configureProcess`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_unix.go#L14-L23)
-sends `SIGKILL` at once. Fix: send `SIGTERM`, wait, then `SIGKILL`.
 
 ### G13. Go's temporary-path pattern can miss an adjacent flag
 
