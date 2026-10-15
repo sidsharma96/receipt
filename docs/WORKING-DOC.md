@@ -1,6 +1,6 @@
 # Receipt: follow one test run
 
-Updated 13 October 2026. This guide explains Phases 1–7 and the single-server HTTPS deployment. Git history records committed revisions. Chapter 9 follows the deployed connection and a one-off R2 recovery exercise. Monitoring remains deferred; no backup schedule is enabled.
+Updated 15 October 2026. This guide explains Phases 1–7 and the single-server HTTPS deployment. Git history records committed revisions. Chapter 9 follows the deployed connection and a one-off R2 recovery exercise. Chapter 11 introduces the [design defense](DESIGN-DEFENSE.md), which answers the questions an expert reviewer would ask. Monitoring remains deferred; no backup schedule is enabled.
 
 ## Start here
 
@@ -41,7 +41,7 @@ Finding a usable saved result is a cache hit. Having to run the command is a cac
 
 ### Why use a struct and slices?
 
-The manifest groups different pieces of information in named fields. This is the actual type from [internal/fingerprint/manifest.go](../internal/fingerprint/manifest.go):
+The manifest groups different pieces of information in named fields. This is the actual type, [`Manifest` in internal/fingerprint/manifest.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L48-L55):
 
 ```go
 type Manifest struct {
@@ -112,7 +112,7 @@ The files come before the database record. Otherwise another client could find a
 
 When sharing is enabled, Receipt does not blindly replay its local copy. It asks the server whether the key has been marked untrustworthy. If that check is unavailable, it executes the command instead.
 
-Here is the relevant condition in [internal/app/run_session.go](../internal/app/run_session.go):
+Here is the relevant condition in internal/app/run_session.go, inside [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L68-L102):
 
 ```go
 if s.remote.URL == "" {
@@ -203,7 +203,7 @@ Accept the result | Only a valid result can proceed to storage. Stored envelopes
 
 The same result type is read from HTTP requests and local files. Putting its decoding checks in `UnmarshalJSON` makes them run when Go's JSON decoder fills that type, rather than relying on each caller to remember them.
 
-This is the last part of that method in [internal/cache/json.go](../internal/cache/json.go):
+This is the last part of that method, [`Result.UnmarshalJSON` in internal/cache/json.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/json.go#L10-L25):
 
 ```go
 if err := Validate(Result(next)); err != nil {
@@ -248,7 +248,7 @@ Check upload permission | Alice's credential allows reading, not publishing. Rec
 Storage stays untouched | The denied request does not proceed to decoding and storing a result. A permitted request would continue.
 ```
 
-The refusal happens in [internal/cache/authorization.go](../internal/cache/authorization.go):
+The refusal happens in [`cacheAPI.serveScoped` in internal/cache/authorization.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L24-L40):
 
 ```go
 if known && !principal.Allows(scope) {
@@ -278,7 +278,7 @@ When the database cannot perform a check, the server refuses access rather than 
 
 Callers still share one store. Read permission does not mean access to only Alice's results. Browser login, private organizations, and a durable record of who uploaded each result are not implemented.
 
-Remote credentials need encrypted transport, normally HTTPS, so someone observing the connection cannot read the secret in transit. Receipt does not provision that deployment. The secret is also currently passed to the child test process through the environment. Run trusted code, and do not automatically exclude that setting from input recording if it can affect behavior.
+Remote credentials need encrypted transport, normally HTTPS, so someone observing the connection cannot read the secret in transit. Receipt itself does not terminate TLS. The deployment in chapter 9 puts Caddy in front of it for that job. The secret is also currently passed to the child test process through the environment. Run trusted code, and do not automatically exclude that setting from input recording if it can affect behavior.
 
 ### Try explaining it
 
@@ -296,12 +296,12 @@ The chapters explain behavior. To follow a change in the source, start with the 
 
 ### The main responsibilities
 
-- [app](../internal/app/run_session.go) reads the command and combines lookup, execution, verification, and publication.
-- [fingerprint](../internal/fingerprint/manifest.go) describes inputs and calculates their key.
-- [runner](../internal/runner/process.go) starts the command and captures output.
-- [cache](../internal/cache/store.go) stores results. Its other files implement HTTP, shared storage, and maintenance.
-- [strictjson](../internal/strictjson/object.go) checks the declared JSON structure. Each decoded type owns its value rules.
-- [auth](../internal/auth/auth.go) defines service credentials and permissions. Its PostgreSQL implementation manages their lifetime.
+- internal/app reads the command and combines lookup, execution, verification, and publication. Start at [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L220-L322).
+- internal/fingerprint describes inputs and calculates their key. Start at [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L95-L129) and [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L60-L71).
+- internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L38-L67).
+- internal/cache stores results. Start at the [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L40-L44) interface; its other files implement HTTP, shared storage, and maintenance.
+- internal/strictjson checks the declared JSON structure in [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61). Each decoded type owns its value rules.
+- internal/auth defines service credentials and permissions in [`Principal`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L51-L60). Its PostgreSQL implementation, starting at [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L46-L83), manages their lifetime.
 
 These boundaries keep responsibilities identifiable. They do not make future work automatic. A cloud output store must still solve publication, deletion, and failure handling. Another project may need different permissions and account rules. Receipt's current internal packages are not a ready-made shared identity platform.
 
@@ -401,7 +401,7 @@ itself need another helper. Receipt follows these arrows before looking for a
 saved result. The [dependency illustration](PHASE-REVIEWS.html#figure-7-cargo-graph)
 shows why the same helper can be reached more than once.
 
-From [cargo_graph.go](../internal/fingerprint/cargo_graph.go):
+From [`cargoClosure` in cargo_graph.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_graph.go#L78-L126):
 
 ```go
 if seen[id] {
@@ -491,7 +491,7 @@ the request to Receipt inside the same machine. This forwarding role is called
 a reverse proxy. It lets Receipt concentrate on cache behavior while Caddy
 handles certificates and their renewal.
 
-Actual [Caddy configuration](../deploy/digitalocean/Caddyfile):
+Actual Caddy configuration, from [`reverse_proxy` in deploy/digitalocean/Caddyfile](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/Caddyfile#L1-L3):
 
 ```text
 receipt.sidsharma.dev {
@@ -585,7 +585,7 @@ we replace the certificate or open PostgreSQL's port to the internet?
 
 Neither. The request reached Receipt; it needs a valid credential with the
 right permissions. Keep the database private and certificate verification on.
-The current CI token expires on 11 November, and renewal is not automated.
+The current CI token expires on 12 November 2026 at 03:28 UTC (11 November, 7:28 p.m. Pacific), and renewal is not automated. The [renewal steps](RECEIPT-CI.md#secrets-and-renewal) also explain why renewing briefly pauses cache reads and writes.
 The [full deployment review](PHASE-REVIEWS.html#deployment-review-one-server-over-https-13-october-2026)
 answers all nine questions, including alternatives, evidence and revisit conditions.
 
@@ -620,7 +620,7 @@ and uploaded. Otherwise Receipt does not save a reusable result. Storage or
 network failures can still prevent a save.
 
 Receipt records the inputs again after execution. Actual excerpt from
-[app.go](../internal/app/app.go):
+[`fingerprint.Build` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L310-L311):
 
 ```go
 after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
@@ -651,7 +651,7 @@ and replays the output and exit code if the check allows it. Pytest does not
 start. If status is unavailable or the key is quarantined, Receipt executes
 instead. With no local copy, a remote hit can supply the saved result.
 
-Actual decision from [app.go](../internal/app/app.go):
+Actual decision from [`s.replay` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L295-L297):
 
 ```go
 if hit && !o.verify {
@@ -662,7 +662,7 @@ if hit && !o.verify {
 `prior` is the saved result. Unless verification was requested, this returns
 before reaching the code that starts the tests. The replay function writes the
 saved bytes to the terminal. Actual excerpt from
-[run_session.go](../internal/app/run_session.go):
+[`runSession.replay` in run_session.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L141-L161):
 
 ```go
 if _, e := out.Write(prior.Stdout); e != nil {
@@ -707,7 +707,7 @@ local runs execute instead of replaying K. A failed report does not undo the
 local marker, but it can leave other clients unaware of the conflict.
 
 Quarantine means do not reuse this key. It does not mean Receipt has determined
-which run was correct. Actual marker creation from [app.go](../internal/app/app.go):
+which run was correct. Actual marker creation from [`quarantine` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L216-L218):
 
 ```go
 func quarantine(dir, key string) error {
@@ -744,7 +744,7 @@ key. Verify checksums, restore a separate database and files, then fetch results
 from a test server. The live data is never replaced during this drill.
 
 Actual Python restart cleanup from
-[backup-r2-drill.py](../deploy/digitalocean/backup-r2-drill.py):
+[`finally` block in backup-r2-drill.py](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/backup-r2-drill.py#L36-L39):
 
 ```text
 finally:
@@ -781,7 +781,55 @@ Recovery restores earlier state, including its limitations; it does not decide
 which conflicting observation was right. Receipt's checks, verification mode
 and quarantine expose some problems rather than eliminating every uncertainty.
 
+## 11. Defending the design
+
+The chapters so far follow one test run and explain what happens. A reviewer
+asks a different kind of question: why this choice, what else could work, what
+it costs, and what breaks when it fails. Suppose someone asks why Receipt uses
+`flock` and not `fcntl` locks, or what happens if the machine loses power
+between saving output file X and saving the database record that points to it.
+The answer needs the operating-system and database rules underneath the code.
+
+The [design defense](DESIGN-DEFENSE.md) is organised as those questions, in the
+order a reviewer would ask them. It starts from first principles: content
+hashing, file locks, `fsync` and hard links, PostgreSQL transactions and
+advisory locks, and bearer tokens. Then it walks each decision: the cache key,
+local publication, the shared store's locks, the cost of an upload, credentials,
+the threat model and the deployment. Each section names the alternatives, the
+cost with measured numbers where they exist, the failure behaviour and links
+to the exact lines of code.
+
+It also lists the known gaps honestly. For example, the credential-issuance
+lock reuses the storage lock's key, so issuing a credential briefly pauses
+every cache read and upload. And the CI token's hash is part of every CI cache
+key, so renewing the token makes every earlier CI result unreachable.
+
+### Check your understanding
+
+A reviewer asks: "Two uploads for different keys arrive together. Why does
+the second one wait?" Which shared resource do they both need?
+
+### Answer: the storage budget and the shared output files
+
+Both uploads may add files to one shared blob directory, and both draw on the
+same storage budget. The quota check must see a total that no other upload is
+changing, and cleanup must not delete a file that an upload is about to
+reference. Receipt meets both needs with one exclusive lock. The design defense
+explains what that lock costs as the store grows and which designs could
+avoid the wait.
+
 ## Updates and documentation records
+
+### 15 October 2026: design defense and corrected claims
+
+Added chapter 11 and the [design defense](DESIGN-DEFENSE.md). Code references
+in this guide now link to exact lines on GitHub, and a documentation test
+checks that each linked line range still contains the named symbol. Corrected
+claims elsewhere: credential issuance shares the storage lock key rather than
+using its own, commands read standard input from `/dev/null` rather than a
+closed descriptor, and the CI token expires on 12 November 2026 at 03:28 UTC.
+The [review reference](PHASE-REVIEWS.md#corrections-15-october-2026) records
+these corrections with dates. No program behaviour changed.
 
 ### 13 October 2026: final four-case walkthrough
 

@@ -33,8 +33,10 @@ def inline(text):
             label, target = match.group(2), match.group(3)
             if target.startswith(("javascript:", "data:")):
                 raise ValueError("Unsupported link target")
+            # A code link names its symbol in backticks; show it as code.
+            label_html = re.sub(r"`([^`]+)`", r"<code>\1</code>", html.escape(label))
             parts.append('<a href="' + html.escape(target, quote=True) + '">'
-                         + html.escape(label) + "</a>")
+                         + label_html + "</a>")
         position = match.end()
     parts.append(html.escape(text[position:]))
     return "".join(parts)
@@ -171,7 +173,7 @@ def render(source):
             + '<p class="sidebar-note">Follow a run. Read the code. Explain the choice.</p></aside>'
             + '<main id="reading" tabindex="-1"><h1>' + inline(title) + '</h1>'
             + "\n".join(intro) + "\n" + "\n".join(pages) + '</main></div>\n'
-            + '<footer>Updated 13 October 2026. Generated from WORKING-DOC.md. '
+            + '<footer>Updated 15 October 2026. Generated from WORKING-DOC.md. '
             + 'No network connection required.</footer>\n<script>\n' + JS
             + '\n</script>\n</body>\n</html>\n')
 

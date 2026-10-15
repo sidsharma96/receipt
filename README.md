@@ -7,11 +7,28 @@ pinned `lib/pq` PostgreSQL driver. No database or cloud account is needed locall
 
 To understand the design from the beginning, read [the illustrated working
 guide](docs/WORKING-DOC.html) or its [phone-readable text](docs/WORKING-DOC.md).
-The [dated phase reviews](docs/PHASE-REVIEWS.html) retain detailed decisions,
-alternatives, and verification evidence.
+To defend it under questioning, read [the design defense](docs/DESIGN-DEFENSE.md):
+the questions an expert reviewer would ask, with alternatives, costs, failure
+behaviour, a threat model and known gaps. The [dated phase reviews](docs/PHASE-REVIEWS.html)
+retain detailed decisions, alternatives, and verification evidence.
 
-The [Fly deployment proposal](docs/FLY-DEPLOYMENT.md) includes local templates,
-an architecture picture and a preliminary budget. It is not deployed yet.
+## Current state (15 October 2026)
+
+- Phases 1 to 7 are implemented: the local cache, PostgreSQL metadata with
+  content-addressed output files and shared quarantine, quotas and garbage
+  collection, strict JSON contracts, scoped service credentials, timing
+  diagnostics, and bounded `cargo test --frozen` support.
+- One private cache server is live at `https://receipt.sidsharma.dev` on a
+  DigitalOcean droplet. Caddy terminates HTTPS and forwards to Receipt on
+  `127.0.0.1:7777`, which runs with `--postgres --credentials --max-inflight 2`
+  against a local PostgreSQL. See [the deployment record](docs/DIGITALOCEAN-SETUP.md).
+- Receipt's own CI uses that server over HTTPS, next to an independent job that
+  always runs the full suite. Its token expires on **12 November 2026 at 03:28
+  UTC** and must be renewed by hand; see [the CI guide](docs/RECEIPT-CI.md#secrets-and-renewal).
+- There is no scheduled backup and no monitoring. One encrypted backup was
+  restored successfully in a drill on 13 October 2026.
+- The [Fly deployment proposal](docs/FLY-DEPLOYMENT.md) includes local templates,
+  an architecture picture and a preliminary budget. It was never deployed.
 
 ## Start
 
@@ -66,7 +83,8 @@ persistent; there is deliberately no automatic "trust it again" policy.
 
 Misses stream output immediately. Hits replay stdout then stderr; original
 cross-stream interleaving, terminal behavior and test side effects are not
-reproduced. Commands receive closed stdin. Failures and interrupted commands
+reproduced. Commands read standard input from `/dev/null`, so a prompt gets
+end of file at once. Failures and interrupted commands
 are never stored. Cache/network errors fall back to execution where possible.
 
 ## The input contract
@@ -179,8 +197,10 @@ The server stores output in SHA-256-addressed files under `blobs/` and metadata
 with version-2 blob references in Postgres. Empty/repeated output deduplicates
 across entries. The v1 HTTP payload and Phase 1 local files remain unchanged.
 
-Publication writes/verifies blobs first, then serializes same-key metadata
-updates with a transaction and row lock. Equal exit/output identities are
+Publication writes/verifies blobs first, then publishes metadata in a
+transaction. Every upload holds the exclusive storage lifecycle lock described
+below, so uploads for any keys run one at a time. The row lock taken during
+publication is defence in depth. Equal exit/output identities are
 idempotent despite timing differences. Different output quarantines the key and
 retains both observation identities in the evidence table. Explicit verification
 reports can also quarantine failed observations; failed runs are not reusable
@@ -199,7 +219,10 @@ Authenticated `GET /v1/metrics` returns aggregate request, active, rejection,
 conflict, miss, failure and cumulative-duration counters. Counters reset on
 restart and have no token/path/output labels. `--max-inflight` bounds admitted
 API work (default 16, range 1–128); excess returns 503 with Retry-After. Admitted
-work has a 25-second context deadline. These are not a hard process-memory limit
+work has a 25-second context deadline. Each storage operation also holds one of
+the 16 pooled database connections, so values above 16 cannot run more storage
+work at once. The live server uses `--max-inflight 2`, and credential mode gives
+authentication the same number of slots. These are not a hard process-memory limit
 or a substitute for reverse-proxy connection limits and disk quotas.
 
 Missing blobs are rejected; re-uploading their original bytes restores them.
@@ -312,23 +335,39 @@ cognitive complexity and nested-condition checks guide responsibility-based
 refactoring, not removal of necessary error checks.
 
 `make` selects the system linker and refreshes the local ad-hoc binary signature
-on macOS because this machine's Go 1.22 internal linker triggers a `missing
-LC_UUID` loader error. This does not change cache logic.
+on macOS because this machine's Go 1.22 internal linker triggered a `missing
+LC_UUID` loader error. Since Go 1.27.2 became the default toolchain here
+(15 October 2026), plain `go test ./...` also works. `go.mod` still declares
+Go 1.22 and CI uses 1.22.12. None of this changes cache logic.
 
-Implemented: local CLI, versioned fingerprints, success-only immutable entries,
-corruption checks, bounded output capture, bypass/refresh/verification, input
-diffs, cache listing/pruning, HTTP client/server and token authentication.
+Implemented, by phase:
 
-Next phases:
+1. Local CLI, versioned fingerprints, success-only immutable entries, corruption
+   checks, bounded output capture, bypass/refresh/verification, input diffs,
+   cache listing/pruning, and the HTTP client/server with a shared token.
+2. PostgreSQL metadata, content-addressed output files, shared quarantine,
+   status checks before local replay, and aggregate counters.
+3. Shared quotas, retention, orphan garbage collection and lifecycle locks.
+4. Strict JSON contracts and tests of interrupted storage operations.
+5. Scoped, expiring, revocable service credentials.
+6. Opt-in timings, request logs and repeatable measurements (including CodeCraft).
+7. Bounded `cargo test --frozen` support.
 
-1. Measure CodeCraft on selected deterministic suites. Record genuine wrong hits,
-   output-only differences, lookup cost and fingerprint overhead.
-2. Phase 2 local shared-storage milestone implemented: content-addressed file
-   blobs, Postgres metadata, conformance tests, shared quarantine and counters.
-   Shared quotas, retention and orphan GC now implemented; cloud object storage
-   and deployment remain follow-up milestones. The maintenance phase review is recorded.
-3. Portable input policy, sandboxed execution, dependency selection and the shared
-   identity/networking learning track, each with explicit correctness gates.
+Deployed: one DigitalOcean droplet behind Caddy and HTTPS, used by Receipt's CI
+(see [Current state](#current-state-15-october-2026)).
 
-The living design and decision record is [docs/WORKING-DOC.html](docs/WORKING-DOC.html).
+Next steps, none of them started:
+
+1. Renew the CI token before 12 November 2026 03:28 UTC, and decide whether CI
+   should stop hashing `RECEIPT_TOKEN` into its keys.
+2. Scheduled backups with a second copy of the recovery key, and monitoring.
+3. Cheaper upload accounting, so that an upload no longer scans the whole store.
+4. Portable input policy, sandboxed execution, dependency selection, and object
+   storage, each with explicit correctness gates.
+
+The [design defense](docs/DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls)
+lists every known gap with a proposed fix.
+
+The living design and decision record is [docs/WORKING-DOC.html](docs/WORKING-DOC.html);
+[docs/DESIGN-DEFENSE.md](docs/DESIGN-DEFENSE.md) answers the questions a reviewer would ask.
 For phone/text viewers, use [docs/WORKING-DOC.md](docs/WORKING-DOC.md). Each implemented phase includes a nine-question review: data structures, architecture, primitives, pitfalls, hot/cold paths, guarantees/non-goals, alternatives, evidence/risks and conditions for revisiting decisions.

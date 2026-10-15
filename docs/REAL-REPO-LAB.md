@@ -1,7 +1,9 @@
 # Real-repository lab
 
 Started 9 October 2026 with Receipt `127bc8d`. This is an experiment record,
-not a completed runner-support phase. No production Go code changed.
+not a completed runner-support phase. The initial lab changed no production Go
+code; the later [Go scratch-path correction](#9-october-2026-go-scratch-path-correction)
+below did change `internal/fingerprint/go_environment.go`.
 
 The lab lives at `/Users/siddharthsharma/Desktop/testing`. `repositories.json`
 records the five upstream URLs and exact revisions. `repos/` contains source,

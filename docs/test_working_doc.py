@@ -9,6 +9,15 @@ import render_working_doc as renderer
 import render_review_figures as review_renderer
 
 
+REPOSITORY = renderer.ROOT.parent
+GITHUB_BLOB = "https://github.com/sidsharma96/receipt/blob/main/"
+# A code link: [`symbol`](https://github.com/sidsharma96/receipt/blob/main/path#L10-L20)
+CODE_LINK = re.compile(r"\[([^\]]+)\]\(" + re.escape(GITHUB_BLOB)
+                       + r"([^)#\s]+)(?:#L(\d+)(?:-L(\d+))?)?\)")
+# The named symbol may sit this many lines outside the anchored range.
+LINK_SLACK = 3
+
+
 class ReaderParser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -82,7 +91,7 @@ class WorkingGuideTests(unittest.TestCase):
         self.assertFalse(parser.tags)
         self.assertEqual(len(parser.ids), len(set(parser.ids)))
         self.assertEqual(parser.figures, 14)
-        self.assertEqual(parser.answers, 9)
+        self.assertEqual(parser.answers, 10)
         for link in parser.links:
             if link.startswith(("http://", "https://")):
                 continue
@@ -95,14 +104,59 @@ class WorkingGuideTests(unittest.TestCase):
                 self.assertIn(fragment, target_parser.ids, link)
 
     def test_actual_go_excerpts_match_attributed_files(self):
+        # Each excerpt is introduced by a GitHub link whose line anchor covers it.
         source = renderer.SOURCE.read_text()
-        pattern = r"\[([^\]]+\.go)\]\(([^)]+\.go)\):\n\n```go\n(.*?)\n```"
+        pattern = (r"\]\(" + re.escape(GITHUB_BLOB) + r"([^)#]+\.go)#L(\d+)(?:-L(\d+))?\):"
+                   r"\n\n```go\n(.*?)\n```")
         excerpts = re.findall(pattern, source, re.DOTALL)
         self.assertEqual(len(excerpts), 9)
-        for _, filename, excerpt in excerpts:
-            actual = (renderer.ROOT / filename).read_text()
+        for path, start, end, excerpt in excerpts:
+            lines = (REPOSITORY / path).read_text().splitlines()
+            covered = "\n".join(lines[int(start) - 1:int(end or start)])
             self.assertIn(re.sub(r"\s+", " ", excerpt).strip(),
-                          re.sub(r"\s+", " ", actual), filename)
+                          re.sub(r"\s+", " ", covered), path + "#L" + start)
+
+    def test_markdown_fragment_links_resolve(self):
+        """GitHub turns each heading into an anchor; links to .md fragments must match one."""
+        def anchors(path):
+            text = re.sub(r"(?ms)^```.*?^```", "", path.read_text())
+            found = set()
+            for heading in re.findall(r"(?m)^#{1,6} (.+)$", text):
+                slug = re.sub(r"[^\w\- ]", "", heading.replace("`", "").lower())
+                found.add(slug.replace(" ", "-"))
+            found.update(re.findall(r'<a id="([^"]+)"', text))
+            return found
+        documents = [REPOSITORY / "README.md", *sorted(renderer.ROOT.glob("*.md"))]
+        for document in documents:
+            for target, fragment in re.findall(r"\]\(([\w./-]*\.md)?#([^)\s]+)\)", document.read_text()):
+                path = (document.parent / target).resolve() if target else document
+                with self.subTest(document=document.name, link=target + "#" + fragment):
+                    self.assertTrue(path.is_file())
+                    self.assertTrue(fragment in anchors(path), "no heading or anchor named " + fragment)
+
+    def test_github_code_links_name_symbols_in_anchored_lines(self):
+        """Line anchors drift when code moves; fail instead of misleading readers."""
+        checked = 0
+        documents = [REPOSITORY / "README.md", *sorted(renderer.ROOT.glob("*.md"))]
+        for document in documents:
+            for label, path, start, end in CODE_LINK.findall(document.read_text()):
+                where = document.name + ": " + path + "#L" + start
+                checked += 1
+                with self.subTest(link=where, label=label):
+                    target = REPOSITORY / path
+                    self.assertTrue(target.is_file(), where)
+                    self.assertTrue(start, where + " needs a #L line anchor")
+                    lines = target.read_text().splitlines()
+                    first, last = int(start), int(end or start)
+                    self.assertTrue(1 <= first <= last <= len(lines), where)
+                    symbols = re.findall(r"`([^`]+)`", label)
+                    self.assertTrue(symbols, where + ": link text must name a symbol in backticks")
+                    window = "\n".join(lines[max(0, first - 1 - LINK_SLACK):last + LINK_SLACK])
+                    for symbol in symbols:
+                        for part in re.split(r"[.\s]+", symbol.removesuffix("()")):
+                            if part:
+                                self.assertIn(part, window, where + ": " + symbol)
+        self.assertGreaterEqual(checked, 60)
 
     def test_all_seven_reviews_keep_nine_questions(self):
         source = (renderer.ROOT / "PHASE-REVIEWS.md").read_text()

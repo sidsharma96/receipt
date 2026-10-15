@@ -10,6 +10,21 @@ Suppose you run the same Python tests twice without editing anything. Running th
 
 That sounds simple. The interesting questions begin when a test reads something we did not record, two users get different outputs, or cleanup deletes a file another command still needs. This guide follows those questions from a personal command-line tool to a small shared service.
 
+## Corrections, 15 October 2026
+
+A documentation audit against `main` at commit `5f5794f` found the factual errors below. The reviews keep their original wording, with a "Corrected on 15 October 2026" link beside each sentence that this section corrects. The [design defense](DESIGN-DEFENSE.md) explains the current behaviour in full.
+
+- Phase 1, question 3, says the command's standard input is closed. Go's `os/exec` connects a nil `Stdin` to `/dev/null`, so a test that reads input gets end of file, not a closed-descriptor error. The code comment inside the excerpt has the same inaccuracy.
+- Phase 2, question 3, calls the 16-connection pool the maintenance CLI's pool. `receipt serve` opens the same pool through `openShared`. Each storage operation pins one connection, so at most 16 storage operations run at once, whatever `--max-inflight` allows.
+- Phase 2, question 3, says the row-level rules remain useful. Since Phase 3, every caller of that row lock already holds the exclusive lifecycle lock, so `SELECT … FOR UPDATE` never waits. It is defence in depth only.
+- Phase 2, question 6, says the bearer token grants shared read and write access. That describes legacy shared-token mode. Phase 5 added scoped credentials, which the deployed server uses.
+- The coding-quality review calls strict result and report decoding proposed work. Phase 4 implemented it, as Phase 4's amendments already note.
+- Phase 5, question 3, says a dedicated advisory lock serializes issuance. Issuance and the credential-table migration use key 72656365697075, the same key as the storage lifecycle lock. Issuing a credential therefore waits for in-flight cache reads and uploads, and new ones queue behind it. CODING-PRACTICES.md and SERVICE-CREDENTIALS.md made the same claim and are corrected.
+- Phase 6, question 9, plans Cargo and Vitest adapters next. Cargo support shipped in Phase 7. No Vitest adapter exists.
+- The deployment review, question 4, says the local checkout has uncommitted deployment work on an older branch. Since 13 October, local `main` contains the merged HTTPS work, and the deployment files are tracked.
+- The deployment review, question 8, mentions a renewal procedure for the November CI token. The token expires on 12 November 2026 at 03:28 UTC. [RECEIPT-CI.md](RECEIPT-CI.md#secrets-and-renewal) lists the renewal steps.
+- Verification entries give different counts of attributed Go excerpts: 19, 20 and 22. Each count was correct on its date. The reference now has 22, and `docs/test_working_doc.py` checks that number.
+
 ## How to read this guide
 
 Start with Phase 1. It explains how Receipt describes a command and remembers its result. Phase 2 adds a server so several clients can share results. Phase 3 adds limits and cleanup. Phase 4 checks the incoming data and deliberately interrupts storage operations to inspect what remains. Phase 5 separates caller credentials and operation permissions.
@@ -225,7 +240,7 @@ args[0] is the executable; the remaining arguments are passed to it. Dir selects
 
 MultiWriter copies each stream to two destinations: the user's output writer and the capture buffer. You see a miss's output as it arrives rather than waiting until the command finishes.
 
-Each capture buffer stops growing at 8 MiB. The expression “8 << 20” calculates that number of bytes. The user can still receive later output, but a result whose capture overflowed is not saved for reuse. This bounds Receipt's capture memory; it does not bound the test program's own memory. The command's standard input, stdin, is closed: interactive answers cannot be replayed from a saved result.
+Each capture buffer stops growing at 8 MiB. The expression “8 << 20” calculates that number of bytes. The user can still receive later output, but a result whose capture overflowed is not saved for reuse. This bounds Receipt's capture memory; it does not bound the test program's own memory. The command's standard input, stdin, is closed: interactive answers cannot be replayed from a saved result. [Corrected on 15 October 2026](#corrections-15-october-2026).
 
 The context passed to CommandContext carries a cancellation signal. On supported Unix systems, Receipt also targets the launched process group during cancellation so children in that group are not left running unnecessarily. That is process management, not isolation from the user's files or network.
 
@@ -454,11 +469,11 @@ default:
 
 The empty struct is a token representing one occupied slot; its contents are irrelevant. If all slots are occupied, default rejects this request with HTTP 503 instead of starting more API work. The default capacity is 16. Each admitted operation also receives a 25-second context deadline.
 
-The database connection pool has a separate purpose: reuse connections while limiting how many are open. The shared maintenance CLI allows up to 16 open connections, four idle connections and a five-minute lifetime. A request slot and a database connection are not the same resource.
+The database connection pool has a separate purpose: reuse connections while limiting how many are open. The shared maintenance CLI allows up to 16 open connections, four idle connections and a five-minute lifetime. A request slot and a database connection are not the same resource. [Corrected on 15 October 2026](#corrections-15-october-2026).
 
 Database updates use transactions. A transaction groups changes so they commit together or are rolled back together. Row locks make conflicting updates wait rather than both modifying a selected row independently.
 
-Current shared writers also take the broader locks added in Phase 3. Different keys therefore do not imply concurrent writes. The row-level rules remain useful, but the complete current sequence serializes shared writers.
+Current shared writers also take the broader locks added in Phase 3. Different keys therefore do not imply concurrent writes. The row-level rules remain useful, but the complete current sequence serializes shared writers. [Corrected on 15 October 2026](#corrections-15-october-2026).
 
 HTTP describes requests and responses. HTTPS adds transport encryption and server-certificate checks. An access token is separate: it shows that the request possesses the configured credential. Encryption alone does not decide whether the caller may upload a result.
 
@@ -530,7 +545,7 @@ It also records conflicting observations and refuses reuse of quarantined keys. 
 
 But an authorized client can lie about what it ran. Conflict reports are assertions from trusted clients, not verified execution proofs. Someone with the token can prevent useful reuse by submitting false conflicting observations.
 
-The bearer token grants shared read/write access. Receipt does not yet distinguish users, organizations, administrative roles or private tenants. It should not be exposed to unrelated untrusted writers as if those rules existed.
+The bearer token grants shared read/write access. Receipt does not yet distinguish users, organizations, administrative roles or private tenants. It should not be exposed to unrelated untrusted writers as if those rules existed. [Corrected on 15 October 2026](#corrections-15-october-2026).
 
 Clients require HTTPS for non-loopback URLs. Loopback is the local machine's network interface. That client rule does not mean a production TLS server and certificate setup are already deployed. Deployment and untrusted-code execution are separate unfinished problems.
 
@@ -948,7 +963,7 @@ Imagine a request repeats a field or omits a required value. Decoding into a str
 
 A schema is the set of rules for accepted fields and values. A strict decoder must define required fields, unknown fields, duplicates, nulls and limits, then test them. A named InputKind alone does not enforce those rules.
 
-Configuration decoding rejects unknown fields and extra JSON values. Result/report decoding is not yet a complete strict firewall. Strengthening it is proposed work, with compatibility tests needed so intentional existing clients are not silently broken.
+Configuration decoding rejects unknown fields and extra JSON values. Result/report decoding is not yet a complete strict firewall. Strengthening it is proposed work, with compatibility tests needed so intentional existing clients are not silently broken. [Corrected on 15 October 2026](#corrections-15-october-2026).
 
 ## Where to find the implementation
 
@@ -1331,7 +1346,7 @@ The first 16 bytes make a public 128-bit ID; the remaining 32 bytes make a 256-b
 
 The database keeps a SHA-256 digest of the full token. Verification compares that digest with the presented token's digest using a constant-time comparison. This means the digest comparison avoids stopping at the first different byte; it does not make the SQL lookup or network response constant-time. This design is for randomly generated secrets, not human passwords.
 
-A SQL transaction and dedicated advisory lock serialize issuance and enforce a 1024-row retained budget. HTTP authentication uses its own buffered channel as an admission counter, with a two-second context. Storage retains its separate admission channel and 25-second context. Releasing the authentication slot before storage admission prevents waiting storage operations from permanently occupying authentication slots. Both use the same database connection pool, so database contention remains possible.
+A SQL transaction and dedicated advisory lock serialize issuance and enforce a 1024-row retained budget. HTTP authentication uses its own buffered channel as an admission counter, with a two-second context. Storage retains its separate admission channel and 25-second context. Releasing the authentication slot before storage admission prevents waiting storage operations from permanently occupying authentication slots. Both use the same database connection pool, so database contention remains possible. [Corrected on 15 October 2026](#corrections-15-october-2026).
 
 The bearer header and existing HTTP client are unchanged. Anyone who steals the secret can use its permissions. HTTPS outside loopback and a restricted server listener therefore remain necessary; this phase does not deploy TLS. Those concerns also appear in [OWASP's REST Security guidance](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html).
 
@@ -1575,7 +1590,7 @@ If request logging noticeably delays clients, measure destination behavior and a
 
 If input scanning dominates the useful saved work, investigate which files and probes cost time before narrowing the dependency model. If lock waits dominate representative shared workloads, measure inventory and lock hold time before designing finer coordination.
 
-For runners, Go support already exists with a go env probe. Next, validate that path against toolchain and dependency changes, then add Cargo and Vitest adapters with explicit input rules. Generic command execution is not evidence that their resolved dependencies are covered. LeetCode currently uses inline Python harnesses; CodeCraft is the existing uv/pytest project used here.
+For runners, Go support already exists with a go env probe. Next, validate that path against toolchain and dependency changes, then add Cargo and Vitest adapters with explicit input rules. Generic command execution is not evidence that their resolved dependencies are covered. LeetCode currently uses inline Python harnesses; CodeCraft is the existing uv/pytest project used here. [Corrected on 15 October 2026](#corrections-15-october-2026).
 
 Final Phase 6 verification on 9 October 2026: make check passed with zero lint issues; the uncached race-enabled full suite passed against a fresh disposable PostgreSQL 14.17 cluster; make build passed. Sixteen shared workload combinations completed without a failed request, and the selected CodeCraft suite passed all 15 tests. Seven documentation tests passed, including six nine-question reviews and all 20 attributed review excerpts. Generated HTML/figures, local links and git whitespace checks passed. Both new measured SVGs were rendered and inspected. Browser-level HTML/phone checks remain incomplete; no production-load claim is made.
 
@@ -2120,7 +2135,7 @@ The local checkout has uncommitted deployment work and remains on the older
 branch. The HTTPS CI migration was merged separately as
 [PR #2](https://github.com/sidsharma96/receipt/pull/2).
 When debugging CI, read that deployed revision, not the older tunnel helper
-in this checkout. We have not silently overwritten the user's local work.
+in this checkout. We have not silently overwritten the user's local work. [Corrected on 15 October 2026](#corrections-15-october-2026).
 
 ### 5. What are the hot and cold paths, and their costs?
 
@@ -2221,7 +2236,7 @@ existing machine's roles; it was not a brand-new-host recovery test.
 See the [deployment record](DIGITALOCEAN-SETUP.md) for commands, hashes and limits.
 
 We still need external monitoring, scheduled backups, separate custody of the
-recovery key, a renewal procedure for the November CI token, and restore drills.
+recovery key, a renewal procedure for the November CI token, and restore drills. [Corrected on 15 October 2026](#corrections-15-october-2026).
 We have not measured sustained load or tested Caddy certificate renewal or a
 post-Caddy reboot. The small tests are not evidence for those claims.
 

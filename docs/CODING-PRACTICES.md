@@ -112,9 +112,14 @@ this file records how to apply those decisions in future code.
   permissions must introduce and test an explicit staleness policy.
 - Do not equate operator-assigned subjects with verified people, scopes with tenant
   isolation, or request identity with a durable upload audit. All are distinct.
-- Issuance and migration share a dedicated advisory lock; the 1024-row retained
-  credential budget includes expired/revoked rows and is separate from cache quotas.
-  Do not auto-purge records or add an administrative network scope without a decision.
+- Issuance and the credential-table migration take PostgreSQL advisory lock
+  72656365697075 exclusively. That is the same key as the storage lifecycle lock
+  (`lifecycleLock` in internal/cache/maintenance.go), not a dedicated lock, so
+  issuing a credential waits for in-flight cache reads and uploads and makes new
+  ones queue behind it. Corrected 15 October 2026; a distinct key is a proposed
+  fix, not current behaviour. The 1024-row retained credential budget includes
+  expired/revoked rows and is separate from cache quotas. Do not auto-purge
+  records or add an administrative network scope without a decision.
 - Authentication work has its own bounded admission and two-second context; storage
   admission remains separate. Cancellation must release slots. Public errors remain
   generic, and metrics use aggregate counters without caller labels.

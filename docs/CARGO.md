@@ -48,10 +48,12 @@ entire sysroot or operating system. This is not complete toolchain attestation.
 
 Receipt asks Cargo for format-version-1 metadata with `--frozen`, the same
 manifest/feature options and a host-platform filter. The selected root package
-must belong to the current Git repository. Its normal and dev dependencies are
-followed; dependencies' own dev dependencies are not needed. Shared dependencies
-are visited once. Missing graph nodes or unknown dependency/target kinds cause
-refusal. Metadata may over-approximate feature use across a workspace, so some
+must belong to the current Git repository. Normal and build dependency edges
+are followed from every package. Dev-dependency edges are followed only from the
+selected root package; dependencies' own dev dependencies are not needed.
+(Corrected 15 October 2026: build dependencies were previously omitted here.)
+Shared dependencies are visited once. Missing graph nodes or unknown
+dependency/target kinds cause refusal. Metadata may over-approximate feature use across a workspace, so some
 otherwise simple commands may be refused conservatively.
 
 The lockfile is hashed even if Git ignores it. Local manifests and target entry
@@ -67,6 +69,17 @@ layouts and symlink/nonregular files in these scans cause refusal. Trusted local
 directory access is assumed; this does not defeat hostile concurrent path changes.
 
 ## Refusals before cache lookup
+
+Every package in the selected graph is checked before lookup. Any of these
+causes uncached execution:
+
+- A build-script target or a procedural-macro target.
+- A target kind other than lib, rlib, bin, test, example and bench, including
+  cdylib and staticlib, or a target with no kind at all.
+- A target whose source file lies outside its package directory.
+- A path dependency outside the Git repository.
+- Any non-registry source, such as a Git dependency.
+- A registry package whose extracted source is not under `CARGO_HOME/registry/src`.
 
 Build-script targets and procedural-macro targets are refused anywhere in the
 selected dependency graph. Both can execute code during compilation and read

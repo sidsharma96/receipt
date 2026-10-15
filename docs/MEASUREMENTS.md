@@ -34,7 +34,7 @@ took zero time. These are elapsed durations, not CPU-only times.
 | Stage | Boundary measured |
 | --- | --- |
 | authentication | Scoped authentication, including its database lookup, pool contention and comparison; not legacy-token comparison |
-| db_pool | Acquiring the dedicated shared-storage connection |
+| db_pool | Taking one connection from the shared 16-connection pool; the storage operation keeps it until it finishes |
 | db_lock | Advisory-lock SQL call, including round trip and waiting |
 | fs_lock | Opening and acquiring the filesystem lifecycle lock |
 | sql | Selected metadata reads/accounting/publication; publication includes validation, policy/binding checks and commit, not pure SQL engine time |
@@ -84,7 +84,8 @@ RECEIPT_MEASURE=1 go test -count=1 -ldflags=-linkmode=external \
   ./internal/cache -run '^TestMeasurementWorkloads$' -v
 ```
 
-The external linker flag is for this macOS setup. The experiment uses real
+The external linker flag was needed for Go 1.22 on this Mac. With Go 1.27.2
+installed as the default toolchain (15 October 2026), plain `go test` works. The experiment uses real
 PostgreSQL credentials and loopback HTTP, stores 16 or 128 descriptions with
 roughly 1 KiB outputs, and runs 1 or 4 clients. Each client makes 8 requests.
 Cases cover reads, duplicate writes, alternating reads/writes, and reads started
@@ -130,11 +131,13 @@ build cache ([Go command documentation](https://pkg.go.dev/cmd/go#hdr-Test_packa
 The current probe is not a proof that external module replacements, native
 libraries or all generated inputs have been captured.
 
-Next adapter work should exercise Go's existing path, then add
+At the time of this Phase 6 record, the next adapter work was to exercise Go's
+existing path, then add
 [`cargo test`](https://doc.rust-lang.org/cargo/commands/cargo-test.html), then
-[`vitest run`](https://vitest.dev/guide/cli). Cargo needs selected toolchain,
-workspace/path dependencies, features and build-script inputs considered. Vitest
-needs Node/package-manager identity, lockfiles, configuration, dependencies and
-non-watch execution considered. Both currently require `--allow-generic`, which
-does not probe their resolved runtime/dependency environment. Do not market that
-escape hatch as fully supported safe reuse. No Cargo/Vitest adapter was added.
+[`vitest run`](https://vitest.dev/guide/cli). Update, 15 October 2026: Phase 7
+added a bounded `cargo test --frozen` adapter, described in [CARGO.md](CARGO.md).
+Supported Cargo commands no longer need `--allow-generic`. Vitest still has no
+adapter: it needs Node/package-manager identity, lockfiles, configuration,
+dependencies and non-watch execution considered, and it requires
+`--allow-generic`, which does not probe its resolved runtime or dependency
+environment. Do not market that escape hatch as fully supported safe reuse.

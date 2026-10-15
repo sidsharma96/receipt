@@ -87,6 +87,20 @@ and remove only `RECEIPT_SELF_CI_TOKEN`. Then enroll again. Partial enrollment f
 need operator inspection; the script is not a transactional deployment system.
 Do not run the old synthetic experiment's cleanup script on these credentials.
 
+Two side effects of renewal, added 15 October 2026:
+
+- The cached job does not ignore `RECEIPT_TOKEN`, so the token's SHA-256 is part
+  of every CI cache key. The first run after renewal is a miss, and every result
+  stored under the old token becomes unreachable until `shared prune` removes it.
+- Enrollment runs `receipt auth issue` on the droplet. That command takes the
+  storage lifecycle lock exclusively, and issuance itself uses the same lock key,
+  so cache reads and uploads pause until the in-flight ones finish and the new
+  row commits. Renew when no CI job is running.
+
+The [design defense](DESIGN-DEFENSE.md#d13-which-advisory-lock-keys-exist-and-what-does-each-guard)
+explains both effects. There is no automatic reminder. Put the expiry,
+12 November 2026 at 03:28 UTC, in a calendar, and renew a few days early.
+
 ## 13 October: moving the connection to HTTPS
 
 The original 12 October rollout used a restricted SSH tunnel. The updated helper

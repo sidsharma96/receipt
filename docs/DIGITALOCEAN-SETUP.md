@@ -1,8 +1,33 @@
 # Private Droplet setup — 12 October 2026
 
-Current status (13 October): HTTPS is now available at
-`https://receipt.sidsharma.dev`. See the dated HTTPS amendment below.
-The initial private setup and earlier experiments remain historical records.
+## Current state, 15 October 2026
+
+This file is a dated log. Later amendments supersede earlier sections, so read
+this summary first. The sections below keep their original wording.
+
+- Public access is `https://receipt.sidsharma.dev`. Caddy listens on TCP 443 and
+  80 (80 only redirects), terminates TLS and forwards to Receipt on
+  `127.0.0.1:7777`. Cloudflare provides DNS only. UFW allows SSH, 80 and 443.
+  Receipt, PostgreSQL (5432) and Caddy's admin port (2019) are loopback only.
+  This supersedes "No Caddy", "only SSH open" and the SSH-tunnel instructions
+  in the initial setup sections.
+- Receipt runs as `receipt serve --postgres --credentials --max-inflight 2
+  --request-log` under [receipt.service](../deploy/digitalocean/receipt.service).
+  It has two storage slots and, separately, two authentication slots. A
+  request that arrives while both slots of either kind are busy gets HTTP 503,
+  and its client runs tests locally.
+- CI connects over HTTPS. The CI SSH key is retired and its GitHub secrets are
+  deleted. The CI application token expires on 12 November 2026 at 03:28 UTC.
+  Renewal is manual ([RECEIPT-CI.md](RECEIPT-CI.md#secrets-and-renewal)).
+- Backups: one encrypted backup was restored in a drill on 13 October. There is
+  no schedule, no second copy of the private recovery key, and no monitoring.
+  This supersedes "Backups are not configured" only in that one drill exists.
+- Still open: root key login is still allowed (`PermitRootLogin
+  prohibit-password`), `sid` has passwordless sudo, the retired `receipt-ci`
+  account still exists, and Caddy has not yet been observed renewing its
+  certificate or restarting after a reboot.
+
+## Initial private setup, 12 October 2026
 
 Receipt is installed on the user's single Ubuntu 24.04 Droplet. This is an
 initial private deployment, not a completed production or CI rollout.

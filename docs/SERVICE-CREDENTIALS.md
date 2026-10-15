@@ -77,6 +77,11 @@ limit cross-client reuse. Authentication does not make keys portable.
 A token contains a public random 128-bit ID and a random 256-bit secret, encoded
 as rcpt_ID_SECRET in lowercase hexadecimal. crypto/rand supplies those random bytes.
 The database stores a SHA-256 digest of the full token, not the bearer token.
+The same digest also appears outside the database whenever the client has
+RECEIPT_TOKEN set and does not ignore it: environment values are hashed into
+every manifest, so each uploaded result carries SHA-256 of the caller's token.
+The digest cannot be turned back into the token, but it links results to one
+credential. See [the design defense](DESIGN-DEFENSE.md#d4-why-is-the-hash-of-receipt_token-in-the-key-a-problem).
 Verification looks up the ID and compares fixed-length digests using Go's
 constant-time comparison. This does not make the entire SQL/network request
 constant-time. This hashing choice is for generated high-entropy tokens, not for
@@ -103,8 +108,13 @@ is no idempotent issuance key or secret recovery operation.
 ## Bounds and operational costs
 
 All retained credential rows, including revoked/expired rows, count against a
-1024-row issuance limit. A separate SQL advisory lock serializes issuance and
-migrations so cooperating issuers cannot both claim the last slot. List reads at
+1024-row issuance limit. A SQL advisory lock serializes issuance and migrations
+so cooperating issuers cannot both claim the last slot. Corrected 15 October
+2026: this is not a separate lock. Issuance uses key 72656365697075, the same
+key as the cache's storage lifecycle lock, so issuing a credential waits for
+in-flight cache reads and uploads and makes new ones queue behind it until it
+commits. Every `receipt auth` command also takes the storage lock exclusively
+once while it opens the store. Plan renewals for a quiet moment. List reads at
 most 1025 rows and errors on over-capacity data. There is no purge command yet;
 the limit makes this a bounded small deployment, not indefinite rotation at scale.
 Credential rows are outside the cache's Phase 3 metadata/evidence budgets.
