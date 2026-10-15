@@ -1,7 +1,7 @@
 name: Receipt CI
 on:
   push:
-    branches: [main, codex/receipt-https-ci]
+    branches: [main]
   pull_request:
 permissions:
   contents: read
@@ -36,7 +36,7 @@ jobs:
         run: python3 -m unittest discover -s deploy/ci -p 'test_*.py'
   cached:
     # Never provide private-cache credentials to pull-request code.
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/receipt-https-ci')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

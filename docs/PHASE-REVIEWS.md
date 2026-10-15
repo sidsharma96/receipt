@@ -82,6 +82,8 @@ original wording.
   `TestAdjacentScratchFlagsAreBothNormalized`. Real `go env -json` output on the
   development Mac normalises to the same bytes as before, so Go keys did not
   change.
+- `receipt-ci.yml` no longer runs, or gives the cache secret to, the finished
+  rollout branch `codex/receipt-https-ci`. Test: `deploy/ci/test_workflow.py`.
 
 ## How to read this guide
 

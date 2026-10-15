@@ -63,8 +63,9 @@ rule has been changed to make either job a required merge check.
 
 ## Secrets and renewal
 
-Only pushes to `main` and the rollout branch `codex/receipt-https-ci` receive
-the `RECEIPT_SELF_CI_TOKEN` repository secret. Pull-request jobs do not receive
+Only pushes to `main` receive the `RECEIPT_SELF_CI_TOKEN` repository secret.
+Until 15 October 2026 the finished rollout branch `codex/receipt-https-ci` did
+too; `deploy/ci/test_workflow.py` now checks that `main` is the only one. Pull-request jobs do not receive
 them. Repository writers who can change workflows remain trusted; a condition
 inside a workflow is not protection against a malicious repository writer.
 
