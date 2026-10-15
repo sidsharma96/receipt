@@ -15,7 +15,7 @@ decision changes, rather than silently introducing a conflicting convention.
 
 After every implemented phase:
 
-1. Append a dated review to `docs/WORKING-DOC.html` and its phone-readable companion `docs/WORKING-DOC.md`.
+1. Update the relevant chapter under `docs/guide/` and append a dated entry to `docs/guide/updates.md` that links the full review in `docs/PHASE-REVIEWS.md`.
 2. Answer the same nine questions in the user-facing handoff, with actual, attributed code snippets where applicable:
    1. What data structures are used, and why?
    2. What is the architecture/flow, why, and what are the extension boundaries?
@@ -69,10 +69,28 @@ or an assumed personal memory to carry them into another session.
 The main working document is the current beginner reading path. Update its
 relevant teaching chapter and append a dated phase entry that links the full
 nine-question review. Keep the complete dated review and verification record in
-docs/PHASE-REVIEWS.md and docs/PHASE-REVIEWS.html. This preserves the review
-requirements above without making test inventories the teaching sequence.
+docs/PHASE-REVIEWS.md. This preserves the review requirements above without
+making test inventories the teaching sequence.
 
-Edit docs/WORKING-DOC.md, then regenerate docs/WORKING-DOC.html with
-`python3 docs/render_working_doc.py`. Run it with `--check` to detect stale HTML.
-Do not edit the generated HTML directly. Verify the reader on phone and desktop
-widths after layout changes, including navigation and answer disclosure.
+## Documentation book, revised 2026-10-15
+
+The docs are an mdBook (0.5.4) whose source is `docs/` itself; `docs/SUMMARY.md`
+orders it. The working guide's overview is docs/WORKING-DOC.md and each chapter
+is a file in docs/guide/. Every new page must be listed in SUMMARY.md.
+
+mdBook copies every non-Markdown file under docs/ into the published site. Keep
+scripts, tests, configuration and anything secret out of docs/: documentation
+tooling lives in scripts/docs/.
+
+Questions live in docs/questions/{newcomer,practitioner,expert}.md in the
+format the checker enforces. A `<!-- check: guide/NN-....md -->` marker under a
+question copies it into that chapter's "Check your understanding" block; edit
+the bank, then run `python3 scripts/docs/sync_questions.py`. Phase-review
+figures are drawn by `python3 scripts/docs/review_figures.py`.
+
+Run `make docs` before committing documentation. It builds docs/book/ and runs
+the checks in scripts/docs/: code links name symbols within their line anchors,
+relative links and heading anchors resolve in the source and in the built site,
+attributed Go excerpts match the source, and questions are well formed and in
+sync. CI (.github/workflows/docs.yml) runs the same target and deploys the book
+to Cloudflare Pages when its secrets are present.

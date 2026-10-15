@@ -251,7 +251,7 @@ tests they skipped. Other verification overlapped, so these are exploratory
 observations, not a performance distribution. See the
 [raw samples](measurements/phase-7-cargo-2026-10-09.json),
 [supported Cargo contract](CARGO.md), and
-[Phase 7 review](PHASE-REVIEWS.html#phase-7-review-bounded-cargo-support).
+[Phase 7 review](PHASE-REVIEWS.md#phase-7-review-bounded-cargo-support).
 
 ## Cargo hardening follow-up: 9 October 2026
 
@@ -283,7 +283,7 @@ The new stage timers show roughly 267–270 ms per hit checking tools, 46–60 m
 querying metadata, and less than 1 ms on the extra source scan. These are nested
 inside fingerprint time and must not be added to it. See the
 [raw sequential record](measurements/cargo-hardening-2026-10-09.json) and
-[comparison figure](PHASE-REVIEWS.html#figure-7-cargo-hardening-cost).
+[comparison figure](PHASE-REVIEWS.md#figure-7-cargo-hardening-cost).
 
 Separately, the offline automated fixture copied prepared memchr 2.8.3 into a
 temporary Cargo home. Changing that dependency to contain a compiler error

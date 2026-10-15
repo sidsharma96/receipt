@@ -1,6 +1,6 @@
 # Receipt: dated phase reviews and implementation evidence
 
-This is the detailed reference record, preserved during the 2026-10-09 documentation revamp. Start with [the working guide](WORKING-DOC.md) for the current explanation, or [open the HTML reader](WORKING-DOC.html). These reviews describe decisions and evidence at their recorded dates; later amendments may supersede earlier behavior. They are not the required reading order for learning Receipt.
+This is the detailed reference record, preserved during the 2026-10-09 documentation revamp. Start with [the working guide](WORKING-DOC.md) for the current explanation. These reviews describe decisions and evidence at their recorded dates; later amendments may supersede earlier behavior. They are not the required reading order for learning Receipt.
 
 Illustrations added 9 October 2026: [A manifest is one record with named fields](#figure-1-manifest) · [An edited file leads to a different lookup](#figure-1-key-change) · [The server joins a database record to output files](#figure-2-storage) · [A failed database save can leave a complete output file](#figure-2-interrupted-write) · [The lock protects the gap before opening the file](#figure-3-reader-cleanup) · [The same upload can require more inspection](#figure-3-upload-cost) · [Two records can share the same “still needed” entries](#figure-3-collection-map) · [Each check answers a different question](#figure-4-validation) · [A valid credential can still be refused an upload](#figure-5-permissions) · [Revocation changes the next credential check](#figure-5-revocation) · [A hit and a miss do different work](#figure-1-local-flow) · [Full slots refuse another request](#figure-2-admission) · [Figure 1.4 · Matching scans can miss a change in between](#figure-1-scan-gap) · [Figure 2.4 · A conflict error must leave a warning behind](#figure-2-conflict-state) · [Figure 4.2 · What remains after a failed save?](#figure-4-failed-save-states) · [Figure 4.3 · Cleanup retries from the state that remains](#figure-4-cleanup-retry) · [Figure 5.3 · Saving a credential and delivering it are separate steps](#figure-5-issuance-failure) · [Measured local runs](#figure-6-local-measurements) · [Measured lock waiting](#figure-6-measured-wait).
 
@@ -24,6 +24,12 @@ A documentation audit against `main` at commit `5f5794f` found the factual error
 - The deployment review, question 4, says the local checkout has uncommitted deployment work on an older branch. Since 13 October, local `main` contains the merged HTTPS work, and the deployment files are tracked.
 - The deployment review, question 8, mentions a renewal procedure for the November CI token. The token expires on 12 November 2026 at 03:28 UTC. [RECEIPT-CI.md](RECEIPT-CI.md#secrets-and-renewal) lists the renewal steps.
 - Verification entries give different counts of attributed Go excerpts: 19, 20 and 22. Each count was correct on its date. The reference now has 22, and `docs/test_working_doc.py` checks that number.
+
+## Documentation book, 15 October 2026
+
+The documentation became an mdBook later on 15 October. This Markdown file is now the only copy of the reviews: the hand-maintained `PHASE-REVIEWS.html` and the generated `WORKING-DOC.html` were retired after a comparison confirmed that every review paragraph, code excerpt and figure already appeared here. Relative links to source files now point at GitHub, and each figure keeps an anchor named after it.
+
+Entries below that name `docs/render_working_doc.py`, `docs/render_review_figures.py` or `docs/test_working_doc.py` describe the tooling on their date. Today the figures are drawn by `scripts/docs/review_figures.py`, the checks live in `scripts/docs/test_docs.py`, and `make docs` builds the book and runs them. The 22 attributed Go excerpts are still checked against the source.
 
 ## How to read this guide
 
@@ -71,7 +77,7 @@ To try the personal tool, build it in the Receipt repository with “make build�
 /Users/siddharthsharma/Desktop/projects/receipt/receipt run --verify -- uv run pytest
 ~~~
 
-The double dash separates Receipt's options from the test command. “explain” compares recorded inputs with the last run. “--verify” reruns a saved result and compares its output. See the [README](../README.md) for configuration, supported commands and setup.
+The double dash separates Receipt's options from the test command. “explain” compares recorded inputs with the last run. “--verify” reruns a saved result and compares its output. See the [README](https://github.com/sidsharma96/receipt/blob/main/README.md) for configuration, supported commands and setup.
 
 ## Phase 1 review: remembering a local run
 
@@ -81,7 +87,7 @@ Reviewed 2026-10-08; explanations revised using the style guide on the same date
 
 Imagine writing down everything Receipt needs to identify a run: its command, its working directory and the files it depends on. We need to keep those pieces together without confusing one with another.
 
-Go's struct does that. It groups named fields with known types. Receipt calls this record a Manifest. From [internal/fingerprint/manifest.go](../internal/fingerprint/manifest.go):
+Go's struct does that. It groups named fields with known types. Receipt calls this record a Manifest. From [internal/fingerprint/manifest.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go):
 
 ~~~go
 type Manifest struct {
@@ -121,7 +127,7 @@ Selected fields in this illustrative manifest:
 
 The struct groups different kinds of information. Its Inputs slice holds a variable number of records, each with the same field structure.
 
-Source: [Manifest and Input](../internal/fingerprint/manifest.go).
+Source: [Manifest and Input](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go).
 <!-- review-figure:figure-1-manifest:end -->
 
 The square brackets in “[]string” and “[]Input” mean slices: sequences whose length can vary. One command may have three arguments; another may have ten. One repository may contain fifty inputs; another may contain thousands. A fixed-size array would force us to choose a length in advance.
@@ -175,7 +181,7 @@ After the edit:
 
 This explains a changed lookup. Matching recorded inputs still cannot reveal an unrecorded dependency such as a website response.
 
-Source: [Build and Manifest.Key](../internal/fingerprint/manifest.go).
+Source: [Build and Manifest.Key](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go).
 <!-- review-figure:figure-1-key-change:end -->
 
 ### 2. What is the overall flow, and where can it be extended?
@@ -207,7 +213,7 @@ Illustration added 9 October 2026.
 
 The ordinary local path looks up recorded inputs. A usable hit prints saved output. A miss executes the command, scans inputs again and saves only an eligible successful result.
 
-Source: [implementation](../internal/app/app.go).
+Source: [implementation](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go).
 <!-- review-figure:figure-1-local-flow:end -->
 
 The arrows show who calls whom; they are not separate services. All of this can happen inside one Receipt process on the user's computer.
@@ -224,7 +230,7 @@ The [directory overview](#where-to-find-the-implementation) maps these responsib
 
 On a miss, Receipt must start another program. That program is a subprocess: a separate process launched by Receipt. Starting it directly avoids an extra shell interpreting the arguments.
 
-From Run in [internal/runner/process.go](../internal/runner/process.go):
+From Run in [internal/runner/process.go](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go):
 
 ~~~go
 stdout, stderr := &limitedBuffer{limit: 8 << 20}, &limitedBuffer{limit: 8 << 20}
@@ -273,7 +279,7 @@ Illustration added 9 October 2026.
 
 A file contains A at the first scan, changes to B while pytest reads it, and returns to A before the second scan. Both recorded scans agree, but they do not describe what the test read.
 
-Source: [implementation](../internal/app/app.go).
+Source: [implementation](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go).
 <!-- review-figure:figure-1-scan-gap:end -->
 
 Symbolic links—paths pointing to another path—and Git submodules are not treated as fully understood inputs. Unsupported cases run without caching rather than creating a result from an incomplete description.
@@ -324,7 +330,7 @@ For targeted reuse, a full build system could track which tests depend on which 
 
 ### 8. What evidence supports the design?
 
-[The fingerprint tests](../internal/fingerprint/manifest_test.go) check canonical key behaviour, working-tree/environment changes and unsupported-input cases. [The runner tests](../internal/runner/process_test.go) check output streaming, exit status, cancellation and capture limits. Local-store tests also exercise malformed and corrupted records.
+[The fingerprint tests](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest_test.go) check canonical key behaviour, working-tree/environment changes and unsupported-input cases. [The runner tests](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_test.go) check output streaming, exit status, cancellation and capture limits. Local-store tests also exercise malformed and corrupted records.
 
 The historical review records one CodeCraft pytest comparison: about 1.69 seconds for a miss and 0.22 seconds for a hit. That shows the particular invocation benefited. It does not establish typical speedups across repository sizes or commands.
 
@@ -348,7 +354,7 @@ Suppose Alice and Bob run different commands that both print the same output. Sa
 
 The shared server separates the description of a result from its output bytes. PostgreSQL stores rows describing which input key produced which result. Files hold the stdout and stderr bytes. We call a stored chunk of bytes a blob; here it means one output stream.
 
-A row refers to its output through BlobRef. From [internal/cache/blob.go](../internal/cache/blob.go):
+A row refers to its output through BlobRef. From [internal/cache/blob.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go):
 
 ~~~go
 type BlobRef struct {
@@ -412,7 +418,7 @@ Follow a shared lookup from the client to the two places that store a result. Th
 
 Different records can reference the same output file. Deleting one record therefore does not automatically make that file disposable.
 
-Source: [Postgres.Get](../internal/cache/shared.go).
+Source: [Postgres.Get](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go).
 <!-- review-figure:figure-2-storage:end -->
 
 <!-- review-figure:figure-2-interrupted-write:start -->
@@ -441,7 +447,7 @@ Consider a new result whose output files have been written, but whose database t
 
 Writing files before the record avoids publishing a record before its output exists. It also creates a cleanup obligation when a later database step fails. Collection and broader coordination were added in Phase 3.
 
-Source: [Postgres.Put and publication](../internal/cache/shared.go).
+Source: [Postgres.Put and publication](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go).
 <!-- review-figure:figure-2-interrupted-write:end -->
 
 Now imagine Alice publishes one output for key K and Bob later publishes a different output for K. The server records the conflict and quarantines K. Quarantine says “do not reuse this key”; it does not say which client was right.
@@ -454,7 +460,7 @@ The server may receive many requests at once. Go runs request handlers using gor
 
 Unrestricted handlers could start more work than the service can reasonably handle. Receipt uses a buffered channel as a limited collection of admission slots. A request puts an item into the channel when admitted and removes it when finished.
 
-The following excerpt is from serveHTTP in [internal/cache/http.go](../internal/cache/http.go):
+The following excerpt is from serveHTTP in [internal/cache/http.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go):
 
 ~~~go
 select {
@@ -492,7 +498,7 @@ Illustration added 9 October 2026.
 
 A buffered channel represents occupied admission slots. If every slot is occupied, the server refuses new work with 503 rather than putting it into a waiting queue. Finishing work releases a slot.
 
-Source: [implementation](../internal/cache/http.go).
+Source: [implementation](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go).
 <!-- review-figure:figure-2-admission:end -->
 
 ### 4. Which cases are easy to misunderstand?
@@ -516,7 +522,7 @@ Illustration added 9 October 2026.
 
 A stored observation for K has output X. A new upload for K reports Y. Receipt commits quarantine before returning the conflict error, so future checks know not to reuse K.
 
-Source: [implementation](../internal/cache/shared.go).
+Source: [implementation](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go).
 <!-- review-figure:figure-2-conflict-state:end -->
 
 A client with a shared server configured also checks status before replaying its local copy. If the status request fails, it runs the command rather than replaying a result whose shared status it cannot check.
@@ -565,7 +571,7 @@ For evidence, storing every run would give more history than storing distinct ob
 
 ### 8. What tests and measurements support this?
 
-[The shared-store tests](../internal/cache/shared_test.go) exercise publication, concurrent conflicts, reports, missing/corrupted output and HTTP handling. TestHTTPAdmissionAndMetricsAuth checks bounded admission and metrics access.
+[The shared-store tests](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared_test.go) exercise publication, concurrent conflicts, reports, missing/corrupted output and HTTP handling. TestHTTPAdmissionAndMetricsAuth checks bounded admission and metrics access.
 
 The historical review describes 32 equal and 20 differing concurrent uploads, six independent blob-writer processes and fetching results after a database restart. These are specific scenarios, not a proof covering every sequence of distributed events.
 
@@ -587,7 +593,7 @@ Reviewed 2026-10-08; explanations revised using the style guide on the same date
 
 Suppose we want the shared cache to stop growing indefinitely. Limiting only output bytes is not enough: a large number of tiny results can still create many database rows.
 
-Receipt stores four budgets in Limits. From [internal/cache/maintenance.go](../internal/cache/maintenance.go):
+Receipt stores four budgets in Limits. From [internal/cache/maintenance.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go):
 
 ~~~go
 type Limits struct {
@@ -701,7 +707,7 @@ With the current locks:
 
 All participating readers and maintenance processes must follow these rules. A slow protected read can make maintenance wait; a long maintenance operation can make later readers wait.
 
-Source: [lifecycle, Collect, and Expire](../internal/cache/maintenance.go).
+Source: [lifecycle, Collect, and Expire](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go).
 <!-- review-figure:figure-3-reader-cleanup:end -->
 
 Receipt coordinates these sequences with shared and exclusive locks. A lock is a rule for who must wait while another operation uses the resource.
@@ -719,7 +725,7 @@ Why isn't the database lock enough? Suppose a writer's database connection dies 
 
 Why not use only a Go mutex? A mutex coordinates activities sharing it inside one process. A separate maintenance CLI process does not share that in-memory mutex. The filesystem lock supplies process-to-process coordination for this directory.
 
-The SQL lock choice in lifecycle, [internal/cache/maintenance.go](../internal/cache/maintenance.go), is:
+The SQL lock choice in lifecycle, [internal/cache/maintenance.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go), is:
 
 ~~~go
 function := "pg_advisory_xact_lock_shared"
@@ -746,7 +752,7 @@ If database/sql automatically rolled back on cancellation while file work contin
 
 Cleanup validates the records and recognized directory layout before starting deletion. A malformed record could otherwise make a needed file look unreferenced. An unexpected symbolic link could point outside the intended directory. Rather than guess, collection stops on those unsafe conditions.
 
-Another mistake would be pairing database A with database B's file directory. Database A would see no references to B's files and might delete them. Bind prevents this with a store-identity marker. From [internal/cache/blob_binding.go](../internal/cache/blob_binding.go):
+Another mistake would be pairing database A with database B's file directory. Database A would see no references to B's files and might delete them. Bind prevents this with a store-identity marker. From [internal/cache/blob_binding.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_binding.go):
 
 ~~~go
 if string(b) != id+"\n" {
@@ -792,7 +798,7 @@ Both uploads contain 1 KiB of new output, about a thousand bytes. Only the amoun
 
 The upload size alone does not describe this work. Existing storage matters too. This comparison does not predict a particular response time.
 
-Source: [inventory, metadataUsage, and checkBlobQuota](../internal/cache/maintenance.go).
+Source: [inventory, metadataUsage, and checkBlobQuota](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go).
 <!-- review-figure:figure-3-upload-cost:end -->
 
 Making other writers wait during this decision prevents two uploads from both claiming the same remaining space. The coordination is simple to follow, but it means a small upload can hold up other work while it inspects a large store.
@@ -823,7 +829,7 @@ This example has two surviving result records and three complete output files. X
 
 Receipt keeps both a map of referenced hashes and an inventory of files. Here those collections have two and three entries respectively. File contents and database records can have different byte sizes, so these counts do not specify exact memory use.
 
-Source: [Collect](../internal/cache/maintenance.go).
+Source: [Collect](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go).
 <!-- review-figure:figure-3-collection-map:end -->
 
 In the second picture, collection reads two result records and inspects three files. For a larger store, call those counts A and B. The traversal is roughly O(A + B): work grows with the number of records plus the number of files. Parsing and validating the records, handling directories, and performing file operations add costs of their own. The notation is not a duration in seconds.
@@ -872,7 +878,7 @@ Finally, storing output in PostgreSQL could place output and metadata changes in
 
 ### 8. Which tests support the important claims?
 
-[The maintenance tests](../internal/cache/maintenance_test.go) make the failure situations above executable.
+[The maintenance tests](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance_test.go) make the failure situations above executable.
 
 TestRetentionWaitsForReaders pauses a reader and checks that retention waits. TestConcurrentUploadsAndCollection overlaps publication and collection. They test specific waiting/deletion behaviour rather than only checking that individual methods return success.
 
@@ -908,7 +914,7 @@ Consider opening a file, writing it and publishing it. If opening fails, there i
 
 Printing several CLI lines is a narrower problem. If printing the first line fails, later printing is unlikely to help. A small helper remembers the first error and skips subsequent printing.
 
-From [internal/app/printer.go](../internal/app/printer.go):
+From [internal/app/printer.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/printer.go):
 
 ~~~go
 type printer struct {
@@ -927,7 +933,7 @@ out is the destination. err starts empty. Each println checks it; after a failed
 
 This helper belongs to one command and is not safe for concurrent use. It must not become shared error state in a server: one user's failure should not stop another user's request. Closing files, unlocking and rolling back must also still run after failure; those are not optional later printing steps.
 
-For independent validation, stopping early can be less useful. If two limits are negative, the user should be able to see both problems in one response. Limits.validate collects these field errors and finishes with this actual line from [internal/cache/maintenance.go](../internal/cache/maintenance.go):
+For independent validation, stopping early can be less useful. If two limits are negative, the user should be able to see both problems in one response. Limits.validate collects these field errors and finishes with this actual line from [internal/cache/maintenance.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go):
 
 ~~~go
 return errors.Join(errs...)
@@ -1045,7 +1051,7 @@ The exact acceptance rules are in [JSON-INPUT-CONTRACT.md](JSON-INPUT-CONTRACT.m
 
 ### 1. What data structures are used, and why?
 
-The decoder needs two small collections. One records which field names the type permits. Another records which names have already appeared in this object. Actual lines from [internal/strictjson/object.go](../internal/strictjson/object.go):
+The decoder needs two small collections. One records which field names the type permits. Another records which names have already appeared in this object. Actual lines from [internal/strictjson/object.go](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go):
 
 ```go
 allowed := make(map[string]Field, len(fields))
@@ -1097,10 +1103,10 @@ This shows an entry upload after access checks have succeeded. An envelope is th
 
 A matching checksum cannot prove that a caller ran the tests. It also cannot replace permission checks or validation of the result's values.
 
-Source: [putEntry](../internal/cache/http.go).
+Source: [putEntry](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go).
 <!-- review-figure:figure-4-validation:end -->
 
-Each important type has an UnmarshalJSON method. Go calls this method when decoding that type. The method first reads into a temporary value and assigns the real receiver only after its checks pass. These actual lines from Result.UnmarshalJSON in [internal/cache/json.go](../internal/cache/json.go) show the final steps:
+Each important type has an UnmarshalJSON method. Go calls this method when decoding that type. The method first reads into a temporary value and assigns the real receiver only after its checks pass. These actual lines from Result.UnmarshalJSON in [internal/cache/json.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/json.go) show the final steps:
 
 ```go
 if err := Validate(Result(next)); err != nil {
@@ -1122,7 +1128,7 @@ To add a future report type, declare its fields and semantic rules without addin
 
 No new locks, goroutines or endpoints were needed for validation. The decoder's maps and temporary values belong to one request. Concurrent requests do not share that state. The existing HTTP body limits, admission slots and storage locks continue to do their separate jobs.
 
-The shape check reads JSON tokens: names, delimiters and values in their received order. Reading names before converting the object to a map matters. If we first decoded Alice's repeated fields into a normal map, the earlier value could already have been replaced. Actual code from readField in [internal/strictjson/object.go](../internal/strictjson/object.go):
+The shape check reads JSON tokens: names, delimiters and values in their received order. Reading names before converting the object to a map matters. If we first decoded Alice's repeated fields into a normal map, the earlier value could already have been replaced. Actual code from readField in [internal/strictjson/object.go](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go):
 
 ```go
 if seen[name] {
@@ -1143,7 +1149,7 @@ A hook calling json.Unmarshal directly into its own type would call itself again
 
 PostgreSQL JSONB keeps normalized JSON rather than the original text. Duplicate names from a manually inserted row are already gone by the time Receipt reads it. That is why incoming JSON must be checked before persistence. Read-time checks can reject an unknown field still present in a row; they cannot reconstruct erased information.
 
-The local publication failure test found a real bug. Disk.Put used to treat an existing destination as success without reading it. A directory or corrupt file was therefore enough to produce a false acknowledgement. The changed branch in [internal/cache/store.go](../internal/cache/store.go) now reads the existing result:
+The local publication failure test found a real bug. Disk.Put used to treat an existing destination as success without reading it. A directory or corrupt file was therefore enough to produce a false acknowledgement. The changed branch in [internal/cache/store.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go) now reads the existing result:
 
 ```go
 if os.IsExist(e) {
@@ -1189,7 +1195,7 @@ Illustration added 9 October 2026.
 
 Two separate attempts: saving stdout X succeeds but stderr publication fails, leaving X; or saving both output files succeeds but the database insert fails, leaving X and Y. Neither attempt publishes a new database result. These are illustrative outcomes, not a claim that every error leaves exactly these files.
 
-Source: [implementation](../internal/cache/shared.go).
+Source: [implementation](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go).
 <!-- review-figure:figure-4-failed-save-states:end -->
 
 If cleanup deletes one orphan and the next deletion fails, the first deletion stays done. The next cleanup recomputes the surviving references and remaining files. This phase tests that retry and checks that live output stays readable. It does not introduce a transaction covering SQL and filesystem changes.
@@ -1213,7 +1219,7 @@ Illustration added 9 October 2026.
 
 X and Y are orphans; a surviving record references L. Cleanup removes X but fails to remove Y. On retry it recomputes references and inventories remaining files. With unchanged references and successful deletion, Y is removed and L stays.
 
-Source: [implementation](../internal/cache/maintenance.go).
+Source: [implementation](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go).
 <!-- review-figure:figure-4-cleanup-retry:end -->
 
 Valid v1 writer encoding and key calculation remain unchanged. Required zero fields, zero timestamps, null output/input slices and empty context strings remain accepted where documented. Previously tolerated malformed records are intentionally rejected, not automatically repaired. The helper uses the standard decoder's remaining Unicode-escape and base64 behaviour; it is not a replacement JSON implementation.
@@ -1266,7 +1272,7 @@ Suppose Alice should be able to reuse the team's test results, while a CI worker
 
 ### 1. What data structures are used, and why?
 
-The result of a successful credential check is a Principal: a small record containing the public credential ID, an operator-assigned subject label, allowed scopes and expiry. Actual type from [internal/auth/auth.go](../internal/auth/auth.go):
+The result of a successful credential check is a Principal: a small record containing the public credential ID, an operator-assigned subject label, allowed scopes and expiry. Actual type from [internal/auth/auth.go](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go):
 
 ```go
 type Principal struct {
@@ -1287,7 +1293,7 @@ Issuance and scope parsing use a small map to reject duplicate scope names. Post
 
 An operator runs auth issue with explicit scopes and a lifetime. The command validates input, generates random token material, stores its hash and metadata, commits, then prints the generated secret once. List shows public metadata; revoke marks a credential disabled. These commands use local database access, not an administrative HTTP permission.
 
-For a request, the server checks the Authorization header, admits a bounded authentication lookup, asks PostgreSQL whether the token is valid, and finds the required endpoint permission. It rejects a valid credential without that permission with HTTP 403. The actual branch in [internal/cache/authorization.go](../internal/cache/authorization.go) is:
+For a request, the server checks the Authorization header, admits a bounded authentication lookup, asks PostgreSQL whether the token is valid, and finds the required endpoint permission. It rejects a valid credential without that permission with HTTP 403. The actual branch in [internal/cache/authorization.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go) is:
 
 ```go
 if known && !principal.Allows(scope) {
@@ -1322,7 +1328,7 @@ Alice sends an upload request with a credential that permits reading. Follow the
 
 If the credential check cannot run because its backend is unavailable, Receipt returns HTTP 503 and does not grant access. A valid read credential still does not establish a verified human identity or private ownership of results.
 
-Source: [serveScoped and authenticate](../internal/cache/authorization.go).
+Source: [serveScoped and authenticate](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go).
 <!-- review-figure:figure-5-permissions:end -->
 
 The auth package currently uses Receipt-specific scope names and SQL tables inside Go's internal import boundary. It is a concrete learning module, not a drop-in identity platform for every other project. Reusing it elsewhere would require deciding the other project's permissions, storage ownership and public package boundary. The concepts can transfer before the implementation does.
@@ -1331,7 +1337,7 @@ GET /v1/identity shows the authenticated caller its ID, label, scopes and expiry
 
 ### 3. What concurrency, networking and fundamental primitives are used?
 
-The secret uses the operating system's cryptographic random source through crypto/rand. The relevant lines from generate in [internal/auth/auth.go](../internal/auth/auth.go) are:
+The secret uses the operating system's cryptographic random source through crypto/rand. The relevant lines from generate in [internal/auth/auth.go](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go) are:
 
 ```go
 var data [48]byte
@@ -1382,7 +1388,7 @@ Use a CI credential that permits publishing. These numbered events describe one 
 
 Cancelling work already admitted would require additional coordination. The current design checks each request when it arrives; it does not continually recheck every operation while it runs.
 
-Source: [Authenticate and Revoke](../internal/auth/postgres.go).
+Source: [Authenticate and Revoke](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go).
 <!-- review-figure:figure-5-revocation:end -->
 
 Issuance has another two-step failure: the database can commit before printing the secret fails. The row remains, but the operator may not have received a complete token. List its public ID, revoke it and issue a replacement. Output failure is not a SQL rollback. An uncertain commit acknowledgement is a related untested recovery case.
@@ -1406,7 +1412,7 @@ Illustration added 9 October 2026.
 
 The database commit succeeds, then printing the secret fails. The credential row remains. The operator can list its public ID, revoke it and issue a replacement; the stored token hash does not recover the secret.
 
-Source: [implementation](../internal/app/auth_command.go).
+Source: [implementation](https://github.com/sidsharma96/receipt/blob/main/internal/app/auth_command.go).
 <!-- review-figure:figure-5-issuance-failure:end -->
 
 Read,publish,report and metrics do not imply one another. But publish can still trigger quarantine when uploaded output contradicts an existing observation. Report permission controls the explicit report endpoint; it does not promise that only report holders can cause quarantine.
@@ -1481,7 +1487,7 @@ Imagine Alice uploads a tiny result while three other clients do the same. The f
 
 ### 1. What data structures are used, and why?
 
-Each operation owns a Trace. From [internal/observe/observe.go](../internal/observe/observe.go):
+Each operation owns a Trace. From [internal/observe/observe.go](https://github.com/sidsharma96/receipt/blob/main/internal/observe/observe.go):
 
 ```go
 type Trace struct {
@@ -1537,7 +1543,7 @@ Compare the bars on one duration scale. The miss pays for execution and two inpu
 
 The bars use the recorded local samples. Direct execution and hits show medians; the miss is one sample. No exercise implementation or project configuration changed.
 
-Source: [measurement script](../scripts/measure_local.py) and [raw samples](measurements/phase-6-2026-10-09.json).
+Source: [measurement script](https://github.com/sidsharma96/receipt/blob/main/scripts/measure_local.py) and [raw samples](measurements/phase-6-2026-10-09.json).
 <!-- review-figure:figure-6-local-measurements:end -->
 
 Shared experiments used 16 or 128 records, roughly 1 KiB outputs and one or four clients. They covered reads, duplicate writes, mixed reads/writes and reads started alongside dry-run collection. At 128 records and four clients, duplicate writes had a 74.67 ms median; their mean database-lock call took 54.56 ms. Those are different statistics, so the next picture compares means with means.
@@ -1555,7 +1561,7 @@ The shorter bar measures the advisory-lock call, including its database round tr
 
 The shorter duration is inside the whole request, not additional time. Collection and other writers use the same coordination rules; more clients do not make an exclusive section run in parallel.
 
-Source: [workload harness](../internal/cache/measurement_test.go) and [raw samples](measurements/phase-6-2026-10-09.json).
+Source: [workload harness](https://github.com/sidsharma96/receipt/blob/main/internal/cache/measurement_test.go) and [raw samples](measurements/phase-6-2026-10-09.json).
 <!-- review-figure:figure-6-measured-wait:end -->
 
 ### 6. What are the guarantees, assumptions and non-goals?
@@ -1602,7 +1608,7 @@ Earlier requests for measurements now have this limited local evidence. Phase 5'
 
 Implemented 9 October 2026. This is one package's host-target Cargo test support,
 not a claim that any Rust command can be cached. The [Cargo contract](CARGO.md)
-lists exact options and limits; the [working chapter](WORKING-DOC.html#8-check-what-a-rust-test-depends-on)
+lists exact options and limits; the [working chapter](guide/08-check-what-a-rust-test-depends-on.md)
 introduces the idea. Storage and manifest schema v1 are unchanged.
 
 ### 1. What data structures are used, and why?
@@ -1612,7 +1618,7 @@ library C. Cargo describes packages and dependency arrows with IDs. Receipt
 uses maps to find a package and its arrows from an ID, a slice of pending IDs
 to hold unfinished work, and a `seen` map to remember completed visits.
 
-From [cargo_graph.go](../internal/fingerprint/cargo_graph.go):
+From [cargo_graph.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_graph.go):
 
 ```go
 if seen[id] {
@@ -1627,6 +1633,7 @@ that slice. A map gives direct lookup at the cost of extra memory. Pending work
 is removed from the end of its slice; no concurrent queue is needed.
 
 <!-- review-figure:figure-7-cargo-graph:start -->
+<a id="figure-7-cargo-graph"></a>
 #### Figure 7.1 · Two arrows can lead to one dependency
 
 <!-- visual-summary:start -->
@@ -1638,7 +1645,7 @@ Follow both branches down to C. A map of visited IDs prevents repeated inspectio
 Illustrative graph: the selected crate needs A and test helper B; both need C.
 C is inspected once. The selected crate's test dependencies count, but we do
 not run A's or B's own test suites, so their test-only dependencies are excluded.
-Source: [cargoClosure](../internal/fingerprint/cargo_graph.go).
+Source: [cargoClosure](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_graph.go).
 <!-- review-figure:figure-7-cargo-graph:end -->
 
 ### 2. What is the architecture and extension boundary?
@@ -1683,6 +1690,7 @@ targets before considering a cached success. It also refuses custom Cargo
 configuration, compiler overrides and path dependencies outside the Git root.
 
 <!-- review-figure:figure-7-cargo-refusal:start -->
+<a id="figure-7-cargo-refusal"></a>
 #### Figure 7.2 · Refusal happens before cache lookup
 
 <!-- visual-summary:start -->
@@ -1695,8 +1703,8 @@ A supported graph proceeds to input hashing and lookup. A graph containing a
 build script takes a different branch: Receipt executes Cargo without lookup
 or publication. An existing saved success cannot override that refusal, and
 `--allow-generic` cannot override it either. The command's exit code still wins.
-Source: [cargoInputs](../internal/fingerprint/cargo.go) and
-[executionInputs](../internal/fingerprint/manifest.go).
+Source: [cargoInputs](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo.go) and
+[executionInputs](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go).
 <!-- review-figure:figure-7-cargo-refusal:end -->
 
 Another trap is confusing a passing command with a cache hit. Read the diagnostic
@@ -1716,6 +1724,7 @@ the graph traversal. Maps hold the metadata, pending IDs and visited IDs;
 source hashing streams file contents rather than keeping all registry files in RAM.
 
 <!-- review-figure:figure-7-cargo-cost:start -->
+<a id="figure-7-cargo-cost"></a>
 #### Figure 7.3 · A real hit can still be slower than a direct run
 
 <!-- visual-summary:start -->
@@ -1830,6 +1839,7 @@ detects different source bytes and executes; the compiler failure reaches the
 caller. Restoring the bytes restores the earlier hit.
 
 <!-- review-figure:figure-7-cargo-mutation:start -->
+<a id="figure-7-cargo-mutation"></a>
 #### Figure 7.4 · The lockfile stays the same; the dependency does not
 
 <!-- visual-summary:start -->
@@ -1842,13 +1852,13 @@ The three states are a real regression-test sequence, with illustrative key
 labels A and B. The dependency edit changes Receipt's key even though the
 lockfile is identical. The fixture also clears its isolated compiled dependency
 files before the failure run; it does not change the user's Cargo cache.
-Source: [cargo_registry_test.go](../internal/app/cargo_registry_test.go).
+Source: [cargo_registry_test.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/cargo_registry_test.go).
 <!-- review-figure:figure-7-cargo-mutation:end -->
 
 ### 3. What primitives were added?
 
 Only timing boundaries were added to production execution; no new concurrency,
-network service or lock. From [cargo_policy.go](../internal/fingerprint/cargo_policy.go):
+network service or lock. From [cargo_policy.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_policy.go):
 
 ```go
 defer observe.Measure(ctx, observe.CargoTools)()
@@ -1884,6 +1894,7 @@ fewer but slower, illustrating why test count alone does not predict benefit.
 The single misses took 1,066 ms and 3,884 ms respectively.
 
 <!-- review-figure:figure-7-cargo-hardening-cost:start -->
+<a id="figure-7-cargo-hardening-cost"></a>
 #### Figure 7.5 · The same checks can hurt a short suite and help a longer one
 
 <!-- visual-summary:start -->
@@ -2053,7 +2064,7 @@ certificate and schedules renewal. It is a reverse proxy: a server that accepts
 a request and passes it to another server. Receipt still owns cache behavior
 and access decisions.
 
-Actual [Caddy configuration](../deploy/digitalocean/Caddyfile):
+Actual [Caddy configuration](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/Caddyfile):
 
 ```text
 receipt.sidsharma.dev {
@@ -2092,7 +2103,7 @@ One VM still handles overlapping requests; one machine does not mean one
 operation at a time.
 
 The service manager, systemd, starts Receipt and Caddy and can restart them
-after failures. Actual lines from [receipt.service](../deploy/digitalocean/receipt.service):
+after failures. Actual lines from [receipt.service](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service):
 
 ```text
 User=receipt
@@ -2284,7 +2295,7 @@ still use the droplet's files. These one-off scripts are not a backup platform.
 
 ### R2 drill — 3. Primitives
 
-The Python [snapshot script](../deploy/digitalocean/backup-r2-drill.py) uses a `finally`
+The Python [snapshot script](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/backup-r2-drill.py) uses a `finally`
 block so ordinary snapshot failures still attempt to restart the service:
 
 ```text

@@ -1,4 +1,4 @@
-.PHONY: build test race vet integration lint lint-install fmt fmt-check check
+.PHONY: build test race vet integration lint lint-install fmt fmt-check check docs
 .DEFAULT_GOAL := build
 
 GOLANGCI_LINT_VERSION := v2.14.0
@@ -47,3 +47,11 @@ vet:
 integration:
 	@test -n "$$RECEIPT_TEST_DATABASE_URL" || (echo "Set RECEIPT_TEST_DATABASE_URL to a disposable PostgreSQL database"; exit 1)
 	go test -count=1 $(LINKFLAGS) ./...
+
+# Build the documentation book (needs mdBook 0.5.4) and run the doc checks.
+# mdBook copies every non-Markdown file under docs/ into the site, including
+# book.toml itself; remove that copy so the site holds only documentation.
+docs:
+	mdbook build docs
+	rm -f docs/book/book.toml
+	python3 -m unittest discover -s scripts/docs -p 'test_*.py'

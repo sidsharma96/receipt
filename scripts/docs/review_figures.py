@@ -1,7 +1,12 @@
-"""Render offline teaching illustrations into the marked review blocks.
+"""Draw the phase-review illustrations as SVG files and their Markdown summaries.
 
-The surrounding historical prose is not generated or rewritten. SVGs also live
-in assets/reviews so Markdown readers can display the same pictures.
+Each figure in docs/PHASE-REVIEWS.md sits between matching review-figure
+comment markers. This script redraws docs/assets/reviews/<name>.svg and the
+visual-summary block (image, what to watch, numbered steps) inside each marker.
+The surrounding historical prose is not generated or rewritten.
+
+    python3 scripts/docs/review_figures.py          # rewrite figures
+    python3 scripts/docs/review_figures.py --check  # fail if any are stale
 """
 from html import escape
 from pathlib import Path
@@ -9,10 +14,8 @@ import re
 import sys
 import json
 import statistics
-from render_cargo_review import update_review
-from render_deployment_review import update_deployment
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2] / 'docs'
 INK = '#24394b'
 BLUE = '#236ba0'
 GREEN = '#167767'
@@ -562,126 +565,48 @@ FIGURES = {
     'figure-5-permissions': permissions, 'figure-5-revocation': revocation,
 }
 
-CSS = '''
-/* review-visuals:start */
-.review-figure{background:#fcfbf7;border-color:#d6dcd9;padding:24px}
-.rv-view{overflow-x:auto;margin:20px 0;border:1px solid #e1e5df;border-radius:12px}
-.rv-view svg{display:block;width:100%;min-width:560px;height:auto}
-.rv-watch{border-left:3px solid #236ba0;padding-left:14px}
-.rv-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
-.rv-controls[hidden]{display:none}
-.rv-controls button{font:inherit;border:1px solid #81999d;border-radius:6px;background:#fff;padding:8px 14px;color:#24394b;cursor:pointer;min-height:44px}
-.rv-controls button:focus-visible{outline:3px solid #236ba0;outline-offset:3px}
-.rv-controls button:disabled{opacity:.45;cursor:default}
-.rv-status{flex:1 1 100%;min-height:3em;font-size:15px}
-.rv-steps{font-size:15px;padding-left:24px}
-.review-figure details{margin-top:16px;border-top:1px solid #d6dcd9;padding-top:12px}
-.review-figure summary{cursor:pointer;font-size:14px;color:#526477}
-.rv-hint{font-size:12px!important;color:#526477}
-@media(min-width:750px){.rv-hint{display:none}}
-@media print{.rv-controls,.rv-hint{display:none!important}.rv-view{overflow:visible}.rv-view svg{min-width:0}.rv-view g[data-step]{opacity:1!important}}
-/* review-visuals:end */
-'''
-
-JS = '''
-// review-visuals:start
-document.querySelectorAll('.review-figure[data-steps]').forEach(figure => {
-  const steps = [...figure.querySelectorAll('.rv-steps li')].map(li => li.textContent);
-  const controls = figure.querySelector('.rv-controls');
-  const status = controls.querySelector('[role="status"]');
-  const back = controls.querySelector('[data-action="back"]');
-  const next = controls.querySelector('[data-action="next"]');
-  let current = steps.length;
-  function render() {
-    figure.querySelectorAll('g[data-step]').forEach(group => {
-      const future = Number(group.dataset.step) > current;
-      group.style.opacity = future ? '0.12' : '1';
-      group.setAttribute('aria-hidden', future ? 'true' : 'false');
-    });
-    status.textContent = `Step ${current} of ${steps.length}: ${steps[current - 1]}`;
-    back.disabled = current === 1;
-    next.disabled = current === steps.length;
-  }
-  controls.hidden = false;
-  controls.addEventListener('click', event => {
-    const action = event.target.closest('button')?.dataset.action;
-    if (action === 'back') current = Math.max(1, current - 1);
-    if (action === 'next') current = Math.min(steps.length, current + 1);
-    if (action === 'restart') current = 1;
-    if (action === 'all') current = steps.length;
-    if (action) render();
-  });
-  render();
-});
-// review-visuals:end
-'''
 
 
-def render(html):
-    html = update_review(html, (ROOT / 'PHASE-REVIEWS.md').read_text())
-    html = update_deployment(html, (ROOT / 'PHASE-REVIEWS.md').read_text())
-    assets = {}
-    for name, draw in FIGURES.items():
-        svg, steps, watch = draw()
-        assets[name] = svg+'\n'
-        pattern = rf'(<!-- review-figure:{name}:start -->\n)(.*?)(\n<!-- review-figure:{name}:end -->)'
-        match = re.search(pattern, html, re.S)
-        if not match:
-            raise ValueError('Missing figure: '+name)
-        old = match[2]
-        # Keep the original explanatory material as the accessible text version.
-        existing = re.search(r'<div class="rv-original">(.*?)</div><!-- rv-original:end -->', old, re.S)
-        if existing:
-            original = existing[1]
-        else:
-            original = re.sub(r'^<figure[^>]*>.*?</figcaption>', '', old, flags=re.S)
-            original = re.sub(r'</figure>$', '', original)
-        caption = re.search(r'<figcaption[^>]*>.*?</figcaption>', old, re.S)[0]
-        attr = f' data-steps="{len(steps)}"' if steps else ''
-        body = f'<figure class="review-figure" id="{name}" aria-labelledby="{name}-caption"{attr}>\n{caption}\n'
-        body += f'<p class="rv-watch">{escape(watch)}</p>\n<div class="rv-view" tabindex="0" role="region" aria-label="Scrollable illustration">{svg}</div>\n<p class="rv-hint">Swipe the illustration sideways to read it at full size.</p>\n'
-        if steps:
-            body += '<div class="rv-controls" hidden><button type="button" data-action="restart">Start at step 1</button><button type="button" data-action="back">Previous</button><button type="button" data-action="next">Next</button><button type="button" data-action="all">Show all</button><p class="rv-status" role="status" aria-live="polite"></p></div>\n'
-            body += '<ol class="rv-steps">'+''.join(f'<li>{escape(s)}</li>' for s in steps)+'</ol>\n'
-        body += '<details><summary>Text explanation and implementation source</summary><div class="rv-original">'+original+'</div><!-- rv-original:end --></details>\n</figure>'
-        html = html[:match.start(2)] + body + html[match.end(2):]
-    html = re.sub(r'\n?/\* review-visuals:start \*/.*?/\* review-visuals:end \*/\n?', '', html, flags=re.S)
-    html = html.replace('</style>', CSS+'</style>')
-    html = re.sub(r'<script>\s*// review-visuals:start.*?// review-visuals:end\s*</script>\n?', '', html, flags=re.S)
-    html = html.replace('</body>', '<script>'+JS+'</script>\n</body>')
-    return html, assets
-
-
-def main():
-    path = ROOT / 'PHASE-REVIEWS.html'
-    html, assets = render(path.read_text())
+def outputs():
+    """Return every file this script owns, mapped to its expected content."""
     markdown_path = ROOT / 'PHASE-REVIEWS.md'
     markdown = markdown_path.read_text()
+    files = {}
     for name, draw in FIGURES.items():
         svg, steps, watch = draw()
+        files[ROOT / 'assets' / 'reviews' / (name + '.svg')] = svg + '\n'
         pattern = rf'(<!-- review-figure:{name}:start -->\n)(.*?)(\n<!-- review-figure:{name}:end -->)'
         match = re.search(pattern, markdown, re.S)
         if not match:
-            raise ValueError('Missing Markdown figure: '+name)
+            raise ValueError('Missing Markdown figure: ' + name)
         body = re.sub(r'<!-- visual-summary:start -->.*?<!-- visual-summary:end -->\n*', '', match[2], flags=re.S)
         heading = re.search(r'#### (.*?)\n', body)
         summary = f'\n<!-- visual-summary:start -->\n![{heading[1]}](assets/reviews/{name}.svg)\n\n{watch}\n'
         if steps:
-            summary += '\n'+ '\n'.join(f'{i+1}. {s}' for i, s in enumerate(steps))+'\n'
+            summary += '\n' + '\n'.join(f'{i+1}. {s}' for i, s in enumerate(steps)) + '\n'
         summary += '<!-- visual-summary:end -->\n'
         body = body[:heading.end()] + summary + body[heading.end():]
         markdown = markdown[:match.start(2)] + body + markdown[match.end(2):]
-    outputs = {path: html, markdown_path: markdown, **{ROOT/'assets'/'reviews'/(name+'.svg'): value for name, value in assets.items()}}
-    stale = [str(p.relative_to(ROOT)) for p, content in outputs.items() if not p.exists() or p.read_text() != content]
+    files[markdown_path] = markdown
+    return files
+
+
+def stale():
+    return [str(p.relative_to(ROOT)) for p, content in outputs().items()
+            if not p.exists() or p.read_text() != content]
+
+
+def main():
     if '--check' in sys.argv:
-        if stale:
-            raise SystemExit('Stale review illustrations: '+', '.join(stale))
+        names = stale()
+        if names:
+            raise SystemExit('Stale review illustrations: ' + ', '.join(names))
         print('Review illustrations are current.')
-    else:
-        for p, content in outputs.items():
-            p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(content)
-        print(f'Rendered {len(FIGURES)} offline illustrations and their Markdown assets.')
+        return
+    for p, content in outputs().items():
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content)
+    print(f'Rendered {len(FIGURES)} illustrations and their Markdown summaries.')
 
 
 if __name__ == '__main__':

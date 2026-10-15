@@ -45,11 +45,11 @@ expiry is a fallback, not a recurring credential-rotation mechanism.
 
 ## Implementation and limits
 
-- [Workflow](../.github/workflows/remote-cache-experiment.yml): two sequential
+- [Workflow](https://github.com/sidsharma96/receipt/blob/main/.github/workflows/remote-cache-experiment.yml): two sequential
   GitHub-hosted Ubuntu jobs; read-only repository permission; pinned action commits.
-- [Harness](../deploy/ci/experiment.py): fixture, restricted tunnel and assertions.
-- [SSH restrictions](../deploy/ci/receipt-ci-ssh.conf): account-specific policy.
-- [Provisioning](../deploy/ci/provision.py): refuses existing account/secrets;
+- [Harness](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/experiment.py): fixture, restricted tunnel and assertions.
+- [SSH restrictions](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/receipt-ci-ssh.conf): account-specific policy.
+- [Provisioning](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/provision.py): refuses existing account/secrets;
   operator-only initial setup, not an idempotent deployment tool. A partial setup
   failure needs inspection and cleanup before retrying.
 

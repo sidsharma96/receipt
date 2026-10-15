@@ -12,7 +12,7 @@ this summary first. The sections below keep their original wording.
   This supersedes "No Caddy", "only SSH open" and the SSH-tunnel instructions
   in the initial setup sections.
 - Receipt runs as `receipt serve --postgres --credentials --max-inflight 2
-  --request-log` under [receipt.service](../deploy/digitalocean/receipt.service).
+  --request-log` under [receipt.service](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service).
   It has two storage slots and, separately, two authentication slots. A
   request that arrives while both slots of either kind are busy gets HTTP 503,
   and its client runs tests locally.
@@ -78,7 +78,7 @@ server's local Receipt listener → local PostgreSQL socket and output files.
   configured. The OS unattended-upgrades status is checked separately.
 - No Caddy, public HTTP/HTTPS listener or certificate yet. There is no domain.
 
-The systemd unit is [receipt.service](../deploy/digitalocean/receipt.service).
+The systemd unit is [receipt.service](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service).
 For example, `User=receipt` separates the service from the administrator, and
 `ProtectSystem=strict` makes most system paths read-only to the service. It can
 still write its designated data directory. These restrictions do not turn it
@@ -273,7 +273,7 @@ Local PostgreSQL + cached output files
 
 Caddy is a reverse proxy: it accepts the public connection and passes requests
 to another server. It does not replace Receipt's permission checks. The actual
-[Caddyfile](../deploy/digitalocean/Caddyfile) contains:
+[Caddyfile](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/Caddyfile) contains:
 
 ```caddyfile
 receipt.sidsharma.dev {
@@ -300,7 +300,7 @@ operations. This adds internet exposure; it is not a denial-of-service guarantee
 
 From the Mac, normal DNS lookup and certificate verification succeeded without
 disabling TLS checks. HTTP returned a 308 redirect to the same HTTPS path.
-The [HTTPS smoke script](../deploy/digitalocean/check_https.py) checked:
+The [HTTPS smoke script](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/check_https.py) checked:
 
 - Missing and invalid credentials: HTTP 401.
 - A temporary read credential: identity returned HTTP 200 with the expected ID.
@@ -331,7 +331,7 @@ external monitoring and hostile-traffic capacity remain untested.
 
 ### 13 October follow-up: fresh HTTPS upload and replay
 
-The [fresh-fixture check](../deploy/digitalocean/experiment_https.py) built the
+The [fresh-fixture check](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/experiment_https.py) built the
 local Receipt client and used a new temporary Go project. It used normal DNS,
 verified HTTPS and a fifteen-minute read/publish/report credential.
 
@@ -367,7 +367,7 @@ Receipt invocation. This is one observed invocation, not a general speed claim.
 The user chose one recovery exercise instead of nightly backups. No schedule,
 retention deletion policy or monitoring workflow was installed.
 
-The [snapshot script](../deploy/digitalocean/backup-r2-drill.py) stopped Receipt,
+The [snapshot script](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/backup-r2-drill.py) stopped Receipt,
 checked that no other Receipt process was running, dumped PostgreSQL, and copied
 the output files, binary, service definition, Caddy configuration and selected
 SSH/sudo configuration. It restarted Receipt before encryption and upload.
@@ -381,7 +381,7 @@ private key stayed on the Mac. R2 credentials were excluded from the archive.
 The roles dump excludes PostgreSQL role passwords. Caddy certificate state was
 not backed up; a replacement host would need certificate issuance again.
 
-The [one-off transfer helper](../deploy/digitalocean/r2_backup_object.py) uploaded
+The [one-off transfer helper](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/r2_backup_object.py) uploaded
 and then downloaded the object over verified HTTPS. It refuses redirects and
 uses a conditional upload to avoid replacing an existing object. Its credentials
 come from `/etc/receipt/backup.env`, owned by root with mode 600. It has no delete
@@ -404,7 +404,7 @@ to a new file inside a mode-700 directory. The decrypted tar contains
 checksums before restoring. Never restore directly over live data for a drill.
 The private key is essential: R2 access alone cannot decrypt the archive.
 
-The [restore script](../deploy/digitalocean/restore-r2-drill.py) records this
+The [restore script](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-r2-drill.py) records this
 specific drill's paths and database name; it is not a generic recovery installer.
 The downloaded archive was decrypted on the Mac, then sent through SSH for the
 isolated test. A private Linux mount namespace gave the test server its own view

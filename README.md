@@ -5,12 +5,22 @@ previous successful result when those inputs match. Implemented in Go; the local
 version uses the standard library, while the optional shared backend uses the
 pinned `lib/pq` PostgreSQL driver. No database or cloud account is needed locally.
 
-To understand the design from the beginning, read [the illustrated working
-guide](docs/WORKING-DOC.html) or its [phone-readable text](docs/WORKING-DOC.md).
-To defend it under questioning, read [the design defense](docs/DESIGN-DEFENSE.md):
+The documentation is a book with a sidebar, search and a question bank,
+published privately at <https://receipt-docs.sidsharma.dev>. Its source is the
+Markdown under `docs/`, which also reads well on GitHub: begin at
+[Start here](docs/START-HERE.md), then follow [the working guide](docs/WORKING-DOC.md).
+To defend the design under questioning, read [the design defense](docs/DESIGN-DEFENSE.md):
 the questions an expert reviewer would ask, with alternatives, costs, failure
-behaviour, a threat model and known gaps. The [dated phase reviews](docs/PHASE-REVIEWS.html)
+behaviour, a threat model and known gaps. Test yourself with the
+[question bank](docs/questions/question-bank.md). The [dated phase reviews](docs/PHASE-REVIEWS.md)
 retain detailed decisions, alternatives, and verification evidence.
+
+To build the book locally, install [mdBook](https://github.com/rust-lang/mdBook)
+0.5.4 and run `make docs`. It writes the site to `docs/book/` and runs the
+documentation checks: code links still point at their symbols, relative links
+and heading anchors resolve, and chapter questions match the bank. CI builds the
+same book on every push to `main` that touches the docs and deploys it to
+Cloudflare Pages.
 
 ## Current state (15 October 2026)
 
@@ -386,6 +396,5 @@ Next steps, none of them started:
 The [design defense](docs/DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls)
 lists every known gap with a proposed fix.
 
-The living design and decision record is [docs/WORKING-DOC.html](docs/WORKING-DOC.html);
-[docs/DESIGN-DEFENSE.md](docs/DESIGN-DEFENSE.md) answers the questions a reviewer would ask.
-For phone/text viewers, use [docs/WORKING-DOC.md](docs/WORKING-DOC.md). Each implemented phase includes a nine-question review: data structures, architecture, primitives, pitfalls, hot/cold paths, guarantees/non-goals, alternatives, evidence/risks and conditions for revisiting decisions.
+The living design and decision record is [the working guide](docs/WORKING-DOC.md);
+[docs/DESIGN-DEFENSE.md](docs/DESIGN-DEFENSE.md) answers the questions a reviewer would ask. Each implemented phase includes a nine-question review: data structures, architecture, primitives, pitfalls, hot/cold paths, guarantees/non-goals, alternatives, evidence/risks and conditions for revisiting decisions.

@@ -1,7 +1,7 @@
 # Defending Receipt's design
 
 Written 15 October 2026 against `main` at commit `5f5794f`. Every code link
-points at exact lines on GitHub, and `docs/test_working_doc.py` fails if a
+points at exact lines on GitHub, and `scripts/docs/test_docs.py` fails if a
 linked line range stops containing the symbol its link names.
 
 ## How to use this document

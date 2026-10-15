@@ -3,7 +3,7 @@ import pathlib
 import tomllib
 import unittest
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 class FlyTemplates(unittest.TestCase):

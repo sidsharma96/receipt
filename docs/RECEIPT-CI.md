@@ -30,7 +30,7 @@ are absent.
 
 ## What is actually cached?
 
-In [self_test.py](../deploy/ci/self_test.py), the test command is:
+In [self_test.py](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py), the test command is:
 
 ```python
 COMMAND = ['go', 'test', '-count=1', './...']
@@ -80,7 +80,7 @@ After expiry, the cached job reports that the cache is unavailable and runs
 tests locally. It does not silently extend credentials or turn test failures
 into successes.
 
-Operator enrollment is [enroll_self_ci.py](../deploy/ci/enroll_self_ci.py).
+Operator enrollment is [enroll_self_ci.py](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/enroll_self_ci.py).
 It refuses existing keys/secrets instead of overwriting them. Before renewing,
 finish active jobs, revoke credential `a985da859dd9a7440452f1a0cc4cfc47`,
 and remove only `RECEIPT_SELF_CI_TOKEN`. Then enroll again. Partial enrollment failures

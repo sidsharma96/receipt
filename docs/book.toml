@@ -1,0 +1,20 @@
+[book]
+title = "Receipt: a test-result cache, explained"
+description = "How Receipt decides when a saved test result can be reused, and how to defend each design decision."
+authors = ["Siddharth Sharma"]
+language = "en"
+src = "."
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/sidsharma96/receipt"
+site-url = "/"
+no-section-label = true
+
+[output.html.search]
+enable = true

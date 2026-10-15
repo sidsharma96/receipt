@@ -144,7 +144,7 @@ Machines are credited before relying on a net estimate.
 
 ## What the templates do
 
-The files are under [`deploy/fly`](../deploy/fly/):
+The files are under [`deploy/fly`](https://github.com/sidsharma96/receipt/tree/main/deploy/fly):
 
 - `Dockerfile` builds Receipt and gives it a small Linux runtime.
 - `entrypoint.sh` refuses to start without a mounted disk at `/data`. It prepares
