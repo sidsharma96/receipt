@@ -38,6 +38,71 @@ A second Receipt server with another disk would not automatically have X, even
 if it could read A from PostgreSQL. Adding a server is therefore not enough to
 make this design safely serve requests from both places.
 
+### What two Receipt Machines would actually do
+
+Each Fly Machine gets its own volume, so a second Receipt Machine mounts a new,
+empty disk at the same path, `/data`. Follow one result through both Machines.
+
+1. Machine A starts first. [`initializePolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L129-L165)
+   records the blob directory `/data/cache/blobs` and a random store identity in
+   PostgreSQL, and [`FileBlobs.Bind`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_binding.go#L13-L71)
+   writes that identity into a `.store-id` file on A's volume.
+2. Machine B starts against the same database. Its blob directory has the same
+   path, so the path check passes. Its volume has no `.store-id` file yet, so
+   `Bind` creates one holding the **same** identity it read from the database.
+   The binding check therefore passes on both Machines. It cannot notice that
+   they hold different disks, because it compares a path and a marker, and both
+   match.
+3. A client uploads result A through Machine A. The output file X lands on A's
+   volume and the record lands in the shared database.
+4. Another client asks for result A, and Fly routes the request to Machine B.
+   B finds the record, then fails to open X on its own disk.
+   [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L140-L183)
+   returns a wrapped cache miss, and [`getEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L319-L325)
+   answers HTTP 404.
+5. The client treats the 404 as an ordinary miss: it runs the tests and uploads
+   again. That upload writes X onto B's volume. If the new output has the same
+   digest as the stored record, the upload succeeds and nothing is quarantined.
+   If the output differs, for example because `go test` printed a different
+   timing, the key is quarantined for everyone.
+
+Other parts degrade in the same way. A status check (`GET /v1/status/<key>`)
+reads only the database, so it answers the same on both Machines. The upload
+quota check in [`checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L303-L337)
+counts only the files on the local volume. `shared gc` on either Machine
+([`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L340-L342))
+deletes only local files that no record references, so it does not delete the
+other Machine's output. The PostgreSQL advisory lock still serializes writers
+across both Machines, because the database is shared. The `flock` on the
+lifecycle lock file is different: each volume has its own lock file, and
+`flock` coordinates only processes on one host. It gives no protection across
+Machines.
+
+In short, two Machines do not corrupt data, but they turn many hits into misses
+and re-runs, store the same output on both volumes over time and add quarantines from
+timing text. That is why [`min_machines_running = 1`](https://github.com/sidsharma96/receipt/blob/main/deploy/fly/api.toml#L33)
+and a single volume are part of the design, not a starting size.
+
+This is also why the template has no Fly `release_command` (see the comment
+beside [`release_command`](https://github.com/sidsharma96/receipt/blob/main/deploy/fly/api.toml#L12)).
+Receipt's startup migration writes the `.store-id` marker onto the mounted
+volume. A Fly release Machine has no volume, so migration must run inside the
+serving Machine when it starts.
+
+### How requests reach the server
+
+Receipt itself speaks plain HTTP. The container starts it with
+[`--listen 0.0.0.0:7777`](https://github.com/sidsharma96/receipt/blob/main/deploy/fly/Dockerfile#L20),
+so it accepts connections on every interface inside the Machine, and it serves
+without TLS ([`srv.Serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L519)).
+Fly's proxy accepts HTTPS on port 443, terminates TLS
+([`handlers`](https://github.com/sidsharma96/receipt/blob/main/deploy/fly/api.toml#L41-L42)),
+and forwards plain HTTP to port 7777. Clients therefore use an `https://` URL,
+which the Receipt client requires for any host other than loopback. Fly's proxy,
+like Caddy on the DigitalOcean server, can read every request, including tokens.
+
+### What one server means
+
 For now, deploy exactly one Receipt Machine and one PostgreSQL Machine. Expect
 interruptions during restarts and updates. A Fly volume is local storage, not a
 replicated network disk. [Fly volume documentation](https://docs.fly.io/volumes/overview/)

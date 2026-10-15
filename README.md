@@ -64,6 +64,10 @@ build scripts and procedural macros currently force uncached execution.
 Other commands require
 `--allow-generic`, which explicitly accepts responsibility for declaring their
 inputs. Run flags go **before** `--`; test flags go **after** it.
+For `go test`, the probe records `go env -json`. Go puts a random scratch
+directory name (`go-build` followed by digits) into `GOGCCFLAGS` on every call,
+so Receipt replaces only those digits with `<scratch>`; any other change to the
+Go environment still changes the key.
 
 ## Useful commands
 
@@ -80,6 +84,12 @@ randomized test ordering and output paths can cause mismatches without a test
 failure. A mismatch exits nonzero and quarantines that key **on this client**.
 Quarantined keys are neither replayed nor republished locally. Quarantine is
 persistent; there is deliberately no automatic "trust it again" policy.
+`--verify` exits 0 on a match, 1 when inputs changed during the rerun
+(inconclusive), and the rerun's own nonzero code, or 1, on a mismatch.
+`--refresh` quarantines a key only when the fresh run fails after a cached
+success on unchanged inputs; a successful refresh replaces the local entry.
+The three modes are mutually exclusive. See
+[run modes](docs/DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do).
 
 Misses stream output immediately. Hits replay stdout then stderr; original
 cross-stream interleaving, terminal behavior and test side effects are not
@@ -147,6 +157,9 @@ nulls, compatibility and size limits. Existing v1 writer/key encoding is unchang
 The local cache has a 1 GiB default entry limit. Hits touch entry modification
 times; pruning evicts least recently touched entries. This disk LRU is an
 approximation across processes, with a soft size bound during concurrent runs.
+Each entry is written to a temporary file, synced to disk, then published with a
+hard link, which creates the entry only if none exists. The first complete entry
+for a key wins and is never overwritten, so a crash never leaves a partial entry.
 History and quarantine metadata are outside that entry-byte budget.
 
 ## Shared cache (trusted clients)
@@ -155,6 +168,11 @@ For separate caller credentials, expiry, revocation and per-operation permission
 use `receipt serve --postgres --credentials`. Manage credentials locally with
 `receipt auth issue`, `receipt auth list` and `receipt auth revoke`; see the
 [service-credential guide](docs/SERVICE-CREDENTIALS.md) for setup and limitations.
+Each token has the form `rcpt_<32 hex id>_<64 hex secret>` (102 characters
+from 48 random bytes). The server stores the id and the token's SHA-256 hash,
+never the token itself. At most 1,024 credential rows may exist, and expired and
+revoked rows still count. There is no purge command, so issuance fails once the
+cap is reached until old rows are deleted by hand.
 All callers still share one cache. Legacy shared-token mode remains available
 without `--credentials`; credential mode never falls back to that token.
 

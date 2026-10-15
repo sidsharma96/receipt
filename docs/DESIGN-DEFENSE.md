@@ -472,6 +472,59 @@ need per-tool rules and would make two different observations look equal.
 colours and every side effect of the tests. Verification flags harmless timing
 text as a conflict.
 
+### D6b. What do `--verify`, `--refresh` and `--bypass` do?
+
+**Decision.** `receipt run` has three modes besides the normal one, and a run
+may use at most one of them. Passing two prints "choose only one of --bypass,
+--refresh, --verify" and runs nothing ([`modes`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L246-L254)).
+
+- `--bypass` runs the command directly and returns its exit code. It computes
+  no key and reads or writes no cache ([`o.bypass`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L259-L262)).
+- `--verify` changes only what happens on a hit, whether the hit came from the
+  local cache or from the server. Receipt runs the tests again, scans the inputs
+  again and then decides in [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L163-L191).
+  On a miss it behaves like a normal run.
+- `--refresh` skips reuse. It still reads the local entry for this key, if one
+  exists, so that it can compare against it ([`lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L68-L76)).
+  It does not ask the server for one.
+
+**Exit codes of `--verify` on a hit.**
+
+| Situation | What Receipt does | Exit code |
+| --- | --- | --- |
+| The input key changed between the two scans | Prints "verification inconclusive", quarantines nothing | 1 |
+| Exit code, stdout or stderr differs byte for byte, or the output exceeded the capture limit | Writes a local quarantine marker, removes the local entry, reports the conflict's hashes to the server, prints "verification mismatch" | The new run's exit code, or 1 if the new run exited 0 |
+| Everything matches | Prints "verification matched byte-for-byte" | 0 |
+
+So a script can tell a match (0) from a problem (non-zero), but it cannot tell
+an inconclusive run from a mismatch by the exit code alone; it must read the
+message on stderr.
+
+**When `--refresh` quarantines.** Only one case quarantines: the fresh run
+**fails**, a cached success for the same key existed locally, and the inputs
+did not change during the run ([`failed`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L193-L214)).
+A failure after a recorded success means the two observations disagree, so
+Receipt writes the marker, removes the entry and reports the conflict. The exit
+code is the fresh run's. If the fresh run succeeds, [`publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
+removes the old local entry and stores the new one, even if the output differs.
+The local cache does not compare them. The upload that follows does: a
+PostgreSQL server compares digests, and if the server already holds a different
+result for the key it answers 409 and the client quarantines the key locally
+([D11](#d11-what-happens-when-two-clients-publish-the-same-key)).
+
+**Order after a successful run.** `publish` stores the entry locally, then
+uploads it, then prunes the local cache ([D8](#d8-how-does-the-local-cache-stay-bounded-and-why-do-quarantine-markers-win)). A key quarantined locally is
+neither stored nor uploaded.
+
+**Alternatives.** A separate exit code for "inconclusive" would let scripts
+retry without parsing text. It was not added; this is a candidate improvement,
+not a defect. Making `--refresh` overwrite without any comparison would lose
+the one signal it can give cheaply: a success followed by a failure on the same
+inputs is direct evidence of a flaky or input-incomplete test.
+
+**Cost.** `--verify` and `--refresh` always run the tests, so they cost a full
+run each time. Each quarantine they cause is permanent ([G15](#g15-quarantine-cannot-be-undone)).
+
 ### D7. How is a local result published so that a crash never leaves a partial entry?
 
 **Decision.** [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L149-L198)
@@ -558,6 +611,16 @@ and a check after replay cannot take the output back.
 hit into an execution. A legacy disk server answers 501 for status, so every
 hit against it executes.
 
+**The disk server has no conflict detection at all.** A server started without
+`--postgres` stores entries with the same [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L150-L198)
+that the client uses locally. When an entry for the key already exists, `Put`
+keeps it and returns success as long as the stored entry is valid, so
+[`putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L346-L369)
+answers 204 to an upload whose output differs. The first writer wins and the
+disagreement is never recorded. Conflict reports and status checks get 501
+from [`cacheAPI.shared`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L263-L272),
+so no client learns about the disagreement either.
+
 ### D10. Why PostgreSQL for metadata and files for output?
 
 **Decision.** The shared store keeps one row per key in
@@ -596,6 +659,10 @@ compares. The digest is the SHA-256 of the stdout hash, stderr hash and exit cod
 Duration and creation time are excluded. Equal digests make the upload a no-op.
 Different digests set `quarantined = TRUE`, store the new observation as
 evidence, commit, and return 409. Every later read of that key returns 409.
+
+All of this needs PostgreSQL. A disk server ([D9](#d9-why-does-a-local-hit-still-ask-the-server)) accepts a differing upload
+with HTTP 204 and keeps the first result, so two clients that disagree are
+never told.
 
 **Alternatives.** Last writer wins hides disagreement. Keeping both results and
 choosing one at read time needs a rule for which run was correct, and Receipt
@@ -1032,6 +1099,35 @@ verified checksums, restored into a separate database and directory inside a
 private mount namespace, and fetched all 10 results. The database and files are
 copied together because a database restored without its output files points at
 missing files. Details are in [DIGITALOCEAN-SETUP.md](DIGITALOCEAN-SETUP.md#13-october-one-off-r2-backup-and-restore).
+
+**Why the drill needs a private mount namespace.** The restored files sit in a
+scratch directory such as `/var/backups/receipt-restore.yCuUL5/extracted/var/lib/receipt`,
+but the restored database says its blobs live at `/var/lib/receipt/cache/blobs`.
+The storage policy row records that absolute path and a random store identity,
+and every storage operation checks both: [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L168-L190)
+compares the server's blob directory with the recorded path, and `Bind` compares
+the `.store-id` file with the recorded identity. A server started against the
+scratch directory would refuse every request with "blob directory does not match
+database storage policy". The binding exists so that one database's `shared gc`
+can never treat another store's files as unreferenced and delete them.
+
+The drill therefore needs the restored files to appear at the original path
+without touching the live server's files at that path. A Linux mount namespace
+gives a process its own table of mounts. The drill is run under
+`unshare --mount --propagation private`, the command the R2 drill script names.
+The script refuses to continue unless its mount namespace differs from PID 1's ([`readlink`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-check-20261012.sh#L5)),
+and then bind-mounts the restored directory over `/var/lib/receipt`
+([`mount --bind`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-check-20261012.sh#L7-L8)).
+Only processes inside that namespace see the restored files. The live server
+keeps its own view. The test server also uses a separate restored database
+(`receipt_restore_20261012`, and `receipt_restore_r2_20261013` for the R2 drill)
+and listens on another loopback port (17778, and 17779 for the R2 drill), so
+production rows and the production port are never touched. The R2 drill script
+makes the same namespace check ([`readlink`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-r2-drill.py#L43-L44)).
+The dated account is in [DIGITALOCEAN-SETUP.md](DIGITALOCEAN-SETUP.md#12-october-amendment-encrypted-backup-and-isolated-restore).
+
+The cost is that recovery onto a new machine must restore the files to the same
+absolute path, or the database row must be changed by hand.
 
 **What the drill does not prove.** Recovery onto a new machine, recovery without
 the single copy of the private key on the Mac, or a backup taken while Receipt
