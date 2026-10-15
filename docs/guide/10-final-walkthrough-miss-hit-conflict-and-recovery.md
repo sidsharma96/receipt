@@ -29,7 +29,7 @@ and uploaded. Otherwise Receipt does not save a reusable result. Storage or
 network failures can still prevent a save.
 
 Receipt [records the inputs again](../GLOSSARY.md#stability-check) after execution. Actual excerpt from
-[`fingerprint.Build` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L310-L311):
+[`fingerprint.Build` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L321-L322):
 
 ```go
 after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
@@ -60,7 +60,7 @@ and replays the output and exit code if the check allows it. Pytest does not
 start. If status is unavailable or the key is quarantined, Receipt executes
 instead. With no local copy, a remote hit can supply the saved result.
 
-Actual decision from [`s.replay` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L295-L297):
+Actual decision from [`s.replay` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L306-L308):
 
 ```go
 if hit && !o.verify {
@@ -116,15 +116,20 @@ local runs execute instead of replaying K. A failed report does not undo the
 local marker, but it can leave other clients unaware of the conflict.
 
 Quarantine means do not reuse this key. It does not mean Receipt has determined
-which run was correct. Actual marker creation from [`quarantine` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L216-L218):
+which run was correct. Actual marker creation from [`quarantine` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L221-L229):
 
 ```go
 func quarantine(dir, key string) error {
-    return atomically(filepath.Join(dir, "quarantine", key), []byte("conflicting observation; do not reuse\n"))
+	path := filepath.Join(dir, "quarantine", key)
+	if err := atomically(path, []byte("conflicting observation; do not reuse\n")); err != nil {
+		return err
+	}
+	return syncDir(filepath.Dir(path))
 }
 ```
 
-The marker is a file, so it remains after this command ends. A verification
+The marker is a file, so it remains after this command ends. `syncDir` flushes
+the `quarantine/` directory, so the marker's name also survives a power loss. A verification
 mismatch returns a nonzero exit code even when the fresh tests passed. If
 recorded inputs change during verification, Receipt instead reports that the
 comparison is inconclusive. Exceeding the output capture limit also prevents

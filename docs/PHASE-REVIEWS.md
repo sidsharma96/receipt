@@ -62,6 +62,12 @@ original wording.
   [D15](DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow)).
   Tests: `TestUploadDoesNotWalkTheStore`, `TestUsageCountersFollowEveryChange`,
   `TestRejectedUploadWritesNoFiles`.
+- New cache and shard directories are created by `MakeDirs`, which syncs the
+  parent of each one; quarantine markers and entry removals sync their
+  directory; and `receipt cache prune` deletes `entries/.pending-*` files older
+  than an hour. Tests: `TestNewDirectoriesAndRemovalsAreSynced`,
+  `TestQuarantineMarkerIsSynced`, `TestPruneRemovesStalePendingEntries`. The
+  tests observe which directories are synced; a real power loss was not tested.
 
 ## How to read this guide
 

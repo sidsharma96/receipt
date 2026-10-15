@@ -392,11 +392,11 @@ The server loses power just after an upload commits, and later a client's laptop
 <details>
 <summary>Answer</summary>
 
-On the server, output files are synced before they are linked into place and before their record commits, so a committed record never names bytes that were never written. But `FileBlobs.Put` creates a new two-character directory with `MkdirAll` and never syncs its parent. After a power loss that directory, and the file inside it, can vanish while the record survives. Reads of that key then fail as a miss with 404, the client runs the tests and its upload restores the file. Orphan files from uploads that failed before commit stay until `shared gc`.
+On the server, output files are synced before they are linked into place and before their record commits, so a committed record never names bytes that were never written. `FileBlobs.Put` creates a new two-character directory through `MakeDirs`, which syncs the parent of every directory it creates, so the directory survives together with the file. Orphan files from uploads whose commit failed stay until `shared gc`.
 
-On the laptop, the quarantine marker is written with a rename, and neither the `quarantine/` directory nor the removal of the entry is synced. After a power loss both changes can be undone and the conflicting result replayed locally. With a remote configured the shared status check still blocks the replay, if the conflict report reached the server. The fixes are to sync each parent directory after creating a directory, and to sync `quarantine/` and `entries/`.
+On the laptop, `quarantine` writes the marker with a rename and then syncs `quarantine/`, and `Disk.Remove` syncs `entries/` after removing the entry, so neither change can be undone by a power loss after it returns. Before 15 October 2026 none of these directories were synced: a new shard directory could vanish while its record survived (a 404 and a re-upload), and the marker and the removal could both be undone, letting the conflicting result be replayed locally unless a remote's status check blocked it.
 
-**Learn more:** [G6. New directories are not fsynced](../DESIGN-DEFENSE.md#g6-new-directories-are-not-fsynced) · [G7](../DESIGN-DEFENSE.md#g7-quarantine-markers-are-not-durable) · [`atomically`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L189-L209)
+**Learn more:** [D7. How is a local result published so that a crash never leaves a partial entry?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [`MakeDirs`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/dirsync.go#L24-L50) · [`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L221-L229)
 
 </details>
 

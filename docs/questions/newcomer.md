@@ -14,7 +14,7 @@ Alice runs `uv run pytest`, the tests pass, and ten minutes later she runs the s
 
 Receipt wraps the test command. Before running it, Receipt describes the run: the command arguments, the repository files, hashes of the environment values, the working directory, the platform and runtime information such as the Python packages. If a successful run with exactly the same description was saved earlier, Receipt prints that run's saved output and exit code instead of starting pytest. Finding such a result is a cache hit; having to run the command is a cache miss. To do this safely Receipt must name every input that could change the result, which is why it records so much more than the command line.
 
-**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L220-L322)
+**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333)
 
 </details>
 
@@ -120,7 +120,7 @@ Receipt sometimes says a key is quarantined. What does that mean for the next ru
 
 A quarantined key is one Receipt has seen produce two different observations: for example, a rerun printed different output from the saved run. Receipt then refuses to reuse that key. Locally it writes a marker file under `.receipt/quarantine/` and removes the saved entry; on the shared server it sets a flag on the key's record. Every later run with that key executes the tests. Quarantine does not decide which observation was right, and no command lifts it; a new key, produced by changing an input, is the normal way out.
 
-**Learn more:** [What if the clients disagree?](../guide/02-let-another-client-reuse-the-result.md#what-if-the-clients-disagree) · [A conflict: the same key, different observations](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-conflict-the-same-key-different-observations) · [`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L216-L218)
+**Learn more:** [What if the clients disagree?](../guide/02-let-another-client-reuse-the-result.md#what-if-the-clients-disagree) · [A conflict: the same key, different observations](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-conflict-the-same-key-different-observations) · [`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L223-L229)
 
 </details>
 

@@ -82,7 +82,7 @@ func (s FileBlobs) Put(ctx context.Context, b []byte) (BlobRef, error) {
 	if err != nil {
 		return ref, err
 	}
-	if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+	if err := MakeDirs(filepath.Dir(p), 0o700); err != nil {
 		return ref, err
 	}
 	f, err := os.CreateTemp(filepath.Dir(p), ".pending-")
@@ -108,10 +108,5 @@ func (s FileBlobs) Put(ctx context.Context, b []byte) (BlobRef, error) {
 	if err != nil {
 		return ref, err
 	}
-	dir, err := os.Open(filepath.Dir(p))
-	if err != nil {
-		return ref, err
-	}
-	defer dir.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
-	return ref, dir.Sync()
+	return ref, syncDirectory(filepath.Dir(p))
 }

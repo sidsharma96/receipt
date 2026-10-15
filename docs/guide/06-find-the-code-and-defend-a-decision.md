@@ -4,7 +4,7 @@ The chapters explain behavior. To follow a change in the source, start with the 
 
 ## The main responsibilities
 
-- internal/app reads the command and combines lookup, execution, verification, and publication. Start at [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L220-L322).
+- internal/app reads the command and combines lookup, execution, verification, and publication. Start at [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333).
 - internal/fingerprint describes inputs and calculates their key. Start at [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L134) and [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76).
 - internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L79).
 - internal/cache stores results. Start at the [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L40-L44) interface; its other files implement HTTP, shared storage, and maintenance.
@@ -64,7 +64,7 @@ Walk through `receipt run -- uv run pytest` on a miss that succeeds, with a remo
 
 On a miss, Receipt runs the command, streaming output while capturing a bounded copy. It builds the manifest again and calls the run stable only if that succeeds with the same key. It records the history file used by `receipt explain`. A successful, stable run goes to `runSession.publish`, which stores the result locally, uploads it to the server, and only then prunes the local cache. A failed upload is reported on stderr but does not change the exit code.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L220-L322) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
 
 </details>
 

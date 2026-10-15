@@ -52,7 +52,7 @@ A cached result is only safe to reuse when Receipt can name the inputs that deci
 
 Any other command makes `toolchainProbe` return an error. `run` reports "inputs unavailable; running uncached" and executes the command without lookup or storage, so an unsupported command is never silently cached. `--allow-generic` is an explicit opt-in: the key then covers only files, environment and the executable's bytes, and the user accepts responsibility for any input outside those.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L267-L291) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L276-L284)
+**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L267-L291) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L287-L295)
 
 </details>
 
@@ -105,7 +105,7 @@ Walk through `receipt run -- uv run pytest` on a miss that succeeds, with a remo
 
 On a miss, Receipt runs the command, streaming output while capturing a bounded copy. It builds the manifest again and calls the run stable only if that succeeds with the same key. It records the history file used by `receipt explain`. A successful, stable run goes to `runSession.publish`, which stores the result locally, uploads it to the server, and only then prunes the local cache. A failed upload is reported on stderr but does not change the exit code.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L220-L322) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
 
 </details>
 
@@ -122,7 +122,7 @@ The cache defaults to `<git root>/.receipt`. A cache inside the repository must 
 
 `Disk.Put` writes the envelope to a `.pending-` temporary file in the same directory, calls `fsync` on it, then calls `os.Link` to create the final name, and finally `fsync`s the directory. A hard link either creates the name or fails because it already exists, and a reader can only ever see a complete file. If the link fails with "already exists", the first writer has won: `Put` reads the existing entry and succeeds only if it decodes and validates. It never overwrites, so a corrupt existing entry makes `Put` return an error rather than report success. A rename would have replaced the existing entry, which is the behaviour this design avoids.
 
-**Learn more:** [D7. How is a local result published?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [F3. Files, inodes, directory entries and hard links](../DESIGN-DEFENSE.md#f3-files-inodes-directory-entries-and-hard-links) · [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L149-L198) · [`cacheDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L169-L187)
+**Learn more:** [D7. How is a local result published?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [F3. Files, inodes, directory entries and hard links](../DESIGN-DEFENSE.md#f3-files-inodes-directory-entries-and-hard-links) · [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L149-L193) · [`cacheDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L169-L187)
 
 </details>
 
@@ -139,7 +139,7 @@ How does local pruning choose which entries to delete, when does it run, and wha
 
 Only `entries/` is counted. Files in `history/` and `quarantine/` are never counted or removed, so they grow without a bound. Keeping quarantine markers is deliberate: deleting one would let a key with contradictory evidence be replayed again.
 
-**Learn more:** [D8. How does the local cache stay bounded?](../DESIGN-DEFENSE.md#d8-how-does-the-local-cache-stay-bounded-and-why-do-quarantine-markers-win) · [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L337-L382)
+**Learn more:** [D8. How does the local cache stay bounded?](../DESIGN-DEFENSE.md#d8-how-does-the-local-cache-stay-bounded-and-why-do-quarantine-markers-win) · [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L367-L418)
 
 </details>
 
@@ -283,7 +283,7 @@ The legacy mode compares the whole `Authorization` header in constant time again
 
 Credential mode stores each credential as a row with its scopes, expiry and revocation time. Those rows live in PostgreSQL, so `serve` refuses `--credentials` without `--postgres`. The modes do not mix: `HandlerAuthorized` uses only the database authenticator and never falls back to the shared token, so a server in credential mode rejects the old token. A fallback would let anyone holding the old shared secret bypass scopes and revocation.
 
-**Learn more:** [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [Start and administer locally](../SERVICE-CREDENTIALS.md#start-and-administer-locally) · [`serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L437-L461) · [`HandlerAuthorized`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L13-L22)
+**Learn more:** [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [Start and administer locally](../SERVICE-CREDENTIALS.md#start-and-administer-locally) · [`serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L473-L497) · [`HandlerAuthorized`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L13-L22)
 
 </details>
 

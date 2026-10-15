@@ -76,7 +76,7 @@ Alice runs `uv run pytest`, the tests pass, and ten minutes later she runs the s
 
 Receipt wraps the test command. Before running it, Receipt describes the run: the command arguments, the repository files, hashes of the environment values, the working directory, the platform and runtime information such as the Python packages. If a successful run with exactly the same description was saved earlier, Receipt prints that run's saved output and exit code instead of starting pytest. Finding such a result is a cache hit; having to run the command is a cache miss. To do this safely Receipt must name every input that could change the result, which is why it records so much more than the command line.
 
-**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L220-L322)
+**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333)
 
 </details>
 

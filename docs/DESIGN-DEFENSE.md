@@ -406,7 +406,7 @@ is never an environment input, and the test command does not inherit it.
 [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L207-L220)
 always skips it, and [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
 removes it from the child's environment in `Run`. The client still reads it,
-through [`os.Getenv(fingerprint.TokenEnvironment)`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L274-L276) in `run`,
+through [`os.Getenv(fingerprint.TokenEnvironment)`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L285-L287) in `run`,
 to authenticate to the server.
 
 **What happened before.** Every environment variable was hashed into the
@@ -457,7 +457,7 @@ is needed.
 
 ### D5. Why scan the inputs twice, and what can the two scans miss?
 
-**Decision.** On a miss, [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L303-L314)
+**Decision.** On a miss, [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L314-L325)
 builds the manifest again after the command finishes and publishes only if the
 key is unchanged. For example, `uv run` may install packages during the first
 run, which changes the Python probe.
@@ -493,10 +493,10 @@ text as a conflict.
 
 **Decision.** `receipt run` has three modes besides the normal one, and a run
 may use at most one of them. Passing two prints "choose only one of --bypass,
---refresh, --verify" and runs nothing ([`modes`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L246-L254)).
+--refresh, --verify" and runs nothing ([`modes`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L257-L265)).
 
 - `--bypass` runs the command directly and returns its exit code. It computes
-  no key and reads or writes no cache ([`o.bypass`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L259-L262)).
+  no key and reads or writes no cache ([`o.bypass`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L270-L273)).
 - `--verify` changes only what happens on a hit, whether the hit came from the
   local cache or from the server. Receipt runs the tests again, scans the inputs
   again and then decides in [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L163-L191).
@@ -544,10 +544,12 @@ run each time. Each quarantine they cause is permanent ([G15](#g15-quarantine-ca
 
 ### D7. How is a local result published so that a crash never leaves a partial entry?
 
-**Decision.** [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L149-L198)
+**Decision.** [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L149-L193)
 uses this exact sequence:
 
-1. `MkdirAll(.receipt/entries)`.
+1. [`MakeDirs`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/dirsync.go#L24-L50)
+   creates `.receipt/entries` if needed and syncs the parent of each directory
+   it creates, so the new directory's name is durable too ([F4](#f4-durability-the-page-cache-and-fsync)).
 2. `CreateTemp` creates `entries/.pending-<random>` in the same directory.
 3. Write the whole encoded envelope.
 4. `File.Sync` makes the bytes durable ([F4](#f4-durability-the-page-cache-and-fsync)).
@@ -560,7 +562,7 @@ uses this exact sequence:
 9. The deferred `os.Remove(tmp)` deletes the temporary name. The inode lives on
    under the final name.
 
-[`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L71-L117)
+[`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L71-L112)
 uses the same sequence for shared output files, and
 [`FileBlobs.Bind`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_binding.go#L11-L71)
 uses it for the store identity marker.
@@ -582,26 +584,35 @@ then open a half-written file.
 | After step 8 | A complete entry. The `.pending-*` name may reappear, because its removal was not synced. It is a second name for the same bytes. | Hit. |
 
 A partial file can never appear under the final name, because the bytes were
-synced before the name existed. Locally, `.pending-*` leftovers are never
-cleaned up and do not count towards the size limit
-([gap G8](#g8-local-pending-files-are-never-removed)).
+synced before the name existed. Local `.pending-*` leftovers do not count
+towards the size limit. Since 15 October 2026,
+[`removeStalePending`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L353-L365)
+in `prune` deletes any that are more than an hour old. A younger one may belong
+to a publication still running in another process, which removes its own file
+within seconds.
 
-**Remaining gaps.** `MkdirAll` creates `entries/` and each shared shard directory
-such as `blobs/ab/` without syncing their parents
-([gap G6](#g6-new-directories-are-not-fsynced)). Quarantine markers are written
-with `rename` and no directory sync ([gap G7](#g7-quarantine-markers-are-not-durable)).
+Before 15 October 2026, `os.MkdirAll` created `entries/` and each shared shard
+directory such as `blobs/ab/` without syncing their parents. After a power loss
+a new directory, and the files in it, could vanish. `MakeDirs` closed that gap.
 
-**Cost.** Two `fsync` calls per entry, which on macOS are full cache flushes.
+**Cost.** Two `fsync` calls per entry, which on macOS are full cache flushes,
+plus one more for each directory created, which happens once per cache and
+once per shard.
 
 ### D8. How does the local cache stay bounded, and why do quarantine markers win?
 
-**Decision.** After each successful publish, [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L337-L382)
+**Decision.** After each successful publish, [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L367-L418)
 lists `entries/`, sorts by modification time and deletes the oldest until the
 total is at most `max_bytes` (1 GiB by default). Each hit touches the entry's
 modification time in [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L141-L161),
 so this is least-recently-used eviction.
 
 A quarantine marker is a file at `.receipt/quarantine/<key>`.
+[`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L221-L229)
+writes it with a temporary file and `rename`, then syncs `quarantine/`, so the
+marker survives a power loss. [`Disk.Remove`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L195-L209)
+syncs `entries/` after removing the matching entry. Before 15 October 2026
+neither directory was synced, and a power loss could undo both changes.
 [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L68-L102)
 checks for it before it opens the entry, and
 [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
@@ -629,7 +640,7 @@ hit into an execution. A legacy disk server answers 501 for status, so every
 hit against it executes.
 
 **The disk server has no conflict detection at all.** A server started without
-`--postgres` stores entries with the same [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L150-L198)
+`--postgres` stores entries with the same [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L150-L193)
 that the client uses locally. When an entry for the key already exists, `Put`
 keeps it and returns success as long as the stored entry is valid, so
 [`putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L346-L369)
@@ -877,7 +888,7 @@ evidence rows.
 | Read the running totals | one row | [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L208-L215) |
 | Check whether each output file is already stored | at most two `lstat` calls | [`FileBlobs.Contains`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_inventory.go#L146-L165) |
 | Insert the record and evidence, update the totals | policy again, a few index lookups and inserts | [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351) |
-| Write two output files | two hashes, writes, `fsync`s and directory `fsync`s | [`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L71-L117) |
+| Write two output files | two hashes, writes, `fsync`s and directory `fsync`s | [`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L71-L112) |
 | Add the new files' bytes to the totals and commit | one update and a commit | [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242) |
 
 None of these steps depends on B, M or E, apart from the logarithmic cost of
@@ -996,7 +1007,7 @@ counting files it already deleted until the next run or restart.
 | Storage deadline | 25 s per admitted request | [`context.WithTimeout`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L216-L219) |
 | Authentication deadline | 2 s | [`context.WithTimeout`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L49-L59) |
 | Database pool | 16 open, 4 idle, 5-minute lifetime, shared by `serve` and every CLI command | [`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L26-L33) |
-| HTTP server | header 5 s, read 30 s, write 30 s, idle 60 s, headers 16 KiB | [`http.Server`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L504) |
+| HTTP server | header 5 s, read 30 s, write 30 s, idle 60 s, headers 16 KiB | [`http.Server`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L540-L540) |
 | Request body | 32 MiB | [`cacheAPI.putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L346-L353) |
 | Client timeout | 10 s per request, redirects refused | [`http.Client`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L54-L58) |
 | Go memory target | `GOMEMLIMIT=320MiB` in production | [`GOMEMLIMIT=320MiB`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service#L13) |
@@ -1100,7 +1111,7 @@ stream stops growing at 8 MiB.
 **Exit codes.** A child killed by any signal reports `ExitCode() == -1`, which
 `Run` turns into 130. A crash from `SIGSEGV` is therefore reported as 130, not
 139. If Receipt's own context was cancelled, `run` returns 130 too
-([`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L303-L309)).
+([`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L314-L320)).
 Interrupted and failed runs are never stored.
 
 **Cost of `SIGKILL`.** Tests get no chance to remove temporary files or stop
@@ -1221,7 +1232,7 @@ test run.
 | Database writer | Change credentials, quarantine flags or records | `Postgres.Get` validates records and output hashes before replaying | Trusted. |
 | Hostile JSON | Malformed, oversized or ambiguous bodies | Size limits before reading, `strictjson` rejects unknown, duplicate and wrongly null fields and non-UTF-8, and semantic validation runs before storage | Bodies are fully buffered in memory. |
 | Hostile local program on the server | Ignore locks and change files | `Get` re-hashes output files before serving them | Locks are advisory. |
-| Crash or power loss | Interrupt any step | Files are synced before they are named, and output files are durable before their record commits | Orphan files until `shared gc`. Unsynced new directories and quarantine markers (gaps G6 and G7). |
+| Crash or power loss | Interrupt any step | Files are synced before they are named, new directories' parents and quarantine markers' directories are synced, and output files are durable before their record commits | Orphan files until `shared gc`. |
 | Database connection loss | Release the advisory lock early | The `flock` keeps file work exclusive | The request fails and the client runs its tests. |
 | Clock jump | Change expiry decisions | Credential expiry and `created_at` use the database clock. Durations use Go's monotonic clock. | `shared prune` computes its cutoff with the CLI host's clock, which matters if the CLI runs on another host. Local LRU uses file times. |
 | Slow disk | Slow every `fsync` | Uploads are serialized, so one slow flush delays all writers. Requests fail at 25 s, and clients fall back. | No alerting exists. |
@@ -1257,32 +1268,6 @@ pool from `--max-inflight` plus authentication, or reject larger values.
 runs with `--max-inflight 2`, and authentication slots equal that number. A
 third concurrent request gets 503. Fix: separate the authentication slot count
 and add a per-IP rate limit in Caddy.
-
-### G6. New directories are not fsynced
-
-[`os.MkdirAll`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L163-L165) in `Disk.Put`
-and [`os.MkdirAll`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L85-L87) in `FileBlobs.Put`
-create directories with `MkdirAll` and never sync their parents. After a power
-loss, a new `blobs/ab/` directory could vanish while the database record that
-references a file inside it survives. Reads of that key then fail as a miss
-(404), the client re-executes, and its upload restores the file. Fix: sync each
-parent after creating a directory.
-
-### G7. Quarantine markers are not durable
-
-[`atomically`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L189-L209)
-writes a marker with `rename` and does not sync the directory, and the matching
-entry removal is not synced either. After a power loss, both changes can be
-undone and the conflicting result replayed locally. With a remote configured,
-the shared status check still blocks it. Fix: sync the `quarantine/` and
-`entries/` directories.
-
-### G8. Local pending files are never removed
-
-A crash during [`os.CreateTemp`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L166-L171) in `Disk.Put`
-can leave `entries/.pending-*` files. [`strings.HasSuffix`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L355-L359) in `prune`
-skips names that do not end in `.json`, so they are never deleted or counted.
-Fix: delete old pending files during prune.
 
 ### G9. The lock file is opened without `O_NOFOLLOW`
 
@@ -1355,7 +1340,7 @@ development Mac now defaults to 1.27.2. Fix: pin one version, or add a
 
 ### G20. Small hygiene items
 
-- [`outDiscard`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L324-L335)
+- [`outDiscard`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L335-L346)
   duplicates `io.Discard`.
 - [`commandPrune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L28-L36)
   is an untyped constant inside the typed `commandName` block.

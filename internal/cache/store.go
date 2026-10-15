@@ -160,7 +160,7 @@ func (d Disk) Put(ctx context.Context, r Result) error {
 	if e != nil {
 		return e
 	}
-	if e = os.MkdirAll(filepath.Dir(p), 0o700); e != nil {
+	if e = MakeDirs(filepath.Dir(p), 0o700); e != nil {
 		return e
 	}
 	f, e := os.CreateTemp(filepath.Dir(p), ".pending-")
@@ -189,15 +189,10 @@ func (d Disk) Put(ctx context.Context, r Result) error {
 	if e != nil {
 		return e
 	}
-	dir, e := os.Open(filepath.Dir(p))
-	if e != nil {
-		return e
-	}
-	defer dir.Close() //nolint:errcheck // Read/resource cleanup; writes and syncs are checked before return.
-	return dir.Sync()
+	return syncDirectory(filepath.Dir(p))
 }
 
-// Remove deletes an entry if it exists.
+// Remove deletes an entry if it exists and makes the removal durable.
 func (d Disk) Remove(key string) error {
 	p, e := d.path(key)
 	if e != nil {
@@ -207,7 +202,10 @@ func (d Disk) Remove(key string) error {
 	if os.IsNotExist(e) {
 		return nil
 	}
-	return e
+	if e != nil {
+		return e
+	}
+	return syncDirectory(filepath.Dir(p))
 }
 
 // List returns valid local entries sorted by creation time.

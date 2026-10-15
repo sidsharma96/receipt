@@ -186,8 +186,10 @@ func cacheDirectory(root, override string) (string, error) {
 	return p, nil
 }
 
+// atomically replaces path with b. New directories are synced; the rename is
+// not, so callers that need it to survive a crash sync the directory.
 func atomically(path string, b []byte) error {
-	if e := os.MkdirAll(filepath.Dir(path), 0o700); e != nil {
+	if e := cache.MakeDirs(filepath.Dir(path), 0o700); e != nil {
 		return e
 	}
 	f, e := os.CreateTemp(filepath.Dir(path), ".tmp-")
@@ -208,13 +210,22 @@ func atomically(path string, b []byte) error {
 	return os.Rename(f.Name(), path)
 }
 
+// syncDir is replaced in tests to observe which directories are synced.
+var syncDir = cache.SyncDir
+
 func quarantined(dir, key string) bool {
 	_, e := os.Stat(filepath.Join(dir, "quarantine", key))
 	return e == nil
 }
 
+// quarantine writes a durable marker: a marker lost in a crash would let the
+// conflicting local result be replayed again.
 func quarantine(dir, key string) error {
-	return atomically(filepath.Join(dir, "quarantine", key), []byte("conflicting observation; do not reuse\n"))
+	path := filepath.Join(dir, "quarantine", key)
+	if err := atomically(path, []byte("conflicting observation; do not reuse\n")); err != nil {
+		return err
+	}
+	return syncDir(filepath.Dir(path))
 }
 
 func run(ctx context.Context, mode commandName, args []string, out, errOut io.Writer) (code int, runErr error) {
@@ -334,6 +345,25 @@ func reportConflict(ctx context.Context, remote cache.Remote, result cache.Resul
 
 func (outDiscard) Write(b []byte) (int, error) { return len(b), nil }
 
+// stalePending is how old a .pending- file must be before prune deletes it. A
+// publication in another process removes its own file within seconds; only a
+// crash leaves one behind.
+const stalePending = time.Hour
+
+func removeStalePending(path string, entry os.DirEntry) error {
+	info, e := entry.Info()
+	if os.IsNotExist(e) || (e == nil && (!info.Mode().IsRegular() || time.Since(info.ModTime()) < stalePending)) {
+		return nil
+	}
+	if e != nil {
+		return e
+	}
+	if e = os.Remove(path); e != nil && !os.IsNotExist(e) {
+		return e
+	}
+	return nil
+}
+
 func prune(d cache.Disk, maxBytes int64, out io.Writer) error {
 	if maxBytes < 0 {
 		return fmt.Errorf("negative size limit")
@@ -354,6 +384,12 @@ func prune(d cache.Disk, maxBytes int64, out io.Writer) error {
 	var total int64
 	for _, entry := range entries {
 		name := entry.Name()
+		if strings.HasPrefix(name, ".pending-") {
+			if e = removeStalePending(filepath.Join(d.Dir, "entries", name), entry); e != nil {
+				return e
+			}
+			continue
+		}
 		if !strings.HasSuffix(name, ".json") {
 			continue
 		}
