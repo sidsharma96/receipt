@@ -37,10 +37,18 @@ const (
 	CargoMetadata
 	// CargoSources includes reading the lockfile and selected dependency files.
 	CargoSources
+	// Discovery includes Git root/file discovery and extra-input enumeration.
+	Discovery
+	// InputFiles includes reading and hashing declared working-tree/extra files.
+	InputFiles
+	// Executable includes reading and hashing the command executable.
+	Executable
+	// Toolchain includes the non-Cargo runtime probe and output normalization.
+	Toolchain
 	stageCount
 )
 
-var names = [stageCount]string{"authentication", "db_pool", "db_lock", "fs_lock", "sql", "files", "inventory", "fingerprint", "execution", "lookup", "cargo_tools", "cargo_metadata", "cargo_sources"}
+var names = [stageCount]string{"authentication", "db_pool", "db_lock", "fs_lock", "sql", "files", "inventory", "fingerprint", "execution", "lookup", "cargo_tools", "cargo_metadata", "cargo_sources", "discovery", "input_files", "executable", "toolchain"}
 
 // Timing aggregates repeated calls to one boundary, in nanoseconds.
 type Timing struct {

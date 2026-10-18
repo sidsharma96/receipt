@@ -298,6 +298,18 @@ remain too noisy for a reliable latency claim.
 The [nine-question implementation review](../PHASE-REVIEWS.md#streaming-file-hashing-18-october-2026)
 records decisions, compatibility tests, verification and remaining limits.
 
+## 18 October 2026: executable hashing and probe boundaries
+
+[Chapter 13](13-hash-executables-and-measure-probes.md) separates executable reads
+from fresh runtime probes, explains streaming raw executable bytes and the direct
+pytest exception, and records old-entry replay compatibility. Four new opt-in
+substage labels expose the remaining work. Large-executable memory use fell;
+probes remain fresh and substantial, and whole-hit latency gains are not established.
+
+The [full implementation review](../PHASE-REVIEWS.md#executable-hashing-and-probes-18-october-2026)
+records the nine questions and scoped evidence. Future optimizations now explicitly
+require new teaching chapters in AGENTS.md.
+
 ## Maintaining these documents
 
 The guide is part of the documentation book. Each chapter is its own Markdown file under `docs/guide/`, listed in `docs/SUMMARY.md`. Edit the chapter that teaches the changed behaviour, then append the dated nine-question review and its evidence to [the review reference](../PHASE-REVIEWS.md). Preserve historical amendments.

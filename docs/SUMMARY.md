@@ -19,6 +19,7 @@
 - [10. Final walkthrough: miss, hit, conflict and recovery](guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md)
 - [11. Defending the design](guide/11-defending-the-design.md)
 - [12. Make a cache hit cheaper](guide/12-profile-before-optimizing.md)
+- [13. Hash executables and measure their probes](guide/13-hash-executables-and-measure-probes.md)
 
 # Defending the design
 

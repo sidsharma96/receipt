@@ -2437,7 +2437,7 @@ A local hit rebuilds a manifest of named input hashes and decodes a checksummed
 JSON result. `fileInput` reads a byte slice, copies it behind a permission prefix,
 and hashes the combination. An 8 MiB fixture allocated about 16 MiB per call.
 The actual excerpt and explanation are in the chapter, attributed to
-[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L180-L204).
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L186-L210).
 A streaming hasher is a candidate for bounded temporary memory, not a way to avoid
 reading declared bytes. Primary-key B-trees map result keys, credential IDs and
 (key,digest) evidence pairs to rows. No JSON-path index is needed by current queries.
@@ -2568,7 +2568,7 @@ For a file containing `abc` with mode `0600`, the old implementation made bytes
 into one SHA-256 state through a reusable byte slice capped at 32 KiB. Small
 files use a smaller buffer. No chunk digests are combined, so the algorithm is
 unchanged. The actual code excerpts in Chapter 12 are attributed to
-[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L180-L204)
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L186-L210)
 and [`hashFile`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/file_hash.go#L12-L28).
 The manifest's fields, sorting and JSON encoding are unchanged.
 
@@ -2676,3 +2676,132 @@ all images loaded; wide byte traces scroll within their code block. Text equival
 remain available without images. These checks do not establish teaching quality
 for every reader or exhaustive accessibility. No existing `.wrangler/` files were
 changed, and benchmark binaries remain under ignored `.tools/streaming`.
+
+## Executable hashing and probes, 18 October 2026
+
+This is the next implementation amendment after file-input streaming, not a new
+cache-protocol phase. [Chapter 13](guide/13-hash-executables-and-measure-probes.md)
+contains the execution sequence, attributed code, comparisons and learner questions.
+The [measurement record](MEASUREMENTS.md#executable-hashing-and-probes-18-october-2026)
+preserves raw data and reproduction instructions. Earlier reviews' statements that
+executable reads remain whole-file are historical; this amendment supersedes them
+except for the explicit direct-pytest fallback.
+
+### Executable — 1. Data structures and why
+
+The existing Input still records kind, absolute executable path and raw-byte
+SHA-256. A per-call 32 KiB buffer and hash state replace the full executable slice
+when no shebang inspection is needed. Unlike ordinary file inputs, the executable
+has no permission prefix. The actual production branch in
+[`executableInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L10-L26)
+is quoted and explained in Chapter 13. Direct pytest retains its existing byte
+slice because its original shebang parser consumes that content. Trace retains
+fixed-size per-stage counters; four labels are appended without renumbering the
+existing stages or recording dynamic values.
+
+### Executable — 2. Flow and extension boundaries
+
+For Go, resolve the executable path, stream/hash its raw bytes, invoke the same
+Go probe, normalize its output exactly as before, then append both Input records.
+Root/file discovery and the ordinary file-input loop now have separate spans.
+`runtimeProbe` is extracted from the existing executionInputs branch to measure
+a full non-Cargo probe on both success and failure. It is not a persistent cache
+or generalized process service. The common executable path applies to supported
+non-pytest commands and generic mode; Cargo keeps its separate dependency/tool
+probe flow. Runtime measurements here cover Go, Python-module pytest and direct
+pytest, not uv or Rust environments.
+
+### Executable — 3. Primitives and concurrency
+
+The optimization reuses the sequential file-hash helper with an empty prefix.
+It adds no goroutines, locks, shared pools or network protocol. Context propagation
+to the probe subprocess is preserved. The fixed timing recorder is request-local;
+new spans are elapsed boundaries inside fingerprint, not CPU-only attribution.
+Path lookup and some manifest work remain outside those child spans. No ordering
+change overlaps the probe with executable reads or repository discovery.
+
+### Executable — 4. Pitfalls and debugging
+
+Using the ordinary file permission prefix would change executable keys. Resolving
+symlink targets into recorded paths would also change identity; the absolute
+lookup spelling is preserved. Mtime/size memoization would miss same-size edits
+with restored timestamps. Caching probes only by executable hash would miss
+package/settings changes. A truncated shebang policy or second independent header
+read would change direct-pytest semantics, so its full-read path remains. Stage
+medians must not be summed or added to fingerprint. Whole-process RSS can include
+waited-for child accounting and is not the sum of live processes.
+
+### Executable — 5. Hot/cold costs
+
+Before optimization, the controlled Go hit had median executable work of 7.32 ms
+and probe work of 35.94 ms; Python's probe took 41.40 ms versus 0.054 ms executable
+work. The probe is larger, but removing its observations would change correctness.
+The isolated 12 MiB executable comparison reduced median allocations from
+12,591,751 to 33,272 B/op, peak process RSS from 45.52 to 23.22 MB, and process CPU
+from 0.81 to 0.68 seconds for fixed work. Those process totals include fixture
+setup/calibration. Real Go hit maximum RSS fell from 29.66 to 17.82 MB; whole-hit
+latency medians changed 108.34 to 104.58 ms with overlapping ranges. No reliable
+whole-hit speedup is claimed. Python/direct-pytest totals remained near 101 ms.
+All executable bytes are still read. No database/maintenance path changed.
+
+### Executable — 6. Guarantees, assumptions and non-goals
+
+For stable executable bytes, SHA-256 sees exactly the old raw byte sequence.
+The same absolute path, kind, probe output, normalization, names and manifest
+encoding therefore produce the same key. A full pre-change cache entry can be
+reused without migration. Probe commands remain fresh, and failure/cancellation
+is not replaced with stale data. Buffer memory is bounded for the streaming
+branch, not for the explicit pytest fallback, all probes or the whole process.
+Concurrent replacement between reading, probing and execution remains possible;
+this is not a snapshot or sandbox. Stable keys do not prove deterministic output.
+
+### Executable — 7. Alternatives and decisions
+
+Streaming was selected because it removes a large allocation while preserving
+observations, even though probes dominate measured latency. Probe caching was
+deferred until there is an explicit invalidation contract for mutable settings
+and packages. Narrowing Go probe fields was rejected for this change because
+it changes the input contract. Parallel hashing/probing was deferred because it
+adds scheduling, cancellation/error handling and resource competition without
+reducing underlying work. A single-pass shebang collector is possible but must
+preserve long/no-newline first lines; the measured tiny script cost did not
+justify it now. These are decisions for this change, not invented earlier history.
+
+### Executable — 8. Evidence and remaining risks
+
+Independent SHA-256 comparisons cover six executable sizes including empty,
+binary data, chunk boundaries and 12 MiB, on streaming and header branches.
+Tests cover executable symlinks, same-size/mtime mutation, mode-only changes,
+70,000-character shebangs with/without newline, invalid shebangs, fresh changed
+probe output, probe failure/cancellation, and open/read errors. Tracing on/off
+preserves the full key. The three real command forms replayed old-CLI entries
+in all 36 expected hits, with identical full keys across old, instrumented-before
+and optimized CLIs. All benchmark and replay commands succeeded.
+
+`make check`, `make race`, and `make build` passed locally. PostgreSQL and Rust
+runtime opt-ins were not enabled locally for this fingerprint-only change;
+GitHub's independent suite exercises PostgreSQL/races after push. Cold-device I/O,
+syscall counts, power, large Python environments, actual uv/Rust replay, adversarial
+concurrent mutation and partial-progress read fault injection remain unmeasured.
+Performance runs were sequential on warm caches with uncontrolled background
+activity. Documentation and visual verification are recorded below.
+
+### Executable — 9. Revisit conditions
+
+Revisit the buffer or a shebang collector if representative executable sizes and
+profiles justify added complexity. Revisit probe work with varying package counts,
+toolchain versions and startup-versus-probe CPU attribution; only then assess
+safe reduced work, overlap or explicit invalidation. Revisit Git discovery in a
+separate measured change. Broaden matched whole-hit samples before promising
+latency gains. Preserve all freshness and compatibility tests when any of these
+boundaries change. Future optimizations receive new teaching chapters under the
+now-versioned reader preference in AGENTS.md.
+
+Documentation verification: `make docs` passed all 18 checks, including source
+anchors, attributed excerpts, question synchronization and built-site links.
+Chrome rendered chapter 13 at 1440 px and 390 px widths without document overflow
+or broken images; its first answer disclosure opened successfully. The desktop
+chapter, mobile opening and standalone flow SVG were visually inspected. This
+is a layout spot check, not a complete accessibility audit. Existing code-link
+line anchors were refreshed after source movement; older reviews retain their
+dated conclusions.

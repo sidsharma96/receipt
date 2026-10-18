@@ -102,7 +102,9 @@ func Build(ctx context.Context, dir string, args, extra, ignoredEnv []string, ge
 	if len(args) == 0 {
 		return Manifest{}, fmt.Errorf("missing test command")
 	}
+	discoveryDone := observe.Measure(ctx, observe.Discovery)
 	root, err := Root(ctx, dir)
+	discoveryDone()
 	if err != nil {
 		return Manifest{}, err
 	}
@@ -111,13 +113,16 @@ func Build(ctx context.Context, dir string, args, extra, ignoredEnv []string, ge
 	if err != nil {
 		return m, err
 	}
+	filesDone := observe.Measure(ctx, observe.InputFiles)
 	for path := range files {
 		input, err := fileInput(path)
 		if err != nil {
+			filesDone()
 			return m, err
 		}
 		m.Inputs = append(m.Inputs, input)
 	}
+	filesDone()
 	m.Inputs = append(m.Inputs, environmentInputs(os.Environ(), ignoredEnv)...)
 	inputs, err := executionInputs(ctx, dir, args, generic)
 	if err != nil {
@@ -134,6 +139,7 @@ func Build(ctx context.Context, dir string, args, extra, ignoredEnv []string, ge
 }
 
 func discoverFiles(ctx context.Context, root string, extra []string) (map[string]bool, error) {
+	defer observe.Measure(ctx, observe.Discovery)()
 	b, err := commandOutput(ctx, root, "git", "ls-files", "-z", "--cached", "--others", "--exclude-standard")
 	if err != nil {
 		return nil, err
@@ -228,11 +234,11 @@ func executionInputs(ctx context.Context, dir string, args []string, generic boo
 	if err != nil {
 		return nil, err
 	}
-	data, err := os.ReadFile(exe)
+	identity, data, err := executableInput(ctx, exe, filepath.Base(args[0]) == pytestCommand)
 	if err != nil {
 		return nil, err
 	}
-	inputs := []Input{{ExecutableInput, exe, Hash(data)}}
+	inputs := []Input{identity}
 	if filepath.Base(args[0]) == cargoCommand {
 		cargo, err := cargoInputs(ctx, dir, args)
 		if err != nil {
@@ -246,19 +252,11 @@ func executionInputs(ctx context.Context, dir string, args []string, generic boo
 		return nil, err
 	}
 	if len(probe) > 0 {
-		b, e := commandOutput(ctx, dir, probe...)
-		if e != nil {
-			return nil, e
+		input, err := runtimeProbe(ctx, dir, args, probe)
+		if err != nil {
+			return nil, err
 		}
-		name := "resolved-environment"
-		if filepath.Base(args[0]) == "go" && args[1] == testCommand {
-			b, e = stableGoEnvironment(b)
-			if e != nil {
-				return nil, e
-			}
-			name = "resolved-go-environment-v2"
-		}
-		inputs = append(inputs, Input{ToolchainInput, name, Hash(b)})
+		inputs = append(inputs, input)
 	}
 
 	return inputs, nil

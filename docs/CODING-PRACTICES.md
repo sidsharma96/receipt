@@ -231,3 +231,16 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
   can bypass the supplied buffer. No shared pool or parallel hashing is introduced.
 - Test against the old concatenation, including chunk boundaries and permissions.
   Distinguish allocation bytes, peak process RSS and end-to-end latency.
+
+## Executable identity and probe timing (18 October 2026)
+
+- Executables retain SHA-256 over raw bytes, without the working-tree permission
+  prefix. Keep the absolute lookup path, including executable symlink spelling.
+- Stream commands that do not need executable contents for probe construction.
+  Direct pytest retains its full-read/shebang contract; do not introduce a line
+  cap or a second independently opened header read without a compatibility decision.
+- Probe output is fresh on every scan. Preserve commands, names, normalization,
+  cancellation and refusal behavior; neither executable identity nor mtime/size
+  is an adequate cache key for mutable runtime/package metadata.
+- The four new fixed timing labels nest inside fingerprint and complete on error.
+  They do not contain dynamic payloads and are never part of manifest identity.

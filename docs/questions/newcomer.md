@@ -262,7 +262,7 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 `internal/fingerprint` describes the inputs and calculates the key, starting at `Build` and `Manifest.Key`. `internal/app` reads the command line and combines lookup, execution, verification and publication, starting at `run`. `internal/runner` starts the test command and captures its output. `internal/cache` stores results locally, over HTTP and in shared storage. `internal/strictjson` checks JSON structure, and `internal/auth` defines credentials and permissions. All of these packages run inside one client or server process; a package is not a separate service.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L134)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L139)
 
 </details>
 
@@ -408,5 +408,53 @@ A file contains `abc`. Receipt used to hash the permission prefix and file bytes
 The same SHA-256 state receives the same bytes in the same order; chunk boundaries are not additional input. Computing separate chunk digests and combining them would be different. The size hint may be stale if the file grows, so it sizes the temporary buffer but does not cap the total bytes read. Receipt reads until EOF. This preserves the hash calculation for stable files without making concurrent edits an atomic snapshot.
 
 **Learn more:** [Streaming file hashing](../guide/12-profile-before-optimizing.md#streaming-file-hashing-implemented-18-october)
+
+</details>
+
+### Why does an executable use no permissions prefix?
+<!-- check: guide/13-hash-executables-and-measure-probes.md -->
+
+**Level:** Newcomer
+
+Receipt now streams executable bytes through the same helper used for project files. Why must it pass an empty prefix instead of copying the project-file permissions prefix?
+
+<details>
+<summary>Answer</summary>
+
+The previous executable identity hashed only raw executable bytes. Adding permissions would change that byte sequence and break compatibility with old keys. Reusing a helper does not make the two input formats identical; each caller must preserve its own existing format.
+
+**Learn more:** [Executable streaming](../guide/13-hash-executables-and-measure-probes.md#reuse-the-streaming-mechanism-with-a-different-prefix)
+
+</details>
+
+### Why not cache the slow probe by executable hash?
+<!-- check: guide/13-hash-executables-and-measure-probes.md -->
+
+**Level:** Newcomer
+
+The Python probe costs much more time than reading the interpreter executable. Why not remember its output until the executable changes?
+
+<details>
+<summary>Answer</summary>
+
+Packages can be installed or removed while the interpreter bytes stay unchanged. Go settings can change without changing its executable too. A probe cache would need a reliable invalidation contract for those inputs. This optimization retains fresh probes and measures their cost rather than silently reusing stale environment descriptions.
+
+**Learn more:** [Fresh probes](../guide/13-hash-executables-and-measure-probes.md#why-probes-still-run-on-every-scan)
+
+</details>
+
+### Why is direct pytest an exception to streaming?
+<!-- check: guide/13-hash-executables-and-measure-probes.md -->
+
+**Level:** Newcomer
+
+The command is an executable script named `pytest`. Why does Receipt still read all of it, and what would a future streaming implementation need to preserve?
+
+<details>
+<summary>Answer</summary>
+
+Receipt reads its shebang to choose the Python interpreter. Keeping the existing full read preserves hashing and parsing from the same bytes, including long first lines and missing newlines. A future single-pass collector would need to preserve that accepted input behavior; simply adding a short line cap or reading the header separately could change the contract.
+
+**Learn more:** [Direct pytest](../guide/13-hash-executables-and-measure-probes.md#preserve-the-direct-pytest-exception)
 
 </details>

@@ -41,6 +41,10 @@ took zero time. These are elapsed durations, not CPU-only times.
 | files | FileBlobs Get/Put/Inventory/Remove, including applicable hashing and filesystem work |
 | inventory | Combined metadata usage and file inventory during stats, limit changes and startup recounts (write admission before 15 October 2026) |
 | fingerprint | Input discovery, content hashing and runtime probes |
+| discovery | Build root lookup and Git/extra-input discovery (18 October) |
+| input_files | Ordinary declared-file hashing loop (18 October) |
+| executable | Command executable bytes, excluding path lookup (18 October) |
+| toolchain | Non-Cargo subprocess probe, normalization and output hash (18 October) |
 | execution | Child execution and output handling |
 | lookup | CLI lookup, including any remote fetch/status request |
 
@@ -303,3 +307,115 @@ test models stale metadata; it does not force an actual concurrent edit. No new
 claims cover snapshot consistency, permission/rename races, partial-progress
 read failures, cold device reads, syscall counts, energy use, Windows behavior,
 or every filesystem. Executable hashing remains a whole-file operation.
+
+## Executable hashing and probes, 18 October 2026
+
+[Chapter 13](guide/13-hash-executables-and-measure-probes.md) is the new teaching
+chapter for this optimization. Source baseline: `3728f35`. Host: Apple M1,
+macOS arm64, Go 1.27.2. Python: the existing CodeCraft virtual environment,
+Python 3.14.2 with eight distributions; no installation or external project edit
+was performed. The Go command selected by PATH was `/usr/local/go/bin/go`, a
+12,365,040-byte launcher. Probes can invoke a different resolved Go toolchain;
+this experiment preserves the existing launcher/probe contract rather than
+claiming complete toolchain-binary attestation.
+
+New fixed diagnostic spans:
+
+| Name | Exact scope and exclusions |
+| --- | --- |
+| discovery | Build's root query plus discoverFiles, including Git and extras; normally 2 calls; settings' earlier root query is excluded |
+| input_files | Build's ordinary fileInput loop including appends; excludes environment hashing and Cargo-specific source work |
+| executable | executableInput reads/hashes; excludes LookPath and Abs; includes full-read fallback for direct pytest |
+| toolchain | runtimeProbe subprocess, captured output, Go normalization and hash; excludes command selection and Cargo probes |
+
+These spans nest within fingerprint and complete on error. They reveal neither
+paths nor payloads. They do not cover every fingerprint cost; do not sum medians
+or add them to their parent duration. Cargo's existing separate spans still apply.
+No new diagnostic fields enter a manifest, result identity or key.
+
+Evidence: [initial breakdown](measurements/executable-2026-10-18/baseline-breakdown.json)
+and [matched comparison](measurements/executable-2026-10-18/comparison.json).
+The initial breakdown ran eight direct commands, one miss and eight hits on
+this working checkout with instrumentation but before executable optimization;
+no files were edited during those invocations. The command was
+`go test -count=1 ./internal/strictjson`. The median fingerprint was 82.94 ms;
+discovery 31.84, input files 6.31, executable 7.40, toolchain 36.97 ms. These
+separate medians should not be summed. The working tree contained pending
+instrumentation and no manifest snapshot was retained; future repo runs have
+changed documentation bytes. Use the controlled fixture for before/after claims.
+
+The matched harness uses three CLIs: unmodified old commit, old algorithm with
+timing spans, and optimized algorithm with identical timing spans. It creates
+an isolated temporary Git directory with 256 × 4 KiB files plus four small files
+(`.gitignore`, `go.mod`, Go and Python tests). An external tiny pytest launcher
+contains an absolute shebang pointing to the selected installed interpreter.
+Old CLI misses populate an external temporary cache. Six alternating before/after
+pairs per command form produce 36 expected hits, all successful and all without
+execution; full explain keys match across all three CLIs for each command.
+This is a strong executable/probe compatibility check, not a universal proof
+about mutable or undeclared runtime inputs.
+
+| Median of six hits | Go before / after | Python-module before / after | Direct pytest before / after |
+| --- | --- | --- | --- |
+| Fingerprint | 83.15 / 79.56 ms | 74.85 / 77.36 ms | 77.54 / 75.18 ms |
+| Discovery | 29.83 / 28.28 ms | 28.22 / 28.97 ms | 28.47 / 28.12 ms |
+| Input files | 7.88 / 7.61 ms | 4.94 / 5.00 ms | 4.97 / 4.99 ms |
+| Executable | 7.32 / 6.15 ms | 0.054 / 0.048 ms | 0.017 / 0.017 ms |
+| Probe | 35.94 / 34.91 ms | 41.40 / 42.72 ms | 41.71 / 41.78 ms |
+| Receipt duration | 108.34 / 104.58 ms | 101.12 / 101.31 ms | 101.02 / 100.69 ms |
+| Maximum RSS | 29.66 / 17.82 MB | 25.14 / 25.20 MB | 25.14 / 25.18 MB |
+| User + system CPU | 0.095 / 0.090 s | 0.090 / 0.090 s | 0.090 / 0.090 s |
+
+MB means decimal. OS resource accounting may include waited-for child usage;
+maximum RSS is not summed simultaneous memory for all processes. The tiny Python
+executable and unchanged pytest fallback act as useful controls, but this is not
+a randomized statistical experiment. Go duration ranges overlap: 103.80–112.99 ms
+before and 100.13–124.03 ms after. The data does not establish a reliable whole-hit
+latency improvement. Probe durations remain substantial and no cache was added.
+
+The separate synthetic executable benchmark uses 12 MiB of deterministic binary
+bytes, six alternating process pairs, and 100 timed hashes per process. Both
+versions have the same tracing calls but tracing is disabled in that benchmark.
+Timing/allocation counts exclude fixture creation; process resource reports
+include setup/calibration and runtime work:
+
+| Median of six process runs | Before | After |
+| --- | ---: | ---: |
+| ns/op | 7,579,791 | 6,957,613.5 |
+| B/op | 12,591,750.5 | 33,272 |
+| CPU user + system | 0.81 s | 0.68 s |
+| Maximum RSS bytes | 45,522,944 | 23,216,128 |
+| Whole-process cycles elapsed | 2,509,253,730 | 2,121,497,333.5 |
+
+Run the harness with prebuilt old, instrumented-before and optimized-after CLI
+binaries, matching before/after fingerprint test binaries, and an installed Python
+with pytest. It never installs packages or edits the selected environment:
+
+```sh
+python3 scripts/profile/compare_executable.py \
+  /absolute/old/receipt /absolute/instrumented/receipt /absolute/after/receipt \
+  /absolute/before/fingerprint.test /absolute/after/fingerprint.test \
+  /absolute/environment/bin/python .tools/executable/comparison.json
+```
+
+Build test binaries using `go test -c ./internal/fingerprint -o PATH` and CLIs
+using `go build -o PATH ./cmd/receipt` in the corresponding checkouts. To recreate
+the instrumented-before algorithm, retain the timing/helper extraction but use
+`os.ReadFile(exe)` followed by `Hash(data)` for every executableInput call; the
+helper's direct-pytest branch still contains that exact baseline calculation.
+Do this in an isolated experimental checkout, not the working production branch.
+Keep Python's virtual-environment path spelling instead of resolving its symlink:
+that spelling can affect the selected environment and recorded interpreter.
+The synthetic executable benchmark did not exist on the old commit; use the same
+new benchmark source in both comparison builds.
+
+Runs were sequential with no concurrent Receipt test/profile work. OS caches were
+warm; background machine activity was uncontrolled. No CPU profiler overhead was
+added. CPU seconds have hundredth-second granularity in time's output. Hardware
+counts describe the entire benchmark process, not per-function attribution. No
+cold-device, syscall, power, large Python-package-set, uv runtime or Rust runtime
+performance measurements were performed. Unit tests cover the common identity
+path; only Go/Python/direct-pytest got real cross-version replay measurements.
+The full-read pytest exception remains potentially unbounded, matching its old
+contract. Concurrent replacement between hashing and probing/execution remains
+outside snapshot guarantees.

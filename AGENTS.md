@@ -94,3 +94,13 @@ relative links and heading anchors resolve in the source and in the built site,
 attributed Go excerpts match the source, and questions are well formed and in
 sync. CI (.github/workflows/docs.yml) runs the same target and deploys the book
 to Cloudflare Pages when its secrets are present.
+
+## Optimization chapters, agreed 2026-10-18
+
+After each implemented optimization, add a new numbered teaching chapter under
+`docs/guide/` and list it in `docs/SUMMARY.md` and the working-guide overview.
+Explain the measured bottleneck, chosen change, compatibility evidence and
+before/after costs. Keep prior measurements and dated reviews as history; update
+older chapters with current-status notes and links rather than making readers
+infer which optimization is now implemented. Append the full nine-question
+review and dated updates entry as usual.

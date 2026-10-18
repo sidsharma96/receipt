@@ -117,7 +117,7 @@ prefix-plus-file slice. The new path writes the prefix to the hash, repeatedly
 reads and hashes through one buffer, then returns the digest. A read error stops
 the operation without returning a digest. All declared file bytes still get read.
 
-The call in [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L180-L204):
+The call in [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L186-L210):
 
 ```go
 	digest, e := hashFile(path, fmt.Sprintf("%o\x00", info.Mode().Perm()), info.Size())
@@ -196,10 +196,10 @@ See the [measurement scope and reproduction commands](../MEASUREMENTS.md#streami
 ### What remains expensive
 
 Streaming still reads and hashes every byte. It can perform more read calls than
-a whole-file read; cold-device I/O and syscall counts were not measured. The
-executable path in `executionInputs` still reads its bytes in full, and probes
-still start subprocesses. Those costs were intentionally left unchanged. Split
-fingerprint timing further before choosing the next optimization.
+a whole-file read; cold-device I/O and syscall counts were not measured. The executable path and probe subprocesses were left unchanged in this file-input
+optimization. The subsequent [Chapter 13](13-hash-executables-and-measure-probes.md)
+now splits fingerprint timing and streams executable bytes except for direct
+pytest, while preserving fresh probes.
 
 Do not replace content hashing with only modification times and file sizes:
 a changed file can retain both. A file-watching cache needs rules for missed
@@ -431,7 +431,7 @@ inside the JSON record.
 
 | Priority | Candidate | Benefit to prove | Revisit or stop when |
 | --- | --- | --- | --- |
-| 1, local user latency | File-input streaming implemented; next split probe timing and investigate executable hashing | file allocations are reduced; prove further whole-hit gains separately | probes or tiny-file opens dominate instead |
+| 1, local user latency | File-input streaming implemented; Chapter 13 adds executable streaming and probe timings | allocations are reduced; prove further whole-hit gains separately | probes or tiny-file opens dominate instead |
 | 2, output-heavy hits | Reduce repeated strict JSON passes/copies | lower decode CPU/allocations with identical rejection behavior | real outputs are small or parser complexity defeats maintainability |
 | 3, shared contention | Verify an existing blob before rewriting it | fewer writes/syncs and shorter writer lock occupancy | duplicates are rare; verification or locking becomes dominant |
 | 4, local bookkeeping | Avoid unchanged history rewrites | less optional serialization and durable I/O | history semantics or multi-process behavior cannot be preserved |
