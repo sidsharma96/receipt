@@ -123,7 +123,7 @@ class SourceChecks(unittest.TestCase):
         excerpts = []
         for chapter in sorted((DOCS / "guide").glob("*.md")):
             excerpts += re.findall(pattern, chapter.read_text(), re.DOTALL)
-        self.assertEqual(len(excerpts), 9)
+        self.assertEqual(len(excerpts), 11)
         for path, start, end, excerpt in excerpts:
             lines = (REPOSITORY / path).read_text().splitlines()
             covered = "\n".join(lines[int(start) - 1:int(end or start)])
@@ -192,7 +192,8 @@ class SourceChecks(unittest.TestCase):
             with self.subTest(path=str(path.relative_to(DOCS))):
                 if path.name == "book.toml":
                     continue
-                self.assertIn(path.suffix, SOURCE_TYPES)
+                allowed = SOURCE_TYPES | ({".png"} if DOCS / "assets" in path.parents else set())
+                self.assertIn(path.suffix, allowed)
                 self.assertFalse(path.name.startswith("."))
 
 

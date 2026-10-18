@@ -280,6 +280,12 @@ The [dated deployment review amendment](../PHASE-REVIEWS.md#r2-drill--1-data-str
 records the nine review questions. No nightly schedule or monitoring workflow
 was enabled. This supersedes the earlier plan to do automated backups next.
 
+## 18 October 2026: profiling and query-plan investigation
+
+[Chapter 12](12-profile-before-optimizing.md) teaches measured local-hit costs, CPU and allocation profiles, writer waiting, and PostgreSQL index selection. Repeatable Go benchmarks and a disposable SQL fixture accompany raw measurements and screenshots. Existing primary-key lookups use indexes; a partial time index helps a synthetic retention count. No production optimization or schema change was made.
+
+The [full nine-question review](../PHASE-REVIEWS.md#profiling-investigation-18-october-2026) records scope, verification, alternatives and remaining risks.
+
 ## Maintaining these documents
 
 The guide is part of the documentation book. Each chapter is its own Markdown file under `docs/guide/`, listed in `docs/SUMMARY.md`. Edit the chapter that teaches the changed behaviour, then append the dated nine-question review and its evidence to [the review reference](../PHASE-REVIEWS.md). Preserve historical amendments.

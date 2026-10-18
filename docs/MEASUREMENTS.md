@@ -141,3 +141,71 @@ adapter: it needs Node/package-manager identity, lockfiles, configuration,
 dependencies and non-watch execution considered, and it requires
 `--allow-generic`, which does not probe its resolved runtime or dependency
 environment. Do not market that escape hatch as fully supported safe reuse.
+
+## Profiling investigation, 18 October 2026
+
+Start with [Chapter 12](guide/12-profile-before-optimizing.md) for the walkthrough.
+This is an investigation, not a new implementation phase or a production benchmark.
+The baseline production source is `4fd07f7`; the working tree additionally held
+the new benchmark functions, query-plan harness and generated measurements.
+
+Host: Apple M1, macOS arm64, Go 1.27.2 (`GOEXPERIMENT` empty), PostgreSQL 14.17,
+128 MiB shared buffers, 8 KiB database blocks. PostgreSQL ran in a newly initialized
+cluster under ignored `.tools/profiling-20261018`, on loopback port 55438. No live
+server or live database was contacted. Production CI uses a different Go version;
+repeat there before extrapolating JSON/runtime behavior.
+
+Evidence:
+
+- [Raw tool output](measurements/profiling-2026-10-18/tool-output.json): three
+  one-second benchmark repetitions per case, CPU/allocation reports, shared
+  request samples, database/index definitions, text plans and `time -l` output.
+- [Local command samples](measurements/profiling-2026-10-18/local.json): five
+  direct runs, one miss and five hits; zero failed commands; all five hits skipped
+  execution. The workload was `go test -count=1 ./internal/strictjson` in this
+  checkout, with a fresh temporary external cache.
+- JSON plans: [lookup](measurements/profiling-2026-10-18/lookup.json),
+  [status](measurements/profiling-2026-10-18/status.json),
+  [authentication](measurements/profiling-2026-10-18/authentication.json),
+  [evidence](measurements/profiling-2026-10-18/evidence.json),
+  [recount](measurements/profiling-2026-10-18/recount.json),
+  [retention before](measurements/profiling-2026-10-18/retention-before.json),
+  [retention after](measurements/profiling-2026-10-18/retention-after.json), and
+  [broad retention](measurements/profiling-2026-10-18/retention-broad.json).
+  JSON and text plans are separate executions, not identical timing samples.
+- [pprof screenshot](assets/profiling/decode-pprof.png) is the actual local Go
+  profile viewer; the [source view](assets/profiling/decode-source.png) connects samples to code and inlined calls. [SQL screenshot](assets/profiling/query-plans.png) renders
+  captured psql text in a browser, with the source output preserved above.
+
+The SQL harness at `scripts/profile/query_plans.py` extracts actual DDL from Go
+migrations. Its 10,000 entries and 100,000 evidence rows are synthetic, at the
+default row-count limits, but far smaller in JSON width than many real manifests.
+It bypasses application validation deliberately. It does not model actual store
+quotas, blob I/O, network, prepared-plan selection under production data skew,
+SQL write costs, physical disk reads or vacuum under churn. Index-only scans
+benefit from fixture VACUUM. The candidate index is dropped with the schema;
+there is no production index migration. Its reported timing improvement is for
+SELECT count, not full DELETE/retention transactions.
+
+The shared experiment uses the existing `TestMeasurementWorkloads`: 16/128
+entries, 1/4 workers, 8 requests per worker, four modes, 320 HTTP requests total,
+zero request failures. Request-log sinks are memory buffers. Its initial execution
+overlapped the first microbenchmarks and SQL fixture preparation on the same
+machine, so resource contention can affect the numbers. These samples establish
+investigation targets, not clean causal speedups or p99 capacity claims.
+CPU/heap profiles were collected in separate benchmark processes; short portions
+of the fingerprint and decode profiling runs overlapped. The isolated `time -l`
+decode run and local command experiment are additional observations, not matched
+before/after optimization comparisons. OS caches were warm; the system's other
+activity was not controlled.
+
+The local experiment completed before the new screenshots/chapter were written.
+No files were edited during those eleven command invocations. Its exact input
+manifest was not retained, so later reruns may fingerprint different documentation
+bytes. A later directory census is not an exact manifest for those samples.
+Raw Go profiles and test binaries remain local under ignored `.tools`; only
+textual reports and screenshots are committed. The whole-process cycle/instruction
+counts include benchmark calibration; no per-function hardware counter, syscall
+trace, network capture, power measurement, production RSS or cold-device test was
+performed. Zero block-I/O counts in the decode-only process do not describe the
+filesystem paths.

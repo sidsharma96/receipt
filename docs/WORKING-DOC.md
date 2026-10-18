@@ -1,6 +1,6 @@
 # Follow one test run
 
-Updated 15 October 2026. This guide explains Phases 1–7 and the single-server HTTPS deployment. Git history records committed revisions. Chapter 9 follows the deployed connection and a one-off R2 recovery exercise. Chapter 11 introduces the [design defense](DESIGN-DEFENSE.md), which answers the questions an expert reviewer would ask. Monitoring remains deferred; no backup schedule is enabled.
+Updated 18 October 2026. This guide explains Phases 1–7 and the single-server HTTPS deployment. Git history records committed revisions. Chapter 9 follows the deployed connection and a one-off R2 recovery exercise. Chapter 11 introduces the [design defense](DESIGN-DEFENSE.md), which answers the questions an expert reviewer would ask. Monitoring remains deferred; no backup schedule is enabled.
 
 You have a Python project and run its tests with `uv run pytest`. [Pytest](GLOSSARY.md#pytest) checks your code. [Uv](GLOSSARY.md#uv) starts it in the project's Python environment. Receipt sits around that command: it can remember a successful run and show its saved output when the recorded inputs match next time.
 
@@ -25,5 +25,6 @@ Read the chapters in order to understand the program. Each ends with a few quest
 9. [Follow a request to the deployed server](guide/09-follow-a-request-to-the-deployed-server.md): DNS, HTTPS, Caddy, and recovery.
 10. [Final walkthrough: miss, hit, conflict and recovery](guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md): one command through four situations.
 11. [Defending the design](guide/11-defending-the-design.md): how the design defense is organised.
+12. [Make a cache hit cheaper](guide/12-profile-before-optimizing.md): measured CPU, memory, waiting and query plans; optimization candidates remain unimplemented.
 
 To inspect setup commands, use the [README](https://github.com/sidsharma96/receipt/blob/main/README.md). To examine the full nine-question phase reviews, test records, and dated decisions, use the [review reference](PHASE-REVIEWS.md). The reference preserves earlier claims and their amendments. This guide describes current behaviour directly so you do not have to reconstruct it from history. Dated changes to the guide itself are in [Updates and documentation records](guide/updates.md).

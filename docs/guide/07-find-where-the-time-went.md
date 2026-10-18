@@ -107,3 +107,7 @@ Before 15 October 2026 each upload instead walked every output file and ran `met
 </details>
 
 <!-- questions:end -->
+
+## Continue with CPU, memory and SQL plans
+
+[Chapter 12](12-profile-before-optimizing.md) follows a measured local hit, inspects Go profiles, and compares PostgreSQL plans with and without a candidate retention index. It separates current behavior from proposed optimizations.

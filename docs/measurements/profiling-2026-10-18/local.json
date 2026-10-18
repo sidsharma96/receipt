@@ -1,0 +1,149 @@
+{
+  "samples": [
+    {
+      "kind": "direct",
+      "client_ns": 1307717375,
+      "exit_code": 0
+    },
+    {
+      "kind": "direct",
+      "client_ns": 832320417,
+      "exit_code": 0
+    },
+    {
+      "kind": "direct",
+      "client_ns": 819042959,
+      "exit_code": 0
+    },
+    {
+      "kind": "direct",
+      "client_ns": 416917250,
+      "exit_code": 0
+    },
+    {
+      "kind": "direct",
+      "client_ns": 852732458,
+      "exit_code": 0
+    },
+    {
+      "kind": "miss",
+      "client_ns": 1716121500,
+      "exit_code": 0,
+      "stages": [
+        {
+          "stage": "fingerprint",
+          "calls": 2,
+          "ns": 553174501
+        },
+        {
+          "stage": "execution",
+          "calls": 1,
+          "ns": 691113875
+        },
+        {
+          "stage": "lookup",
+          "calls": 1,
+          "ns": 45667
+        }
+      ],
+      "receipt_ns": 1315642334,
+      "executed": true
+    },
+    {
+      "kind": "hit",
+      "client_ns": 331325125,
+      "exit_code": 0,
+      "stages": [
+        {
+          "stage": "fingerprint",
+          "calls": 1,
+          "ns": 267129584
+        },
+        {
+          "stage": "lookup",
+          "calls": 1,
+          "ns": 5271625
+        }
+      ],
+      "receipt_ns": 306690750,
+      "executed": false
+    },
+    {
+      "kind": "hit",
+      "client_ns": 712679959,
+      "exit_code": 0,
+      "stages": [
+        {
+          "stage": "fingerprint",
+          "calls": 1,
+          "ns": 573586958
+        },
+        {
+          "stage": "lookup",
+          "calls": 1,
+          "ns": 10397583
+        }
+      ],
+      "receipt_ns": 671475250,
+      "executed": false
+    },
+    {
+      "kind": "hit",
+      "client_ns": 403785667,
+      "exit_code": 0,
+      "stages": [
+        {
+          "stage": "fingerprint",
+          "calls": 1,
+          "ns": 302182708
+        },
+        {
+          "stage": "lookup",
+          "calls": 1,
+          "ns": 5944125
+        }
+      ],
+      "receipt_ns": 365995083,
+      "executed": false
+    },
+    {
+      "kind": "hit",
+      "client_ns": 357265583,
+      "exit_code": 0,
+      "stages": [
+        {
+          "stage": "fingerprint",
+          "calls": 1,
+          "ns": 189178250
+        },
+        {
+          "stage": "lookup",
+          "calls": 1,
+          "ns": 2807083
+        }
+      ],
+      "receipt_ns": 315114042,
+      "executed": false
+    },
+    {
+      "kind": "hit",
+      "client_ns": 358913208,
+      "exit_code": 0,
+      "stages": [
+        {
+          "stage": "fingerprint",
+          "calls": 1,
+          "ns": 223358583
+        },
+        {
+          "stage": "lookup",
+          "calls": 1,
+          "ns": 10345458
+        }
+      ],
+      "receipt_ns": 340642917,
+      "executed": false
+    }
+  ],
+  "scope": "one selected command; warm OS caches; no edits between runs"
+}

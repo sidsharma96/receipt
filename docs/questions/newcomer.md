@@ -346,3 +346,51 @@ No. The key describes the inputs Receipt records, not every influence on a test.
 **Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
 
 </details>
+
+### Why can a cache hit still be expensive?
+<!-- check: guide/12-profile-before-optimizing.md -->
+
+**Level:** Newcomer
+
+The tests did not execute, but Alice still waited 359 ms. Which work can remain, and which measurement should she inspect first?
+
+<details>
+<summary>Answer</summary>
+
+Receipt must discover and hash inputs, probe the toolchain, construct the key, read and validate the saved result, replay output and update bookkeeping. Start with wall time and the Receipt timing stages. In the recorded workload fingerprinting had a 267 ms median, so a database index would not address the main cost of this standalone local hit.
+
+**Learn more:** [Make a cache hit cheaper](../guide/12-profile-before-optimizing.md)
+
+</details>
+
+### Is allocated memory the same as peak memory?
+<!-- check: guide/12-profile-before-optimizing.md -->
+
+**Level:** Newcomer
+
+A benchmark allocates about 15 MB each time it decodes a result. Does one hundred repetitions prove that the process needs 1.5 GB of RAM at once?
+
+<details>
+<summary>Answer</summary>
+
+No. Allocation bytes count memory created over time; the garbage collector can reclaim earlier objects. Peak resident size measures a different quantity: memory resident in the process at its high point. Inspect both allocation profiles and process memory, and remember that separate PostgreSQL and child processes are not included in a Go heap profile.
+
+**Learn more:** [Avoid repeatedly parsing large output](../guide/12-profile-before-optimizing.md#the-second-opportunity-avoid-repeatedly-parsing-large-output)
+
+</details>
+
+### Does a sequential scan prove that an index is missing?
+<!-- check: guide/12-profile-before-optimizing.md -->
+
+**Level:** Newcomer
+
+A plan says sequential scan. Should we always add an index? What did the retention experiment actually establish?
+
+<details>
+<summary>Answer</summary>
+
+No. Reading all rows can be sensible for an exact recount, a tiny table or a broad selection. The selective retention count benefited from a partial time index: it visited three cached blocks instead of 910. That does not prove faster full deletion, which also changes evidence, reads JSON sizes and commits. Compare complete workloads and index maintenance costs before adopting it.
+
+**Learn more:** [Are our indexes appropriate?](../guide/12-profile-before-optimizing.md#are-our-indexes-appropriate)
+
+</details>

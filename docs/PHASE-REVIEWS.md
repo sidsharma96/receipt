@@ -2421,3 +2421,134 @@ calling this a disaster-recovery plan, restore onto a new machine and arrange a
 separately protected recovery-key copy. If backup deletion becomes a concern,
 design retention protection and narrower credentials rather than assuming
 encryption prevents deletion.
+
+## Profiling investigation, 18 October 2026
+
+This is an evidence/tooling amendment, not Phase 8. Production cache behavior,
+wire bytes, lock protocol and migrations remain unchanged. See
+[Chapter 12](guide/12-profile-before-optimizing.md) for the beginner sequence and
+[measurement scope](MEASUREMENTS.md#profiling-investigation-18-october-2026) for
+raw data. The comparisons below are retrospective proposals, not reconstructed
+historical decisions.
+
+### Profiling — 1. Data structures
+
+A local hit rebuilds a manifest of named input hashes and decodes a checksummed
+JSON result. `fileInput` reads a byte slice, copies it behind a permission prefix,
+and hashes the combination. An 8 MiB fixture allocated about 16 MiB per call.
+The actual excerpt and explanation are in the chapter, attributed to
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L180-L204).
+A streaming hasher is a candidate for bounded temporary memory, not a way to avoid
+reading declared bytes. Primary-key B-trees map result keys, credential IDs and
+(key,digest) evidence pairs to rows. No JSON-path index is needed by current queries.
+
+### Profiling — 2. Architecture and extension boundaries
+
+For the measured local command: fingerprint, local lookup/validation, replay and
+history write. Median hit wall time was 359 ms, fingerprint 267 ms and lookup
+5.94 ms, using separate medians. Optimize that path before unrelated server SQL.
+Shared uploads additionally authenticate, acquire lifecycle locks, publish blobs,
+then metadata. New benchmark functions isolate file hashing, codecs and duplicate
+blob publication without adding production dependencies. The Python SQL harness
+uses actual table DDL but synthetic JSON; it measures database access paths, not
+the application's whole retrieval contract.
+
+### Profiling — 3. Primitives and concurrency
+
+The shared server's exclusive writer protocol makes writers wait for one another.
+At 128 entries, four duplicate-upload workers had 67.39 ms median latency and
+47.99 ms mean database-lock-call time; that call includes round trip plus waiting.
+The candidate optimization is less redundant work while holding the lock, not
+unlimited goroutines or removing coordination. Go sampling profiles and allocation
+counters observe the Go process; PostgreSQL and child processes need their own
+measurements. Local HTTP avoids TLS/WAN effects in this fixture.
+
+### Profiling — 4. Pitfalls and debugging
+
+A CPU profile does not explain all wall-clock waiting. Cumulative profile columns
+overlap. `B/op` measures allocated bytes, not peak RSS. Warm buffer hits are not
+device reads. `EXPLAIN ANALYZE` runs SQL, including writes if supplied. A candidate
+count-query index improvement does not establish faster full deletion. The SQL
+fixture was initially rejected because VACUUM followed SET in one multi-command
+transaction; separate psql commands fixed the harness and its cleanup removed the
+failed schema. Toolchain-specific JSON internals and overlapping measurement work
+limit conclusions. No failure was hidden as a successful measurement.
+
+### Profiling — 5. Hot and cold paths
+
+Ordinary hits repeatedly fingerprint and decode. The 1 MiB decode fixture took
+16.06 ms and allocated 14.36 MiB/op; JSON string scanning led the CPU profile.
+The 8 MiB fingerprint fixture took 5.24 ms with roughly 16 MiB/op allocations.
+Duplicate 1 MiB blob publication took 11.2–20.9 ms including durable writes.
+These sizes deliberately expose scaling costs, not typical-output frequency.
+Recount and retention are occasional maintenance. The candidate partial time
+index cut a 90-row retention count from 910 buffer hits to 3; the existing
+primary-key result lookup needed 4. No production workload-frequency estimate
+was collected, so this is a conditional prioritization.
+
+### Profiling — 6. Guarantees, assumptions and non-goals
+
+Only profiling fixtures, documentation and evidence were added. All production
+hashing, validation, publication and quarantine guarantees remain as before.
+The SQL experiment uses a disposable local cluster and drops its unique schema;
+its valid relational rows need not be valid Receipt result records. Passing tests
+and index plans do not establish deterministic outputs, hermetic input discovery,
+lock freedom or production capacity. The experiment does not claim hardware-cycle
+attribution, power savings, a new parser, a production index, or a deployed change.
+
+### Profiling — 7. Retrospective alternatives
+
+Streaming file hashing should preserve byte identity and reduce temporary memory;
+mtime-only memoization would weaken input detection without a new contract.
+One-pass strict decoding could reduce scans/copies but must preserve all malformed
+JSON refusals; a new binary format would require compatibility work. A verified
+existing-blob fast path could avoid duplicate writes; existence-only acceptance
+would miss corruption. Skipping unchanged history writes could reduce optional
+I/O but requires multi-process semantics. A partial retention index fits the
+predicate; redundant key or GIN JSON indexes add write/storage costs without
+serving current lookup shapes. None was shipped as a production optimization.
+
+### Profiling — 8. Evidence, verification and remaining risk
+
+Raw benchmarks, CPU/allocation reports, process resource totals, HTTP samples and
+EXPLAIN plans are linked from MEASUREMENTS. Screenshots show the actual pprof
+viewer and a clearly labeled rendering of raw psql output; text equivalents remain
+readable offline. The complete local Go tests, race tests against the disposable
+database, lint and documentation checks are recorded in the final verification
+amendment below. The measurement harness itself is not an assertion that a fixed
+latency must pass. Untested areas include real large manifests, sustained load,
+full prune speed with the candidate index, cold device I/O, syscall counts,
+production memory, Linux/CI performance, new-host effects and adversarial workloads
+against proposed (unimplemented) optimizations.
+
+### Profiling — 9. Conditions for revisiting
+
+Revisit file streaming after measuring small-file and probe overhead and proving
+key equivalence. Revisit JSON decoding when representative output distributions
+show material decoding/GC cost and a replacement preserves rejection semantics.
+Revisit duplicate-blob publication when duplicate frequency and lock occupancy
+justify the extra branch and corruption/race tests. Revisit history durability
+only with an explicit bookkeeping policy. Promote the retention index only after
+full-prune and write/vacuum measurements justify its maintenance cost. Revisit
+admission limits using measured process-plus-database memory and tail latency,
+not nominal CPU count or an index microbenchmark alone.
+
+#### Profiling verification amendment, 18 October 2026
+
+`make build`, `make lint` (zero issues), `make integration` (uncached full Go
+suite with the disposable PostgreSQL URL), `make race` against the same local
+cluster, and `make docs` (18 checks) passed. Cargo runtime tests remain opt-in and
+were not enabled. The SQL fixture completed and its schema was removed; no
+`receipt_%` schema remained after integration cleanup. The initial missing
+chapter-question block was fixed by adding three bank questions and synchronizing
+with `scripts/docs/sync_questions.py` before the successful documentation build.
+The excerpt checker now expects eleven attributed guide excerpts; PNG files are
+allowed only under documentation assets, with other source-file restrictions intact.
+
+Playwright with installed Chrome rendered the book at 1440 and 390 pixels wide.
+Images loaded, the page had no horizontal overflow at those sizes, and a question
+answer expanded on click. Screenshots of pprof, its source view and the captured
+psql output were inspected. On a phone the normal reading view requires the
+sidebar closed; leaving the desktop sidebar open while resizing squeezes the
+content. Source Markdown and text equivalents remain available offline. These
+layout checks do not establish learning effectiveness or exhaustive accessibility.

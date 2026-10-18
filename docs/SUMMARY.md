@@ -18,6 +18,7 @@
 - [9. Follow a request to the deployed server](guide/09-follow-a-request-to-the-deployed-server.md)
 - [10. Final walkthrough: miss, hit, conflict and recovery](guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md)
 - [11. Defending the design](guide/11-defending-the-design.md)
+- [12. Make a cache hit cheaper](guide/12-profile-before-optimizing.md)
 
 # Defending the design
 
