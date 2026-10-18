@@ -315,3 +315,12 @@ require new teaching chapters in AGENTS.md.
 The guide is part of the documentation book. Each chapter is its own Markdown file under `docs/guide/`, listed in `docs/SUMMARY.md`. Edit the chapter that teaches the changed behaviour, then append the dated nine-question review and its evidence to [the review reference](../PHASE-REVIEWS.md). Preserve historical amendments.
 
 Build the book with `mdbook build docs` and run the documentation checks with `python3 -m unittest discover -s scripts/docs -p 'test_*.py'`. The checks confirm that code links still point at their symbols, that relative links and heading anchors resolve, and that question answers stay in sync with the chapters that quote them.
+
+## 18 October 2026: reuse the initial Git root
+
+[Chapter 14](14-reuse-the-git-root.md) explains removing the duplicate initial
+root query while preserving fresh file lists and post-execution discovery.
+The old/new experiment replayed 60 old entries with matching keys; generic-root
+hit latency fell from 70.42 to 52.43 ms, with near-unchanged peak RAM. Go timings
+were noisier. The [full review](../PHASE-REVIEWS.md#git-root-reuse-18-october-2026)
+records the nine questions, tests, assumptions and measurement limitations.

@@ -262,7 +262,7 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 `internal/fingerprint` describes the inputs and calculates the key, starting at `Build` and `Manifest.Key`. `internal/app` reads the command line and combines lookup, execution, verification and publication, starting at `run`. `internal/runner` starts the test command and captures its output. `internal/cache` stores results locally, over HTTP and in shared storage. `internal/strictjson` checks JSON structure, and `internal/auth` defines credentials and permissions. All of these packages run inside one client or server process; a package is not a separate service.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L139)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L143)
 
 </details>
 
@@ -456,5 +456,64 @@ The command is an executable script named `pytest`. Why does Receipt still read 
 Receipt reads its shebang to choose the Python interpreter. Keeping the existing full read preserves hashing and parsing from the same bytes, including long first lines and missing newlines. A future single-pass collector would need to preserve that accepted input behavior; simply adding a short line cap or reading the header separately could change the contract.
 
 **Learn more:** [Direct pytest](../guide/13-hash-executables-and-measure-probes.md#preserve-the-direct-pytest-exception)
+
+</details>
+
+### Why can the first fingerprint reuse the Git root?
+<!-- check: guide/14-reuse-the-git-root.md -->
+
+**Level:** Newcomer
+
+Receipt just found `/work/project` to load configuration. Which work can its first
+fingerprint reuse, and which work must still happen?
+
+<details>
+<summary>Answer</summary>
+
+It can reuse that root string within this invocation, assuming the repository
+topology stays stable during initial collection. It must still ask Git for the
+current file list and hash the current inputs. This removes one root query, not
+the discovery of changed files. It is not a filesystem snapshot.
+
+**Learn more:** [14. Reuse the Git root](../guide/14-reuse-the-git-root.md)
+
+</details>
+
+### Why discover the root again after tests run?
+<!-- check: guide/14-reuse-the-git-root.md -->
+
+**Level:** Newcomer
+
+A command creates a new Git repository in its nested working directory. What
+should the final fingerprint do?
+
+<details>
+<summary>Answer</summary>
+
+It should ask Git for the root again. The new nested root changes the manifest,
+so the before/after keys differ and Receipt refuses to store the result. Reusing
+the initial root after execution would weaken that check.
+
+**Learn more:** [14. Reuse the Git root](../guide/14-reuse-the-git-root.md)
+
+</details>
+
+### Why did removing a process barely change peak RAM?
+<!-- check: guide/14-reuse-the-git-root.md -->
+
+**Level:** Newcomer
+
+Receipt starts one fewer Git process, and the measured hit is faster. Why might
+maximum resident memory remain almost unchanged?
+
+<details>
+<summary>Answer</summary>
+
+Peak memory measures the largest reported footprint, not the sum of memory used
+over time. The removed Git process ran sequentially; another part of the run can
+still set the same peak. Saving a process can reduce CPU and waiting without
+reducing that maximum.
+
+**Learn more:** [14. Reuse the Git root](../guide/14-reuse-the-git-root.md)
 
 </details>

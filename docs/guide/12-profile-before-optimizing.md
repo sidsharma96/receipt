@@ -117,7 +117,7 @@ prefix-plus-file slice. The new path writes the prefix to the hash, repeatedly
 reads and hashes through one buffer, then returns the digest. A read error stops
 the operation without returning a digest. All declared file bytes still get read.
 
-The call in [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L186-L210):
+The call in [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L190-L214):
 
 ```go
 	digest, e := hashFile(path, fmt.Sprintf("%o\x00", info.Mode().Perm()), info.Size())
@@ -527,3 +527,7 @@ The same SHA-256 state receives the same bytes in the same order; chunk boundari
 </details>
 
 <!-- questions:end -->
+
+Current update (18 October): [Chapter 14](14-reuse-the-git-root.md) removes the
+duplicate initial Git-root query. Earlier measurements in this chapter remain
+historical; fresh file listing and post-run root discovery still run.

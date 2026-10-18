@@ -41,7 +41,7 @@ took zero time. These are elapsed durations, not CPU-only times.
 | files | FileBlobs Get/Put/Inventory/Remove, including applicable hashing and filesystem work |
 | inventory | Combined metadata usage and file inventory during stats, limit changes and startup recounts (write admission before 15 October 2026) |
 | fingerprint | Input discovery, content hashing and runtime probes |
-| discovery | Build root lookup and Git/extra-input discovery (18 October) |
+| discovery | Fresh Git/extra-input discovery; standalone/post-run Build also includes root lookup (see Git root reuse below) |
 | input_files | Ordinary declared-file hashing loop (18 October) |
 | executable | Command executable bytes, excluding path lookup (18 October) |
 | toolchain | Non-Cargo subprocess probe, normalization and output hash (18 October) |
@@ -419,3 +419,80 @@ path; only Go/Python/direct-pytest got real cross-version replay measurements.
 The full-read pytest exception remains potentially unbounded, matching its old
 contract. Concurrent replacement between hashing and probing/execution remains
 outside snapshot guarantees.
+
+## Git root reuse, 18 October 2026
+
+Implementation: [chapter 14](guide/14-reuse-the-git-root.md). Baseline is unmodified
+`97b833e`; candidate reuses settings' freshly discovered root only for the initial
+CLI fingerprint. `Build` and post-execution root discovery stay fresh. This reduces
+Git subprocesses on a hit from three to two, and on an ordinary miss from five to
+four. It does not cache listings, change Git flags or skip the post-run scan.
+
+An initial ten-sample read-only investigation in this repository measured
+`git rev-parse --show-toplevel` at median 16.07 ms and `git ls-files -z --cached
+--others --exclude-standard` at 20.47 ms. Output sizes were 48 and 7,583 bytes.
+Python's monotonic clock surrounded each subprocess. This separates the commands,
+not Git startup from its internal filesystem operations. The root calls were
+measured before the listing calls, so this initial investigation is not an
+alternating performance comparison. [Raw samples](measurements/discovery-2026-10-18/repository-breakdown.json).
+
+The matched comparison used macOS arm64, Go 1.27.2 and Apple Git 2.54.0
+(Apple Git-157). Both CLIs were built with the external linker. The temporary Git
+fixture has 256 × 4 KiB input files, go.mod, one Go test, a .gitignore, one ignored
+file and an empty nested directory. Cache data lives outside it. Before populates
+the cache; ten alternating before/after process pairs per case then replay those
+entries. Measurements run sequentially with local test/build work stopped, warm
+OS caches and uncontrolled background activity. No packages were installed.
+
+[Raw comparison](measurements/discovery-2026-10-18/comparison.json) records all 60
+hits, full key comparisons for all three cases, timing stages, resource counters,
+platform versions and 20 separate Git-command resource measurements. All commands
+succeeded; every expected hit omitted execution. Both CLIs produced identical
+full keys in each case. These fixture keys depend on temporary absolute paths
+and environment, so a reproduction need not yield the same literal key.
+
+| Case | Version | Receipt median (range), ms | Discovery median, ms | CPU user + system, s | Peak RSS, decimal MB |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Generic root | Before | 70.42 (68.58–77.29) | 36.35 | 0.06 | 17.69 |
+| Generic root | After | 52.43 (50.44–57.83) | 19.02 | 0.04 | 17.60 |
+| Generic nested | Before | 74.49 (68.42–136.49) | 38.70 | 0.06 | 17.79 |
+| Generic nested | After | 55.01 (51.29–97.49) | 19.58 | 0.04 | 17.61 |
+| Go | Before | 182.50 (130.49–235.17) | 40.82 | 0.135 | 18.05 |
+| Go | After | 123.21 (107.90–179.64) | 22.02 | 0.105 | 17.80 |
+
+Latency comes from Receipt's full diagnostic duration. `/usr/bin/time -l` measures
+process resources, including child CPU accounting; user/system values have only
+hundredth-second resolution. RSS is the reported maximum resident set size, not a
+sum of simultaneous parent/child footprints. Removing a sequential subprocess
+need not reduce the largest peak. Raw hardware instruction/cycle counters are
+retained as reported; they are not a complete per-stage or whole-process-tree
+CPU profile and are not used to claim a cycle reduction percentage.
+
+The generic-root latency ranges do not overlap in these samples, and the saved
+~18 ms is consistent with removing one root query. The Go ranges overlap, and
+unchanged toolchain-probe medians varied from 56.37 to 49.14 ms. Do not attribute
+its full 59.29 ms median difference to root reuse. Individual stage medians need
+not sum to parent medians. The initial CLI discovery stage now has one call;
+standalone/post-run Build still has two. Settings' root query stays outside those
+stages. The diagnostic's apparent substage reduction reflects removed work, not
+a new boundary moved around the settings query.
+
+The measured warm-cache block-I/O counters were zero. That does not mean there
+were no file operations: metadata reads, cached reads and system calls remain.
+One fewer Git process is established by an app regression test; syscall counts,
+cold-device/network filesystem behavior, energy, large repositories and Windows
+performance were not measured. Runtime fixtures cover generic and Go commands;
+Python/Rust compatibility is inferred from the unchanged shared discovery path,
+not measured here. PostgreSQL and Rust opt-in suites were not enabled locally.
+
+Reproduction (run from the repository root, using an isolated checkout of
+`97b833e` to build BEFORE rather than resetting current user changes):
+
+```sh
+go build -ldflags=-linkmode=external -o /tmp/receipt-discovery-after ./cmd/receipt
+python3 scripts/profile/compare_discovery.py /path/to/receipt-before /tmp/receipt-discovery-after /tmp/discovery-comparison.json
+```
+
+The script is macOS-specific because it parses `/usr/bin/time -l`. It creates and
+removes temporary fixtures, alternates order, checks replay and compares keys.
+No raw environment values or probe output are published in its records.

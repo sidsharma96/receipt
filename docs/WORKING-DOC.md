@@ -27,5 +27,6 @@ Read the chapters in order to understand the program. Each ends with a few quest
 11. [Defending the design](guide/11-defending-the-design.md): how the design defense is organised.
 12. [Make a cache hit cheaper](guide/12-profile-before-optimizing.md): measured CPU, memory, waiting and query plans; streaming file-input hashing is implemented, with other candidates still deferred.
 13. [Hash executables and measure their probes](guide/13-hash-executables-and-measure-probes.md): executable streaming, fresh probes, measured substeps and compatibility with old cache entries.
+14. [Reuse the Git root within one invocation](guide/14-reuse-the-git-root.md): remove one redundant Git process while preserving fresh file discovery and post-run validation.
 
 To inspect setup commands, use the [README](https://github.com/sidsharma96/receipt/blob/main/README.md). To examine the full nine-question phase reviews, test records, and dated decisions, use the [review reference](PHASE-REVIEWS.md). The reference preserves earlier claims and their amendments. This guide describes current behaviour directly so you do not have to reconstruct it from history. Dated changes to the guide itself are in [Updates and documentation records](guide/updates.md).

@@ -2437,7 +2437,7 @@ A local hit rebuilds a manifest of named input hashes and decodes a checksummed
 JSON result. `fileInput` reads a byte slice, copies it behind a permission prefix,
 and hashes the combination. An 8 MiB fixture allocated about 16 MiB per call.
 The actual excerpt and explanation are in the chapter, attributed to
-[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L186-L210).
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L190-L214).
 A streaming hasher is a candidate for bounded temporary memory, not a way to avoid
 reading declared bytes. Primary-key B-trees map result keys, credential IDs and
 (key,digest) evidence pairs to rows. No JSON-path index is needed by current queries.
@@ -2568,7 +2568,7 @@ For a file containing `abc` with mode `0600`, the old implementation made bytes
 into one SHA-256 state through a reusable byte slice capped at 32 KiB. Small
 files use a smaller buffer. No chunk digests are combined, so the algorithm is
 unchanged. The actual code excerpts in Chapter 12 are attributed to
-[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L186-L210)
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L190-L214)
 and [`hashFile`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/file_hash.go#L12-L28).
 The manifest's fields, sorting and JSON encoding are unchanged.
 
@@ -2805,3 +2805,119 @@ chapter, mobile opening and standalone flow SVG were visually inspected. This
 is a layout spot check, not a complete accessibility audit. Existing code-link
 line anchors were refreshed after source movement; older reviews retain their
 dated conclusions.
+
+## Git root reuse, 18 October 2026
+
+A run from `/work/project/nested` first asks Git for `/work/project` to load
+configuration. The old first fingerprint repeated that query. The new initial
+call receives the root already observed; a later post-execution fingerprint still
+asks Git again. [Chapter 14](guide/14-reuse-the-git-root.md) teaches the sequence;
+[measurements](MEASUREMENTS.md#git-root-reuse-18-october-2026) retain raw evidence.
+
+### Git discovery — 1. Data structures
+
+The reused observation is the existing root string, passed explicitly with the
+working directory. There is no persistent cache or new map. The existing
+`map[string]bool` still deduplicates freshly enumerated paths, and the manifest
+still sorts inputs before hashing. A root path is not a captured filesystem state.
+
+### Git discovery — 2. Architecture and extension boundaries
+
+Settings resolves the root and reads configuration; the initial CLI fingerprint
+uses `BuildAtRoot`; both that entry point and `Build` share `buildAtRoot` for
+listing, hashing, environment collection and probes. The post-run caller retains
+`Build`, which resolves Git root anew. The actual initial call in
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333)
+is `fingerprint.BuildAtRoot(ctx, root, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)`.
+The root must come from this invocation's settings discovery. The API comment
+forbids retaining it across execution or invocations; it is a caller contract,
+not a runtime proof of root freshness. No generic discovery service was added.
+
+### Git discovery — 3. Primitives and concurrency
+
+The change passes a string between sequential Go functions and removes one
+`git rev-parse` subprocess. Fresh `git ls-files` remains a context-bound process;
+its NUL-separated output preserves unusual filenames. No goroutines, networking,
+locks, global state or background refresh were added. Cancellation still reaches
+file discovery, and errors still prevent successful fingerprint construction.
+
+### Git discovery — 4. Pitfalls and debugging
+
+Reusing a root after execution would miss a command creating a nested repository.
+A regression creates that repository and verifies refusal to store the result.
+Reusing file lists would omit newly created files; a regression verifies fresh
+listing even with the same supplied root. The initial CLI discovery timing now
+has one call, whereas standalone/post-run Build still has two. Settings' earlier
+query is outside the fingerprint timing. Do not confuse this with all Git work
+being removed, or with a newly measured settings span.
+
+### Git discovery — 5. Hot and cold costs
+
+Every cache hit benefits from one fewer root query: three Git subprocesses become
+two. A normal miss removes one of five, retaining both post-run queries. Initial
+repository measurements found 16.07 ms root lookup and 20.47 ms file listing. The
+controlled generic-root hit median fell 70.42 to 52.43 ms; discovery fell 36.35 to
+19.02 ms. CPU medians fell 0.06 to 0.04 seconds at coarse accounting resolution.
+Peak RSS remained near 17.7 MB. Go whole-hit timings were noisy and overlapping;
+only the removed query and measured discovery reduction are directly explained
+by this change. Remaining probes, file reads and sorting still cost work.
+
+### Git discovery — 6. Guarantees, assumptions and non-goals
+
+For a stable repository root, the same directory, configuration, Git listing and
+input contents reach the same manifest encoding, so keys remain compatible.
+Tracked/deleted files, untracked nonignored files, explicit extras and config
+inclusion keep their old rules. Initial configuration and fingerprint now share
+one root observation. Repository topology must stay stable during that initial
+collection. Concurrent rename/replacement can still race it; removing a query
+changes the possible interleavings and is not an atomic-snapshot guarantee.
+Stable keys do not guarantee deterministic outputs or discover undeclared inputs.
+No Git ignore reimplementation, listing cache or security-boundary claim is made.
+
+### Git discovery — 7. Alternatives and decisions
+
+For this change, a longer-lived root cache was deferred because repository
+identity can change between invocations. Reusing the initial root post-execution
+was rejected because it weakens the existing stability check. A hand-written
+filesystem walk would need to replicate index/ignore/deleted-file semantics;
+removing a redundant query avoids that contract change. Parallel Git calls could
+overlap waiting but keep resource work and add coordination. Parsing optimizations
+remain possible for very large listings, but the measured startup/query cost
+motivated removing a whole process first. These are current comparisons, not
+claims about undocumented earlier decisions.
+
+### Git discovery — 8. Evidence and limits
+
+New tests compare keys for root/nested working directories, whitespace/newline
+names, deleted tracked files, ignored and explicit inputs, and configuration
+inclusion. They check fresh untracked-file discovery, cancellation, empty command,
+missing extras and symlink refusal. An actual Git wrapper counts root/list calls:
+two of each on a miss (including post-run), one of each on a hit. A command that
+creates a nested repository is not cached. The matched CLI experiment replayed
+all 60 expected old entries and compared full keys in three cases. It used
+unmodified `97b833e` as baseline, not two versions of the new implementation.
+
+`make check`, `make race` and `make build` passed locally. Database/Rust opt-in
+integration tests were not enabled for this discovery-only change. Warm macOS
+measurements are not Windows, network-filesystem, cold-storage or power evidence.
+Linked worktrees, sparse checkouts and submodule topologies were not separately
+exercised in the new comparison; Git's unchanged commands still interpret them.
+Concurrent root replacement and custom Git wrappers with side effects are not
+covered by key-compatibility guarantees. Documentation/render verification is
+recorded below when performed; deployment is checked after pushing.
+
+### Git discovery — 9. Revisit conditions
+
+Revisit the explicit-root API if another caller cannot establish its short
+lifetime, or if settings loading is reorganized. Retain post-run fresh discovery
+when changing execution. Revisit listing parsing if large-repository profiles
+show allocation pressure, and investigate Git/probe startup with representative
+filesystems before adding concurrency or persistent caches. Broaden latency
+samples before claiming the whole Go-run median difference as a stable benefit.
+
+Documentation verification: `make docs` passed all 18 checks, including matching
+source excerpts/anchors, bank questions and built links. Chrome rendered chapter
+14 at 1440 px and 390 px widths with no document overflow or broken images; the
+first answer disclosure opened. Desktop and mobile opening screenshots were
+visually inspected. Wide execution traces scroll within code boxes. This is a
+layout spot check, not a complete accessibility or teaching-quality audit.

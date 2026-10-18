@@ -11,6 +11,10 @@ streaming for executable bytes that the probe does not need to inspect, and
 confirmed that old cache entries still replay. We deliberately kept probes
 fresh. This chapter explains that decision and the measured limits.
 
+Current update: [Chapter 14](14-reuse-the-git-root.md) now removes the duplicate
+initial root query. The measurements below describe the executable optimization
+before that change; initial CLI discovery now has one timed call rather than two.
+
 ## Follow the executable and probe separately
 
 For a Go invocation the sequence is:

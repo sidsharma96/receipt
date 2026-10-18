@@ -248,7 +248,7 @@ The decisions are ordered so that each one depends only on earlier ones.
 **Decision.** The key is the SHA-256 of a manifest: a JSON record of everything
 Receipt knows to record about one test invocation. The
 [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
-type has these fields, and [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L97-L139)
+type has these fields, and [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L97-L143)
 fills them.
 
 | Field or input kind | Contents |
@@ -262,16 +262,16 @@ fills them.
 | `executable` input | The absolute path of the resolved command and the SHA-256 of its bytes. |
 | `toolchain` inputs | A runtime probe: Python version and installed distributions, `go env -json`, or the Cargo tool, metadata and source hashes. |
 
-[`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L141-L187)
-collects the paths. [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L189-L211)
+[`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L145-L191)
+collects the paths. [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L193-L215)
 hashes each one as `SHA-256(octal permission bits + NUL byte + file bytes)`, so
 `chmod +x` changes the key. A tracked file that was deleted hashes as
 `SHA-256("deleted")`. That marker cannot equal a real file's hash except by a
 SHA-256 collision, because every real preimage contains a NUL byte after the
 permission digits and the string `deleted` contains none. Symlinks, submodules
 and other non-regular files make `Build` fail, and Receipt then runs the command
-uncached. [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L213-L226)
-hashes the environment, and [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L265-L288)
+uncached. [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L217-L230)
+hashes the environment, and [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L269-L292)
 selects the runtime probe.
 
 **Alternatives.**
@@ -403,7 +403,7 @@ measurements show hashing, not reading, is the bottleneck.
 **Decision.** Since 15 October 2026, Receipt's own bearer-token variable,
 [`TokenEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L40-L43),
 is never an environment input, and the test command does not inherit it.
-[`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L213-L226)
+[`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L217-L230)
 always skips it, and [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
 removes it from the child's environment in `Run`. The client still reads it,
 through [`os.Getenv(fingerprint.TokenEnvironment)`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L285-L287) in `run`,
@@ -1329,7 +1329,7 @@ development Mac now defaults to 1.27.2. Fix: pin one version, or add a
 - [`commandPrune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L28-L36)
   is an untyped constant inside the typed `commandName` block.
 - The comment above the `extra_inputs` loop in
-  [`range extra` loop in `discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L141-L159)
+  [`range extra` loop in `discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L145-L163)
   describes `.gitignore` and matches nothing there.
 
 ### G21. Operations

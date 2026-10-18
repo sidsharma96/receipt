@@ -244,3 +244,16 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
   is an adequate cache key for mutable runtime/package metadata.
 - The four new fixed timing labels nest inside fingerprint and complete on error.
   They do not contain dynamic payloads and are never part of manifest identity.
+
+## Invocation-local Git root reuse (18 October 2026)
+
+- The initial CLI fingerprint may reuse only the root just resolved for settings
+  in the same invocation, through `BuildAtRoot`. This is a caller lifetime
+  contract; do not treat an arbitrary or persisted string as a validated root.
+- Use `Build` after command execution to rediscover the root. Keep file listing
+  fresh in both entry points; preserve Git flags, NUL-delimited names, ignored
+  file policy, extras and deleted-file handling.
+- Root reuse assumes stable topology during initial input collection; it does
+  not promise a filesystem snapshot or compatibility under concurrent replacement.
+- Initial CLI discovery timing now has one call; standalone/post-run Build has
+  two. Settings' root lookup remains outside fingerprint/discovery spans.

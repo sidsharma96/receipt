@@ -21,6 +21,8 @@
 - [12. Make a cache hit cheaper](guide/12-profile-before-optimizing.md)
 - [13. Hash executables and measure their probes](guide/13-hash-executables-and-measure-probes.md)
 
+- [14. Reuse the Git root within one invocation](guide/14-reuse-the-git-root.md)
+
 # Defending the design
 
 - [Defending Receipt's design](DESIGN-DEFENSE.md)

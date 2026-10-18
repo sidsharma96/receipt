@@ -108,6 +108,10 @@ func Build(ctx context.Context, dir string, args, extra, ignoredEnv []string, ge
 	if err != nil {
 		return Manifest{}, err
 	}
+	return buildAtRoot(ctx, root, dir, args, extra, ignoredEnv, generic)
+}
+
+func buildAtRoot(ctx context.Context, root, dir string, args, extra, ignoredEnv []string, generic bool) (Manifest, error) {
 	m := Manifest{Version: 1, Root: root, Directory: dir, Platform: runtime.GOOS + "/" + runtime.GOARCH, Command: args, Inputs: []Input{}}
 	files, err := discoverFiles(ctx, root, extra)
 	if err != nil {

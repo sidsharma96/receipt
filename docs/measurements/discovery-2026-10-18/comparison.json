@@ -1,0 +1,3283 @@
+{
+  "go": "go version go1.27.2 darwin/arm64",
+  "git": "git version 2.54.0 (Apple Git-157)",
+  "platform": "Darwin arm64",
+  "hits": [
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 0,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 70451834,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 41974500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3536834
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 36378667
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5381250
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 80292
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 18055168,
+        "instructions retired": 154844155,
+        "cycles elapsed": 65032268,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 0,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 53292500,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 25516500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3529000
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 19177750
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6137125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 78541
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.49,
+        "user_s": 0.02,
+        "system_s": 0.03,
+        "maximum resident set size": 17612800,
+        "instructions retired": 162792941,
+        "cycles elapsed": 74911669,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 1,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 53868708,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 25022584
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3526208
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18647417
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6097833
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 84667
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17645568,
+        "instructions retired": 152663401,
+        "cycles elapsed": 63670919,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 1,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 70395042,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 42359458
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3614292
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 37008375
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5096959
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 82792
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17727488,
+        "instructions retired": 156762652,
+        "cycles elapsed": 68956947,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 2,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 77292333,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 47859417
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4239625
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 39453166
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8189958
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 87875
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.08,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17367040,
+        "instructions retired": 155345059,
+        "cycles elapsed": 72464148,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 2,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 52217000,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 24205625
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3826083
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18517625
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5480458
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 80291
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17743872,
+        "instructions retired": 151345771,
+        "cycles elapsed": 59197670,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 3,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 54990875,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 24117333
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4000666
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18640625
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5275583
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 79750
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17776640,
+        "instructions retired": 151700559,
+        "cycles elapsed": 62434993,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 3,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 69905083,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 41692208
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3499209
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 34941250
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6538875
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 84042
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17596416,
+        "instructions retired": 155049634,
+        "cycles elapsed": 69120207,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 4,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 70911458,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 41194875
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4143250
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 35784709
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5196250
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 83000
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17645568,
+        "instructions retired": 153770466,
+        "cycles elapsed": 65164253,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 4,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 57831916,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 26857459
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4307292
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 20234417
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6409500
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 81834
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17514496,
+        "instructions retired": 152621999,
+        "cycles elapsed": 69130243,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 5,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 51172541,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 24520708
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3675459
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 19201500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5117125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 79084
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17367040,
+        "instructions retired": 151529893,
+        "cycles elapsed": 61588821,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 5,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 72023292,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 42833125
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3731791
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 37388834
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5230583
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 86416
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.08,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17776640,
+        "instructions retired": 155200626,
+        "cycles elapsed": 67275991,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 6,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 68575292,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 40698958
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3159208
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 35262084
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5241416
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 76750
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17661952,
+        "instructions retired": 154388257,
+        "cycles elapsed": 64192713,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 6,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 52652375,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 25529000
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3221000
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 19420208
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5907250
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 82625
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17580032,
+        "instructions retired": 151916152,
+        "cycles elapsed": 62787589,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 7,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 52215375,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 25408375
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3553333
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 19477417
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5721042
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 80958
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17137664,
+        "instructions retired": 150085998,
+        "cycles elapsed": 60413214,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 7,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 69389458,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 41771334
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3415583
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 35571375
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5981375
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 84708
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17776640,
+        "instructions retired": 155811671,
+        "cycles elapsed": 64328684,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 8,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 69399959,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 42873750
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3793250
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 36320708
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6346000
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 81959
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17547264,
+        "instructions retired": 154418120,
+        "cycles elapsed": 66467928,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 8,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 52131666,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 24856958
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3734500
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18860458
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5748625
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 95041
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17760256,
+        "instructions retired": 150930815,
+        "cycles elapsed": 61911333,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "after",
+      "pair": 9,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 50442709,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 22832625
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3680709
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17488666
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5149042
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 78209
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17596416,
+        "instructions retired": 150841564,
+        "cycles elapsed": 58817570,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-root",
+      "version": "before",
+      "pair": 9,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 74060542,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 46990541
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3975083
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 40285417
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6496541
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 77458
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.08,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17973248,
+        "instructions retired": 154079092,
+        "cycles elapsed": 64062296,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 0,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 74854000,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 44992084
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4151208
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 39609583
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5182750
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 78333
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.08,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17793024,
+        "instructions retired": 153860451,
+        "cycles elapsed": 65223192,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 0,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 53273084,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 24405083
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3426833
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18725834
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5455042
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 91208
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17924096,
+        "instructions retired": 150789566,
+        "cycles elapsed": 59977522,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 1,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 59364833,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 26859667
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4067250
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 21504042
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5168250
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 74708
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 18022400,
+        "instructions retired": 151446359,
+        "cycles elapsed": 65247463,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 1,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 71598666,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 41177750
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4630167
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 35419416
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5543250
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 82667
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.08,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 18071552,
+        "instructions retired": 155311910,
+        "cycles elapsed": 69648272,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 2,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 136485459,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 93413292
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 5804417
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 87469000
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5730042
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 84916
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.14,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17547264,
+        "instructions retired": 153242082,
+        "cycles elapsed": 74646192,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 2,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 97487625,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 46098708
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 10410417
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 32918625
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 12765458
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 141500
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17514496,
+        "instructions retired": 152094618,
+        "cycles elapsed": 85080820,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 3,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 90265625,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 48667208
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 9097166
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 30601209
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 17772292
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 103083
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.03,
+        "system_s": 0.04,
+        "maximum resident set size": 18219008,
+        "instructions retired": 152419189,
+        "cycles elapsed": 90846730,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 3,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 84840708,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 46963167
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4676334
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 40549708
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6200417
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 83542
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.09,
+        "user_s": 0.04,
+        "system_s": 0.03,
+        "maximum resident set size": 18120704,
+        "instructions retired": 155475584,
+        "cycles elapsed": 73124992,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 4,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 74127375,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 46386167
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3462167
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 40831875
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5334000
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 87833
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.08,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17612800,
+        "instructions retired": 154183321,
+        "cycles elapsed": 64499399,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 4,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 58746375,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 30110667
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3816708
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 20440125
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 9436709
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 90083
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17317888,
+        "instructions retired": 152323567,
+        "cycles elapsed": 68594626,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 5,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 54204000,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 25283250
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3606084
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 19639875
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5412750
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 104750
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 18006016,
+        "instructions retired": 151449582,
+        "cycles elapsed": 62784063,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 5,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 85972791,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 50431834
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3635333
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 44344208
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5818417
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 139084
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.09,
+        "user_s": 0.03,
+        "system_s": 0.04,
+        "maximum resident set size": 18038784,
+        "instructions retired": 155830296,
+        "cycles elapsed": 69023678,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 6,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 81674875,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 45065625
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 6966000
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 37791042
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 7057500
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 81208
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.08,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17809408,
+        "instructions retired": 154335550,
+        "cycles elapsed": 70749423,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 6,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 53468791,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 25026125
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3898458
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18867458
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5309750
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 716041
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17530880,
+        "instructions retired": 150767088,
+        "cycles elapsed": 62676491,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 7,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 52501666,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 24255959
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4065125
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18678333
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5356667
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 83875
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17465344,
+        "instructions retired": 151592601,
+        "cycles elapsed": 61530221,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 7,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 70514708,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 43028584
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3240333
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 37265417
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5548500
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 83541
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17793024,
+        "instructions retired": 154862381,
+        "cycles elapsed": 63636122,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 8,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 68417875,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 42090958
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 2991292
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 36724333
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5168625
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 78542
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17498112,
+        "instructions retired": 154158656,
+        "cycles elapsed": 62075557,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 8,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 51290500,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 25804958
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3518666
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 19524542
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6028708
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 93250
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17530880,
+        "instructions retired": 150878914,
+        "cycles elapsed": 60540158,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "after",
+      "pair": 9,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 55818709,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 24260042
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4107917
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18693667
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5359083
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 77625
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 17694720,
+        "instructions retired": 150853081,
+        "cycles elapsed": 60711853,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "generic-nested",
+      "version": "before",
+      "pair": 9,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 70002042,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 41079792
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4271750
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 34995958
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5851542
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 89167
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.03,
+        "system_s": 0.03,
+        "maximum resident set size": 17645568,
+        "instructions retired": 155223854,
+        "cycles elapsed": 66242468,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 0,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 185890500,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 137754417
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3650875
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 58450292
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 15105917
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7839333
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 56077959
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.19,
+        "user_s": 0.07,
+        "system_s": 0.09,
+        "maximum resident set size": 18186240,
+        "instructions retired": 228831727,
+        "cycles elapsed": 121146798,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 0,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 120747792,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 85074083
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3144792
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 20497959
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8108334
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 8051667
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48192417
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17793024,
+        "instructions retired": 223981280,
+        "cycles elapsed": 98826891,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 1,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 113907334,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 79107292
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3960250
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18762667
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8935041
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7403291
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 43786959
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 18104320,
+        "instructions retired": 223928898,
+        "cycles elapsed": 98547278,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 1,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 138430917,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 106307500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3446542
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 37770749
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 10287000
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7005333
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 50553500
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.14,
+        "user_s": 0.06,
+        "system_s": 0.07,
+        "maximum resident set size": 18055168,
+        "instructions retired": 227524618,
+        "cycles elapsed": 102421883,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 2,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 130493083,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 102234458
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3214375
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 36527500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8034209
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6985542
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 50380083
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.13,
+        "user_s": 0.06,
+        "system_s": 0.06,
+        "maximum resident set size": 18038784,
+        "instructions retired": 226253027,
+        "cycles elapsed": 100673051,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 2,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 115561375,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 84242291
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4315042
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 21992334
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8820458
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7841875
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 45256667
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17448960,
+        "instructions retired": 224132569,
+        "cycles elapsed": 102253177,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 3,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 142173125,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 109556416
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3811125
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 30839041
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 16439416
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 8692250
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 53187542
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.15,
+        "user_s": 0.06,
+        "system_s": 0.07,
+        "maximum resident set size": 17809408,
+        "instructions retired": 225102165,
+        "cycles elapsed": 113838816,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 3,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 133903792,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 103611833
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3567042
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 40556667
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 9175000
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7881667
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 45677750
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.14,
+        "user_s": 0.06,
+        "system_s": 0.06,
+        "maximum resident set size": 17498112,
+        "instructions retired": 226439617,
+        "cycles elapsed": 103268576,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 4,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 144354417,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 113271208
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3374209
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 40461750
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8168125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7747333
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 56656667
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.15,
+        "user_s": 0.06,
+        "system_s": 0.07,
+        "maximum resident set size": 18153472,
+        "instructions retired": 227411318,
+        "cycles elapsed": 104849927,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 4,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 107902292,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 79107291
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3261083
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 22589417
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8477291
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6806083
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 41021292
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17825792,
+        "instructions retired": 223829543,
+        "cycles elapsed": 97738236,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 5,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 179639667,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 126109250
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 13683417
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 20121166
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 9916584
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7114500
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 88576250
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.19,
+        "user_s": 0.06,
+        "system_s": 0.07,
+        "maximum resident set size": 18087936,
+        "instructions retired": 225721259,
+        "cycles elapsed": 108965684,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 5,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 191444292,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 139497458
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4573667
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 58174417
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 10455166
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 10125416
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 60100333
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.2,
+        "user_s": 0.08,
+        "system_s": 0.09,
+        "maximum resident set size": 17645568,
+        "instructions retired": 231530258,
+        "cycles elapsed": 122879113,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 6,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 235169750,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 171629334
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 5040584
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 76143875
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 11250458
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 10545083
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 73447583
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.25,
+        "user_s": 0.09,
+        "system_s": 0.1,
+        "maximum resident set size": 17334272,
+        "instructions retired": 228172762,
+        "cycles elapsed": 130141014,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 6,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 160637042,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 116400125
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 5261166
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 22289833
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 19208167
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 11394875
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 63031375
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.17,
+        "user_s": 0.06,
+        "system_s": 0.08,
+        "maximum resident set size": 17743872,
+        "instructions retired": 226870868,
+        "cycles elapsed": 122944942,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 7,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 124027542,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 91013625
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3855541
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 21131292
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 11766000
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6631083
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 51222625
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.13,
+        "user_s": 0.05,
+        "system_s": 0.06,
+        "maximum resident set size": 17498112,
+        "instructions retired": 223387804,
+        "cycles elapsed": 104904521,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 7,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 230321292,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 175616208
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 22800542
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 39078166
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 9485709
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 8970083
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 117760167
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.23,
+        "user_s": 0.07,
+        "system_s": 0.07,
+        "maximum resident set size": 18284544,
+        "instructions retired": 227687670,
+        "cycles elapsed": 110277945,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 8,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 185995083,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 132545042
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3875417
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 66545875
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 9658667
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 8791500
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 47278542
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.2,
+        "user_s": 0.07,
+        "system_s": 0.08,
+        "maximum resident set size": 18071552,
+        "instructions retired": 228300824,
+        "cycles elapsed": 111986739,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 8,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 142587458,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 103418500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3525542
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 26473833
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 14905375
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 11391041
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 50088459
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.15,
+        "user_s": 0.05,
+        "system_s": 0.06,
+        "maximum resident set size": 17563648,
+        "instructions retired": 225235415,
+        "cycles elapsed": 106449413,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "after",
+      "pair": 9,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 122401500,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 87372292
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3644750
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 22056750
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 10577709
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7802166
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 46672584
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.13,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17842176,
+        "instructions retired": 223412382,
+        "cycles elapsed": 101540383,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "case": "go",
+      "version": "before",
+      "pair": 9,
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 179111208,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 147654750
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3502000
+          },
+          {
+            "stage": "discovery",
+            "calls": 2,
+            "ns": 41086500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 20925833
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 8964083
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 75917417
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.18,
+        "user_s": 0.06,
+        "system_s": 0.07,
+        "maximum resident set size": 17498112,
+        "instructions retired": 230457313,
+        "cycles elapsed": 112897290,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    }
+  ],
+  "compatibility": {
+    "generic-root": {
+      "before": "4d7c730f3cbd652a297759b9c763be515f5fe189562e734ced4b425bdd28dc38",
+      "after": "4d7c730f3cbd652a297759b9c763be515f5fe189562e734ced4b425bdd28dc38"
+    },
+    "generic-nested": {
+      "before": "aa7c63c6b1077363864e40fce5b0d854086514aa4cee6a4bdfcbb93f8882bd74",
+      "after": "aa7c63c6b1077363864e40fce5b0d854086514aa4cee6a4bdfcbb93f8882bd74"
+    },
+    "go": {
+      "before": "0895529578f2ee6cc1f8d0b9500a9aa5943f2d64087be51d5af717ae23025616",
+      "after": "0895529578f2ee6cc1f8d0b9500a9aa5943f2d64087be51d5af717ae23025616"
+    }
+  },
+  "git_commands": [
+    {
+      "pair": 0,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 4177920,
+        "instructions retired": 110334262,
+        "cycles elapsed": 65219496,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 0,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 4620288,
+        "instructions retired": 122511454,
+        "cycles elapsed": 64008333,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 1,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 4210688,
+        "instructions retired": 112411015,
+        "cycles elapsed": 64209664,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 1,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 4603904,
+        "instructions retired": 125229024,
+        "cycles elapsed": 67636100,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 2,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4210688,
+        "instructions retired": 112496626,
+        "cycles elapsed": 52617853,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 2,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 4636672,
+        "instructions retired": 121022924,
+        "cycles elapsed": 68934683,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 3,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4177920,
+        "instructions retired": 111148992,
+        "cycles elapsed": 52776964,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 3,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 4587520,
+        "instructions retired": 120182148,
+        "cycles elapsed": 63645264,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 4,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4177920,
+        "instructions retired": 110084387,
+        "cycles elapsed": 46254124,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 4,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4636672,
+        "instructions retired": 119797371,
+        "cycles elapsed": 52613320,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 5,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4194304,
+        "instructions retired": 112039316,
+        "cycles elapsed": 47523302,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 5,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4603904,
+        "instructions retired": 118486256,
+        "cycles elapsed": 47193316,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 6,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4194304,
+        "instructions retired": 111904497,
+        "cycles elapsed": 46837485,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 6,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4571136,
+        "instructions retired": 118575609,
+        "cycles elapsed": 47956037,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 7,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4194304,
+        "instructions retired": 109577845,
+        "cycles elapsed": 45581293,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 7,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4603904,
+        "instructions retired": 119861530,
+        "cycles elapsed": 51805467,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 8,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4177920,
+        "instructions retired": 109610992,
+        "cycles elapsed": 44540606,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 8,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4587520,
+        "instructions retired": 119164166,
+        "cycles elapsed": 49081304,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 9,
+      "command": "root",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4177920,
+        "instructions retired": 110033991,
+        "cycles elapsed": 44952955,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    },
+    {
+      "pair": 9,
+      "command": "listing",
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 4603904,
+        "instructions retired": 118413707,
+        "cycles elapsed": 45872285,
+        "block input operations": 0,
+        "block output operations": 0
+      }
+    }
+  ]
+}
