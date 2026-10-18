@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 350" role="img" aria-labelledby="title desc">
+<title id="title">Same bytes, bounded temporary memory</title>
+<desc id="desc">Before, the file is read into a full-size byte slice and copied behind a permissions prefix. After, the prefix enters one SHA-256 state, followed by successive chunks read through a reused buffer of at most 32 KiB. Both feed the identical byte sequence into SHA-256.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#34556f"/></marker></defs>
+<rect width="840" height="350" rx="12" fill="#f5f8fc"/>
+<g font-family="system-ui,sans-serif" fill="#182f45">
+<text x="24" y="32" font-size="21" font-weight="bold">Same SHA-256 byte sequence; different temporary storage</text>
+<text x="24" y="60" font-size="15">Illustrative 8 MiB file. Boxes are not drawn to memory scale.</text>
+<text x="24" y="103" font-size="18" font-weight="bold">Before</text>
+<rect x="122" y="78" width="180" height="65" rx="7" fill="#dce9f5" stroke="#6686a3"/>
+<text x="137" y="104" font-size="16">Read whole file</text><text x="137" y="127" font-size="15">8 MiB byte slice</text>
+<path d="M303 110H345" stroke="#34556f" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="349" y="78" width="220" height="65" rx="7" fill="#dce9f5" stroke="#6686a3"/>
+<text x="364" y="104" font-size="16">Copy prefix + file</text><text x="364" y="127" font-size="15">another ~8 MiB slice</text>
+<path d="M570 110H615" stroke="#34556f" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="628" y="116" font-size="18">SHA-256 → digest</text>
+<text x="24" y="205" font-size="18" font-weight="bold">After</text>
+<rect x="122" y="177" width="180" height="66" rx="7" fill="#d9f0e9" stroke="#4b8a76"/>
+<text x="137" y="204" font-size="16">Write prefix once</text><text x="137" y="227" font-size="15">same hash state</text>
+<path d="M303 210H345" stroke="#34556f" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="349" y="177" width="220" height="66" rx="7" fill="#d9f0e9" stroke="#4b8a76"/>
+<text x="364" y="204" font-size="16">Read → hash → reuse</text><text x="364" y="227" font-size="15">buffer ≤ 32 KiB</text>
+<path d="M495 244V268H380V246" fill="none" stroke="#34556f" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="500" y="271" font-size="14">until EOF</text>
+<path d="M570 210H615" stroke="#34556f" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="628" y="216" font-size="18">same digest</text>
+<text x="24" y="312" font-size="16">Read failure → no digest returned. File bytes are still all read and hashed.</text>
+<text x="24" y="336" font-size="15">A file changing during the read is not turned into an atomic snapshot.</text>
+</g></svg>

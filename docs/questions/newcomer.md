@@ -394,3 +394,19 @@ No. Reading all rows can be sensible for an exact recount, a tiny table or a bro
 **Learn more:** [Are our indexes appropriate?](../guide/12-profile-before-optimizing.md#are-our-indexes-appropriate)
 
 </details>
+
+### Why does streaming preserve the file hash?
+<!-- check: guide/12-profile-before-optimizing.md -->
+
+**Level:** Newcomer
+
+A file contains `abc`. Receipt used to hash the permission prefix and file bytes in one slice. It now writes the prefix, then `ab`, then `c` into one hash state. Why is the digest unchanged, and why must the old file size not limit the read?
+
+<details>
+<summary>Answer</summary>
+
+The same SHA-256 state receives the same bytes in the same order; chunk boundaries are not additional input. Computing separate chunk digests and combining them would be different. The size hint may be stale if the file grows, so it sizes the temporary buffer but does not cap the total bytes read. Receipt reads until EOF. This preserves the hash calculation for stable files without making concurrent edits an atomic snapshot.
+
+**Learn more:** [Streaming file hashing](../guide/12-profile-before-optimizing.md#streaming-file-hashing-implemented-18-october)
+
+</details>

@@ -286,6 +286,18 @@ was enabled. This supersedes the earlier plan to do automated backups next.
 
 The [full nine-question review](../PHASE-REVIEWS.md#profiling-investigation-18-october-2026) records scope, verification, alternatives and remaining risks.
 
+## 18 October 2026: streaming file-input hashing
+
+File inputs now feed the same permission prefix and file bytes into SHA-256
+through a buffer capped at 32 KiB. [Chapter 12](12-profile-before-optimizing.md#streaming-file-hashing-implemented-18-october)
+explains why chunking preserves keys and compares allocations, CPU, resident
+memory and latency. An old CLI's cache entry was replayed by the new CLI with
+an identical full key. Large-file allocations fell sharply; whole-hit timings
+remain too noisy for a reliable latency claim.
+
+The [nine-question implementation review](../PHASE-REVIEWS.md#streaming-file-hashing-18-october-2026)
+records decisions, compatibility tests, verification and remaining limits.
+
 ## Maintaining these documents
 
 The guide is part of the documentation book. Each chapter is its own Markdown file under `docs/guide/`, listed in `docs/SUMMARY.md`. Edit the chapter that teaches the changed behaviour, then append the dated nine-question review and its evidence to [the review reference](../PHASE-REVIEWS.md). Preserve historical amendments.

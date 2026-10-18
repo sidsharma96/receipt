@@ -2552,3 +2552,127 @@ psql output were inspected. On a phone the normal reading view requires the
 sidebar closed; leaving the desktop sidebar open while resizing squeezes the
 content. Source Markdown and text equivalents remain available offline. These
 layout checks do not establish learning effectiveness or exhaustive accessibility.
+
+## Streaming file hashing, 18 October 2026
+
+This implementation amendment follows the profiling investigation; it is not a
+new product phase. [Chapter 12](guide/12-profile-before-optimizing.md#streaming-file-hashing-implemented-18-october)
+teaches the changed mechanism. The [measurement record](MEASUREMENTS.md#streaming-file-hashing-18-october-2026)
+contains commands, raw observations, compatibility evidence and scope. Earlier
+profiling observations remain historical, describing the pre-change implementation.
+
+### Streaming — 1. Data structures and why
+
+For a file containing `abc` with mode `0600`, the old implementation made bytes
+`600`, NUL, `abc` in one slice. The new implementation feeds those same bytes
+into one SHA-256 state through a reusable byte slice capped at 32 KiB. Small
+files use a smaller buffer. No chunk digests are combined, so the algorithm is
+unchanged. The actual code excerpts in Chapter 12 are attributed to
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L180-L204)
+and [`hashFile`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/file_hash.go#L12-L28).
+The manifest's fields, sorting and JSON encoding are unchanged.
+
+### Streaming — 2. Execution flow and extension boundaries
+
+`fileInput` checks path metadata and preserves deleted-file/directory/symlink/
+nonregular-input behavior. It passes the old prefix and size hint to `hashFile`,
+which opens the file, writes the prefix, copies bytes to the hash until EOF,
+and returns its hexadecimal digest. Read failures return no digest. This affects
+working-tree/extra inputs and Cargo paths already calling `fileInput`. The separate
+`executionInputs` whole-executable read and other hash consumers remain unchanged.
+The helper is deliberately local to fingerprinting, not a general storage API.
+
+### Streaming — 3. Primitives, concurrency and networking
+
+The implementation uses SHA-256, `os.Open`, `io.CopyBuffer` and a reader-only
+wrapper. Hiding `File.WriteTo` makes CopyBuffer honor the supplied buffer. There
+are no new locks, goroutines, shared pools or network calls. Each invocation owns
+its file, buffer and hash state. The current sequential fingerprint loop therefore
+does not multiply buffers by input count. Read-only Close remains deferred and
+best-effort, matching the prior read cleanup policy.
+
+### Streaming — 4. Pitfalls and debugging
+
+Using size as a read limit could silently omit growth; here it only bounds buffer
+allocation. Tests use stale/small/huge hints to catch truncation. Independently
+hashing chunks would change keys, as would changing octal spelling, NUL separation,
+permissions or the deleted marker. Stream errors must prevent a digest from being
+returned. The Lstat-to-open race and concurrent-edit limitations remain; this
+change is not an immutable filesystem snapshot. OS process RSS is not B/op, and
+benchmark setup also consumes memory outside timed operations.
+
+### Streaming — 5. Hot/cold paths and costs
+
+Every regular file fingerprint uses the new hot path. The six matched 8 MiB
+benchmark repetitions per version yielded median allocations of 16,795,790 to
+33,632 B/op, latency of 13.24 to 9.20 ms/op, peak process RSS of 44.41 to 22.28 MB,
+and process CPU time of 1.965 to 1.425 seconds for fixed work. Process numbers
+include fixture setup/calibration, not just timed calls. Small-file median latency
+also fell in the sample. Full-hit median duration changed only about 2% amid high
+variance, so no reliable end-to-end latency improvement is claimed. All file bytes
+are still read; more chunk reads can trade CPU/memory savings for syscall costs.
+No maintenance or database path was changed.
+
+### Streaming — 6. Guarantees, assumptions and non-goals
+
+For the same stable file bytes and permission metadata, incremental SHA-256 sees
+exactly the old byte sequence; input hashes and thus canonical manifest keys stay
+identical. Existing entries remain readable without version migration. The buffer
+is at most 32 KiB, not a 32 KiB whole-process memory bound. The helper reads to EOF
+and propagates open/read errors. Stable files remain an assumption; equal keys do
+not prove deterministic outputs or discovery of undeclared inputs. This work does
+not stream executable probes, change subprocess behavior, add content memoization,
+or modify SQL, blob publication, locks or durability.
+
+### Streaming — 7. Alternatives and decisions
+
+We chose a bounded sequential stream to remove large allocations without changing
+identity. A fixed 32 KiB allocation for every tiny file was avoidable, so the
+existing size hint shrinks the buffer. A shared pool could reduce allocations
+further but adds shared lifecycle and retention behavior; defer until profiles
+justify it. Parallel hashing could increase storage contention and memory; defer
+until measured need. Mtime/size caching would require a new invalidation contract.
+Streaming the executable could help too, but the existing Python entry-point
+probe consumes executable bytes; keep that separate. These are current decisions
+for this change, not claims about original project decision history.
+
+### Streaming — 8. Evidence, verification and remaining risk
+
+The independent old-concatenation oracle passed 32 size/permission combinations
+and manifest-key comparisons, including NUL/non-ASCII bytes and 32 KiB boundaries.
+Size-hint tests, open/read failure tests, deleted markers, symlink/directory
+refusals, and existing canonical encoding/input-change tests passed. The old CLI
+created one cache entry that the new CLI replayed in eight expected hit runs;
+full 64-character keys matched. All matched benchmark and CLI commands succeeded.
+`make check` (lint and suite), `make race`, and `make build` passed. PostgreSQL and
+Rust runtime integration tests were not enabled locally for this isolated hash
+change. GitHub CI separately runs PostgreSQL/race tests after push.
+
+A first lint pass flagged the deeply nested test's cognitive complexity; the
+single-fixture compatibility assertion was moved into a named helper, preserving
+the matrix and checks. No linter rule was weakened. Remaining gaps include actual
+concurrent mutation, partial-progress read failure injection, platform/device
+variation, syscall and cold-I/O costs, and representative whole-hit confidence.
+Documentation/render checks are recorded in the verification note below.
+
+### Streaming — 9. Revisit conditions
+
+Revisit buffer size if controlled runs across realistic small/large files and
+cold storage show a better CPU/RAM/I/O balance. Revisit pooling only if these
+remaining small allocations dominate. Revisit parallelism when storage throughput
+and bounded memory justify workers. Revisit executable streaming after measuring
+its share and preserving probe behavior. Revisit metadata caching only with an
+explicit correctness contract. Broaden whole-hit measurements before promising
+user-visible latency gains; neither passing tests nor an allocation reduction
+establishes that guarantee.
+
+#### Streaming verification note, 18 October 2026
+
+`make docs` passed all 18 checks after adding the fourth chapter question and
+synchronizing the bank. Twelve attributed guide excerpts now match source. The
+new SVG was rendered in Chrome and inspected; arrows, labels and the repeated
+read loop are visible. The 390-pixel chapter view had no page-wide overflow and
+all images loaded; wide byte traces scroll within their code block. Text equivalents
+remain available without images. These checks do not establish teaching quality
+for every reader or exhaustive accessibility. No existing `.wrangler/` files were
+changed, and benchmark binaries remain under ignored `.tools/streaming`.

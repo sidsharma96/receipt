@@ -209,3 +209,97 @@ counts include benchmark calibration; no per-function hardware counter, syscall
 trace, network capture, power measurement, production RSS or cold-device test was
 performed. Zero block-I/O counts in the decode-only process do not describe the
 filesystem paths.
+
+## Streaming file hashing, 18 October 2026
+
+This follow-up implements only the `fileInput` path. The before binaries were
+built from `4fe7a9b`; the after binaries use the new `hashFile` helper. Both were
+built with Go 1.27.2 on the same macOS arm64 Apple M1 host. No compiler flags,
+hash/key format, executable-probe logic or benchmark workload changed. The
+benchmark comment changed to stop describing the old implementation as current.
+
+The [raw comparison](measurements/streaming-2026-10-18/comparison.json) contains
+all 24 benchmark process reports, 17 CLI timing/resource reports, full keys,
+versions and the unabridged `/usr/bin/time -l` output. These are new matched
+measurements; do not compare them directly with the earlier profiling session's
+absolute times. Machine activity and sampling protocols differ.
+
+Use `scripts/profile/compare_hashing.py` with four prebuilt binaries: the before
+and after fingerprint test executables, then the before and after Receipt CLIs.
+Build each version in its own checkout, keeping binaries outside the workload.
+For each version, from its checkout:
+
+```sh
+go test -c ./internal/fingerprint -o /absolute/output/fingerprint.test
+go build -o /absolute/output/receipt ./cmd/receipt
+```
+
+Then, from the updated checkout:
+
+```sh
+python3 scripts/profile/compare_hashing.py \
+  /absolute/before/fingerprint.test /absolute/after/fingerprint.test \
+  /absolute/before/receipt /absolute/after/receipt \
+  .tools/streaming/comparison.json
+```
+
+The macOS-only helper executes six alternating before/after pairs per file size,
+with 2,000 timed operations for 4 KiB and 200 for 8 MiB. Order reverses each pair.
+It runs one process at a time; no other Receipt profiling/test workload was run
+concurrently. Fixture writes are excluded from Go's benchmark timer and B/op,
+but included in whole-process CPU/RSS and hardware-counter reports. Go benchmark
+calibration/setup also remains in those process totals. `/usr/bin/time` rounds
+CPU seconds to hundredths, making small-case CPU differences coarse. The OS
+page cache is warm; background machine activity is uncontrolled. No pprof
+sampling overhead was added to these timing runs.
+
+| Metric (median of six process reports per version) | Before | After |
+| --- | --- | --- |
+| 4 KiB latency | 24,037 ns/op | 20,920.5 ns/op |
+| 4 KiB allocations | 10,616 B/op | 4,956 B/op |
+| 4 KiB process CPU, user + system | 0.050 s | 0.040 s |
+| 4 KiB peak RSS | 12,034,048 bytes | 11,886,592 bytes |
+| 8 MiB latency | 13,243,660.5 ns/op | 9,198,498.5 ns/op |
+| 8 MiB allocations | 16,795,789.5 B/op | 33,632 B/op |
+| 8 MiB process CPU, user + system | 1.965 s | 1.425 s |
+| 8 MiB peak RSS | 44,408,832 bytes | 22,282,240 bytes |
+| 8 MiB process cycles elapsed | 4,863,006,900 | 3,465,580,119.5 |
+
+The allocation reduction follows directly from removing two file-sized slices.
+The timing samples are noisier: the new large-file case ranged from 5.51 to
+16.87 ms/op, the old from 11.55 to 15.29 ms/op. Medians favor streaming but do
+not establish universal percentage gains. Whole-process cycle counts include
+setup and runtime work; they are not CPU-cycle attribution to `hashFile`.
+
+The second experiment creates an isolated Git directory with 256 × 4 KiB data
+files, one 8 MiB file, `go.mod`, and a Go test: 259 files and 9 MiB of payload
+excluding the two source/config files. `go test -count=1 ./...` is the wrapped
+command. The old CLI writes the initial result to one external temporary cache;
+eight alternating hit invocations per version reuse it. Every expected hit
+skipped execution, both full `explain` keys matched, and all commands succeeded.
+The exact key is stored in the raw JSON; a future run's temporary absolute path
+will produce a different key, which is expected.
+
+| Complete-hit metric (median of eight) | Before | After |
+| --- | --- | --- |
+| Receipt duration | 240.50 ms | 235.75 ms |
+| Fingerprint stage | 183.90 ms | 175.72 ms |
+| time-reported wall duration | 255 ms | 245 ms |
+| time-reported user + system CPU | 0.190 s | 0.180 s |
+| time-reported maximum RSS | 38,330,368 bytes | 29,417,472 bytes |
+
+These wall durations and process resource reports have different boundaries from
+Receipt stages. OS accounting can include waited-for subprocess usage; maximum
+RSS is not a sum of simultaneously resident parent/child memory. The Go probe and
+executable read remain unchanged. Whole-hit Receipt times ranged from 181–283 ms
+before and 183–493 ms after. The small median difference does not support a
+reliable whole-hit latency claim. A representative larger campaign is needed.
+
+Compatibility evidence combines the byte-sequence argument, 32 old/new
+size/permission comparisons, the existing version-one encoding test, and the
+cross-version cache replay. Tests also check undersized/oversized/negative hints,
+missing/deleted files, open/read failures, directories and symlinks. The size-hint
+test models stale metadata; it does not force an actual concurrent edit. No new
+claims cover snapshot consistency, permission/rename races, partial-progress
+read failures, cold device reads, syscall counts, energy use, Windows behavior,
+or every filesystem. Executable hashing remains a whole-file operation.

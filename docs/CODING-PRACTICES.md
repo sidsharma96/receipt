@@ -219,3 +219,15 @@ to game. Revisit them with concrete false positives and readable alternatives.
 References: [Errors are values](https://go.dev/blog/errors-are-values),
 [errors.Join](https://pkg.go.dev/errors#Join),
 [golangci-lint settings](https://golangci-lint.run/docs/linters/configuration/).
+
+## Streaming file inputs (18 October 2026)
+
+- Preserve SHA-256 over the exact octal permission prefix, NUL separator and file
+  bytes. Chunking must not change the input hash, manifest format or key version.
+- `hashFile` uses at most 32 KiB of read-buffer storage per call; the size hint
+  sizes the buffer only. Read to EOF and propagate read failures. Keep existing
+  deleted-file, symlink and nonregular-file policies in `fileInput`.
+- Keep the reader-only adapter when using `io.CopyBuffer`; allowing `File.WriteTo`
+  can bypass the supplied buffer. No shared pool or parallel hashing is introduced.
+- Test against the old concatenation, including chunk boundaries and permissions.
+  Distinguish allocation bytes, peak process RSS and end-to-end latency.

@@ -197,11 +197,11 @@ func fileInput(path string) (Input, error) {
 	if !info.Mode().IsRegular() {
 		return Input{}, fmt.Errorf("nonregular input: %s", path)
 	}
-	data, e := os.ReadFile(path)
+	digest, e := hashFile(path, fmt.Sprintf("%o\x00", info.Mode().Perm()), info.Size())
 	if e != nil {
 		return Input{}, e
 	}
-	return Input{FileInput, path, Hash(append([]byte(fmt.Sprintf("%o\x00", info.Mode().Perm())), data...))}, nil
+	return Input{FileInput, path, digest}, nil
 }
 
 func environmentInputs(env, ignored []string) []Input {

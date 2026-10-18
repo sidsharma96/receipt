@@ -20,8 +20,10 @@ not necessarily help either: the fingerprint stage also starts Git and toolchain
 processes, opens files, and allocates memory. We must split those costs before
 claiming which change will save the 267 ms.
 
-The investigation adds repeatable measurements, **not production optimizations**.
-The existing correctness rules and database migrations are unchanged. The
+The initial investigation added measurements without production changes. A later
+18 October change implements streaming file-input hashing, explained below; the
+other optimization candidates remain unimplemented. Cache key encoding and
+database migrations are unchanged. The
 [detailed review](../PHASE-REVIEWS.md#profiling-investigation-18-october-2026)
 records the evidence and remaining gaps.
 
@@ -86,45 +88,124 @@ nested spans together: `sql` can include work also reported elsewhere. A large
 `db_lock` duration suggests waiting; it is not evidence that an index lookup
 consumed that time. See [the stage boundaries](../MEASUREMENTS.md#read-the-timings).
 
-## The first opportunity: stop allocating whole files twice
+## Streaming file hashing: implemented 18 October
 
-The current [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L180-L204):
+Consider a file containing `abc` with permission bits `0600`. Receipt must hash
+the bytes for `600`, then a zero byte, then `abc`. Previously it read the whole
+file into memory and copied those bytes behind the prefix before hashing. Now
+it feeds the prefix and successive file chunks into the **same** SHA-256 state.
+A hash state remembers the work so far; dividing the input into writes does not
+change the final digest. Hashing each chunk separately and combining the digests
+would be a different algorithm and would change keys.
+
+```text
+Old bytes:   [6 0 0 NUL a b c] -> SHA-256
+New writes:  [6 0 0 NUL], [a b], [c] -> one SHA-256 state
+Result: identical digest for identical bytes and permissions
+```
+
+The two-byte chunks here are illustrative. Actual file reads use a buffer no
+larger than 32 KiB. For small files the buffer uses the size hint, with a one-byte
+minimum. The hint only sizes temporary storage; it never limits how much we read.
+If a file grows after its size is checked, the loop still reads until EOF (end
+of file). This preserves full-read behavior, not an atomic snapshot during edits.
+
+![Before and after: same hash bytes, less temporary storage](../assets/profiling/streaming-hash.svg)
+
+Text equivalent: the old 8 MiB path allocated a file-sized slice and another
+prefix-plus-file slice. The new path writes the prefix to the hash, repeatedly
+reads and hashes through one buffer, then returns the digest. A read error stops
+the operation without returning a digest. All declared file bytes still get read.
+
+The call in [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L180-L204):
 
 ```go
-	data, e := os.ReadFile(path)
+	digest, e := hashFile(path, fmt.Sprintf("%o\x00", info.Mode().Perm()), info.Size())
 	if e != nil {
 		return Input{}, e
 	}
-	return Input{FileInput, path, Hash(append([]byte(fmt.Sprintf("%o\x00", info.Mode().Perm())), data...))}, nil
+	return Input{FileInput, path, digest}, nil
 ```
 
-Receipt reads the whole file into `data`. It then constructs another byte slice
-containing the permissions, a zero byte, and those same file bytes. Hashing that
-combined slice preserves permissions in the identity, but requires another large
-allocation. The benchmark for an 8 MiB file allocated **about 16 MiB per call**
-and took **5.24 ms** at the median of three benchmark runs. Its allocation
-profile attributed almost half the bytes to reading and half to this function's
-additional allocation. These are cumulative allocation bytes, not simultaneous
-resident memory.
+`%o` retains the old octal permission spelling; `\x00` retains the zero separator.
+The file path, input kind, deleted-file marker and manifest serialization are
+unchanged. The preceding checks still refuse directories, symlinks and other
+nonregular inputs. This also benefits Cargo paths already using `fileInput`.
 
-A promising replacement is to write the permission prefix to a SHA-256 hasher,
-then stream the file through a bounded buffer. Incremental hashing of exactly
-the same bytes produces the same digest. Preserve the current prefix, deletion
-markers, permission semantics, symlink refusals, and errors. Compare old/new keys
-on fixtures before changing production. Streaming reduces temporary storage;
-it still reads every byte and might lose time on tiny files. Benchmark both sizes.
+The bounded read in [`hashFile`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/file_hash.go#L12-L28):
+
+```go
+	buffer := make([]byte, min(max(size, 1), 32<<10))
+	// Hide File.WriteTo so io.CopyBuffer uses this bounded, size-aware buffer.
+	if _, err := io.CopyBuffer(h, struct{ io.Reader }{f}, buffer); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+```
+
+`h` is the SHA-256 state after writing the prefix; `f` is the open file.
+`io.CopyBuffer` repeatedly reads into `buffer` and sends those bytes to `h`.
+The small wrapper exposes only `Read`: otherwise Go can choose the file's
+`WriteTo` method and bypass the supplied buffer. This is a local adapter, not a
+new storage framework. There are no new goroutines, shared pools or locks.
+Read errors propagate, and the read-only file is closed on return.
+
+### Proving compatibility and measuring the result
+
+An independent test reconstructs the old byte concatenation and applies SHA-256
+directly. All **32 size/permission combinations** match the new input hash and
+manifest key, including empty files, binary data, chunk boundaries and an 8 MiB
+file. Additional tests cover misleading size hints, missing files, open/read
+errors, directories and symlinks. Existing encoding and input-change tests pass.
+
+We also built the previous commit's CLI and this implementation separately. The
+old CLI populated a temporary cache for a fixed Go project; the new CLI replayed
+that entry. Both `explain` commands reported the identical full 64-character key,
+recorded in the [raw comparison](../measurements/streaming-2026-10-18/comparison.json).
+This checks compatibility at the complete command/cache boundary, beyond the
+unit-level hash comparison. Identical keys still do not prove deterministic tests.
+
+The same prebuilt benchmark ran six times per version, alternating order:
+
+| 8 MiB file metric | Before | After | Change in medians |
+| --- | --- | --- | --- |
+| Hash latency | 13.24 ms/op | 9.20 ms/op | 30.5% lower |
+| Allocated bytes | 16,795,790 B/op | 33,632 B/op | 99.8% lower |
+| Peak process resident memory | 44.41 MB | 22.28 MB | 49.8% lower |
+| Process CPU time for fixed work | 1.965 s | 1.425 s | 27.5% lower |
+
+CPU and peak resident memory cover a whole benchmark process: 200 timed
+operations plus setup/calibration and runtime work. They are not single-call
+CPU or memory attribution. Allocation bytes come from the timed operation.
+Here MB means one million bytes; the input is 8 MiB (8,388,608 bytes).
+The benchmark setup itself allocates the 8 MiB fixture, so process RSS is not
+expected to shrink to 32 KiB. CPU time includes user and system time.
+
+For 4 KiB files, median latency fell from **24.04 to 20.92 microseconds**, and
+allocations from **10,616 to 4,956 bytes/op**. No small-file median regression
+appeared in this sample. There is still allocation and hashing work per file.
+
+For complete hits on a fixed 259-file fixture containing 9 MiB of payload, the
+median Receipt duration was **240.5 ms before / 235.7 ms after**, while peak
+process RSS fell from **38.33 / 29.42 MB**. The eight hit timings per version
+varied widely (before 181–283 ms, after 183–493 ms). **This does not establish a
+reliable end-to-end latency improvement.** The memory result and eliminated
+whole-file allocations are clearer than that small difference in hit medians.
+See the [measurement scope and reproduction commands](../MEASUREMENTS.md#streaming-file-hashing-18-october-2026).
+
+### What remains expensive
+
+Streaming still reads and hashes every byte. It can perform more read calls than
+a whole-file read; cold-device I/O and syscall counts were not measured. The
+executable path in `executionInputs` still reads its bytes in full, and probes
+still start subprocesses. Those costs were intentionally left unchanged. Split
+fingerprint timing further before choosing the next optimization.
 
 Do not replace content hashing with only modification times and file sizes:
-a changed file can retain both. A file-watching cache or persistent fingerprint
-index needs explicit rules for missed events, restarts and concurrent edits.
-That is a larger correctness project. Parallel hashing also multiplies open
-files, buffers and competing reads; test bounded workers only after measuring
-whether sequential disk work is the limiting step.
-
-The executable is also read in full by `executionInputs`. Go/Rust toolchain
-probes and subprocess startup are included in the full fingerprint duration but
-excluded from the isolated `fileInput` benchmark. Measuring these substeps is the
-next investigation before attributing the entire local-hit delay to file copies.
+a changed file can retain both. A file-watching cache needs rules for missed
+events, restarts and edits. Parallel hashing multiplies buffers and competing
+reads; try bounded workers only after demonstrating a throughput need. Revisit
+the 32 KiB cap if repeatable representative workloads show a better tradeoff.
 
 ## The second opportunity: avoid repeatedly parsing large output
 
@@ -350,7 +431,7 @@ inside the JSON record.
 
 | Priority | Candidate | Benefit to prove | Revisit or stop when |
 | --- | --- | --- | --- |
-| 1, local user latency | Split fingerprint timings; stream large-file/executable hashing | lower hit latency and allocation bytes, identical keys | probes or tiny-file opens dominate instead |
+| 1, local user latency | File-input streaming implemented; next split probe timing and investigate executable hashing | file allocations are reduced; prove further whole-hit gains separately | probes or tiny-file opens dominate instead |
 | 2, output-heavy hits | Reduce repeated strict JSON passes/copies | lower decode CPU/allocations with identical rejection behavior | real outputs are small or parser complexity defeats maintainability |
 | 3, shared contention | Verify an existing blob before rewriting it | fewer writes/syncs and shorter writer lock occupancy | duplicates are rare; verification or locking becomes dominant |
 | 4, local bookkeeping | Avoid unchanged history rewrites | less optional serialization and durable I/O | history semantics or multi-process behavior cannot be preserved |
@@ -427,6 +508,21 @@ A plan says sequential scan. Should we always add an index? What did the retenti
 No. Reading all rows can be sensible for an exact recount, a tiny table or a broad selection. The selective retention count benefited from a partial time index: it visited three cached blocks instead of 910. That does not prove faster full deletion, which also changes evidence, reads JSON sizes and commits. Compare complete workloads and index maintenance costs before adopting it.
 
 **Learn more:** [Are our indexes appropriate?](../guide/12-profile-before-optimizing.md#are-our-indexes-appropriate)
+
+</details>
+
+### Why does streaming preserve the file hash?
+
+**Level:** Newcomer
+
+A file contains `abc`. Receipt used to hash the permission prefix and file bytes in one slice. It now writes the prefix, then `ab`, then `c` into one hash state. Why is the digest unchanged, and why must the old file size not limit the read?
+
+<details>
+<summary>Answer</summary>
+
+The same SHA-256 state receives the same bytes in the same order; chunk boundaries are not additional input. Computing separate chunk digests and combining them would be different. The size hint may be stale if the file grows, so it sizes the temporary buffer but does not cap the total bytes read. Receipt reads until EOF. This preserves the hash calculation for stable files without making concurrent edits an atomic snapshot.
+
+**Learn more:** [Streaming file hashing](../guide/12-profile-before-optimizing.md#streaming-file-hashing-implemented-18-october)
 
 </details>
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// BenchmarkProfileFileInput measures the existing complete-file fingerprint path.
+// BenchmarkProfileFileInput measures the file fingerprint path.
 // Fixture creation is excluded; repeated reads normally hit the OS page cache.
 func BenchmarkProfileFileInput(b *testing.B) {
 	for _, size := range []int{4096, 8 << 20} {

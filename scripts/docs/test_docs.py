@@ -123,7 +123,7 @@ class SourceChecks(unittest.TestCase):
         excerpts = []
         for chapter in sorted((DOCS / "guide").glob("*.md")):
             excerpts += re.findall(pattern, chapter.read_text(), re.DOTALL)
-        self.assertEqual(len(excerpts), 11)
+        self.assertEqual(len(excerpts), 12)
         for path, start, end, excerpt in excerpts:
             lines = (REPOSITORY / path).read_text().splitlines()
             covered = "\n".join(lines[int(start) - 1:int(end or start)])

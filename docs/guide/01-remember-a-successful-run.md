@@ -57,6 +57,10 @@ The same issue applies to time, randomness, and some files outside the discovere
 
 With `--verify`, Receipt runs a saved command again and compares the exit code and both output streams byte for byte. A difference makes it stop trusting that key. Even timing text can cause a difference; a mismatch is not automatically a failed test.
 
+Since 18 October 2026, file inputs are hashed through a bounded buffer rather
+than two whole-file byte slices. The permissions prefix and file bytes stay in
+the same order, so existing keys remain compatible. [Chapter 12](12-profile-before-optimizing.md#streaming-file-hashing-implemented-18-october) walks through the bytes, compatibility evidence and memory measurements.
+
 ## Read further
 
 For the exact local storage rules and alternatives, see [Phase 1's review](../PHASE-REVIEWS.md#phase-1-review-remembering-a-local-run).
