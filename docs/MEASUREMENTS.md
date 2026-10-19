@@ -777,3 +777,116 @@ and exact syscall/cycle counts. Repeat on an otherwise quiet host and multiple
 sessions/machines before making a broader latency promise. If controls again
 show a material apparent effect, inspect distributions and system traces before
 treating a narrow interval as reliable.
+
+## GC and subprocess variance diagnosis, 18 October 2026
+
+A fresh diagnostic Go hit took 586.16 ms. Receipt recorded one garbage collection
+with only 0.0314 ms of total stop-the-world pause time. During that same hit,
+Git file listing took 301.71 ms elapsed but 24.89 ms of child CPU. A second slow
+hit took 422.93 ms, with 0.0432 ms of GC pauses and a 249.20 ms Git listing
+using 22.62 ms of child CPU. Receipt's GC pauses cannot account for these spikes.
+
+The diagnostic harness, [diagnose_variance.py](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/diagnose_variance.py),
+builds an isolated Go overlay over the original baseline export, commit 97b833e.
+An overlay substitutes source files only for that build; production files remain
+unchanged. The diagnostic entry point measures runtime memory statistics around
+the invocation. Each existing fingerprint child call additionally records elapsed
+time and ProcessState user + system CPU, and captures GC trace lines from child
+stderr. Child commands get GODEBUG=gctrace=1. That changes diagnostic probe
+conditions, so these runs use their own seeded entries and are not a key or
+speed comparison against the normal CLI. Arbitrary child stderr is not exported.
+
+The first fixed run collected Go runtime traces and fixed stage/child regions:
+60 Go hits and 40 generic hits, in shuffled order, after five warmups per case.
+Its Go median was 207.01 ms and maximum 638.47 ms; generic median 120.39 ms and
+maximum 523.47 ms. It recorded two Receipt collections per call. The largest
+Go pause total was 9.506 ms. One generic run recorded 53.004 ms of pauses, so GC
+can be visible in a traced run; even that invocation took 511.22 ms overall.
+The slowest generic run had only 1.545 ms of pauses. Tracing changes the runtime
+and adds output work; these observations must not be substituted into the earlier
+performance comparison.
+
+The follow-up disabled runtime trace writing while retaining child timings and
+before/after memory counters. It used the same fixed counts and warmup rule:
+
+| Lighter diagnostic metric | Go: 60 hits | Generic: 40 hits |
+| --- | ---: | ---: |
+| Receipt latency minimum / median / maximum | 115.03 / 122.57 / 586.16 ms | 65.41 / 71.13 / 130.86 ms |
+| Collections per invocation | 1 in every call | 1 in every call |
+| Total GC pause median / maximum | 0.0473 / 0.1120 ms | 0.0540 / 0.1084 ms |
+| Git listing elapsed median / maximum | 18.05 / 301.71 ms | 18.23 / 33.90 ms |
+| Go probe elapsed median / maximum | 42.46 / 100.82 ms | No Go probe |
+
+Across these 100 hits, all expected replays succeeded. None of the 60 Go probes
+emitted a GC trace line. A separate detection check set GOGC=1 in a dedicated
+fixture environment to force frequent collection: it captured four child GC
+events, six Receipt collections and 0.339 ms of Receipt pauses. That validates
+the collection-event capture path; it is not a recommendation to tune GOGC.
+Go's runtime memory statistics report GC pauses, not every possible allocation
+or scheduling delay. No emitted child collection event is scoped evidence, not
+proof that every part of child memory management was free.
+
+Published records retain all calls, including outliers:
+[traced diagnostics](measurements/variance-diagnosis-2026-10-18/traced.json),
+[lighter diagnostics](measurements/variance-diagnosis-2026-10-18/light.json),
+and the [GC detection check](measurements/variance-diagnosis-2026-10-18/gc-positive-control.json).
+Machine-local source paths were removed and the baseline revision annotated
+during export. Raw runtime and macOS traces stay local because they can contain
+paths and unrelated process information.
+
+To reproduce, export 97b833e to an isolated source directory as in the previous
+section, then use fresh output directories:
+
+```sh
+python3 scripts/profile/diagnose_variance.py /path/to/before-source /tmp/receipt-traced
+python3 scripts/profile/diagnose_variance.py /path/to/before-source /tmp/receipt-light --no-trace
+go tool trace /tmp/receipt-traced/062-go.trace
+go tool trace -pprof=syscall /tmp/receipt-traced/062-go.trace > /tmp/syscall.pb.gz
+go tool pprof -top /tmp/syscall.pb.gz
+```
+
+Index 062 was the slowest Go trace in this run; choose the slowest observed index
+in a reproduction rather than assuming the same call will be slow. The recorded
+638.47 ms trace's syscall profile attributed 410.36 ms to Process.Wait and
+56.25 ms to File.Read. These profiles sum delays across goroutines, can overlap,
+and are not an additive decomposition of request time. A wait stack identifies
+where Receipt waited; it does not say why a child was delayed.
+
+The shared host was not isolated. Trace analysis and tool discovery also ran
+during parts of the diagnostic session. The heavy and light protocols were
+sequential, not randomized pairs, so their median difference is not an isolated
+estimate of tracing overhead. The result is narrower and stronger: the lighter
+run reproduced large spikes with tiny measured Receipt GC pauses, and located
+large elapsed-versus-CPU gaps at Git calls. Elapsed-minus-child-CPU also includes
+parent launch/wait/capture work and possible parent descheduling; it is not an
+exact measure of child I/O waiting. We must inspect OS scheduling and filesystem
+events before assigning that gap to one cause. No GC tuning or production
+optimization was made.
+
+A macOS System Trace follow-up first targeted the Python launcher, which did not
+include its child processes in the exported tables. A second recording targeted
+all processes for 15 seconds, with the workload launched after tracing started.
+It recorded 15.818 seconds in total and included 26 Receipt process identities
+from a target that launched 31 invocations (one population run and 30 hits).
+The recording ended before the complete workload; the slowest hit in that batch
+was late in the sequence. It therefore cannot resolve the earlier 249–302 ms
+Git-listing outliers. This is a coverage gap, not evidence that they disappeared.
+
+In the captured Git events, the largest exported syscall duration was 3.52 ms,
+and the largest sum of active thread-state intervals for one Git process was
+35.31 ms: 27.16 running, 6.70 blocked, 1.33 runnable, plus small interruptions.
+Runnable means ready but waiting for CPU; blocked means waiting for an event.
+Intervals marked Unknown or Terminated were excluded, and totals across threads
+are not elapsed process duration. The [scoped system summary](measurements/variance-diagnosis-2026-10-18/system-summary.json)
+retains these observations without unrelated process data. No specific
+background application, disk operation or security service is established as
+the cause of the earlier spikes.
+
+The export was made with xctrace's syscall and thread-state schemas.
+[summarize_system_trace.py](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/summarize_system_trace.py)
+resolves exported IDs across tables and retains only Git/Receipt rows; a small
+fixture tests that cross-table references survive. Raw system-wide traces and
+exports remain under the ignored local diagnostic directory. A future OS
+recording must span the whole workload and correlate child PIDs/timestamps
+with the slow call before making a causal claim. The runtime diagnosis used
+four evidence/extraction checks and make docs passed 18 documentation checks.

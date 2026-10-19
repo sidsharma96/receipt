@@ -344,3 +344,14 @@ The initial control exposed long-tail noise; both datasets and their uncertainty
 remain published. The [nine-question amendment](../PHASE-REVIEWS.md#controlled-git-discovery-rerun-18-october-2026)
 records the protocol change and limits. This updates measurement evidence;
 production code is unchanged.
+
+## 18 October 2026: diagnose GC versus subprocess waiting
+
+[Chapter 14](14-reuse-the-git-root.md#was-the-variation-garbage-collection) now
+follows a reproduced 586 ms hit with only 0.031 ms of Receipt GC pauses.
+The long delay was concentrated around Git subprocess calls. Heavy tracing
+perturbed the workload, so the diagnosis also used lighter counters and a
+positive check for child GC event capture. The
+[nine-question amendment](../PHASE-REVIEWS.md#gc-and-subprocess-variance-diagnosis-18-october-2026)
+records evidence and remaining attribution limits. No production GC setting
+or fingerprint behavior changed.

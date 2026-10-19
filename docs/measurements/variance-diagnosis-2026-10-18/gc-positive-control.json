@@ -1,0 +1,85 @@
+[
+  {
+    "cpu_ns": 12759000,
+    "elapsed_ns": 14951750,
+    "gc_lines": null,
+    "operation": "rev-parse",
+    "program": "git",
+    "type": "diagnostic_child"
+  },
+  {
+    "cpu_ns": 12511000,
+    "elapsed_ns": 14736792,
+    "gc_lines": null,
+    "operation": "rev-parse",
+    "program": "git",
+    "type": "diagnostic_child"
+  },
+  {
+    "cpu_ns": 14202000,
+    "elapsed_ns": 16600833,
+    "gc_lines": null,
+    "operation": "ls-files",
+    "program": "git",
+    "type": "diagnostic_child"
+  },
+  {
+    "cpu_ns": 40733000,
+    "elapsed_ns": 40271000,
+    "gc_lines": [
+      "gc 1 @0.000s 11%: 0.005+0.21+0.035 ms clock, 0.043+0.11/0.14/0+0.28 ms cpu, 0->0->0 MB, 0 MB goal, 0 MB stacks, 0 MB globals, 8 P",
+      "gc 2 @0.002s 4%: 0.019+0.24+0.002 ms clock, 0.15+0.042/0.34/0.16+0.022 ms cpu, 1->1->0 MB, 1 MB goal, 0 MB stacks, 0 MB globals, 8 P",
+      "gc 1 @0.000s 12%: 0.006+0.19+0.052 ms clock, 0.049+0.032/0.19/0.045+0.42 ms cpu, 0->0->0 MB, 0 MB goal, 0 MB stacks, 0 MB globals, 8 P",
+      "gc 2 @0.023s 0%: 0.030+0.28+0.013 ms clock, 0.24+0.024/0.33/0.099+0.10 ms cpu, 1->1->0 MB, 1 MB goal, 0 MB stacks, 0 MB globals, 8 P"
+    ],
+    "operation": "env",
+    "program": "go",
+    "type": "diagnostic_child"
+  },
+  {
+    "type": "receipt_timing",
+    "duration_ns": 137907417,
+    "exit_code": 0,
+    "failed": false,
+    "stages": [
+      {
+        "stage": "fingerprint",
+        "calls": 1,
+        "ns": 87790583
+      },
+      {
+        "stage": "lookup",
+        "calls": 1,
+        "ns": 4843125
+      },
+      {
+        "stage": "discovery",
+        "calls": 2,
+        "ns": 31920000
+      },
+      {
+        "stage": "input_files",
+        "calls": 1,
+        "ns": 8214625
+      },
+      {
+        "stage": "executable",
+        "calls": 1,
+        "ns": 6539625
+      },
+      {
+        "stage": "toolchain",
+        "calls": 1,
+        "ns": 40918459
+      }
+    ]
+  },
+  {
+    "allocated_bytes": 4266632,
+    "collections": 6,
+    "elapsed_ns": 138063667,
+    "gc_cpu_fraction": 0.004513305179915001,
+    "pause_ns": 338667,
+    "type": "diagnostic_gc"
+  }
+]

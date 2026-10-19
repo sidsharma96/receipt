@@ -3169,3 +3169,100 @@ The prose review checked the concrete example, ordering trace, control failure,
 costs, alternatives and limitations. Automated checks do not establish teaching
 quality. Published-page inspection follows deployment; no local browser layout
 verification is claimed.
+
+## GC and subprocess variance diagnosis, 18 October 2026
+
+This diagnostic amendment follows one reproduced 586.16 ms hit. Receipt's total
+GC pause time was 0.0314 ms; Git listing took 301.71 ms elapsed and 24.89 ms
+child CPU. [Chapter 14](guide/14-reuse-the-git-root.md#was-the-variation-garbage-collection)
+explains the difference, and the [measurement reference](MEASUREMENTS.md#gc-and-subprocess-variance-diagnosis-18-october-2026)
+preserves protocols, raw metrics and attribution limits. Production code is
+unchanged.
+
+### Variance diagnosis — 1. Data structures
+
+Per-call JSON records retain fixed stages, child operation names, elapsed/CPU
+durations and runtime memory-counter differences. Lists keep all calls in order.
+Runtime trace files add timestamped scheduler/GC events and stage regions.
+They remain local because detailed traces may reveal paths or other processes.
+
+### Variance diagnosis — 2. Architecture and boundaries
+
+A Go build overlay replaces only the diagnostic entry point, timing helper and
+child-command helper over the original 97b833e export. The normal source remains
+untouched. The entry point reads MemStats around app.Main; the child helper
+records duration and ProcessState CPU and captures GC lines. In the
+[diagnostic harness](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/diagnose_variance.py),
+the emitted pause counter is the actual difference
+`after.PauseTotalNs-before.PauseTotalNs`: cumulative paused nanoseconds after
+the invocation minus the value before it. It measures GC pauses, not all
+allocation costs. Runtime tracing can be disabled separately.
+
+### Variance diagnosis — 3. Primitives and concurrency
+
+The harness launches sequential CLI invocations. Receipt still starts Git and
+Go child processes, while optional Go runtime tracing adds background activity
+and file writes. Child probes receive GODEBUG=gctrace=1. That diagnostic change
+requires its own cache entries and prevents treating these as normal-binary
+performance or compatibility comparisons. No network behavior is added.
+
+### Variance diagnosis — 4. Pitfalls and debugging
+
+Heavy tracing changed both timings and collection counts. One traced generic
+call recorded 53 ms of GC pauses, but the lighter run reproduced a much larger
+latency spike with a tiny pause. A profile of Receipt waiting for a child
+identifies the waiting caller, not the child's reason for waiting. Subtracting
+child CPU from parent-observed elapsed time also includes parent overhead and
+possible descheduling. It cannot be labelled pure disk latency.
+
+### Variance diagnosis — 5. Hot and cold costs
+
+The lighter run's Go latency median/maximum was 122.57/586.16 ms, with GC pause
+median/maximum 0.0473/0.1120 ms. Git listing median/maximum was 18.05/301.71 ms.
+The 100 lighter hits each collected once. Cold storage and actual test execution
+were not measured. Detailed tracing is investigative work, not a new hot-path
+feature, and its overhead was not isolated by a randomized comparison.
+
+### Variance diagnosis — 6. Guarantees and non-goals
+
+The measured pause totals exclude Receipt stop-the-world GC as the dominant
+cause of these reproduced spikes. They do not prove GC never matters, nor
+exclude concurrent GC costs. No child GC events appeared in 60 ordinary Go
+probes; a separate forced-collection check captured four events. Production
+keys, freshness rules and GC settings are unchanged. Diagnostic fixture
+replays do not establish new key-compatibility guarantees.
+
+### Variance diagnosis — 7. Alternatives and decisions
+
+We used lighter counters after observing perturbation from detailed tracing.
+Disabling GC as a proposed production fix was rejected because pauses were
+too small to explain the observed delay. GOGC=1 was used only as a detection
+check in a separate environment. CPU profiles alone cannot expose time when a
+process is not running; runtime and OS traces are needed to investigate waits.
+These are decisions from this diagnosis, not historical implementation choices.
+
+### Variance diagnosis — 8. Evidence and limitations
+
+Both fixed diagnostic runs replayed 60 Go and 40 generic hits after five warmups
+per case. Three evidence tests check record counts/success, the measured
+slow-call counters, and the positive child-GC detection check. Trace records,
+lightweight metrics and all outliers are retained. Host activity and diagnostic
+tooling were not isolated. The heavy/light median difference is therefore not
+a clean estimate of trace overhead. Remaining uncertainty includes OS scheduling,
+filesystem and process-startup attribution, plus behavior on other machines.
+
+### Variance diagnosis — 9. Revisit conditions
+
+Revisit GC if representative slow runs show substantial GC pauses, assists or
+CPU work. Revisit process startup and Git I/O when OS traces identify a repeatable
+waiting cause. Keep fresh file enumeration and post-execution discovery while
+investigating. Do not tune runtime settings or add persistent Git caches from
+latency variation alone.
+
+OS follow-up and verification: the all-process macOS trace ended before the
+complete target workload and did not establish the cause of the largest
+outliers. Captured ordinary Git events showed modest runnable/blocked delays;
+the reference records exact coverage and a scoped summary. Unrelated process
+data stays local. Four evidence/extraction checks passed, including cross-table
+ID resolution; make docs passed all 18 checks. These validate evidence handling
+and documentation structure, not OS-cause attribution or teaching quality.

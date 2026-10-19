@@ -207,6 +207,50 @@ and background-load effects still need separate evidence. The
 [dated review amendment](../PHASE-REVIEWS.md#controlled-git-discovery-rerun-18-october-2026)
 records the decisions and limits without rewriting the original review.
 
+## Was the variation garbage collection?
+
+A later diagnostic hit took **586.16 ms**, but Receipt's garbage collector
+paused it for only **0.0314 ms**. Garbage collection means reclaiming memory
+that the program no longer needs. A stop-the-world pause briefly suspends the
+application while part of that work happens. This particular pause total is far
+too small to explain the slow hit.
+
+Follow the observations from that one invocation:
+
+| Operation | Elapsed time | Child CPU time |
+| --- | ---: | ---: |
+| First Git root query | 17.11 ms | 14.42 ms |
+| Repeated Git root query | 90.24 ms | 24.66 ms |
+| Git file listing | 301.71 ms | 24.89 ms |
+| Go environment probe | 100.82 ms | 53.62 ms |
+
+Elapsed time is how long Receipt waits for the call to finish. Child CPU time
+counts processor work charged to the child. Receipt's own launch, capture and
+waiting overhead is outside that child CPU figure. Therefore the difference
+cannot simply be called disk time. The child might wait for a processor or
+filesystem operation; Receipt might also be delayed before it collects the
+answer. A timer around a child call sees all of those possibilities.
+
+In 60 Go and 40 generic diagnostic hits with runtime trace writing disabled,
+Receipt had one collection per hit and no more than **0.112 ms** of total GC
+pauses. A second slow Go hit took 422.93 ms with only 0.0432 ms of pauses.
+The Go probes emitted no collection events; deliberately forcing frequent
+collection in a separate check confirmed that our event capture worked.
+These observations rule out Receipt GC pauses as the main explanation for
+the reproduced large spikes. They do not prove that GC never affects Receipt.
+
+Detailed runtime tracing perturbed the workload: the traced run had two
+collections per hit, and one generic invocation recorded 53 ms of GC pauses.
+We kept those results but did not mix them into the performance benchmark.
+Use tracing to locate work and waiting, then use lighter measurements to check
+that the suspected problem also occurs without the trace writer.
+
+The [diagnosis reference](../MEASUREMENTS.md#gc-and-subprocess-variance-diagnosis-18-october-2026)
+records the overlays, all observations, a GC detection check and remaining OS
+attribution limits. No GC setting or production code was changed. The useful
+next boundary is the Git process's execution and waiting, rather than tuning
+the collector merely because a Go program sometimes finishes slowly.
+
 ## Choose the next question from evidence
 
 Fresh listing and runtime probes remain. A longer-lived root cache could save
