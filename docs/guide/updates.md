@@ -355,3 +355,12 @@ positive check for child GC event capture. The
 [nine-question amendment](../PHASE-REVIEWS.md#gc-and-subprocess-variance-diagnosis-18-october-2026)
 records evidence and remaining attribution limits. No production GC setting
 or fingerprint behavior changed.
+
+## 18 October 2026: research Git startup with Trace2
+
+[Chapter 14](14-reuse-the-git-root.md#look-inside-git-before-blaming-its-file-scan)
+now explains comparing Git's internal clock with the caller's elapsed time.
+A 240-call exploratory comparison found about 11 ms of routine overhead saved
+by directly invoking the selected Xcode Git. The rare long tail did not recur.
+The [diagnosis review amendment](../PHASE-REVIEWS.md#gc-and-subprocess-variance-diagnosis-18-october-2026)
+links evidence and selection-policy limits. Production behavior is unchanged.

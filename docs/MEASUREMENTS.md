@@ -890,3 +890,79 @@ exports remain under the ignored local diagnostic directory. A future OS
 recording must span the whole workload and correlate child PIDs/timestamps
 with the slow call before making a causal claim. The runtime diagnosis used
 four evidence/extraction checks and make docs passed 18 documentation checks.
+
+## Git Trace2 and the macOS launcher, 18 October 2026
+
+Research following the GC diagnosis identified two complementary tools.
+[Git Trace2](https://git-scm.com/docs/api-trace2) emits internal elapsed times,
+regions, command arguments and child-process events. Apple's
+[System Trace guidance](https://developer.apple.com/videos/play/wwdc2026/268/)
+distinguishes runnable threads waiting for CPU from blocked threads waiting for
+an event. Trace2 narrows the slow interval; OS tracing investigates its cause.
+
+We compared /usr/bin/git with the Git executable returned by xcrun --find git:
+the latter was inside Xcode. Apple documents the
+[/usr/bin developer-tool shims](https://developer.apple.com/library/archive/technotes/tn2339/_index.html)
+that select corresponding tools inside Xcode. This comparison uses the same
+Apple Git 2.54.0 version and command flags through two entry points.
+
+The same local fixture was used: 256 × 4 KiB files plus the small Go fixture,
+with no tracked input files. Each command had 60 adjacent launcher/direct pairs,
+balanced by order, randomized with seed 20261018 and interleaved between root
+discovery and file listing. Three warmups per command/entry point were excluded.
+All 240 measured calls succeeded and each pair's output SHA-256 matched.
+The traces emitted no child_start events. Results and all Trace2 events are
+in the [raw comparison](measurements/git-trace2-2026-10-18/comparison.json).
+
+| Command / entry point | Outer median | Git-reported median | Child CPU median |
+| --- | ---: | ---: | ---: |
+| Root query, launcher | 18.51 ms | 1.58 ms | 15.43 ms |
+| Root query, direct | 7.34 ms | 1.55 ms | 5.83 ms |
+| File listing, launcher | 19.51 ms | 2.80 ms | 16.54 ms |
+| File listing, direct | 8.64 ms | 2.66 ms | 7.12 ms |
+
+Paired arithmetic-mean savings were 10.93 ms for root discovery and 11.04 ms
+for listing. Mean child CPU savings were 9.55 and 9.40 ms. This is exploratory
+one-session evidence, with tracing enabled and warm caches; no confidence
+interval or whole-Receipt benefit is established. The original rare tail did
+not recur: launcher listing peaked at 26.16 ms and direct listing at 10.94 ms.
+It would be incorrect to attribute the earlier 249–302 ms calls to the shim
+from this experiment alone.
+
+Git-reported duration is the final atexit event's t_abs in seconds, not Git CPU
+time. The outer clock surrounds subprocess launch, output capture and waiting.
+Subtracting the two includes work before Git's timing begins, process teardown
+and parent overhead/descheduling. It is not an exact pure-shim timer.
+Nevertheless, the matched entry-point comparison identifies substantial
+routine startup overhead while Git's reported work is similar.
+
+The local fixture resides on /dev/disk3s5 mounted at /System/Volumes/Data.
+The exact commands inspect local repository metadata and the working tree;
+they do not ordinarily contact a Git remote. No selected fsmonitor/untracked
+cache/global-excludes overrides were found in the checked configuration.
+These checks do not substitute for a packet trace, but remote round-trip
+latency is not supported as the explanation here. Network mounts or custom
+helpers would require separate checking in another environment.
+
+Reproduction on macOS, using an existing fixture and a new output directory:
+
+```sh
+python3 scripts/profile/compare_git_launcher.py /path/to/fixture /tmp/git-launcher-trace
+GIT_TRACE2_EVENT=/tmp/git-events.json git ls-files -z --cached --others --exclude-standard > /tmp/git-files
+```
+
+The [harness](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/compare_git_launcher.py)
+writes event data locally; Trace2 includes paths and arguments, so inspect it
+before publishing. To investigate a future long call, record the parent's
+start/end timestamps and child PID, compare with Trace2 start/atexit and
+region timings, then inspect that same interval in System Trace and File
+Activity. If the long gap precedes Trace2, investigate launch/loader/shim work;
+if it occurs inside read_directory, investigate enumeration/ignore rules and
+filesystem activity. Runnable versus blocked states then separate CPU queueing
+from dependency waits. A complete recording must cover that exact invocation.
+
+No production Git selection, PATH or configuration changed. Direct selection
+would need to respect user-selected Git and active developer-tool changes.
+Calling xcrun on every operation could consume some of the saved time.
+The experiment motivates measuring resolution once per invocation before
+considering an implementation; it does not justify hard-coding an Xcode path.

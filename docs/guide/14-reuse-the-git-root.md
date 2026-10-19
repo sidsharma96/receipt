@@ -251,6 +251,41 @@ attribution limits. No GC setting or production code was changed. The useful
 next boundary is the Git process's execution and waiting, rather than tuning
 the collector merely because a Go program sometimes finishes slowly.
 
+## Look inside Git before blaming its file scan
+
+Git has its own diagnostic clock, called Trace2. We measured elapsed time around
+the process and compared it with Git's reported duration. On this Mac, the
+usual Git entry point was a developer-tool launcher in /usr/bin. The selected
+Git executable lived inside Xcode.
+
+A small follow-up compared the same commands through both paths:
+
+| Command | Launcher median | Direct executable median |
+| --- | ---: | ---: |
+| Find root | 18.51 ms | 7.34 ms |
+| List files | 19.51 ms | 8.64 ms |
+
+There were 60 randomized, balanced pairs per command, and all paired outputs
+matched. Git's own reported listing time was similar: 2.80 versus 2.66 ms.
+This points to about 11 ms of routine overhead around the actual Git program.
+It is a concrete optimization candidate, but directly selecting Git must still
+respect the user's tool choice and changes to the active developer tools.
+
+The rare 249–302 ms calls did not recur in this comparison, so the launcher
+does not yet explain those outliers. The commands read local files and metadata;
+they do not normally contact a Git server. The benchmark fixture was on a local
+disk. We have no evidence of a remote network round trip causing the delay.
+
+To debug the next outlier, align the parent timer, child process ID and Git's
+internal events. If the delay is before Git's first event, inspect launch and
+loader work. If a directory-reading region is slow, inspect filesystem calls.
+A thread marked runnable is waiting for CPU; one marked blocked is waiting
+for some event. Use those OS observations from the same slow call before
+assigning a cause. The
+[research and experiment reference](../MEASUREMENTS.md#git-trace2-and-the-macos-launcher-18-october-2026)
+links the official guides, exact metrics, raw traces and reproduction commands.
+No production Git selection changed.
+
 ## Choose the next question from evidence
 
 Fresh listing and runtime probes remain. A longer-lived root cache could save

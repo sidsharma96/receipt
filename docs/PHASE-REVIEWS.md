@@ -3266,3 +3266,15 @@ the reference records exact coverage and a scoped summary. Unrelated process
 data stays local. Four evidence/extraction checks passed, including cross-table
 ID resolution; make docs passed all 18 checks. These validate evidence handling
 and documentation structure, not OS-cause attribution or teaching quality.
+
+Research amendment (18 October): Git Trace2 exposed a separate routine startup
+cost. Sixty balanced pairs per command compared /usr/bin/git with the same
+selected Apple Git executable inside Xcode. Listing medians were 19.51 versus
+8.64 ms, while Git-reported elapsed medians were 2.80 versus 2.66 ms.
+All 240 calls succeeded and paired outputs matched. The earlier long tail did
+not recur; these samples cannot explain its cause. The
+[research reference](MEASUREMENTS.md#git-trace2-and-the-macos-launcher-18-october-2026)
+records sources, timings and limitations. This amends costs/evidence and the
+next diagnostic boundary in questions 5, 8 and 9 above. Direct selection is an
+optimization candidate; respecting PATH/developer-tool selection and measuring
+resolution overhead remain prerequisites. No production selection policy changed.
