@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="365" viewBox="0 0 860 365" role="img" aria-labelledby="title desc">
+<title id="title">Receipt call 688: Go and the system sampler slow together</title>
+<desc id="desc">A 2.28 second Receipt hit contains a 1.675 second Go probe. The separate system sampler takes 1.678 seconds over almost the same interval. These clocks do not identify OS thread states or prove a shared cause. Go reports 75.588 milliseconds CPU; Receipt reports 1.023 milliseconds GC pauses.</desc>
+<rect width="860" height="365" rx="12" fill="#f8fafc"/>
+<g font-family="Arial, sans-serif" fill="#172d43">
+<text x="24" y="31" font-size="21" font-weight="bold">Two observed operations slowed together</text>
+<text x="24" y="56" font-size="14">Call 688 · same horizontal clock · no native thread-state trace</text>
+<path d="M155 82V252" stroke="#d5dce5"/><text x="155" y="77" text-anchor="middle" font-size="12">0s</text>
+<path d="M287.5 82V252" stroke="#d5dce5"/><text x="287.5" y="77" text-anchor="middle" font-size="12">0.5s</text>
+<path d="M420 82V252" stroke="#d5dce5"/><text x="420" y="77" text-anchor="middle" font-size="12">1s</text>
+<path d="M552.5 82V252" stroke="#d5dce5"/><text x="552.5" y="77" text-anchor="middle" font-size="12">1.5s</text>
+<path d="M685 82V252" stroke="#d5dce5"/><text x="685" y="77" text-anchor="middle" font-size="12">2s</text>
+<text x="24" y="118" font-size="15">Receipt hit</text>
+<text x="24" y="176" font-size="15">Go probe</text>
+<text x="24" y="233" font-size="15">System sampler</text>
+<rect x="155" y="100" width="604.232065" height="24" rx="4" fill="#98aec0"/>
+<text x="767.232065" y="118" font-size="13">2,280 ms*</text>
+<rect x="297.92086" y="157" width="443.88692499999996" height="25" rx="4" fill="#b45309"/>
+<rect x="297.92086" y="157" width="15.780484999999999" height="25" fill="#eab308"/>
+<text x="321.92086" y="174" font-size="13" fill="white">Start 60 ms → Wait returns after another 1,615 ms</text>
+<text x="297.92086" y="200" font-size="13">Reported CPU: 76 ms (its location on this clock is unknown)</text>
+<rect x="296.218235" y="216" width="444.73095000000006" height="24" rx="4" fill="#156d77"/>
+<text x="310.218235" y="233" font-size="13" fill="white">ps + vm_stat collection: 1,678 ms</text>
+<text x="24" y="279" font-size="14">Receipt GC pauses total 1.02 ms; Go-child GC was not recorded in this batch.</text>
+<text x="24" y="303" font-size="14">The overlapping delays suggest shared contention. They do not identify the waiting resource.</text>
+<text x="24" y="336" font-size="12">*Unix timestamp span rounded; monotonic external duration is 2,279.595 ms. Other spans use parent clocks.</text>
+</g></svg>

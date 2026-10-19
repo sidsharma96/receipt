@@ -228,6 +228,103 @@ settings on one stable setup does not prove those cases. The
 contains the reproducible tools, raw metrics and remaining limits, with a
 [full review](../PHASE-REVIEWS.md#go-probe-localization-19-october-2026).
 
+## A longer local run reproduced the stalls
+
+In a later run on 19 October, call 688 spent **1,675 ms** inside the Go probe,
+while the OS reported **75.588 ms of CPU time** for that child. CPU time counts
+execution on processors; elapsed time also includes waiting and delays before
+the parent can observe completion. This difference is evidence of a delay, not
+an exact stopwatch for a particular OS wait.
+
+Follow the two lanes below. Receipt starts Go, its Start call returns after
+60 ms, and Wait returns another 1,615 ms later. Separately, the machine sampler
+needs 1,678 ms to collect process and memory counters over almost the same
+interval. Neither lane records the native thread's reason for waiting.
+
+![Measured overlapping Receipt, Go and system-sampler intervals, with unknown native thread states](../assets/receipt-go-batch-timeline.svg)
+
+The text equivalent is: the whole hit took 2,280 ms; the Go probe occupied about
+539–2,214 ms of that interval, and the system sample occupied about 533–2,211 ms.
+Receipt's recorded garbage-collection pauses totaled 1.02 ms. That cannot explain
+this hit's long delay. **Go-child GC was not recorded in this batch**; the earlier
+Go runtime trace remains separate evidence from a different, shorter call.
+
+### Why run thousands of calls?
+
+We ran the current Receipt hit path 5,000 times locally with stock Go, in five
+blocks of 1,000. Each call used the same small Go fixture and already saved test
+result. Five warmups preceded each block; two seconds separated blocks. The
+fixed plan kept going after outliers instead of stopping at the first one.
+
+| Block | Go median, ms | Go maximum, ms | Go calls ≥200 ms |
+| --- | ---: | ---: | ---: |
+| 1 | 48.51 | 1,675.04 | 7 |
+| 2 | 34.23 | 160.27 | 0 |
+| 3 | 33.75 | 65.16 | 0 |
+| 4 | 33.87 | 148.09 | 0 |
+| 5 | 38.78 | 135.44 | 0 |
+
+All seven ≥200 ms probes occurred within 15 seconds, at zero-based indices
+666–727; three exceeded 300 ms. The last 4,000 had none. Thus “one stall per
+1,000 calls” is not a dependable schedule: machine conditions can produce a
+burst, then a long quiet period. The observed 7/5,000 fraction describes this
+session, not a stable probability for another machine or tomorrow's run.
+
+The whole-hit mean was 103.48 ms, with median 89.95 ms. Go's median reported CPU
+was 33.695 ms and median peak resident memory was 16.01 MB; the largest stall
+reported 16.24 MB. Resident memory means pages held in RAM, not all memory ever
+allocated. These are descriptive costs, **not a before/after optimization**.
+Every call replayed a hit; stock and diagnostic full keys matched before and
+after. No new production optimization or Go patch was installed.
+
+### What the slow calls had in common
+
+The largest call also slowed Git selection, Git commands and executable hashing.
+For example, executable hashing took 220.44 ms against a session median of
+6.27 ms, and file listing took 97.43 ms against 5.78 ms. The problem is broader
+than one extra computation in Go. Parent-observed child intervals include
+parent scheduling and output-copy completion, so they do not isolate Go's
+startup instructions alone.
+
+The overlapping memory snapshots show the OS compressing and decompressing many
+pages. Compression packs memory contents into less RAM; decompression restores
+them before use. Between two snapshots roughly 2.71 seconds apart around the
+largest event, the counters increased by 145,141 compressions and 187,074
+decompressions, plus 220 swap-ins. A swap-in brings a page back from swap storage.
+These are **machine-wide cumulative work counts**, not Go's allocations or the
+amount of RAM held at once. A page may be processed repeatedly.
+
+This makes shared machine contention a stronger lead: several operations slowed
+while memory and background applications were active. It does **not** identify
+which application or resource caused the stall. The fifth block also had
+substantial compression without a ≥200 ms Go probe. Five of seven slow probes
+had the usual 65 major-fault counter, and their involuntary context switches
+ranged from 235 to 799. Neither counter supplies a universal signature. A context
+switch records the OS moving execution between tasks, not how long a task waited.
+
+### What would distinguish the remaining explanations?
+
+The next comparison should repeat the same workload during a quiet desktop
+period and interleave sampler-on/off blocks. That separates a possible observer
+effect—measurement changing the workload—from changes in ordinary background
+activity. Keep the fresh Go probe and tool selection unchanged. A droplet run
+would test a different OS and toolchain context; it would not explain this Mac's
+specific wait.
+
+The sampler targeted one-second intervals but normally took 34 ms to collect
+and once took 1,678 ms. It has gaps and adds work; it is not an OS scheduler trace.
+To distinguish “Go could run but was not scheduled” from “Go or its compiler was
+waiting for a resource,” we still need native thread-state evidence for a matching
+stall. The earlier Instruments save crash remains unresolved. We have reproduced
+the same class of delay and narrowed its surroundings, not recovered the cause
+of the historical call. Fixing Go's repeated compiler probe may reduce ordinary
+cost, but this run does not prove it would remove the long waits.
+
+The [measurement record](../MEASUREMENTS.md#five-thousand-local-receipt-hits-19-october-2026)
+contains all compact call metrics, reproduction commands and observation limits.
+The [dated nine-question review](../PHASE-REVIEWS.md#five-thousand-hit-local-stall-hunt-19-october-2026)
+records the tooling and verification.
+
 ## Check your understanding
 
 <!-- questions:start -->
@@ -307,6 +404,27 @@ wait requires evidence covering that call's stage and time interval; mean saving
 do not identify its kernel cause.
 
 **Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
+
+</details>
+
+### Do overlapping delays prove the same cause?
+
+**Level:** Expert
+
+A Go probe takes 1.675 seconds and a separate system sample takes 1.678 seconds
+over nearly the same interval. Memory-compression counters also increase.
+Have we proved that compression caused Go to wait?
+
+<details>
+<summary>Answer</summary>
+
+No. The overlap suggests shared machine contention, but neither clock records
+the native thread's waiting reason. The counters are machine-wide and span a
+wider snapshot interval; the sampler itself adds work. A quiet-period comparison
+with interleaved sampler-on/off blocks can test the association and observer
+cost. A matching native thread-state trace is needed to identify the wait.
+
+**Learn more:** [A longer local run reproduced the stalls](../guide/16-resolve-selected-git.md#a-longer-local-run-reproduced-the-stalls)
 
 </details>
 

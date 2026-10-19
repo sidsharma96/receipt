@@ -474,3 +474,25 @@ do not identify its kernel cause.
 **Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
 
 </details>
+
+### Do overlapping delays prove the same cause?
+<!-- check: guide/16-resolve-selected-git.md -->
+
+**Level:** Expert
+
+A Go probe takes 1.675 seconds and a separate system sample takes 1.678 seconds
+over nearly the same interval. Memory-compression counters also increase.
+Have we proved that compression caused Go to wait?
+
+<details>
+<summary>Answer</summary>
+
+No. The overlap suggests shared machine contention, but neither clock records
+the native thread's waiting reason. The counters are machine-wide and span a
+wider snapshot interval; the sampler itself adds work. A quiet-period comparison
+with interleaved sampler-on/off blocks can test the association and observer
+cost. A matching native thread-state trace is needed to identify the wait.
+
+**Learn more:** [A longer local run reproduced the stalls](../guide/16-resolve-selected-git.md#a-longer-local-run-reproduced-the-stalls)
+
+</details>

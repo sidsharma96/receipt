@@ -1306,3 +1306,187 @@ retain PID and timestamps and stop on changed output or a failed child. The
 runtime trace begins at main, so it cannot explain pre-main gaps by itself.
 The [nine-question diagnosis review](PHASE-REVIEWS.md#go-probe-localization-19-october-2026)
 records decisions, verification and untested cases.
+
+## Five thousand local Receipt hits, 19 October 2026
+
+Call 688 is a useful specimen: a full hit took 2,279.595 ms, the parent-observed
+Go probe took 1,675.043 ms, and the OS reported 75.588 ms CPU for that child.
+Its first output was observed after 1,674.558 ms. The Start call took 59.549 ms;
+the subsequent Wait interval took 1,615.494 ms. These boundaries include parent
+scheduling and pipe-copy completion, not just instructions executing inside Go.
+
+![Observed overlapping process-boundary timings](assets/receipt-go-batch-timeline.svg)
+
+The [teaching chapter](guide/16-resolve-selected-git.md#a-longer-local-run-reproduced-the-stalls)
+walks through that execution. The [compact evidence](measurements/receipt-go-batch-2026-10-19/evidence.json)
+retains all 5,000 call records, Go PIDs and resource counters, ordered stage
+metrics, 527 machine samples and selected common process-name counters near slow
+calls. Raw JSONL records stay local; their SHA-256 hashes are in the evidence.
+No environment values, command output or process argument lists are published.
+
+### Fixed plan and environment
+
+The runner wrote its plan before building or measuring: five blocks of 1,000
+cached Go hits, five warmups per block, two seconds between blocks, thresholds
+100/200/300 ms, and no early stop on an outlier. It checks a 30-minute budget
+before each measured call and uses a 30-second subprocess timeout. This is not
+an absolute deadline including builds, final key checks or every cleanup action.
+All 5,000 calls succeeded; none reached the timeout. The measured loop plus its
+warmups, pauses and final identity checks took 530.419 seconds.
+
+Source was d125ea1, including the implemented selected-Git optimization. The
+workload was `receipt run --timings --cache-dir CACHE -- go test -count=1 ./...`
+in a fresh Git fixture: go.mod, one tiny test, 256 files of 4 KiB, and an ignored
+file. The cache was outside the fixture and seeded with the stock Receipt binary.
+This repeats the earlier fixture/full-hit context using **current** production
+behavior, not the historical 97b833e discovery implementation.
+
+The host reported macOS 26.6.2, arm64, 16 GiB RAM, eight logical CPUs and 16 KiB
+pages. The resource sizes came from read-only sysctl observations during the run;
+the retained metadata contains the OS/version and binary hashes. Normal PATH Go
+selection remained enabled: the existing launcher selected stock Go 1.27.2.
+The selected Go binary's hash stayed unchanged. No installed Go source/binary,
+PATH, developer selection, power setting or user application was changed.
+Background applications remained active. No experiment ran on the droplet.
+
+Both Receipt binaries used `-trimpath -buildvcs=false -ldflags=-linkmode=external`.
+The diagnostic overlay records subprocess Start/Wait/first-output boundaries,
+OS child resource usage and Receipt's runtime GC counters. It retains current
+Git selection. Go itself has no instrumentation or experimental parser fix here.
+Git Trace2, Go runtime tracing and Instruments were off. A separate Python thread
+ran ps and vm_stat at nominal one-second intervals, recording names instead of
+arguments. Collection took median 34.028 ms, p99 139.638 ms, maximum 1,678.230 ms;
+its CPU/observer cost was not separately calibrated. These are collection wall
+durations, not CPU overhead percentages. Short-lived processes may disappear
+between ps snapshots; process CPU deltas are not complete machine utilization.
+
+### All calls, including the quiet periods
+
+| Metric | Median | Mean | p99 | Maximum |
+| --- | ---: | ---: | ---: | ---: |
+| Go boundary elapsed, ms | 35.079 | 41.362 | 95.269 | 1,675.043 |
+| Go child reported CPU, ms | 33.695 | 38.101 | 72.693 | 84.812 |
+| External whole hit elapsed, ms | 89.949 | 103.476 | 221.076 | 2,279.595 |
+| time-reported CPU, ms | 70 | 79.544 | 150.1 | 180 |
+| time-reported peak RSS, decimal MB | 18.432 | 18.431 | 18.973 | 19.595 |
+| Go child peak RSS, decimal MB | 16.007 | 16.009 | 16.318 | 16.417 |
+
+The external clock includes `/usr/bin/time`, Receipt startup and diagnostic exit
+work. time's CPU fields have coarse 10 ms display precision; the Go child counters
+have finer resolution. The CPU rows are OS accounting, not hardware-cycle counts.
+Peak RSS is not total allocations or summed simultaneous memory across a process
+tree. Nested stage durations and parent/child CPU reports must not be summed as
+independent work. These are descriptive session costs, not optimization savings.
+
+There were 36 Go probes ≥100 ms, 11 ≥150 ms, seven ≥200 ms and three ≥300 ms.
+Whole hits had 107 ≥200 ms and 12 ≥300 ms; a slow whole hit is not automatically
+a slow Go child. The seven Go events occurred within 14.962 seconds, all in the
+first block. The final four blocks had no Go probe ≥200 ms. Indices are zero-based.
+
+| Index | Go elapsed, ms | Go CPU, ms | Start, ms | Major faults | Involuntary switches |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 666 | 370.603 | 67.012 | 93.666 | 119 | 550 |
+| 688 | 1,675.043 | 75.588 | 59.549 | 129 | 799 |
+| 690 | 243.043 | 61.923 | 5.992 | 65 | 447 |
+| 691 | 239.434 | 55.708 | 27.379 | 65 | 302 |
+| 694 | 276.118 | 66.109 | 4.936 | 65 | 406 |
+| 723 | 404.884 | 65.095 | 32.066 | 65 | 235 |
+| 727 | 293.003 | 51.763 | 1.787 | 65 | 313 |
+
+Around index 688, Go elapsed times were 48.580, 116.568, **1,675.043**, 134.957,
+243.043 and 239.434 ms at indices 686–691. Around index 723, they were 75.207,
+**404.884** and 65.364 ms at 722–724. Retained neighborhoods and all other calls
+allow checking a burst rather than selecting only dramatic specimens.
+
+### Commonalities and counterexamples
+
+For index 688, Git selection took 54.957 ms against session median 9.543 ms;
+root/list children took 49.655/97.427 ms against 5.127/5.779 ms. Input hashing was
+36.603 ms against 6.888 ms, and executable hashing 220.439 ms against 6.266 ms.
+The independent ps/vm_stat sample at index 89 occupied almost the same interval
+as Go and took 1,678.230 ms. Multiple operations were delayed together.
+
+VM snapshots 88–89, roughly 2.708 seconds apart, show increases of 145,141 page
+compressions, 187,074 decompressions, 4,347 page-ins and 220 swap-ins. Counts are
+machine-wide repeated work, not unique pages or Go-owned bytes. Selected ps
+counters near the burst include active Codex/Chrome renderers, ffmpeg and the
+window server. Their coarse counter deltas neither establish CPU saturation nor
+assign blame to an application. The complete process list remains local.
+
+| Block | Go ≥200 ms | Page compressions between in-block samples | Swap-outs between those samples | Longest collection, ms |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 7 | 1,734,381 | 41,800 | 1,678.230 |
+| 2 | 0 | 149,296 | 0 | 94.411 |
+| 3 | 0 | 98,381 | 0 | 49.736 |
+| 4 | 0 | 114,981 | 0 | 57.189 |
+| 5 | 0 | 1,203,007 | 0 | 96.498 |
+
+These snapshot differences omit small block-edge intervals and have different
+observation lengths; they are not normalized rates. Block five is a useful
+counterexample: substantial compression occurred without any ≥200 ms Go probe.
+Five of the seven slow calls retained the usual major-fault value 65. Some normal
+calls had higher fault/switch counts. Go's reported block I/O counters were zero
+throughout, which does not exclude filesystem/cache/memory waits. Apple's
+[getrusage manual](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/getrusage.2.html)
+defines the counters and their cached-I/O limitation; its
+[virtual-memory guide](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/ManagingMemory/Articles/VMPages.html)
+explains inspecting memory with vm_stat. The installed vm_stat manual describes
+its counters as cumulative system-wide totals when no interval is supplied.
+
+Receipt recorded one GC cycle per hit. The largest Go stall coincided with only
+1.023250 ms of Receipt GC pauses, while the largest Receipt pause anywhere was
+10.766750 ms in block five. Receipt GC pauses cannot explain the 1.675-second
+specimen. Stock Go-child GC was not recorded; earlier Go runtime-trace evidence
+must not be attached to this different PID. Reported child CPU was much smaller
+than elapsed time, but their difference is not a direct native wait-state trace.
+
+### Compatibility, uncertainty and the next discriminating check
+
+Stock and diagnostic full keys matched both before and after the run:
+`a2ae2ce0fdeea8a48cbb081887c5502443c4f3037c0e0ee597b376266da60f42`.
+Every measured invocation replayed a hit with no execution stage. This checks
+instrumentation on this fixture; it does not establish deterministic test outputs
+or the correctness of a future cached-probe workaround. Receipt production code
+is unchanged. No before/after CPU/RAM/latency improvement is claimed.
+
+The 7/5,000 fraction is observed in one session, not an independently sampled
+steady probability. The events cluster, machine activity changes, and earlier
+standalone Go harnesses differ. Do not pool these counts or infer a guaranteed
+run count/confidence interval under independent trials. This run reproduced the
+same class of long Go-boundary delay, not the OS cause of the historical event.
+
+Shared machine contention is now a stronger lead than extra Go CPU work alone.
+The next useful experiment is the same local fixture during a quiet desktop
+period with interleaved sampler-on/off blocks, fixed counts and unchanged stock
+Go. That tests observer cost and the association with surrounding activity. A
+matching native thread-state trace is still needed to distinguish a runnable
+but unscheduled task from a resource wait in Go, its compiler or the parent.
+The earlier Instruments save crash is not repaired by these counters. No native
+OS wait stack or socket trace was captured here. Changing/caching Go probes or
+patching the installed toolchain would mix a compatibility change into diagnosis.
+
+### Reproduce and verify
+
+Use fresh output directories on macOS with the intended Go/toolchain already
+installed. Building and the initial cache seed happen before measured calls.
+
+```sh
+python3 scripts/profile/capture_receipt_go_batch.py . .tools/NEW-CAPTURE
+python3 scripts/profile/analyze_receipt_go_batch.py .tools/NEW-CAPTURE .tools/NEW-EVIDENCE.json
+```
+
+The capture reuses the overlay builder in scripts/profile/capture_git_outlier.py
+with `trace_git=False`; existing Git-focused captures keep Trace2 by default.
+Only diagnostic overlay code gained OS usage/error fields. The analysis computes
+interpolated percentiles, preserves all ordered compact calls and selects ±2
+neighbors plus overlapping sample intervals for each ≥200 ms Go call.
+`scripts/profile/receipt_go_batch_figure.py` regenerates the retained specimen's
+SVG from the committed evidence. Raw captures remain in ignored local storage.
+
+Verification: the three-call stock/diagnostic smoke passed, followed by the full
+5,000 successful hits, unchanged selected-Go hash and before/after full keys.
+Twenty profiling/evidence tests passed. Documentation build/check and publication
+results are recorded in the [full dated review](PHASE-REVIEWS.md#five-thousand-hit-local-stall-hunt-19-october-2026).
+Timeouts, failed commands, all-system-sampler failures and cleanup after forced
+termination were not exercised. Timing/resource observations do not prove those
+failure paths correct. This is diagnostic tooling, not production supervision.

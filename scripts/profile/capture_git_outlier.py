@@ -16,7 +16,7 @@ import time
 def run(args, **kwargs):
     return subprocess.run(args,capture_output=True,text=True,check=True,**kwargs)
 
-def build(source,out,events,git_binary=''):
+def build(source,out,events,git_binary='',trace_git=True):
     main = r'''package main
 import (
  "encoding/json"
@@ -39,7 +39,7 @@ func main() {
 }
 '''
     manifest=(source/'internal/fingerprint/manifest.go').read_text()
-    manifest=manifest.replace('"context"','"context"\n "bytes"\n "time"')
+    manifest=manifest.replace('"context"','"context"\n "bytes"\n "time"\n "syscall"')
     old='''	c.Dir = dir
 	b, err := c.Output()'''
     new=r''' c.Dir = dir
@@ -47,7 +47,7 @@ func main() {
   c.Path = DIRECT_GIT
   c.Args[0] = DIRECT_GIT
  }
- if args[0] == "git" {
+ if args[0] == "git" && TRACE_GIT {
   c.Env = append(os.Environ(), "GIT_TRACE2_EVENT="+EVENT_PATH)
  }
  var output diagnosticOutput
@@ -70,6 +70,8 @@ func main() {
  if c.ProcessState != nil {
   cpu = c.ProcessState.UserTime().Nanoseconds()+c.ProcessState.SystemTime().Nanoseconds()
  }
+ var usage *syscall.Rusage
+ if c.ProcessState != nil { usage, _ = c.ProcessState.SysUsage().(*syscall.Rusage) }
  data, marshalErr := json.Marshal(map[string]any{
   "type":"diagnostic_child","parent_pid":os.Getpid(),"pid":pid,
   "program":args[0],"operation":args[1],"start_ns":started.UnixNano(),
@@ -78,11 +80,12 @@ func main() {
   "wait_ms":float64(finished.Sub(launched).Nanoseconds())/1e6,
   "wall_ms":float64(finished.Sub(started).Nanoseconds())/1e6,
   "cpu_ms":float64(cpu)/1e6,
+  "usage":usage,"failed":err != nil,
  })
  if marshalErr != nil { return nil, marshalErr }
  fmt.Fprintln(os.Stderr,string(data))
  b := output.Bytes()'''
-    new=new.replace('EVENT_PATH',json.dumps(str(events))).replace('DIRECT_GIT',json.dumps(git_binary))
+    new=new.replace('EVENT_PATH',json.dumps(str(events))).replace('DIRECT_GIT',json.dumps(git_binary)).replace('TRACE_GIT',str(trace_git).lower())
     assert manifest.count(old)==1
     manifest=manifest.replace(old,new)
     manifest += r'''

@@ -3659,3 +3659,157 @@ recording finalizes and contains the target, before another long capture. Revisi
 launcher bypass only with complete Go selection compatibility. Revisit more
 instrumentation when its added overhead or absent pre-main coverage prevents
 answering the remaining question.
+
+## Five-thousand-hit local stall hunt, 19 October 2026
+
+In call 688, Receipt waited 1,675 ms around its Go environment probe while the
+OS charged that child 75.588 ms CPU. A separate process/memory collection took
+1,678 ms over almost the same interval. Git and executable hashing were slow
+too. This reproduces the class of delay under investigation and suggests shared
+machine contention, without identifying a native waiting resource. The
+[chapter](guide/16-resolve-selected-git.md#a-longer-local-run-reproduced-the-stalls)
+shows the execution lanes; the [measurement reference](MEASUREMENTS.md#five-thousand-local-receipt-hits-19-october-2026)
+retains the full protocol and all compact calls. This is diagnosis, not an
+implemented production optimization; Chapter 16 is amended rather than adding
+an optimization chapter or rewriting earlier measurements.
+
+### Local stall hunt — 1. Data structures
+
+Each completed call is one flushed JSONL record with ordered stage/child/GC
+observations, timestamps, PIDs and resource counters. The capture keeps only the
+current result rather than accumulating all 5,000 in memory. The sampler keeps
+a PID-to-cumulative-CPU map across snapshots to compute deltas for surviving
+processes; missing short-lived processes are not silently counted as idle CPU.
+Its JSONL includes machine memory counters and selected top deltas. Analysis
+later loads records outside the measured interval and produces all 5,000 compact
+rows, 527 samples, block summaries and neighbor indices. This uses more analysis
+memory but does not add that memory to a measured Receipt process. Published
+process examples allow only a few common application names; arguments, output
+and environment values stay out of the evidence. Raw files stay local, with
+hashes retained for attribution.
+
+### Local stall hunt — 2. Architecture and boundaries
+
+The capture first writes the fixed plan, builds stock and overlaid Receipt with
+identical flags, creates the fixture, seeds the external cache and compares full
+keys. Current Receipt keeps its normal selected-Git behavior and normal stock
+Go/toolchain selection. The overlay adds parent-observed child resource counters;
+it does not instrument or patch cmd/go. Each block warms the cache five times,
+then records 1,000 hits; two-second pauses separate blocks. Final keys and the
+selected-Go binary hash are checked after all calls. Analysis and figure drawing
+run after measurement. Other storage backends, the droplet, command execution
+misses and a native OS waiting-state recorder are outside this experiment.
+
+### Local stall hunt — 3. Primitives and concurrency
+
+One Python main thread runs calls sequentially. A second samples ps/vm_stat and
+uses a threading.Event for shutdown and waiting. From
+[sample_system in capture_receipt_go_batch.py](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/capture_receipt_go_batch.py):
+
+```python
+            stop.wait(max(0, 1 - (time.time_ns() - started) / 1e9))
+```
+
+Here started is the sample's start timestamp. A short sample leaves time to wait
+before the next one; a 1.678-second sample leaves no remainder and the next
+collection can begin immediately. This is a nominal interval, not a promise to
+collect once every second under load. The stop event lets normal completion wake
+that wait. Go's existing subprocess stdout copier is joined by Wait before its
+first-output timestamp is read. OS child usage is available after completion.
+No Receipt worker, network request, installed package or persisted probe cache
+was introduced. Diagnostic stderr writes and ReadMemStats add observation work.
+
+### Local stall hunt — 4. Pitfalls and debugging
+
+A Start/Wait interval is measured by Receipt's parent clocks. It can include
+parent descheduling and delayed output-copy completion, not just the Go child's
+own waiting. Wall time minus CPU time is therefore not a direct blocked-time
+measurement. VM counters cover all processes, and repeated compression is not
+unique resident memory. Process CPU snapshots are not atomic or complete; their
+deltas do not prove saturation or blame a particular app. Collection itself was
+slow during the worst event and has uncalibrated observer cost. The earlier
+Instruments crash remains unresolved. Receipt GC and Go-child GC are different:
+this batch observes only the former. No native wait stack or socket trace was
+obtained. Timeout/forced-termination cleanup and sampler-failure paths were not
+exercised; these scripts are not a production child-supervision guarantee.
+
+### Local stall hunt — 5. Hot and cold costs
+
+All 5,000 measured calls were warm hits; builds, test execution/cache seeding and
+analysis were outside the measured calls. Go median elapsed/CPU were
+35.079/33.695 ms, mean 41.362/38.101 ms. External whole-hit median/mean were
+89.949/103.476 ms. time-reported RSS median/mean were 18.432/18.431 MB, and Go's
+median peak RSS was 16.007 MB. time CPU uses coarse display precision; none of
+these values are hardware-cycle counts or summed process-tree memory.
+
+Seven Go probes reached 200 ms, three 300 ms. They clustered within 14.962 seconds
+in block one; the last 4,000 calls had none. The largest Go call took 1,675.043 ms,
+including Start 59.549 ms and subsequent Wait 1,615.494 ms, while its CPU was
+75.588 ms and peak RSS 16.237 MB. Whole-hit latency there was 2,279.595 ms.
+Receipt's GC pause total in that hit was 1.023250 ms. Executable hashing also
+rose from session median 6.266 ms to 220.439 ms. This is a broad delayed specimen,
+not evidence that the program performed 1.6 seconds of additional Go computation.
+
+### Local stall hunt — 6. Guarantees and assumptions
+
+The fixed plan completed with all 5,000 successful hits and no execution stages.
+Stock/diagnostic full keys matched before and after, and the selected Go binary
+hash stayed unchanged. This checks the diagnostic overlay on the fixed fixture;
+it does not prove deterministic test output or a future workaround's key policy.
+No production Receipt code, installed toolchain or user selection was changed.
+Timing rows cover every completed measured call. Normal background apps remained
+active; there is no quiet-machine, stationary-rate or independent-trials guarantee.
+The overlapping sample and slow Git/hash stages suggest shared contention, not
+its exact OS cause. The old 300 ms call has no newly recovered thread trace.
+
+### Local stall hunt — 7. Alternatives and decisions
+
+The local-first choice preserves the Mac/toolchain context; a droplet would
+measure a different OS and remains useful later for comparison. Recording all
+planned calls rather than stopping at the first event reveals clustering and
+long quiet periods. Heavy runtime/OS tracing was left off to keep stock Go and
+avoid repeating the failed Instruments capture. Retrospectively, no machine
+sampler would remove its observer cost but lose the current correlation; a
+future interleaved on/off comparison can measure that tradeoff. Quiet-desktop
+blocks can test surrounding activity without changing Go's behavior. Caching
+probe outputs, bypassing the Go launcher or patching installed Go would alter
+compatibility/selection assumptions and is deferred. The prior isolated compiler
+cache experiment remains separate from this run.
+
+### Local stall hunt — 8. Evidence, verification and risks
+
+The committed [evidence](measurements/receipt-go-batch-2026-10-19/evidence.json)
+contains all compact rows, ordered counters and the fixed plan. Raw JSONL hashes
+identify the local originals. Three smoke hits checked parsing, keys and child
+usage before the full batch. Twenty profile/evidence tests passed, covering
+retained sample coverage, key comparisons, timestamp relationships and the stated
+outlier cluster. The measured loop, warmups, pauses and final checks took
+530.419 seconds. A generated SVG was rendered to PNG locally and inspected for
+labels, lanes and timing relationships. The chapter includes its text equivalent
+and a table readable without the picture. The prose checklist reviewed the
+concrete specimen, distinct GC owners, cumulative-counter meaning, observer
+cost and the compression counterexample. Automated checks cannot certify teaching
+quality or causal attribution.
+
+Documentation verification: `make docs` built the book and all 18 checks passed.
+No local production Go unit/race/PostgreSQL suite was rerun for these diagnostic scripts
+and documents; stock/diagnostic builds and the successful hit checks ran locally.
+The timeout, forced termination, sampler-error and quiet-machine cases remain
+untested. No A/A control, sampler-off control or confidence interval is claimed.
+One session and clustered observations cannot establish a steady tail probability.
+The fifth block had over a million compression events without a ≥200 ms Go probe,
+so compression alone is not a sufficient explanation. Publication is checked
+against the deployment for this commit, separately from runtime evidence.
+
+### Local stall hunt — 9. Revisit conditions
+
+Revisit observer cost with fixed, interleaved sampler-on/off blocks; revisit
+background contention by repeating on this host during a quiet desktop period.
+Do not stop user applications or change power/security settings implicitly.
+Revisit native thread tracing only after a short capture finalizes successfully;
+a matching stall must distinguish runnable-but-unscheduled work from a resource
+wait in Go, its compiler or the parent. Revisit the Go compiler-cache experiment
+when a supported upstream fix and its invalidation coverage can be evaluated.
+Use a droplet only to compare Linux behavior, not to claim a cause for this Mac.
+Revisit the run budget if another session yields no examples; preserve all calls
+and avoid turning this burst's observed frequency into a guaranteed sample count.

@@ -394,3 +394,13 @@ probe cost; it is not installed or adopted by Receipt. A matching Go runtime
 trace confirms a compiler-child wait in one call, while the earlier 300 ms event
 remains unexplained. The [nine-question diagnosis review](../PHASE-REVIEWS.md#go-probe-localization-19-october-2026)
 records evidence, tooling failures, reproducible scripts and remaining limits.
+
+## 19 October 2026: reproduce the clustered Go stalls locally
+
+[Chapter 16](16-resolve-selected-git.md#a-longer-local-run-reproduced-the-stalls)
+now follows a 1.675-second Go probe and an overlapping delayed machine sample.
+A fixed 5,000-hit run captured seven ≥200 ms Go probes within 15 seconds, followed
+by 4,000 calls with none. Full keys stayed compatible; no production optimization
+was added. The [nine-question review](../PHASE-REVIEWS.md#five-thousand-hit-local-stall-hunt-19-october-2026)
+records the CPU/RAM/latency evidence, machine-memory correlation, observer cost
+and the native waiting-state evidence still missing.
