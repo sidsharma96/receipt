@@ -286,6 +286,37 @@ assigning a cause. The
 links the official guides, exact metrics, raw traces and reproduction commands.
 No production Git selection changed.
 
+## Slow hits can move between stages
+
+A 476.56 ms hit in the longer diagnostic run had Git calls of 22–28 ms.
+The Go environment probe took 371.37 ms, using only 53.39 ms of child CPU.
+Receipt's GC pauses totaled 0.0995 ms. Blaming that whole delay on Git would
+send us toward the wrong operation.
+
+The direct-Git version also had a 416.59 ms hit while its Git calls stayed
+around 8–10 ms. That time appeared in file hashing and the Go probe.
+A hashing timer includes both processing bytes and waiting, so these stages
+alone cannot tell us whether storage or scheduling delayed the run.
+
+We did reproduce two long Git calls separately. A 244.97 ms root query spent
+about 233.65 ms before Git's internal clock began; a 238.99 ms listing spent
+about 200.94 ms before that clock began. Git's actual listing region took
+11.34 ms. These observations narrow those particular spikes to startup,
+but the OS recordings did not identify the exact dependency.
+
+The longer launcher/direct comparison used 500 pairs, with all 1,000 cache hits
+and matching keys. Mean duration fell from 115.97 to 84.69 ms in that diagnostic
+baseline. It makes three Git calls per hit, whereas current production makes
+two. The selected direct path was resolved outside the timer, so a production
+optimization must also measure that resolution cost.
+
+There are two separate next steps: reduce the measured launcher overhead while
+respecting the user's Git choice, and investigate remaining waits across Go
+startup and file operations. Bypassing the launcher did not eliminate slow hits.
+The [capture and replay reference](../MEASUREMENTS.md#correlated-startup-outliers-and-wider-variance-18-october-2026)
+keeps the full observations, failed recording attempts and limits. No production
+Git selection or probe freshness changed.
+
 ## Choose the next question from evidence
 
 Fresh listing and runtime probes remain. A longer-lived root cache could save

@@ -3278,3 +3278,106 @@ records sources, timings and limitations. This amends costs/evidence and the
 next diagnostic boundary in questions 5, 8 and 9 above. Direct selection is an
 optimization candidate; respecting PATH/developer-tool selection and measuring
 resolution overhead remain prerequisites. No production selection policy changed.
+
+## Startup outlier diagnosis, 18 October 2026
+
+A 244.97 ms root query spent about 233.65 ms before Git's internal clock began.
+A 238.99 ms listing spent about 200.94 ms before that clock; its directory
+enumeration took 11.34 ms. The
+[measurement record](MEASUREMENTS.md#correlated-startup-outliers-and-wider-variance-18-october-2026)
+preserves aligned events and a longer control. [Chapter 14](guide/14-reuse-the-git-root.md#slow-hits-can-move-between-stages)
+explains why later 400 ms hits also require investigation outside Git.
+
+### Startup diagnosis — 1. Data structures
+
+Per-call records contain integer nanosecond timestamps, child/parent PIDs,
+monotonic Start/Wait durations, CPU time and first-output time. Trace2 session
+IDs correlate Git events with the child PID. Lists retain run order; paired
+records retain order and full keys. Detailed OS traces stay local.
+
+### Startup diagnosis — 2. Architecture and boundaries
+
+A build overlay splits the existing child call into Start and Wait, captures
+first output and adds per-invocation GC counters. The normal source is untouched.
+The experimental direct-path branch changes only Git command selection in the
+diagnostic build. Its source is in the
+[capture harness](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/capture_git_outlier.py).
+The actual sequence is c.Start(), c.Wait(), then reading the completed stdout
+buffer and process CPU counters. Wait joins the stdout copier; the first-output
+field is read only afterward. A named buffer prevents ReadFrom from bypassing
+the timestamped Write method.
+
+### Startup diagnosis — 3. Primitives and concurrency
+
+One stdout-copy goroutine timestamps its first write. A completed Wait synchronizes
+its result with the reader. Invocations and their Git/probe commands remain
+sequential. OS profiling and a watchdog sample were diagnostic trials, not new
+production concurrency. The final capture tool bounds recording finalization
+and marks OS coverage unverified until separately checked.
+
+### Startup diagnosis — 4. Pitfalls and debugging
+
+The first writer embedded bytes.Buffer, exposing ReadFrom and bypassing Write.
+Its first-output field is unusable, while its start/wait/Trace2 clocks remain
+valid. The corrected writer owns a named buffer and refuses missing timestamps
+for successful nonempty output. Monotonic parent intervals and wall-clock Git
+timestamps differ slightly; aligned totals are approximate. Windowed recording
+did not cover the target PID; normal recording stalled on finalization, and
+watchdog sampling attached too late. These failures do not establish a kernel cause.
+
+### Startup diagnosis — 5. Hot and cold costs
+
+The two large Git calls mostly delayed before instrumented Git execution.
+A 500-pair diagnostic control reduced mean hit time 115.97 to 84.69 ms and CPU
+104.98 to 79.80 ms by directly calling selected Git. That old baseline has three
+Git calls; current main has two, and resolution was excluded. The 476.56 ms
+launcher hit was dominated by a 371.37 ms Go probe. A 416.59 ms direct hit had
+large hashing/probe stages with ordinary Git calls. Startup and non-Git waits
+both matter. Cold storage and broad hardware behavior remain unmeasured.
+
+### Startup diagnosis — 6. Guarantees and assumptions
+
+Every one of the 1,000 paired invocations replayed old entries; full keys matched
+before and after measurement. No production contract changed. The observations
+locate these two reproduced Git spikes before its clock but do not assign them
+to one Apple library, scheduler or filesystem event. Stable keys do not establish
+deterministic output. Direct selection in the overlay is not a production-ready
+tool-selection policy, and removing launcher overhead does not eliminate all
+slow hits.
+
+### Startup diagnosis — 7. Alternatives and decisions
+
+We tried PID-aligned OS recording to identify waiting. Failed finalization led
+to a narrower instrument and a bounded timeout; the profiling lock required
+restarting the user-owned helper. A watchdog sample was too late for short
+processes. We then used paired entry points to check the actionable routine cost.
+Changing global PATH was avoided because it changes recorded environment inputs.
+Caching probe results was not implemented: mutable settings/package metadata
+still require fresh observation. These are decisions from this investigation.
+
+### Startup diagnosis — 8. Evidence and risks
+
+Both reproduced startup cases retain parent and matching Trace2 events.
+The 500 randomized pairs were balanced by order, with five warmups per version,
+one inherited environment and no removed outliers. Full paired records are linked.
+Neither version had a Git call above 200 ms in that control, so it does not
+establish a difference in the rare-tail rate. Shared-host activity and diagnostic
+overhead remain. Failed OS captures, the sampler race and the early writer bug
+are recorded explicitly. Exact kernel waiting attribution remains unresolved.
+
+### Startup diagnosis — 9. Revisit conditions
+
+Implement tool selection only after resolving user-choice, developer-directory,
+failure and resolution-cost behavior. Revisit the tail explanation when a valid
+OS recording covers the exact PID/interval, or per-stage CPU/fault/I/O counters
+identify a repeatable wait. Include Go probes and file work in that investigation.
+Revisit GC only if corresponding collection evidence becomes substantial.
+
+Verification: a fresh two-hit smoke capture built the final overlay, replayed
+both entries and captured first-output timestamps. Seven evidence/extraction
+checks passed, including PID matching, timestamp arithmetic, paired order/counts,
+success/no-execution records, PID filtering and the non-Git slow-hit examples.
+make docs passed all 18 checks. Production tests were not rerun locally for
+this diagnostic-only change; repository CI follows the push. OS recording
+coverage/finalization failures remain explicit and are not validated by these
+tests. Automated documentation checks do not establish teaching quality.

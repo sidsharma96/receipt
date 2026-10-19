@@ -51,6 +51,8 @@ class DiagnosticEvidence(unittest.TestCase):
             path = Path(directory) / 'trace.xml'
             path.write_text(xml)
             rows = extract(path)
+            self.assertEqual(extract(path, [7]), rows)
+            self.assertEqual(extract(path, [70]), [])
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[1]['schema'], 'thread-state')
         self.assertEqual(rows[1]['fields']['process']['fmt'], 'git (7)')

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Extract only Git/Receipt events from an xctrace syscall/thread-state XML export.
-Usage: summarize_system_trace.py INPUT.xml OUTPUT.json
+Usage: summarize_system_trace.py INPUT.xml OUTPUT.json [PID ...]
 Raw system-wide exports should remain local.
 """
 import json
@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
 
-def extract(path):
+def extract(path, pids=None):
     refs = {}
     rows = []
     keep = {'start-time','duration','duration-on-core','duration-waiting',
@@ -43,12 +43,15 @@ def extract(path):
             fields = {column:value(child) for column,child in zip(row_columns,element)}
             process = fields.get('process',{}).get('fmt','')
             thread = fields.get('thread',{}).get('fmt','')
-            if process.startswith(('git (','receipt-diagnostic (')) or '(git, pid:' in thread or '(receipt-diagnostic, pid:' in thread:
+            selected = (process.startswith(('git (','receipt-diagnostic (')) or '(git, pid:' in thread or '(receipt-diagnostic, pid:' in thread)
+            if pids is not None:
+                selected = any(process.endswith(f'({pid})') or f'pid: {pid})' in thread for pid in pids)
+            if selected:
                 rows.append({'schema':row_schema, 'fields':fields})
             element.clear()
     return rows
 
 if __name__ == '__main__':
-    rows = extract(sys.argv[1])
+    rows = extract(sys.argv[1], [int(pid) for pid in sys.argv[3:]] or None)
     Path(sys.argv[2]).write_text(json.dumps(rows,indent=2)+'\n')
     print('Retained target rows:',len(rows))

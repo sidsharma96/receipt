@@ -966,3 +966,123 @@ would need to respect user-selected Git and active developer-tool changes.
 Calling xcrun on every operation could consume some of the saved time.
 The experiment motivates measuring resolution once per invocation before
 considering an implementation; it does not justify hard-coding an Xcode path.
+
+## Correlated startup outliers and wider variance, 18 October 2026
+
+A later capture reproduced a 244.97 ms Git root query. The child's CPU time was
+27.29 ms and Receipt's total GC pauses in that invocation were 0.0874 ms.
+Matching the child PID to its Trace2 session located most of the delay before
+Git's internal elapsed-time origin:
+
+| Captured operation | Parent-observed call | Before Git clock | Git-reported elapsed | After Git report |
+| --- | ---: | ---: | ---: | ---: |
+| Root query | 244.97 ms | 233.65 ms | 5.65 ms | 5.68 ms |
+| File listing | 238.99 ms | 200.94 ms | 18.55 ms | 19.50 ms |
+
+For the listing, Start returned after 6.23 ms, first output arrived about
+219.65 ms after the call began, and Wait returned at about 239 ms. Git's
+read_directory region took 11.34 ms and index reading 0.013 ms.
+These two reproduced outliers are primarily startup delays before Git's
+instrumented execution. They do not establish whether the Apple shim, dynamic
+loader, scheduling, page faults or another startup dependency caused that delay.
+
+The [selected captures and attempt record](measurements/git-outliers-2026-10-18/startup-cases.json)
+preserve PID-aligned parent timestamps, full matching Git events and GC counters.
+The Git-clock origin is estimated from the final atexit event's timestamp minus
+its t_abs. Parent intervals use Go's monotonic clock; alignment uses wall-clock
+timestamps with microsecond precision. The arithmetic therefore differs by
+microseconds and does not identify an individual kernel wait.
+
+The first capture's first-output counter was bypassed because an embedded
+bytes.Buffer exposed ReadFrom, allowing copying without calling our Write
+method. Its start/wait/Trace2 measurements remain usable. The corrected
+diagnostic writer owns a named buffer and records its first write; the final
+harness rejects a successful nonempty output whose timestamp was not captured.
+
+### The larger control changes the scope of the diagnosis
+
+We then measured 500 balanced, randomized pairs through diagnostic Receipt:
+1,000 Go cache hits total, five excluded warmups per version, one frozen parent
+environment and seed 20261018. Both binaries use the original 97b833e baseline,
+which makes three Git calls per hit. One retains normal Git selection; the other
+uses the same selected Xcode Git directly. Git was resolved before measuring,
+so resolution cost is excluded. No production selection policy or PATH changed.
+Old entries replayed in every measured call; full keys matched at both ends.
+
+| Diagnostic baseline metric | Launcher | Direct Git |
+| --- | ---: | ---: |
+| Receipt mean | 115.97 ms | 84.69 ms |
+| Receipt median | 105.92 ms | 77.98 ms |
+| Receipt maximum | 476.56 ms | 416.59 ms |
+| Process-tree CPU mean | 104.98 ms | 79.80 ms |
+| Mean elapsed per Git call | 16.95 ms | 6.70 ms |
+| Maximum Git call | 144.06 ms | 52.36 ms |
+| Git calls at least 200 ms | 0 / 1,500 | 0 / 1,500 |
+
+The mean Receipt difference is 31.28 ms and CPU difference 25.18 ms in this
+diagnostic baseline. Current production already removed one root query, so
+this is not a measured 31 ms benefit for current main. The comparison has no
+same-binary control or prespecified confidence interval and runs on a shared
+host; it is an exploratory estimate. All observations remain in the
+[full paired records](measurements/git-outliers-2026-10-18/paired-replays.json).
+
+The largest launcher hit spent 371.37 ms in go env -json, using 53.39 ms of child
+CPU. Its three Git calls took only 27.71, 23.18 and 22.29 ms. Receipt GC pauses
+totaled 0.0995 ms. The largest direct-Git hit had ordinary Git calls of 7.89,
+9.61 and 8.68 ms, but its input-file stage took 137.79 ms, executable hashing
+120.65 ms and Go probe 113.59 ms. Its process-tree CPU total was 112.17 ms
+versus 416.59 ms Receipt elapsed; Receipt GC pauses were 0.0363 ms.
+
+Thus the remaining variation is not confined to Git. The stage timers combine
+work and waiting; they do not by themselves distinguish disk I/O, page faults
+or being descheduled during hashing. There is evidence of delays outside Git,
+not evidence for one named OS cause. Direct invocation reduces routine overhead
+without establishing elimination of occasional slow cache hits.
+
+### Capture limitations and next actions
+
+The bounded hunts stopped at the first Git call above 200 ms or 600 hits.
+One unrecorded hunt found the root-query outlier at hit 116. A windowed OS
+recording found the listing outlier at hit 226, but its export did not contain
+the trigger PID or a covering time range. A full-recording hunt finished
+600 hits with a 108.37 ms maximum Git call; its recorder stalled while stopping
+and was terminated after preserving timing records. A 100 ms watchdog sampler
+trial completed 600 hits with a 150.43 ms maximum; the target exited before
+sampling attached, so no useful slow-call stack was obtained.
+
+The narrower System Call Trace attempt first failed because kperf's recording
+lock remained held. Restarting the user-owned Instruments helper cleared that
+lock. A repeat completed 600 hits with a 116.28 ms maximum but again failed to
+finalize within the harness's timeout. No usable OS attribution is claimed.
+The stale diagnostic helper was stopped afterward; no system-wide recording
+or benchmark process was left running. These tooling failures are recorded
+rather than treated as completed kernel evidence. Raw OS data remains local.
+
+The focused [capture harness](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/capture_git_outlier.py)
+records child PID, Start/Wait boundaries and first output. Its recorder has a
+90-second finalization timeout; completed target calls do not imply a verified
+OS recording. The optional PID filter in
+[summarize_system_trace.py](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/summarize_system_trace.py)
+limits extracted rows to selected process IDs. The
+[paired replay harness](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/compare_receipt_git_paths.py)
+reproduces the direct-path control:
+
+```sh
+python3 scripts/profile/capture_git_outlier.py /path/to/97b833e-source /tmp/git-startup-capture --limit 600 --threshold 200
+python3 scripts/profile/compare_receipt_git_paths.py /path/to/97b833e-source /tmp/git-startup-capture/fixture /tmp/git-path-pairs
+```
+
+Use fresh output directories. The tools modify only isolated fixtures, cache
+entries and diagnostic builds; detailed traces can reveal local paths.
+The build overlay's direct-path branch is experimental. A production change
+must preserve the user's selected Git, handle active developer-tool changes
+and failures, and include resolution cost in whole-hit measurements.
+Changing PATH globally would also change Receipt's recorded environment and
+could legitimately change keys; that is not the optimization tested here.
+
+The supported next optimization is to evaluate resolving the selected Git once
+within an invocation. Further variance diagnosis should measure parent/child
+CPU, faults, I/O counters and scheduling around Go startup and file work as well
+as Git. A successful complete OS capture is still needed to assign the waiting
+to a specific kernel dependency. Caching mutable toolchain probes would need a
+freshness contract; these results do not justify changing it.

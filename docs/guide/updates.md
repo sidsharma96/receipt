@@ -364,3 +364,12 @@ A 240-call exploratory comparison found about 11 ms of routine overhead saved
 by directly invoking the selected Xcode Git. The rare long tail did not recur.
 The [diagnosis review amendment](../PHASE-REVIEWS.md#gc-and-subprocess-variance-diagnosis-18-october-2026)
 links evidence and selection-policy limits. Production behavior is unchanged.
+
+## 18 October 2026: correlate startup outliers and broaden the diagnosis
+
+[Chapter 14](14-reuse-the-git-root.md#slow-hits-can-move-between-stages) now follows
+two startup-delayed Git calls and explains later slow hits dominated by Go probes
+or hashing. A 1,000-hit diagnostic control preserved full keys and reduced routine
+cost through direct Git, but did not eliminate slow hits. The
+[nine-question review](../PHASE-REVIEWS.md#startup-outlier-diagnosis-18-october-2026)
+records the evidence, capture failures and remaining OS uncertainty.

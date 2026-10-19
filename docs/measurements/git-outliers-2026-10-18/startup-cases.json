@@ -1,0 +1,610 @@
+{
+  "source_revision": "97b833e",
+  "cases": [
+    {
+      "capture": "light",
+      "call": {
+        "cpu_ms": 27.286,
+        "first_output_ns": 0,
+        "operation": "rev-parse",
+        "parent_pid": 18782,
+        "pid": 18785,
+        "program": "git",
+        "start_ms": 4.004833,
+        "start_ns": 1792375392252397000,
+        "start_return_ns": 1792375392256402000,
+        "type": "diagnostic_child",
+        "wait_ms": 240.966584,
+        "wait_return_ns": 1792375392497374000,
+        "wall_ms": 244.971417
+      },
+      "parent_events": [
+        {
+          "cpu_ms": 27.286,
+          "first_output_ns": 0,
+          "operation": "rev-parse",
+          "parent_pid": 18782,
+          "pid": 18785,
+          "program": "git",
+          "start_ms": 4.004833,
+          "start_ns": 1792375392252397000,
+          "start_return_ns": 1792375392256402000,
+          "type": "diagnostic_child",
+          "wait_ms": 240.966584,
+          "wait_return_ns": 1792375392497374000,
+          "wall_ms": 244.971417
+        },
+        {
+          "cpu_ms": 26.561,
+          "first_output_ns": 0,
+          "operation": "rev-parse",
+          "parent_pid": 18782,
+          "pid": 18847,
+          "program": "git",
+          "start_ms": 12.538959,
+          "start_ns": 1792375392499939000,
+          "start_return_ns": 1792375392512479000,
+          "type": "diagnostic_child",
+          "wait_ms": 61.039541,
+          "wait_return_ns": 1792375392573520000,
+          "wall_ms": 73.5785
+        },
+        {
+          "cpu_ms": 27.971,
+          "first_output_ns": 0,
+          "operation": "ls-files",
+          "parent_pid": 18782,
+          "pid": 18873,
+          "program": "git",
+          "start_ms": 5.133458,
+          "start_ns": 1792375392573881000,
+          "start_return_ns": 1792375392579015000,
+          "type": "diagnostic_child",
+          "wait_ms": 79.194084,
+          "wait_return_ns": 1792375392658211000,
+          "wall_ms": 84.327542
+        },
+        {
+          "cpu_ms": 54.149,
+          "first_output_ns": 0,
+          "operation": "env",
+          "parent_pid": 18782,
+          "pid": 18933,
+          "program": "go",
+          "start_ms": 1.917083,
+          "start_ns": 1792375392677732000,
+          "start_return_ns": 1792375392679650000,
+          "type": "diagnostic_child",
+          "wait_ms": 59.249,
+          "wait_return_ns": 1792375392738900000,
+          "wall_ms": 61.166083
+        },
+        {
+          "type": "receipt_timing",
+          "duration_ns": 499994208,
+          "exit_code": 0,
+          "failed": false,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 239578667
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 4698417
+            },
+            {
+              "stage": "discovery",
+              "calls": 2,
+              "ns": 158597166
+            },
+            {
+              "stage": "input_files",
+              "calls": 1,
+              "ns": 10925458
+            },
+            {
+              "stage": "executable",
+              "calls": 1,
+              "ns": 8080750
+            },
+            {
+              "stage": "toolchain",
+              "calls": 1,
+              "ns": 61671875
+            }
+          ]
+        },
+        {
+          "collections": 1,
+          "pause_ns": 87417,
+          "pid": 18782,
+          "type": "diagnostic_gc"
+        }
+      ],
+      "git_events": [
+        {
+          "event": "version",
+          "sid": "20261019T020312.487160Z-Hca1bca31-P00004961",
+          "thread": "main",
+          "time": "2026-10-19T02:03:12.490828Z",
+          "file": "common-init.c",
+          "line": 57,
+          "evt": "4",
+          "exe": "2.54.0 (Apple Git-157)"
+        },
+        {
+          "event": "start",
+          "sid": "20261019T020312.487160Z-Hca1bca31-P00004961",
+          "thread": "main",
+          "time": "2026-10-19T02:03:12.490876Z",
+          "file": "common-init.c",
+          "line": 58,
+          "t_abs": 0.004832,
+          "argv": [
+            "/Applications/Xcode.app/Contents/Developer/usr/bin/git",
+            "rev-parse",
+            "--show-toplevel"
+          ]
+        },
+        {
+          "event": "cmd_ancestry",
+          "sid": "20261019T020312.487160Z-Hca1bca31-P00004961",
+          "thread": "main",
+          "time": "2026-10-19T02:03:12.490994Z",
+          "file": "compat/darwin/procinfo.c",
+          "line": 81,
+          "ancestry": [
+            "receipt-diagnost",
+            "python3.14",
+            "codex",
+            "ChatGPT",
+            "launchd"
+          ]
+        },
+        {
+          "event": "cmd_name",
+          "sid": "20261019T020312.487160Z-Hca1bca31-P00004961",
+          "thread": "main",
+          "time": "2026-10-19T02:03:12.491059Z",
+          "file": "git.c",
+          "line": 503,
+          "name": "rev-parse",
+          "hierarchy": "rev-parse"
+        },
+        {
+          "event": "def_repo",
+          "sid": "20261019T020312.487160Z-Hca1bca31-P00004961",
+          "thread": "main",
+          "time": "2026-10-19T02:03:12.491226Z",
+          "file": "repository.c",
+          "line": 262,
+          "repo": 1,
+          "worktree": "/Users/siddharthsharma/Desktop/projects/receipt/.tools/git-outlier/light/fixture"
+        },
+        {
+          "event": "exit",
+          "sid": "20261019T020312.487160Z-Hca1bca31-P00004961",
+          "thread": "main",
+          "time": "2026-10-19T02:03:12.491675Z",
+          "file": "git.c",
+          "line": 783,
+          "t_abs": 0.005631,
+          "code": 0
+        },
+        {
+          "event": "atexit",
+          "sid": "20261019T020312.487160Z-Hca1bca31-P00004961",
+          "thread": "main",
+          "time": "2026-10-19T02:03:12.491691Z",
+          "file": "trace2/tr2_tgt_event.c",
+          "line": 207,
+          "t_abs": 0.005647,
+          "code": 0
+        }
+      ],
+      "before_git_ms": 233.647,
+      "git_reported_ms": 5.647,
+      "after_git_ms": 5.683,
+      "note": "Before/after use wall-clock alignment; parent wall_ms uses Go monotonic duration. Microsecond-scale differences are expected."
+    },
+    {
+      "capture": "flight",
+      "call": {
+        "cpu_ms": 24.359,
+        "first_output_ns": 1792375459464079000,
+        "operation": "ls-files",
+        "parent_pid": 20797,
+        "pid": 20800,
+        "program": "git",
+        "start_ms": 6.225291,
+        "start_ns": 1792375459244432000,
+        "start_return_ns": 1792375459250658000,
+        "type": "diagnostic_child",
+        "wait_ms": 232.767417,
+        "wait_return_ns": 1792375459483430000,
+        "wall_ms": 238.992708
+      },
+      "parent_events": [
+        {
+          "cpu_ms": 14.456,
+          "first_output_ns": 1792375459164063000,
+          "operation": "rev-parse",
+          "parent_pid": 20797,
+          "pid": 20798,
+          "program": "git",
+          "start_ms": 1.096458,
+          "start_ns": 1792375459147047000,
+          "start_return_ns": 1792375459148143000,
+          "type": "diagnostic_child",
+          "wait_ms": 20.930542,
+          "wait_return_ns": 1792375459169074000,
+          "wall_ms": 22.027
+        },
+        {
+          "cpu_ms": 17.425,
+          "first_output_ns": 1792375459197050000,
+          "operation": "rev-parse",
+          "parent_pid": 20797,
+          "pid": 20799,
+          "program": "git",
+          "start_ms": 1.171708,
+          "start_ns": 1792375459169491000,
+          "start_return_ns": 1792375459170663000,
+          "type": "diagnostic_child",
+          "wait_ms": 73.319209,
+          "wait_return_ns": 1792375459243983000,
+          "wall_ms": 74.490917
+        },
+        {
+          "cpu_ms": 24.359,
+          "first_output_ns": 1792375459464079000,
+          "operation": "ls-files",
+          "parent_pid": 20797,
+          "pid": 20800,
+          "program": "git",
+          "start_ms": 6.225291,
+          "start_ns": 1792375459244432000,
+          "start_return_ns": 1792375459250658000,
+          "type": "diagnostic_child",
+          "wait_ms": 232.767417,
+          "wait_return_ns": 1792375459483430000,
+          "wall_ms": 238.992708
+        },
+        {
+          "cpu_ms": 67.201,
+          "first_output_ns": 1792375459591414000,
+          "operation": "env",
+          "parent_pid": 20797,
+          "pid": 20801,
+          "program": "go",
+          "start_ms": 4.414625,
+          "start_ns": 1792375459502750000,
+          "start_return_ns": 1792375459507165000,
+          "type": "diagnostic_child",
+          "wait_ms": 89.439792,
+          "wait_return_ns": 1792375459596607000,
+          "wall_ms": 93.854417
+        },
+        {
+          "type": "receipt_timing",
+          "duration_ns": 463591291,
+          "exit_code": 0,
+          "failed": false,
+          "stages": [
+            {
+              "stage": "fingerprint",
+              "calls": 1,
+              "ns": 427567125
+            },
+            {
+              "stage": "lookup",
+              "calls": 1,
+              "ns": 3016791
+            },
+            {
+              "stage": "discovery",
+              "calls": 2,
+              "ns": 314362583
+            },
+            {
+              "stage": "input_files",
+              "calls": 1,
+              "ns": 11769583
+            },
+            {
+              "stage": "executable",
+              "calls": 1,
+              "ns": 6903917
+            },
+            {
+              "stage": "toolchain",
+              "calls": 1,
+              "ns": 94263958
+            }
+          ]
+        },
+        {
+          "collections": 1,
+          "pause_ns": 50875,
+          "pid": 20797,
+          "type": "diagnostic_gc"
+        }
+      ],
+      "git_events": [
+        {
+          "event": "version",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.451330Z",
+          "file": "common-init.c",
+          "line": 57,
+          "evt": "4",
+          "exe": "2.54.0 (Apple Git-157)"
+        },
+        {
+          "event": "start",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.451620Z",
+          "file": "common-init.c",
+          "line": 58,
+          "t_abs": 0.006242,
+          "argv": [
+            "/Applications/Xcode.app/Contents/Developer/usr/bin/git",
+            "ls-files",
+            "-z",
+            "--cached",
+            "--others",
+            "--exclude-standard"
+          ]
+        },
+        {
+          "event": "cmd_ancestry",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.451751Z",
+          "file": "compat/darwin/procinfo.c",
+          "line": 81,
+          "ancestry": [
+            "receipt-diagnost",
+            "python3.14",
+            "codex",
+            "ChatGPT",
+            "launchd"
+          ]
+        },
+        {
+          "event": "def_repo",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.452016Z",
+          "file": "repository.c",
+          "line": 262,
+          "repo": 1,
+          "worktree": "/Users/siddharthsharma/Desktop/projects/receipt/.tools/git-outlier/flight/fixture"
+        },
+        {
+          "event": "cmd_name",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.452237Z",
+          "file": "git.c",
+          "line": 503,
+          "name": "ls-files",
+          "hierarchy": "ls-files"
+        },
+        {
+          "event": "region_enter",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.452385Z",
+          "file": "read-cache.c",
+          "line": 2360,
+          "repo": 1,
+          "nesting": 1,
+          "category": "index",
+          "label": "do_read_index",
+          "msg": ".git/index"
+        },
+        {
+          "event": "region_leave",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.452397Z",
+          "file": "read-cache.c",
+          "line": 2365,
+          "repo": 1,
+          "t_rel": 1.3e-05,
+          "nesting": 1,
+          "category": "index",
+          "label": "do_read_index",
+          "msg": ".git/index"
+        },
+        {
+          "event": "region_enter",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.452523Z",
+          "file": "dir.c",
+          "line": 3140,
+          "repo": 1,
+          "nesting": 1,
+          "category": "dir",
+          "label": "read_directory"
+        },
+        {
+          "event": "region_enter",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.463243Z",
+          "file": "name-hash.c",
+          "line": 597,
+          "repo": 1,
+          "nesting": 2,
+          "category": "index",
+          "label": "name-hash-init"
+        },
+        {
+          "event": "region_leave",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.463324Z",
+          "file": "name-hash.c",
+          "line": 618,
+          "repo": 1,
+          "t_rel": 8.7e-05,
+          "nesting": 2,
+          "category": "index",
+          "label": "name-hash-init"
+        },
+        {
+          "event": "data",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.463815Z",
+          "file": "dir.c",
+          "line": 3108,
+          "repo": 1,
+          "t_abs": 0.018439,
+          "t_rel": 0.011294,
+          "nesting": 2,
+          "category": "read_directory",
+          "key": "path",
+          "value": ""
+        },
+        {
+          "event": "data",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.463834Z",
+          "file": "dir.c",
+          "line": 3117,
+          "repo": 1,
+          "t_abs": 0.018458,
+          "t_rel": 0.011313,
+          "nesting": 2,
+          "category": "read_directory",
+          "key": "directories-visited",
+          "value": "1"
+        },
+        {
+          "event": "data",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.463846Z",
+          "file": "dir.c",
+          "line": 3119,
+          "repo": 1,
+          "t_abs": 0.018468,
+          "t_rel": 0.011323,
+          "nesting": 2,
+          "category": "read_directory",
+          "key": "paths-visited",
+          "value": "261"
+        },
+        {
+          "event": "region_leave",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.463858Z",
+          "file": "dir.c",
+          "line": 3163,
+          "repo": 1,
+          "t_rel": 0.011337,
+          "nesting": 1,
+          "category": "dir",
+          "label": "read_directory"
+        },
+        {
+          "event": "exit",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.463915Z",
+          "file": "git.c",
+          "line": 783,
+          "t_abs": 0.018537,
+          "code": 0
+        },
+        {
+          "event": "atexit",
+          "sid": "20261019T020419.445841Z-Hca1bca31-P00005140",
+          "thread": "main",
+          "time": "2026-10-19T02:04:19.463926Z",
+          "file": "trace2/tr2_tgt_event.c",
+          "line": 207,
+          "t_abs": 0.01855,
+          "code": 0
+        }
+      ],
+      "before_git_ms": 200.944,
+      "git_reported_ms": 18.55,
+      "after_git_ms": 19.504,
+      "note": "Before/after use wall-clock alignment; parent wall_ms uses Go monotonic duration. Microsecond-scale differences are expected."
+    }
+  ],
+  "attempts": [
+    {
+      "name": "light",
+      "hits": 116,
+      "target_complete": true,
+      "threshold_ms": 200,
+      "max_git_ms": 244.971417,
+      "recorder_exit": null,
+      "recording_finalized": false,
+      "note": "First-output field unavailable due to reader optimization; start/wait clocks remain valid."
+    },
+    {
+      "name": "flight",
+      "hits": 226,
+      "target_complete": true,
+      "threshold_ms": 200.0,
+      "max_git_ms": 238.992708,
+      "recorder_exit": 0,
+      "recording_finalized": false,
+      "note": "Windowed export did not contain trigger PID; OS attribution invalid."
+    },
+    {
+      "name": "complete",
+      "hits": 600,
+      "target_complete": true,
+      "threshold_ms": 200.0,
+      "max_git_ms": 108.371458,
+      "recorder_exit": 1,
+      "recording_finalized": false,
+      "note": "Full recording stalled on stop; terminated. Timing records retained."
+    },
+    {
+      "name": "sampled",
+      "hits": 600,
+      "target_complete": true,
+      "threshold_ms": 200.0,
+      "max_git_ms": 150.430958,
+      "recorder_exit": null,
+      "recording_finalized": false,
+      "note": "100ms watchdog sample missed short-lived processes; no usable slow-call stack."
+    },
+    {
+      "name": "syscalls",
+      "hits": 7,
+      "target_complete": false,
+      "threshold_ms": 200.0,
+      "max_git_ms": 37.330458,
+      "recorder_exit": 2,
+      "recording_finalized": false,
+      "note": "Recording failed with kperf lock held; not a valid OS capture."
+    },
+    {
+      "name": "syscalls-reset",
+      "hits": 600,
+      "target_complete": true,
+      "threshold_ms": 200.0,
+      "max_git_ms": 116.275084,
+      "recorder_exit": 1,
+      "recording_finalized": false,
+      "note": "Narrow recording timed out finalizing; no usable OS attribution."
+    }
+  ]
+}
