@@ -15,6 +15,10 @@ Current update: [Chapter 14](14-reuse-the-git-root.md) now removes the duplicate
 initial root query. The measurements below describe the executable optimization
 before that change; initial CLI discovery now has one timed call rather than two.
 
+Current update (18 October): [Chapter 15](15-measure-toolchain-probe-overhead.md)
+measures fresh probe costs and reduces local Go normalization allocations. Probe
+commands and freshness remain unchanged; no whole-hit speedup was established.
+
 ## Follow the executable and probe separately
 
 For a Go invocation the sequence is:

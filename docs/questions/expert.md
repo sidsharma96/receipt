@@ -413,7 +413,7 @@ The `go env -json` probe output includes `GOGCCFLAGS`, which contains `-ffile-pr
 
 The edge case is that the pattern consumes the delimiter after a match, so in one pass a second prefix-map flag separated by a single space is not normalised. Until 15 October 2026 that caused extra misses, never wrong hits. `stableGoEnvironment` now repeats the replacement until nothing changes, so each flag is normalised. Current Go versions print a single such flag, so their keys did not change.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L11-L50)
+**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L10-L37)
 
 </details>
 

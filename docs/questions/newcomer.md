@@ -517,3 +517,63 @@ reducing that maximum.
 **Learn more:** [14. Reuse the Git root](../guide/14-reuse-the-git-root.md)
 
 </details>
+
+### Why can a faster normalizer leave cache-hit latency unchanged?
+<!-- check: guide/15-measure-toolchain-probe-overhead.md -->
+
+**Level:** Newcomer
+
+Local Go normalization falls from about 43 to 19 microseconds, but the fresh probe
+takes tens of milliseconds. Why is a large whole-hit speedup unlikely?
+
+<details>
+<summary>Answer</summary>
+
+One millisecond is one thousand microseconds. Saving about 24 microseconds removes
+only a tiny part of the total work. The subprocess still runs, and variation in
+its timing can be much larger than the saving. Local allocation evidence should
+not be presented as an end-to-end latency improvement.
+
+**Learn more:** [15. Measure toolchain probe overhead](../guide/15-measure-toolchain-probe-overhead.md)
+
+</details>
+
+### Which part of a scratch flag may change during normalization?
+<!-- check: guide/15-measure-toolchain-probe-overhead.md -->
+
+**Level:** Newcomer
+
+A recognized compiler flag names `/tmp/go-build123`. Can Receipt discard the
+whole flag to avoid temporary-path differences?
+
+<details>
+<summary>Answer</summary>
+
+No. Only the numeric suffix in the recognized form becomes `<scratch>`. The root,
+flag kind, destination and other settings remain. Removing the whole flag could
+hide a meaningful change and permit reuse under a different compiler environment.
+Unknown forms remain unchanged.
+
+**Learn more:** [15. Measure toolchain probe overhead](../guide/15-measure-toolchain-probe-overhead.md)
+
+</details>
+
+### Does the scanner threshold reject long paths?
+<!-- check: guide/15-measure-toolchain-probe-overhead.md -->
+
+**Level:** Newcomer
+
+The optimized path checks whether a prefix is at most 4096 bytes. What happens to
+a longer prefix?
+
+<details>
+<summary>Answer</summary>
+
+It uses the original regular-expression algorithm, including that algorithm's
+errors. The threshold chooses an implementation; it does not introduce a new
+path-length refusal. This keeps unusual input behavior while ordinary paths avoid
+recompiling a pattern.
+
+**Learn more:** [15. Measure toolchain probe overhead](../guide/15-measure-toolchain-probe-overhead.md)
+
+</details>

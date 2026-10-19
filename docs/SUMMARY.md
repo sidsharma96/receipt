@@ -23,6 +23,8 @@
 
 - [14. Reuse the Git root within one invocation](guide/14-reuse-the-git-root.md)
 
+- [15. Measure toolchain probe overhead](guide/15-measure-toolchain-probe-overhead.md)
+
 # Defending the design
 
 - [Defending Receipt's design](DESIGN-DEFENSE.md)

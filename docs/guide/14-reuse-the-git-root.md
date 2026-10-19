@@ -10,6 +10,10 @@ the root it just found into the first fingerprint. It still asks Git for a fresh
 file list. If tests execute, the final fingerprint still discovers the root again.
 This chapter explains why those two kinds of reuse have different consequences.
 
+Current update (18 October): [Chapter 15](15-measure-toolchain-probe-overhead.md)
+measures fresh probe costs and reduces local Go normalization allocations. Probe
+commands and freshness remain unchanged; no whole-hit speedup was established.
+
 ## Follow the calls before deleting one
 
 Git runs as a separate process: the operating system starts a program, Receipt

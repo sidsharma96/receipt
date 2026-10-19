@@ -2921,3 +2921,120 @@ source excerpts/anchors, bank questions and built links. Chrome rendered chapter
 first answer disclosure opened. Desktop and mobile opening screenshots were
 visually inspected. Wide execution traces scroll within code boxes. This is a
 layout spot check, not a complete accessibility or teaching-quality audit.
+
+## Toolchain probe normalization, 18 October 2026
+
+Two fresh Go probes may report `/tmp/go-build123` and `/tmp/go-build456` in the
+same compiler prefix-map flag. Receipt already replaces those digits with
+`<scratch>`. This change preserves that policy while making the local rewrite
+cheaper. [Chapter 15](guide/15-measure-toolchain-probe-overhead.md) explains the
+sequence, and [measurements](MEASUREMENTS.md#toolchain-probe-normalization-18-october-2026)
+provide raw records, reproduction and limitations.
+
+### Probe normalization — 1. Data structures
+
+The existing string map still holds all decoded Go settings. For ordinary path
+prefixes, two literal prefix strings identify file/debug flags, integer positions
+identify the digit span, and a strings.Builder collects unchanged text plus
+`<scratch>`. There is no result cache. Unknown strings return unchanged. JSON
+encoding and SHA-256 input remain the existing representation.
+
+### Probe normalization — 2. Architecture and extension boundaries
+
+Fresh `go env -json` output still flows through decode, flag normalization,
+encode and hash. `stableGoEnvironment` delegates only the flag rewrite to
+`scratchFlags`. The ordinary branch calls the literal scanner; long or invalid
+UTF-8 prefixes retain the exact old regexp algorithm and wrapped compiler errors.
+The 4096-byte threshold chooses a branch and does not refuse input. Python, uv
+and Cargo command/probe behavior are unchanged. Actual checks are shown in
+[`scratchDigits`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_scratch.go#L43-L63):
+`last == first` rejects a missing numeric suffix, and
+`strings.HasPrefix(flag[last:], destination)` retains the destination rule.
+Chapter 15 includes the attributed multiline excerpt and explanation.
+
+### Probe normalization — 3. Primitives and concurrency
+
+The scanner performs sequential string searches and ASCII-byte checks. It adds
+no goroutines, network calls, locks or shared buffers. Probe process invocation,
+context cancellation and output capture are untouched. Repeated local work is
+removed; subprocess waiting and fresh observations remain.
+
+### Probe normalization — 4. Pitfalls and debugging
+
+Spaces, tabs and quotes were the old delimiters; newlines were not. Prefix and
+destination matching must be exact, including root spelling. Replacing a suffix
+like `123abc` would erase meaningful input. Adjacent flags must both normalize.
+The old regexp could refuse invalid UTF-8 from TMPDIR, so a fast path must not
+silently accept it. A differential fuzz harness initially panicked in its legacy
+reference on this case. The corrected domain models JSON text, with separate
+TMPDIR refusal tests and the original fallback algorithm for unusual prefixes.
+The fallback also retains long-pattern compiler limits instead of inventing a
+new path-length rule.
+
+### Probe normalization — 5. Hot and cold costs
+
+Initial subprocess/output capture took about 36.28 ms, versus 0.048 ms for local
+normalization. Six matched process pairs reduced the latter from 42.64 to
+18.56 µs and allocations from 26,186 to 8,308 bytes per operation. Fixed-work
+process CPU fell 0.480 to 0.225 seconds; peak RSS stayed 15.97 MB. Go whole-hit
+medians changed 98.69 to 103.86 ms with overlapping ranges. The fresh subprocess
+still dominates; no end-to-end speedup is claimed. The unusual-prefix fallback
+keeps old costs. Costs of Git, file hashing, storage and networking are unchanged.
+
+### Probe normalization — 6. Guarantees, assumptions and non-goals
+
+The scanner recognizes the same ordinary literal root, flag kind, digit span,
+destination and separators as the old pattern. Only those digits become
+`<scratch>`; unknown settings remain. All other serialization and key inputs are
+unchanged, allowing old entries to replay for equal observed inputs. The fallback
+preserves unusual-path refusal behavior. This is not a shell parser or a general
+Go-flag rewriter. Probe results remain fresh, not atomically captured with files;
+stable keys do not prove deterministic outputs or complete dependency coverage.
+
+### Probe normalization — 7. Alternatives and decisions
+
+For this change, caching outputs by executable hash was rejected because settings
+and installed packages can change independently of executable bytes. Narrower Go
+fields or disabled Python startup would change the input contract. Python's
+metadata access was left unchanged, including custom distribution behavior.
+Parallel probing was deferred: it can overlap waiting but keeps work, adds error
+coordination and may raise simultaneous memory use. A global compiled-pattern
+cache would retain mutable-root bookkeeping yet still compile on a CLI's first
+probe. Literal scanning offers small local savings without a freshness policy.
+Retaining a fallback trades some code size for old unusual-input/error behavior.
+These are current decisions, not invented earlier history.
+
+### Probe normalization — 8. Evidence and remaining risks
+
+Targeted cases compare an independent old implementation with the scanner across
+path spelling, delimiters, adjacency and malformed suffixes/destinations. Tests
+exercise invalid TMPDIR and long-prefix fallback. A 30-second fuzz run completed
+98,733 executions without an output mismatch after correcting the harness domain.
+Existing Go normalization tests preserve unknown fields and settings changes;
+existing subprocess tests cover freshness, failure and cancellation. The old/new
+CLI comparison replayed 60 old entries and matched full keys for Go, Python module
+and direct pytest. Every measured command succeeded.
+
+`make check`, `make race` and `make build` passed locally on the final production
+implementation. Database/Rust opt-in suites were not enabled locally. Measurements
+were sequential on warm macOS caches with uncontrolled background activity. Child
+CPU sampling, syscalls, cold storage, power, Windows, large package environments,
+uv/Rust replay and concurrent input mutation remain outside this evidence.
+Differential tests are strong regression evidence, not exhaustive verification.
+Documentation and deployment checks follow the code validation.
+
+### Probe normalization — 9. Revisit conditions
+
+Revisit the scanner if Go's emitted syntax changes or maintenance outweighs the
+small measured savings. Keep unknown syntax unchanged and retain old/new
+comparison tests. Revisit subprocess overhead with representative toolchains,
+package counts and startup/child profiles. Any meaningful caching or field
+selection needs an explicit freshness/input contract before implementation.
+Broaden measurements before claiming a whole-hit benefit; the present results
+support only local CPU/allocation savings.
+
+Documentation verification: `make docs` passed all 18 checks, including source
+anchors, attributed excerpts, synchronized questions and built links. The in-app
+browser disallows local-file URLs, so a local browser preview was not performed;
+the published HTTPS chapter will be inspected after deployment. Automated checks
+do not establish teaching quality or complete accessibility.

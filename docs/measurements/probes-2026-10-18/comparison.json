@@ -1,0 +1,3927 @@
+{
+  "go": "go version go1.27.2 darwin/arm64",
+  "python": "Python 3.14.2",
+  "platform": "Darwin arm64",
+  "normalization": [
+    {
+      "pair": 0,
+      "version": "before",
+      "iterations": 10000,
+      "ns_per_op": 40199.0,
+      "bytes_per_op": 26158,
+      "allocs_per_op": 161,
+      "resources": {
+        "wall_s": 0.75,
+        "user_s": 0.43,
+        "system_s": 0.04,
+        "maximum resident set size": 15990784,
+        "instructions retired": 5857725403,
+        "cycles elapsed": 1318537244
+      }
+    },
+    {
+      "pair": 0,
+      "version": "after",
+      "iterations": 10000,
+      "ns_per_op": 18006.0,
+      "bytes_per_op": 8309,
+      "allocs_per_op": 91,
+      "resources": {
+        "wall_s": 0.5,
+        "user_s": 0.2,
+        "system_s": 0.03,
+        "maximum resident set size": 15925248,
+        "instructions retired": 2604837372,
+        "cycles elapsed": 595208535
+      }
+    },
+    {
+      "pair": 1,
+      "version": "after",
+      "iterations": 10000,
+      "ns_per_op": 18387.0,
+      "bytes_per_op": 8308,
+      "allocs_per_op": 91,
+      "resources": {
+        "wall_s": 0.22,
+        "user_s": 0.2,
+        "system_s": 0.02,
+        "maximum resident set size": 15892480,
+        "instructions retired": 2596997856,
+        "cycles elapsed": 592329957
+      }
+    },
+    {
+      "pair": 1,
+      "version": "before",
+      "iterations": 10000,
+      "ns_per_op": 42014.0,
+      "bytes_per_op": 26162,
+      "allocs_per_op": 161,
+      "resources": {
+        "wall_s": 0.46,
+        "user_s": 0.44,
+        "system_s": 0.04,
+        "maximum resident set size": 15990784,
+        "instructions retired": 5867978247,
+        "cycles elapsed": 1325180694
+      }
+    },
+    {
+      "pair": 2,
+      "version": "before",
+      "iterations": 10000,
+      "ns_per_op": 40457.0,
+      "bytes_per_op": 26209,
+      "allocs_per_op": 161,
+      "resources": {
+        "wall_s": 0.45,
+        "user_s": 0.43,
+        "system_s": 0.04,
+        "maximum resident set size": 15908864,
+        "instructions retired": 5857513511,
+        "cycles elapsed": 1311315009
+      }
+    },
+    {
+      "pair": 2,
+      "version": "after",
+      "iterations": 10000,
+      "ns_per_op": 17696.0,
+      "bytes_per_op": 8300,
+      "allocs_per_op": 91,
+      "resources": {
+        "wall_s": 0.22,
+        "user_s": 0.2,
+        "system_s": 0.02,
+        "maximum resident set size": 16007168,
+        "instructions retired": 2588325988,
+        "cycles elapsed": 579917763
+      }
+    },
+    {
+      "pair": 3,
+      "version": "after",
+      "iterations": 10000,
+      "ns_per_op": 18734.0,
+      "bytes_per_op": 8307,
+      "allocs_per_op": 91,
+      "resources": {
+        "wall_s": 0.23,
+        "user_s": 0.2,
+        "system_s": 0.02,
+        "maximum resident set size": 16056320,
+        "instructions retired": 2589104871,
+        "cycles elapsed": 581784650
+      }
+    },
+    {
+      "pair": 3,
+      "version": "before",
+      "iterations": 10000,
+      "ns_per_op": 44916.0,
+      "bytes_per_op": 26219,
+      "allocs_per_op": 161,
+      "resources": {
+        "wall_s": 0.5,
+        "user_s": 0.44,
+        "system_s": 0.04,
+        "maximum resident set size": 15925248,
+        "instructions retired": 5882028272,
+        "cycles elapsed": 1318655276
+      }
+    },
+    {
+      "pair": 4,
+      "version": "before",
+      "iterations": 10000,
+      "ns_per_op": 46633.0,
+      "bytes_per_op": 26216,
+      "allocs_per_op": 161,
+      "resources": {
+        "wall_s": 0.52,
+        "user_s": 0.46,
+        "system_s": 0.05,
+        "maximum resident set size": 16023552,
+        "instructions retired": 5890139261,
+        "cycles elapsed": 1375079901
+      }
+    },
+    {
+      "pair": 4,
+      "version": "after",
+      "iterations": 10000,
+      "ns_per_op": 21531.0,
+      "bytes_per_op": 8309,
+      "allocs_per_op": 91,
+      "resources": {
+        "wall_s": 0.34,
+        "user_s": 0.23,
+        "system_s": 0.05,
+        "maximum resident set size": 16007168,
+        "instructions retired": 2646671859,
+        "cycles elapsed": 644754809
+      }
+    },
+    {
+      "pair": 5,
+      "version": "after",
+      "iterations": 10000,
+      "ns_per_op": 19542.0,
+      "bytes_per_op": 8301,
+      "allocs_per_op": 91,
+      "resources": {
+        "wall_s": 0.24,
+        "user_s": 0.21,
+        "system_s": 0.03,
+        "maximum resident set size": 15925248,
+        "instructions retired": 2592948958,
+        "cycles elapsed": 614632800
+      }
+    },
+    {
+      "pair": 5,
+      "version": "before",
+      "iterations": 10000,
+      "ns_per_op": 43256.0,
+      "bytes_per_op": 26148,
+      "allocs_per_op": 161,
+      "resources": {
+        "wall_s": 0.5,
+        "user_s": 0.45,
+        "system_s": 0.05,
+        "maximum resident set size": 15941632,
+        "instructions retired": 5893186712,
+        "cycles elapsed": 1354947103
+      }
+    }
+  ],
+  "breakdown": [
+    {
+      "pair": 0,
+      "probe": "go-version",
+      "elapsed_ns": 34096792,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 14434304,
+        "instructions retired": 111706403,
+        "cycles elapsed": 58185340
+      }
+    },
+    {
+      "pair": 0,
+      "probe": "go-env",
+      "elapsed_ns": 62346375,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 16039936,
+        "instructions retired": 128044322,
+        "cycles elapsed": 65800626
+      }
+    },
+    {
+      "pair": 0,
+      "probe": "python-start",
+      "elapsed_ns": 43196167,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.02,
+        "system_s": 0.0,
+        "maximum resident set size": 19103744,
+        "instructions retired": 159595250,
+        "cycles elapsed": 84678274
+      }
+    },
+    {
+      "pair": 0,
+      "probe": "python-imports",
+      "elapsed_ns": 76597792,
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.04,
+        "system_s": 0.01,
+        "maximum resident set size": 23248896,
+        "instructions retired": 258049281,
+        "cycles elapsed": 153592156
+      }
+    },
+    {
+      "pair": 0,
+      "probe": "python-full",
+      "elapsed_ns": 76491584,
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.04,
+        "system_s": 0.01,
+        "maximum resident set size": 25264128,
+        "instructions retired": 324883699,
+        "cycles elapsed": 174119704
+      }
+    },
+    {
+      "pair": 1,
+      "probe": "python-full",
+      "elapsed_ns": 54718542,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.03,
+        "system_s": 0.01,
+        "maximum resident set size": 25100288,
+        "instructions retired": 315526643,
+        "cycles elapsed": 148271284
+      }
+    },
+    {
+      "pair": 1,
+      "probe": "python-imports",
+      "elapsed_ns": 77908125,
+      "resources": {
+        "wall_s": 0.07,
+        "user_s": 0.04,
+        "system_s": 0.01,
+        "maximum resident set size": 23232512,
+        "instructions retired": 251659592,
+        "cycles elapsed": 165159028
+      }
+    },
+    {
+      "pair": 1,
+      "probe": "python-start",
+      "elapsed_ns": 38464833,
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.02,
+        "system_s": 0.0,
+        "maximum resident set size": 19103744,
+        "instructions retired": 152996983,
+        "cycles elapsed": 84436545
+      }
+    },
+    {
+      "pair": 1,
+      "probe": "go-env",
+      "elapsed_ns": 54828500,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 16318464,
+        "instructions retired": 146281822,
+        "cycles elapsed": 77049722
+      }
+    },
+    {
+      "pair": 1,
+      "probe": "go-version",
+      "elapsed_ns": 20717000,
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 14647296,
+        "instructions retired": 111063834,
+        "cycles elapsed": 50151931
+      }
+    },
+    {
+      "pair": 2,
+      "probe": "go-version",
+      "elapsed_ns": 19280792,
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 14647296,
+        "instructions retired": 110044515,
+        "cycles elapsed": 47798783
+      }
+    },
+    {
+      "pair": 2,
+      "probe": "go-env",
+      "elapsed_ns": 48349791,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.01,
+        "system_s": 0.02,
+        "maximum resident set size": 15941632,
+        "instructions retired": 140021523,
+        "cycles elapsed": 65915739
+      }
+    },
+    {
+      "pair": 2,
+      "probe": "python-start",
+      "elapsed_ns": 25920958,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.0,
+        "maximum resident set size": 19070976,
+        "instructions retired": 155182458,
+        "cycles elapsed": 67274154
+      }
+    },
+    {
+      "pair": 2,
+      "probe": "python-imports",
+      "elapsed_ns": 45954500,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.03,
+        "system_s": 0.0,
+        "maximum resident set size": 23117824,
+        "instructions retired": 252051326,
+        "cycles elapsed": 122224760
+      }
+    },
+    {
+      "pair": 2,
+      "probe": "python-full",
+      "elapsed_ns": 56529875,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.03,
+        "system_s": 0.01,
+        "maximum resident set size": 25280512,
+        "instructions retired": 319221102,
+        "cycles elapsed": 147442056
+      }
+    },
+    {
+      "pair": 3,
+      "probe": "python-full",
+      "elapsed_ns": 48959291,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.03,
+        "system_s": 0.0,
+        "maximum resident set size": 25165824,
+        "instructions retired": 314513491,
+        "cycles elapsed": 136616691
+      }
+    },
+    {
+      "pair": 3,
+      "probe": "python-imports",
+      "elapsed_ns": 41843417,
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.02,
+        "system_s": 0.0,
+        "maximum resident set size": 23085056,
+        "instructions retired": 248103229,
+        "cycles elapsed": 112901123
+      }
+    },
+    {
+      "pair": 3,
+      "probe": "python-start",
+      "elapsed_ns": 31032500,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.0,
+        "maximum resident set size": 19103744,
+        "instructions retired": 152116251,
+        "cycles elapsed": 75112781
+      }
+    },
+    {
+      "pair": 3,
+      "probe": "go-env",
+      "elapsed_ns": 59313750,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 15941632,
+        "instructions retired": 139999585,
+        "cycles elapsed": 77124078
+      }
+    },
+    {
+      "pair": 3,
+      "probe": "go-version",
+      "elapsed_ns": 24988792,
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 14368768,
+        "instructions retired": 111210353,
+        "cycles elapsed": 51386479
+      }
+    },
+    {
+      "pair": 4,
+      "probe": "go-version",
+      "elapsed_ns": 29640750,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 14483456,
+        "instructions retired": 111660665,
+        "cycles elapsed": 60709761
+      }
+    },
+    {
+      "pair": 4,
+      "probe": "go-env",
+      "elapsed_ns": 57841458,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.02,
+        "system_s": 0.02,
+        "maximum resident set size": 15925248,
+        "instructions retired": 141804542,
+        "cycles elapsed": 74458422
+      }
+    },
+    {
+      "pair": 4,
+      "probe": "python-start",
+      "elapsed_ns": 27124291,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.0,
+        "maximum resident set size": 19070976,
+        "instructions retired": 155687095,
+        "cycles elapsed": 68890508
+      }
+    },
+    {
+      "pair": 4,
+      "probe": "python-imports",
+      "elapsed_ns": 45371542,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.03,
+        "system_s": 0.0,
+        "maximum resident set size": 23117824,
+        "instructions retired": 252349176,
+        "cycles elapsed": 119552731
+      }
+    },
+    {
+      "pair": 4,
+      "probe": "python-full",
+      "elapsed_ns": 56701708,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.04,
+        "system_s": 0.01,
+        "maximum resident set size": 25214976,
+        "instructions retired": 319038167,
+        "cycles elapsed": 152304133
+      }
+    },
+    {
+      "pair": 5,
+      "probe": "python-full",
+      "elapsed_ns": 62997834,
+      "resources": {
+        "wall_s": 0.06,
+        "user_s": 0.04,
+        "system_s": 0.01,
+        "maximum resident set size": 25247744,
+        "instructions retired": 316843982,
+        "cycles elapsed": 160903121
+      }
+    },
+    {
+      "pair": 5,
+      "probe": "python-imports",
+      "elapsed_ns": 38494916,
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.02,
+        "system_s": 0.0,
+        "maximum resident set size": 23117824,
+        "instructions retired": 246627369,
+        "cycles elapsed": 107225999
+      }
+    },
+    {
+      "pair": 5,
+      "probe": "python-start",
+      "elapsed_ns": 25750500,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.0,
+        "maximum resident set size": 19054592,
+        "instructions retired": 150504832,
+        "cycles elapsed": 65149003
+      }
+    },
+    {
+      "pair": 5,
+      "probe": "go-env",
+      "elapsed_ns": 41519792,
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 16105472,
+        "instructions retired": 141877909,
+        "cycles elapsed": 61887154
+      }
+    },
+    {
+      "pair": 5,
+      "probe": "go-version",
+      "elapsed_ns": 18870125,
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 14188544,
+        "instructions retired": 109488045,
+        "cycles elapsed": 45156304
+      }
+    },
+    {
+      "pair": 6,
+      "probe": "go-version",
+      "elapsed_ns": 19974875,
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 14548992,
+        "instructions retired": 107374500,
+        "cycles elapsed": 47191177
+      }
+    },
+    {
+      "pair": 6,
+      "probe": "go-env",
+      "elapsed_ns": 41867541,
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.01,
+        "system_s": 0.02,
+        "maximum resident set size": 15892480,
+        "instructions retired": 138401083,
+        "cycles elapsed": 63192958
+      }
+    },
+    {
+      "pair": 6,
+      "probe": "python-start",
+      "elapsed_ns": 31444750,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.0,
+        "maximum resident set size": 19087360,
+        "instructions retired": 156411703,
+        "cycles elapsed": 75676314
+      }
+    },
+    {
+      "pair": 6,
+      "probe": "python-imports",
+      "elapsed_ns": 47415083,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.03,
+        "system_s": 0.0,
+        "maximum resident set size": 23085056,
+        "instructions retired": 252446894,
+        "cycles elapsed": 123517780
+      }
+    },
+    {
+      "pair": 6,
+      "probe": "python-full",
+      "elapsed_ns": 58599791,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.04,
+        "system_s": 0.01,
+        "maximum resident set size": 25051136,
+        "instructions retired": 319568812,
+        "cycles elapsed": 154267453
+      }
+    },
+    {
+      "pair": 7,
+      "probe": "python-full",
+      "elapsed_ns": 53391750,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.03,
+        "system_s": 0.01,
+        "maximum resident set size": 25116672,
+        "instructions retired": 315045273,
+        "cycles elapsed": 146114836
+      }
+    },
+    {
+      "pair": 7,
+      "probe": "python-imports",
+      "elapsed_ns": 42466250,
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.03,
+        "system_s": 0.0,
+        "maximum resident set size": 23166976,
+        "instructions retired": 247841444,
+        "cycles elapsed": 116449502
+      }
+    },
+    {
+      "pair": 7,
+      "probe": "python-start",
+      "elapsed_ns": 25465584,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.0,
+        "maximum resident set size": 18857984,
+        "instructions retired": 150557525,
+        "cycles elapsed": 65919230
+      }
+    },
+    {
+      "pair": 7,
+      "probe": "go-env",
+      "elapsed_ns": 46318000,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.01,
+        "system_s": 0.02,
+        "maximum resident set size": 15925248,
+        "instructions retired": 137988619,
+        "cycles elapsed": 65317334
+      }
+    },
+    {
+      "pair": 7,
+      "probe": "go-version",
+      "elapsed_ns": 19893208,
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 14319616,
+        "instructions retired": 110550280,
+        "cycles elapsed": 48829788
+      }
+    },
+    {
+      "pair": 8,
+      "probe": "go-version",
+      "elapsed_ns": 24346750,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 14581760,
+        "instructions retired": 106649122,
+        "cycles elapsed": 45515203
+      }
+    },
+    {
+      "pair": 8,
+      "probe": "go-env",
+      "elapsed_ns": 48301834,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.01,
+        "system_s": 0.02,
+        "maximum resident set size": 16302080,
+        "instructions retired": 137727591,
+        "cycles elapsed": 67361182
+      }
+    },
+    {
+      "pair": 8,
+      "probe": "python-start",
+      "elapsed_ns": 27206125,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.0,
+        "maximum resident set size": 19087360,
+        "instructions retired": 155840210,
+        "cycles elapsed": 69552286
+      }
+    },
+    {
+      "pair": 8,
+      "probe": "python-imports",
+      "elapsed_ns": 45143417,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.03,
+        "system_s": 0.0,
+        "maximum resident set size": 23117824,
+        "instructions retired": 253479457,
+        "cycles elapsed": 120125004
+      }
+    },
+    {
+      "pair": 8,
+      "probe": "python-full",
+      "elapsed_ns": 59168292,
+      "resources": {
+        "wall_s": 0.05,
+        "user_s": 0.03,
+        "system_s": 0.01,
+        "maximum resident set size": 25067520,
+        "instructions retired": 318740776,
+        "cycles elapsed": 153472263
+      }
+    },
+    {
+      "pair": 9,
+      "probe": "python-full",
+      "elapsed_ns": 44712541,
+      "resources": {
+        "wall_s": 0.04,
+        "user_s": 0.03,
+        "system_s": 0.0,
+        "maximum resident set size": 25264128,
+        "instructions retired": 314208998,
+        "cycles elapsed": 127667634
+      }
+    },
+    {
+      "pair": 9,
+      "probe": "python-imports",
+      "elapsed_ns": 36928792,
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.02,
+        "system_s": 0.0,
+        "maximum resident set size": 23085056,
+        "instructions retired": 246615695,
+        "cycles elapsed": 104072292
+      }
+    },
+    {
+      "pair": 9,
+      "probe": "python-start",
+      "elapsed_ns": 23401375,
+      "resources": {
+        "wall_s": 0.02,
+        "user_s": 0.01,
+        "system_s": 0.0,
+        "maximum resident set size": 19070976,
+        "instructions retired": 150442933,
+        "cycles elapsed": 61325127
+      }
+    },
+    {
+      "pair": 9,
+      "probe": "go-env",
+      "elapsed_ns": 37297209,
+      "resources": {
+        "wall_s": 0.03,
+        "user_s": 0.01,
+        "system_s": 0.01,
+        "maximum resident set size": 16056320,
+        "instructions retired": 140650603,
+        "cycles elapsed": 58812185
+      }
+    },
+    {
+      "pair": 9,
+      "probe": "go-version",
+      "elapsed_ns": 17189583,
+      "resources": {
+        "wall_s": 0.01,
+        "user_s": 0.0,
+        "system_s": 0.0,
+        "maximum resident set size": 14319616,
+        "instructions retired": 109011767,
+        "cycles elapsed": 42584518
+      }
+    }
+  ],
+  "hits": [
+    {
+      "case": "go",
+      "pair": 0,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 101111583,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 71156375
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4049750
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17716500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8402541
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6589208
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 38209584
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17514496,
+        "instructions retired": 224076605,
+        "cycles elapsed": 95988061
+      }
+    },
+    {
+      "case": "go",
+      "pair": 0,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 125965959,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 91031750
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 6277167
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 22946625
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 11573875
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6727167
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 49562333
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.6,
+        "user_s": 0.05,
+        "system_s": 0.06,
+        "maximum resident set size": 17465344,
+        "instructions retired": 237063332,
+        "cycles elapsed": 114436990
+      }
+    },
+    {
+      "case": "go",
+      "pair": 1,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 112665750,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 75945250
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3325708
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16920750
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8937708
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6873250
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 43000041
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.04,
+        "system_s": 0.05,
+        "maximum resident set size": 18087936,
+        "instructions retired": 224552802,
+        "cycles elapsed": 96834626
+      }
+    },
+    {
+      "case": "go",
+      "pair": 1,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 116156542,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 75996875
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3183250
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18189833
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 9113209
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6618458
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 41853375
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17776640,
+        "instructions retired": 224325715,
+        "cycles elapsed": 101597803
+      }
+    },
+    {
+      "case": "go",
+      "pair": 2,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 114913417,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 85343250
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4778667
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 21284875
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8115000
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6972000
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48711625
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17612800,
+        "instructions retired": 224277307,
+        "cycles elapsed": 97385277
+      }
+    },
+    {
+      "case": "go",
+      "pair": 2,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 127553167,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 99050334
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3603916
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 33554500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8643875
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7887792
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48718500
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.13,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17694720,
+        "instructions retired": 223444625,
+        "cycles elapsed": 98585657
+      }
+    },
+    {
+      "case": "go",
+      "pair": 3,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 112589875,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 83919500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3322708
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 22239416
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 9528375
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6608000
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 45304416
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17481728,
+        "instructions retired": 222796763,
+        "cycles elapsed": 95043345
+      }
+    },
+    {
+      "case": "go",
+      "pair": 3,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 95571125,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 65489583
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3447166
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16296708
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 7602542
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6241041
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 35146917
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17874944,
+        "instructions retired": 222371864,
+        "cycles elapsed": 91595257
+      }
+    },
+    {
+      "case": "go",
+      "pair": 4,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 91915375,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 64656083
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3137125
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16153666
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 7563750
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6204292
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 34536583
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.09,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17252352,
+        "instructions retired": 220903197,
+        "cycles elapsed": 84867466
+      }
+    },
+    {
+      "case": "go",
+      "pair": 4,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 89219250,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 63754083
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3167500
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 14932250
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 7695125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6207125
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 34730583
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.09,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17301504,
+        "instructions retired": 221516123,
+        "cycles elapsed": 83607674
+      }
+    },
+    {
+      "case": "go",
+      "pair": 5,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 87879250,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 63217041
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3054458
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 15035375
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 7528458
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6226625
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 34237125
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.09,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17891328,
+        "instructions retired": 221812919,
+        "cycles elapsed": 83117100
+      }
+    },
+    {
+      "case": "go",
+      "pair": 5,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 96447209,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 71374708
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3167125
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16146833
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8199291
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6970208
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 39814375
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17760256,
+        "instructions retired": 223201321,
+        "cycles elapsed": 87909278
+      }
+    },
+    {
+      "case": "go",
+      "pair": 6,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 97386333,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 69751625
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3008250
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17468083
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 7977500
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6956791
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 37099042
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17678336,
+        "instructions retired": 222783454,
+        "cycles elapsed": 88765030
+      }
+    },
+    {
+      "case": "go",
+      "pair": 6,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 102644459,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 75907584
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3302083
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16630708
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8567834
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6322167
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 44167000
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17432576,
+        "instructions retired": 222583129,
+        "cycles elapsed": 87898460
+      }
+    },
+    {
+      "case": "go",
+      "pair": 7,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 95690208,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 69387333
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3437708
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17023667
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 7886708
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6625250
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 37628500
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17825792,
+        "instructions retired": 221344019,
+        "cycles elapsed": 86322854
+      }
+    },
+    {
+      "case": "go",
+      "pair": 7,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 97891000,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 71386750
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3440625
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16960625
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8395166
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6315583
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 39504792
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17645568,
+        "instructions retired": 222495278,
+        "cycles elapsed": 89313465
+      }
+    },
+    {
+      "case": "go",
+      "pair": 8,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 117918166,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 88306083
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3254916
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 23230000
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 10643792
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 8114459
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 46084625
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17842176,
+        "instructions retired": 223396949,
+        "cycles elapsed": 97931988
+      }
+    },
+    {
+      "case": "go",
+      "pair": 8,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 105078334,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 73431125
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4431083
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18743167
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 7655541
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7576584
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 39234208
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.05,
+        "system_s": 0.05,
+        "maximum resident set size": 17727488,
+        "instructions retired": 222643687,
+        "cycles elapsed": 97833806
+      }
+    },
+    {
+      "case": "go",
+      "pair": 9,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 96046083,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 68796458
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4247959
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16484500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8315625
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 6307875
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 37470625
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17530880,
+        "instructions retired": 222755054,
+        "cycles elapsed": 91809331
+      }
+    },
+    {
+      "case": "go",
+      "pair": 9,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 99491916,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 72747500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3290792
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17058167
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 8502125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 7831667
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 39108959
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.04,
+        "system_s": 0.04,
+        "maximum resident set size": 17629184,
+        "instructions retired": 223384612,
+        "cycles elapsed": 90187115
+      }
+    },
+    {
+      "case": "python",
+      "pair": 0,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 97800333,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 70460875
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3368875
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16570333
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 4933833
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 47958
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48786959
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25231360,
+        "instructions retired": 154144885,
+        "cycles elapsed": 59430928
+      }
+    },
+    {
+      "case": "python",
+      "pair": 0,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 105838625,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 70580042
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3966542
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16821291
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 4970542
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 56750
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48585500
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25247744,
+        "instructions retired": 155476326,
+        "cycles elapsed": 61295331
+      }
+    },
+    {
+      "case": "python",
+      "pair": 1,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 99806916,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 70580250
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3304959
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16895000
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5737000
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 56375
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 47743750
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25247744,
+        "instructions retired": 153653155,
+        "cycles elapsed": 60231913
+      }
+    },
+    {
+      "case": "python",
+      "pair": 1,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 99421666,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 69880542
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3277042
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17342500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5035917
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 47875
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 47308834
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 24838144,
+        "instructions retired": 154396817,
+        "cycles elapsed": 58506452
+      }
+    },
+    {
+      "case": "python",
+      "pair": 2,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 102350541,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 76437084
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3469750
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16764375
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5626792
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 59709
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 53830292
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25018368,
+        "instructions retired": 153549854,
+        "cycles elapsed": 58506563
+      }
+    },
+    {
+      "case": "python",
+      "pair": 2,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 97724750,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 71831959
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3742792
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16971084
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 4960666
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 49292
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 49710500
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25083904,
+        "instructions retired": 155117717,
+        "cycles elapsed": 59892861
+      }
+    },
+    {
+      "case": "python",
+      "pair": 3,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 98926583,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 73167542
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3073875
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17213416
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5300750
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 49042
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 50464708
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25264128,
+        "instructions retired": 153701970,
+        "cycles elapsed": 61338061
+      }
+    },
+    {
+      "case": "python",
+      "pair": 3,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 103773417,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 76578292
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3497667
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 21240709
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5713291
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 59542
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 49402209
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25214976,
+        "instructions retired": 154462902,
+        "cycles elapsed": 62283437
+      }
+    },
+    {
+      "case": "python",
+      "pair": 4,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 106015083,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 77123875
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3560583
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 20195333
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5985167
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 53666
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 50719042
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25247744,
+        "instructions retired": 153793285,
+        "cycles elapsed": 62991982
+      }
+    },
+    {
+      "case": "python",
+      "pair": 4,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 98487958,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 72607125
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3595042
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18840083
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5120292
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 48000
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48471458
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25182208,
+        "instructions retired": 155260495,
+        "cycles elapsed": 62239390
+      }
+    },
+    {
+      "case": "python",
+      "pair": 5,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 98018000,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 72524292
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3386166
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17156584
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6311875
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 72166
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48831333
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25280512,
+        "instructions retired": 154513041,
+        "cycles elapsed": 62304830
+      }
+    },
+    {
+      "case": "python",
+      "pair": 5,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 101234875,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 73617250
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3856375
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17074833
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 4954500
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 47625
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 51392542
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25247744,
+        "instructions retired": 154664834,
+        "cycles elapsed": 62300121
+      }
+    },
+    {
+      "case": "python",
+      "pair": 6,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 97596792,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 71137500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3412167
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17576250
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5299583
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 53375
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48059041
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25214976,
+        "instructions retired": 153405004,
+        "cycles elapsed": 58618569
+      }
+    },
+    {
+      "case": "python",
+      "pair": 6,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 96882125,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 71255916
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3657417
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17279209
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5433458
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 48208
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48348083
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25247744,
+        "instructions retired": 155354085,
+        "cycles elapsed": 62170049
+      }
+    },
+    {
+      "case": "python",
+      "pair": 7,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 98624917,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 70709333
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4282792
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16512333
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5340250
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 53750
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48657333
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 24920064,
+        "instructions retired": 155133411,
+        "cycles elapsed": 66129469
+      }
+    },
+    {
+      "case": "python",
+      "pair": 7,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 101819000,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 72474125
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3369625
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16852333
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5800125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 54875
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 49626542
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25214976,
+        "instructions retired": 154758128,
+        "cycles elapsed": 68115703
+      }
+    },
+    {
+      "case": "python",
+      "pair": 8,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 97231875,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 71179750
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3054708
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17358458
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 4951542
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 48583
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48692291
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25247744,
+        "instructions retired": 154637046,
+        "cycles elapsed": 59962378
+      }
+    },
+    {
+      "case": "python",
+      "pair": 8,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 97632833,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 69902959
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3613959
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16966708
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5925625
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 58459
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 46774917
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.05,
+        "system_s": 0.03,
+        "maximum resident set size": 25067520,
+        "instructions retired": 153942995,
+        "cycles elapsed": 59884586
+      }
+    },
+    {
+      "case": "python",
+      "pair": 9,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 102075250,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 73756584
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3329584
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18797750
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5959375
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 51958
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48788959
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25214976,
+        "instructions retired": 155907497,
+        "cycles elapsed": 72531863
+      }
+    },
+    {
+      "case": "python",
+      "pair": 9,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 105530417,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 78831125
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3966125
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16800542
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5041916
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 48792
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 56760125
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25116672,
+        "instructions retired": 153806453,
+        "cycles elapsed": 59413910
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 0,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 99360167,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 72664458
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4409125
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16702291
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5174500
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 20958
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 50643625
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25280512,
+        "instructions retired": 153127011,
+        "cycles elapsed": 59936929
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 0,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 99435458,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 72106666
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3541834
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17595500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5276083
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 18917
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 49088458
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25214976,
+        "instructions retired": 155232904,
+        "cycles elapsed": 60389894
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 1,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 100823250,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 73091042
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3851834
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16832333
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5699708
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 19625
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 50408375
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25296896,
+        "instructions retired": 153491310,
+        "cycles elapsed": 61179763
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 1,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 98917292,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 72428083
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3766333
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17814833
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5081667
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 16750
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 49397625
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25247744,
+        "instructions retired": 154611391,
+        "cycles elapsed": 61154720
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 2,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 107848333,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 80871708
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3536791
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17347500
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5751208
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 23083
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 57622833
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25280512,
+        "instructions retired": 154603361,
+        "cycles elapsed": 62421252
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 2,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 144144750,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 107653541
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 9741709
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17990291
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5364584
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 21833
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 84130750
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.15,
+        "user_s": 0.08,
+        "system_s": 0.04,
+        "maximum resident set size": 25280512,
+        "instructions retired": 156646578,
+        "cycles elapsed": 69743992
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 3,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 99111583,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 70914750
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3404709
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17442542
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5112708
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 20042
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48221750
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25247744,
+        "instructions retired": 153979031,
+        "cycles elapsed": 65473101
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 3,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 102809541,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 71057625
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3165666
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17205916
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5032750
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 18792
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 48683459
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25067520,
+        "instructions retired": 153976155,
+        "cycles elapsed": 60937297
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 4,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 102812334,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 77039750
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3124333
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17182667
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5792125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 19959
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 53914959
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25231360,
+        "instructions retired": 154051328,
+        "cycles elapsed": 62430905
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 4,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 102108125,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 75622209
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3432833
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17535458
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5884459
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 22833
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 52042917
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25116672,
+        "instructions retired": 155362894,
+        "cycles elapsed": 62522910
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 5,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 101965083,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 73883500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3831875
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18353041
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5412834
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 19416
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 49962125
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.1,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25083904,
+        "instructions retired": 154283965,
+        "cycles elapsed": 62598769
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 5,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 104140125,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 77974417
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3478250
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 19648333
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5696250
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 19000
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 52487458
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25231360,
+        "instructions retired": 154209748,
+        "cycles elapsed": 62408049
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 6,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 109148709,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 82014792
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3984583
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17292083
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5643333
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 21334
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 58910791
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25296896,
+        "instructions retired": 154375057,
+        "cycles elapsed": 62054843
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 6,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 113504292,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 82065833
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4078958
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18435208
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5134125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 18042
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 58330833
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.06,
+        "system_s": 0.04,
+        "maximum resident set size": 25313280,
+        "instructions retired": 156137056,
+        "cycles elapsed": 67480698
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 7,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 115117875,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 87647459
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4352375
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 18519666
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5455042
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 19833
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 63516000
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25362432,
+        "instructions retired": 154705778,
+        "cycles elapsed": 64718259
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 7,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 113384417,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 85005500
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3795875
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 20028375
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5473917
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 20875
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 59352417
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.12,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25411584,
+        "instructions retired": 155488528,
+        "cycles elapsed": 64461563
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 8,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 105156500,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 77551459
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3683417
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 17356250
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5254875
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 24625
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 54750333
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25264128,
+        "instructions retired": 155224658,
+        "cycles elapsed": 66916730
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 8,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 112433125,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 84509250
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3370958
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 19901167
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6052417
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 22583
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 58361375
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 24920064,
+        "instructions retired": 155032162,
+        "cycles elapsed": 64101255
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 9,
+      "version": "after",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 102481500,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 75477333
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 4072709
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 16968750
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 6274459
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 19500
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 52077958
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 24870912,
+        "instructions retired": 155306346,
+        "cycles elapsed": 67038334
+      }
+    },
+    {
+      "case": "pytest",
+      "pair": 9,
+      "version": "before",
+      "timing": {
+        "type": "receipt_timing",
+        "duration_ns": 103601417,
+        "exit_code": 0,
+        "failed": false,
+        "stages": [
+          {
+            "stage": "fingerprint",
+            "calls": 1,
+            "ns": 77687083
+          },
+          {
+            "stage": "lookup",
+            "calls": 1,
+            "ns": 3079458
+          },
+          {
+            "stage": "discovery",
+            "calls": 1,
+            "ns": 20005542
+          },
+          {
+            "stage": "input_files",
+            "calls": 1,
+            "ns": 5437125
+          },
+          {
+            "stage": "executable",
+            "calls": 1,
+            "ns": 20292
+          },
+          {
+            "stage": "toolchain",
+            "calls": 1,
+            "ns": 52088958
+          }
+        ]
+      },
+      "resources": {
+        "wall_s": 0.11,
+        "user_s": 0.06,
+        "system_s": 0.03,
+        "maximum resident set size": 25264128,
+        "instructions retired": 155585551,
+        "cycles elapsed": 64296436
+      }
+    }
+  ],
+  "compatibility": {
+    "go": {
+      "before": "b100d56a557f08d222309160953b6a7aeb70cd9f2bace9186cfb941a13142e4b",
+      "after": "b100d56a557f08d222309160953b6a7aeb70cd9f2bace9186cfb941a13142e4b"
+    },
+    "python": {
+      "before": "e758e5c83929a022e63c568259ee1d6ecd08dd7e92cd5e22e17848b237cbfc1c",
+      "after": "e758e5c83929a022e63c568259ee1d6ecd08dd7e92cd5e22e17848b237cbfc1c"
+    },
+    "pytest": {
+      "before": "7546b0ee1f5242b5f2bfa97b8f0d7cbc018969dba5d2e511134c9e232c3cbef2",
+      "after": "7546b0ee1f5242b5f2bfa97b8f0d7cbc018969dba5d2e511134c9e232c3cbef2"
+    }
+  }
+}

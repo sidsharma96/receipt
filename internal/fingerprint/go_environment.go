@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 )
 
 // stableGoEnvironment retains Go's settings, normalizing only the random
@@ -27,24 +26,12 @@ func stableGoEnvironment(data []byte) ([]byte, error) {
 	if root == "" {
 		root = os.TempDir()
 	}
-	// cmd/go uses os.MkdirTemp(GOTMPDIR, "go-build") and maps that
-	// directory to /tmp/go-build. Retain the root, flag kind and destination.
-	prefix := regexp.QuoteMeta(filepath.Join(root, "go-build"))
-	pattern, err := regexp.Compile(`(^|[ \t"'])(-f(?:file|debug)-prefix-map=` + prefix + `)[0-9]+(=/tmp/go-build)([ \t"']|$)`)
+	// Retain the root, flag kind and destination; only the numeric suffix varies.
+	flags, err := scratchFlags(flags, filepath.Join(root, "go-build"))
 	if err != nil {
-		return nil, fmt.Errorf("compile Go scratch-path pattern: %w", err)
+		return nil, err
 	}
-	// Each match consumes the delimiter after it, so a flag that follows another
-	// after a single space is missed by one pass. Repeat until nothing changes;
-	// a normalized flag no longer matches, so this ends after at most one pass
-	// per flag.
-	for {
-		next := pattern.ReplaceAllString(flags, `${1}${2}<scratch>${3}${4}`)
-		if next == flags {
-			break
-		}
-		flags = next
-	}
+
 	env["GOGCCFLAGS"] = flags
 	return json.Marshal(env)
 }

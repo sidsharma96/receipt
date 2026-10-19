@@ -316,7 +316,7 @@ can differ even on one laptop.
 
 **Go test coverage.** For `go test`, Receipt hashes the `go` executable and the
 output of `go env -json`, after removing the random suffix of Go's temporary
-build directory in [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L11-L50).
+build directory in [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L10-L37).
 That covers the Go version, `GOFLAGS`, `GOROOT` and the path of any `go.work`
 file. It does not hash the contents of the module cache, a `go.work` file above
 the repository root, or `replace` directories outside the repository. Receipt's

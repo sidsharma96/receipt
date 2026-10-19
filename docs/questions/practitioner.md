@@ -69,7 +69,7 @@ The Python probe prints JSON containing `sys.version`, `sys.executable` and a so
 
 `go env -json` includes `GOGCCFLAGS`, which contains `-ffile-prefix-map=<GOTMPDIR>/go-buildNNNN=/tmp/go-build`. Go chooses a new random `NNNN` scratch directory on every invocation, so without a rewrite every Go run would miss. `stableGoEnvironment` replaces only the digits after the exact `<GOTMPDIR>/go-build` prefix in `-ffile-prefix-map` and `-fdebug-prefix-map` flags with `<scratch>`. Everything else stays, and a format it does not recognise is left unchanged. That choice fails toward extra misses rather than toward hiding a real compiler setting. The input is named `resolved-go-environment-v2`. Go module dependencies are covered by `go.mod` and `go.sum` as repository files, not by the probe.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L14-L49)
+**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L13-L36)
 
 </details>
 

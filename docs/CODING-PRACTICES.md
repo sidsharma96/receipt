@@ -257,3 +257,16 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
   not promise a filesystem snapshot or compatibility under concurrent replacement.
 - Initial CLI discovery timing now has one call; standalone/post-run Build has
   two. Settings' root lookup remains outside fingerprint/discovery spans.
+
+## Go probe normalization fast path (18 October 2026)
+
+- Preserve the existing scratch-flag policy: exact cleaned root and flag kind,
+  ASCII digits, exact destination, and existing ASCII delimiters. Do not turn
+  the helper into a shell parser or normalize unknown forms.
+- Ordinary valid-UTF-8 prefixes up to 4096 bytes use literal scanning. Longer or
+  invalid-UTF-8 prefixes keep the original regexp algorithm and failure behavior;
+  the threshold is implementation selection, not a new accepted-input limit.
+- Keep an independent legacy reference in differential tests. Distinguish local
+  normalization time/allocations from fresh subprocess cost and whole-hit latency.
+- Probe commands, output fields and freshness remain unchanged. A local
+  normalization optimization does not authorize caching probe results.

@@ -496,3 +496,109 @@ python3 scripts/profile/compare_discovery.py /path/to/receipt-before /tmp/receip
 The script is macOS-specific because it parses `/usr/bin/time -l`. It creates and
 removes temporary fixtures, alternates order, checks replay and compares keys.
 No raw environment values or probe output are published in its records.
+
+## Toolchain probe normalization, 18 October 2026
+
+[Chapter 15](guide/15-measure-toolchain-probe-overhead.md) describes this deliberately
+small optimization. Baseline: unmodified `4cbf0d7`. Candidate: literal scanning of
+ordinary Go scratch-path flags instead of per-call regexp compilation and repeated
+replacement passes. Long (>4096-byte) or invalid-UTF-8 prefixes keep the original
+regexp path; the threshold is not a path-length refusal. Probe commands, fields,
+JSON serialization, hashes, names and freshness are unchanged. No Python/Rust
+probe optimization or result caching was implemented.
+
+[Initial breakdown](measurements/probes-2026-10-18/initial-breakdown.json) records
+three 20-operation Go subbenchmarks: median subprocess/output capture 36.28 ms,
+local normalization 48.28 µs. Normalization includes JSON decode/encode and flag
+handling, but not the subprocess or output hash. The dominant cost is outside
+that local step; these independently measured subbenchmarks are not additive
+components of one cache-hit sample.
+
+[Matched raw comparison](measurements/probes-2026-10-18/comparison.json) records six
+alternating before/after normalization-process pairs, 50 standalone process
+samples and 60 cache hits. Environment: macOS arm64 Apple M1, Go 1.27.2,
+Python 3.14.2 with eight installed distributions. Existing Python was used without
+installing or changing packages. External linker builds were used for both CLIs
+and test binaries. Runs were sequential, warm-cache, with other local tests/builds
+stopped and uncontrolled background activity.
+
+The normalization benchmark ran 10,000 operations per process using freshly
+collected real Go output as its fixture. Per-operation time/allocations exclude
+fixture collection. Process CPU/RSS include runtime startup, fixture collection,
+calibration and cleanup. The baseline test executable used a Go overlay restoring
+`go_environment.go` from `4cbf0d7`, with the same benchmark source; the baseline CLI
+was built before implementation changes. The candidate test executable used the
+final implementation, including the legacy fallback.
+
+| Normalization metric (six medians) | Before | After |
+| --- | ---: | ---: |
+| Time per operation | 42.635 µs | 18.5605 µs |
+| Sample time range | 40.199–46.633 µs | 17.696–21.531 µs |
+| Allocated bytes per operation | 26,185.5 B | 8,307.5 B |
+| Allocations per operation | 161 | 91 |
+| Process user + system CPU | 0.480 s | 0.225 s |
+| Process maximum resident size | 15,966,208 B | 15,966,208 B |
+
+This establishes roughly 56% lower local normalization time and 68% fewer
+allocated bytes in this fixture. Median process CPU falls for this repeated work;
+peak RSS does not. Fractional bytes and CPU hundredths arise from medians, not
+half-byte allocations or finer timing resolution. `/usr/bin/time -l` reports
+CPU in hundredths of seconds. RSS is a maximum, not a sum of simultaneous process
+memory. Raw cycle/instruction counters are retained without treating them as a
+complete process-tree or per-stage profile.
+
+The standalone process experiment alternated forward/reverse command order for
+ten rounds. Python's monotonic timer surrounded `/usr/bin/time -l` plus each
+command. The commands were `go version`, `go env -json`, Python `-c pass`, Python
+importing sys/json/importlib.metadata, and the exact production package probe.
+Their medians were respectively 20.35, 48.33, 27.17, 45.26 and 56.62 ms. These
+include launcher, waiting and capture overhead. `go version` is a reference
+command, not a pure startup timer; differences between command medians are not
+exact attribution to compiler/package work. Internal child CPU sampling and
+filesystem syscall counts were not collected. Raw probe output is not published.
+
+The replay fixture contains 256 × 4 KiB files, go.mod, a Go test, a Python test
+and .gitignore. A direct-pytest launcher and cache live outside it. The old CLI
+creates entries, then ten alternating before/after pairs per command reuse them.
+
+| Case | Version | Receipt median (range), ms | Toolchain median, ms | Process CPU, s | Peak RSS, decimal MB |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Go | Before | 98.69 (91.92–117.92) | 39.31 | 0.080 | 17.66 |
+| Go | After | 103.86 (87.88–127.55) | 41.12 | 0.085 | 17.61 |
+| Python module | Before | 101.53 (97.23–106.02) | 49.51 | 0.090 | 25.21 |
+| Python module | After | 98.56 (96.88–105.84) | 48.62 | 0.090 | 25.23 |
+| Direct pytest | Before | 103.87 (98.92–113.38) | 53.20 | 0.090 | 25.26 |
+| Direct pytest | After | 102.29 (99.11–144.14) | 52.06 | 0.090 | 25.23 |
+
+All 60 expected hits skipped execution, and full old/new keys matched for all
+three forms. Keys contain temporary paths and environment hashes, so exact key
+strings need not repeat across reproduction runs. The Go whole-hit median was
+higher after the change; ranges overlap, and unchanged Python controls also
+vary. No whole-hit speedup, regression attribution or meaningful peak-RAM
+improvement is established by these samples. The saved ~24 µs local work is much
+smaller than observed subprocess variation. Do not add nested stage medians.
+
+Reproduction requires before/after CLIs and fingerprint test executables with
+`BenchmarkProbeBreakdown`, and an existing Python with pytest:
+
+```sh
+python3 scripts/profile/compare_probes.py /path/to/before /path/to/after /path/to/before.test /path/to/after.test /path/to/venv/bin/python /tmp/probe-comparison.json
+go test -ldflags=-linkmode=external ./internal/fingerprint -run '^$' -fuzz '^FuzzScratchScannerMatchesLegacy$' -fuzztime=30s -parallel=2
+```
+
+Build the old CLI in an isolated checkout of `4cbf0d7`. For the baseline benchmark,
+use Go's `-overlay` JSON `Replace` mapping from the absolute current
+`internal/fingerprint/go_environment.go` path to a saved copy of that file from
+`4cbf0d7`, then `go test -overlay /path/to/overlay.json -c -o /path/to/before.test
+./internal/fingerprint`. Build the candidate test executable without the overlay.
+The harness is macOS-specific and cleans only its temporary fixtures.
+
+Differential fuzzing completed 98,733 executions in about 31 seconds; an initial
+invalid-UTF-8 reference panic was corrected by limiting generated JSON roots to
+valid text and testing raw TMPDIR refusal separately. The final implementation
+retains the original algorithm for invalid UTF-8 and long prefixes, preserving
+compiler error behavior. Deterministic tests cover delimiters, unusual paths,
+adjacency and the fallback threshold. Existing settings/freshness/failure tests
+also pass. Fuzzing is sampled evidence, not an exhaustive proof. Windows, cold
+storage, energy, large Python environments, uv/Rust replay and adversarial
+concurrent changes were not measured; database/Rust opt-ins were not run locally.

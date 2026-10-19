@@ -324,3 +324,12 @@ The old/new experiment replayed 60 old entries with matching keys; generic-root
 hit latency fell from 70.42 to 52.43 ms, with near-unchanged peak RAM. Go timings
 were noisier. The [full review](../PHASE-REVIEWS.md#git-root-reuse-18-october-2026)
 records the nine questions, tests, assumptions and measurement limitations.
+
+## 18 October 2026: measure probe overhead and reduce normalization work
+
+[Chapter 15](15-measure-toolchain-probe-overhead.md) separates fresh subprocess
+cost from local Go output normalization. Literal scanning reduced local median
+normalization time from 42.64 to 18.56 µs and allocations by about 68%; no whole-hit
+speedup was established. Probe commands remain fresh and unchanged. All 60 old-entry
+replays succeeded with matching keys. The [full review](../PHASE-REVIEWS.md#toolchain-probe-normalization-18-october-2026)
+records differential/fuzz evidence, the legacy fallback and remaining limits.
