@@ -15,6 +15,11 @@ other settings. On 18 October 2026 we measured probe overhead and made this loca
 normalization cheaper. The expensive fresh probes still run. This chapter explains
 both the improvement and why it does not establish a faster whole cache hit.
 
+Follow-up (19 October): [Chapter 16's Go investigation](16-resolve-selected-git.md#what-the-next-go-investigation-found)
+locates a repeated compiler query caused by a known upstream Go cache-reader bug.
+A diagnostic fix removes that query on a stable fixture; it is not a Receipt
+optimization and does not explain the original rare 300 ms delay.
+
 ## Separate asking the tool from processing its answer
 
 A probe is a command Receipt runs to learn the current runtime environment.

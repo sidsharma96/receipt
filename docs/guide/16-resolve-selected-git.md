@@ -172,6 +172,62 @@ outgrows the saved startup work, or callers need to change tools within an
 invocation. Go probes and hashing still have their own variable costs; this is
 not a fix for every 300 ms outlier.
 
+## What the next Go investigation found
+
+On 19 October, we looked inside `go env -json`. Before it returns the compiler
+flags, Go asks the C compiler about itself. On this Mac that starts
+`/usr/bin/clang`. A cache is meant to let later Go processes reuse the compiler
+identity after checking whether the compiler file changed.
+
+Follow this illustrative record through Go's actual format. NUL means a zero
+byte separating fields; `stat description` stands for recorded file metadata.
+
+```text
+Writer: filename NUL stat description NUL compiler-ID bytes
+Reader removes compiler-ID bytes:
+        filename NUL stat description NUL
+Reader splits at every NUL:
+        [ filename, stat description, empty field ]
+Three fields → cannot form pairs → reject cache → start Clang again
+```
+
+[Go's reader](https://go.dev/src/cmd/go/internal/work/exec.go#L2722) uses
+`strings.Split`, which retains that final empty field. Its following
+`len(stats)%2 != 0` check rejects the odd count. We observed that exact three-field
+rejection on consecutive warm calls. This matches the already reported
+[Go issue 81553](https://github.com/golang/go/issues/81553), which also describes
+advancing one field instead of two when validating several filename/stat pairs.
+This is Go's compiler cache, a different store from Receipt's saved test results.
+
+An isolated diagnostic build removed the trailing separator before splitting
+and advanced by pairs. In 60 randomized pairs, standalone `go env` averaged
+29.30 → 11.54 ms elapsed and 27.46 → 9.73 ms process-tree CPU. Reported peak RSS
+averaged 16.722 → 16.042 MB. The original started one compiler child every time;
+the experiment started none. All settings matched after the recognized temporary
+scratch suffix was normalized. These are rebuilt diagnostic Go binaries with
+one warm isolated build cache, not a production Receipt benchmark.
+
+We also obtained a valid **Go runtime trace**. In its 54.24 ms specimen, Go spent
+about 28.18 ms in the system call that waits for the compiler child to finish.
+That explains what Go was waiting for in that call. It does not tell us whether
+Clang was doing work or waiting on the OS. Runtime tracing begins at main and
+cannot explain earlier process startup. The OS recorder still crashed while
+saving, so it supplies no verified thread-state evidence.
+
+A separate 1,200-call diagnostic hunt peaked at 106.52 ms; no call reached its
+200 ms threshold. That call combined 33.84 ms before the first marker and
+52.44 ms around the compiler child. Its GC pauses were only 0.070 ms. We have
+identified repeated work and a concrete waiting dependency, **not reproduced
+or explained the original 300 ms event**.
+
+The parser change is an experiment in an isolated Go copy. It is not installed
+and Receipt's fresh probe is unchanged. A correct toolchain fix must also handle
+changed compilers, malformed cache data and developer-tool selection; matching
+settings on one stable setup does not prove those cases. The
+[measurement record](../MEASUREMENTS.md#inside-the-go-environment-probe-19-october-2026)
+contains the reproducible tools, raw metrics and remaining limits, with a
+[full review](../PHASE-REVIEWS.md#go-probe-localization-19-october-2026).
+
 ## Check your understanding
 
 <!-- questions:start -->
@@ -210,6 +266,27 @@ paths, including custom symlinks, keep their spelling and behavior. Resolver
 failure retains the original launcher.
 
 **Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
+
+</details>
+
+### Which cache rejected the compiler record?
+
+**Level:** Practitioner
+
+The Go investigation found a filename, a stat description and an empty third
+field after splitting a record. Which cache was involved, and why did Go start
+Clang again?
+
+<details>
+<summary>Answer</summary>
+
+It was Go's compiler-identity cache, not Receipt's saved test-result cache. The
+writer's final NUL separator made strings.Split retain an empty field. The reader
+expected filename/stat pairs, rejected the odd count and queried Clang again.
+The diagnostic correction demonstrated the repeated-work cause on a stable
+fixture; it did not reproduce or explain the earlier 300 ms event.
+
+**Learn more:** [What the next Go investigation found](../guide/16-resolve-selected-git.md#what-the-next-go-investigation-found)
 
 </details>
 

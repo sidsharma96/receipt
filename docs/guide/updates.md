@@ -383,3 +383,14 @@ comparison includes resolution cost, preserves old keys/entries and finds roughl
 11–13.5 ms lower mean elapsed time and 9 ms less CPU, with a small RSS increase.
 The [nine-question review](../PHASE-REVIEWS.md#selected-git-resolution-18-october-2026)
 records code, tradeoffs, intervals, controls, verification and remaining limits.
+
+## 19 October 2026: look inside the Go probe
+
+[Chapter 16](16-resolve-selected-git.md#what-the-next-go-investigation-found)
+now explains a known Go compiler-cache reader bug reproduced locally: the reader
+rejects the writer's trailing empty field and starts Clang on every warm query.
+An isolated diagnostic correction removed those launches and reduced standalone
+probe cost; it is not installed or adopted by Receipt. A matching Go runtime
+trace confirms a compiler-child wait in one call, while the earlier 300 ms event
+remains unexplained. The [nine-question diagnosis review](../PHASE-REVIEWS.md#go-probe-localization-19-october-2026)
+records evidence, tooling failures, reproducible scripts and remaining limits.

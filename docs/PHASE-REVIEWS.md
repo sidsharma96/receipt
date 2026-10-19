@@ -3524,3 +3524,138 @@ RSS is a constraint. Revisit the remaining tail only with matching stage/CPU/OS
 evidence; unrelated slow probes and hashing remain possible. Consider a broader
 discovery implementation only with independent compatibility coverage of Git
 semantics and a demonstrated workload benefit.
+
+## Go probe localization, 19 October 2026
+
+Start with one Go environment query. Go creates its build helper, checks the
+compiler identity cache, rejects an odd field count, then launches Clang to ask
+about the compiler. Later Go processes repeat this even when the compiler is
+unchanged. A diagnostic parser correction removes that repeated child on the
+stable fixture. This matches [upstream issue 81553](https://github.com/golang/go/issues/81553).
+It does not establish the cause of the original 300 ms event. The
+[chapter](guide/16-resolve-selected-git.md#what-the-next-go-investigation-found)
+explains the record format; the
+[measurement record](MEASUREMENTS.md#inside-the-go-environment-probe-19-october-2026)
+retains protocols, metrics, scripts and failure limits. No production Receipt
+optimization is implemented by this investigation.
+
+### Go probe diagnosis — 1. Data structures
+
+Fixed stage marks collect timestamps and self resource counters in a diagnostic
+Go binary. A mutex protects a list of marks; one JSON record includes PID and
+GC counters. Separate child records retain compiler PID/CPU. Python records
+preserve run order, metrics and output comparison status. An overlay map names
+original files and local replacement files; it changes the compilation view
+without editing the installation. Published evidence keeps all compact call
+metrics and selected complete records; large raw/runtime/OS traces stay local.
+
+### Go probe diagnosis — 2. Architecture and boundaries
+
+The builder pins installed Go 1.27.2 source and instruments main, env setup,
+builder/compiler checks, cache validation and compiler subprocess boundaries.
+The optional experiment trims the cache payload's final NUL before splitting
+and advances by pairs. The serializer ends each filename/stat pair with NUL;
+strings.Split retains an extra final empty field, so the original reader rejects
+three fields. Three warm diagnostic calls observed that precise branch.
+The implementing external source is
+[gccCompilerID](https://go.dev/src/cmd/go/internal/work/exec.go#L2690): its
+`len(stats)%2 != 0` rejection follows the split. The packaged overlay builder
+retains the exact matched expressions and refuses changed source layout.
+
+The capture tool compares stock/diagnostic settings after the recognized temporary
+GOGCCFLAGS suffix replacement. It stops on failed commands or changed fields.
+The comparison tool uses the two diagnostic variants in a single isolated GOCACHE.
+This boundary is external-tool diagnosis; Receipt's executable hashing, fresh
+probe command, normalization, manifests and keys remain unchanged.
+
+### Go probe diagnosis — 3. Primitives and concurrency
+
+Child processes remain sequential. Diagnostic Go uses its standard runtime trace,
+not a privileged OS recorder. A trace path is supplied only to the diagnostic
+child and output is flushed at exit; tracing begins at main. Existing Go background
+goroutines can appear in the trace. Timing marks use a mutex and buffered records;
+Getrusage adds per-stage observation cost. Compiler CombinedOutput waits for its
+child and copier. Raw counters and timestamps do not automatically explain
+scheduler waiting or work in other services. No new Receipt network operation,
+worker or persisted probe-result cache is introduced.
+
+### Go probe diagnosis — 4. Pitfalls and debugging
+
+A five-second Thread Activity smoke recording crashed in Instruments while saving;
+its partial directory is not verified evidence. The first Go runtime-trace hunt
+overwrote each prior trace, so its largest call lacks a matching trace. The
+packaged capture retains largest.trace and a follow-up verified its compiler
+markers and syscall-delay profile. Go 1.27 uses -d=parsed for text export;
+-d=1 failed and was corrected. Runtime profiler data shows Go's wait for Clang,
+not Clang's OS thread state. Instrumentation, external linking and a rebuilt Go
+binary can move or suppress the rare event. The diagnostic-only parser change
+needs independent cache-invalidation/malformed-data tests before adoption.
+
+### Go probe diagnosis — 5. Hot and cold costs
+
+Every full environment query in the 1,200-call diagnostic hunt launched Clang.
+The largest 106.519 ms call included 33.838 ms before base_init and 52.444 ms
+around the compiler child, with 0.070292 ms of Go GC pauses. No 200 ms call was
+captured. The follow-up's matching 54.244 ms runtime trace attributed 28.18 ms
+syscall delay to Wait4 through the compiler probe. Nested durations are not
+additive. Sixty paired diagnostic parser comparisons reduced mean external
+elapsed 29.299 → 11.540 ms, CPU 27.459 → 9.730 ms and reported RSS 16.722 →
+16.042 MB. Compiler children fell 1 → 0. These are warm standalone Go results,
+not whole-hit gains, cold-cache costs, hardware cycles or rare-tail estimates.
+
+### Go probe diagnosis — 6. Guarantees and assumptions
+
+All measured parser-comparison settings matched after the recognized scratch
+suffix normalization on the fixed fixture. That does not prove full Receipt key
+compatibility for a future workaround or deterministic outputs. Production key
+behavior is unchanged because the experiment is not installed. The fixture's
+compiler/developer selection stayed stable. Changing tools behind the same
+system launcher, malformed cache contents, and concurrent replacement require
+separate correctness work. Runtime trace confirms a compiler wait in its recorded
+specimen; it does not assign an OS cause to the earlier 300 ms call.
+
+### Go probe diagnosis — 7. Alternatives and decisions
+
+We tried a short OS recorder smoke before another long hunt; its crash led to
+Go-level instrumentation and runtime tracing. A plain CPU profile cannot explain
+all waiting. Direct selected-Go invocation separated about 6.8 ms launcher cost,
+but bypasses the old launcher and cannot explain every original-path wait.
+Caching Receipt's full probe is deferred because mutable compiler/runtime settings
+still need observation. An isolated parser experiment tests a concrete mechanism
+without modifying the user's installation. Shipping it as a toolchain patch or
+Receipt workaround is deferred pending selection/invalidation correctness. No
+upstream issue/comment was posted; the matching existing issue was read.
+
+### Go probe diagnosis — 8. Evidence and remaining risks
+
+The evidence includes 60 launcher/direct pairs, a 600-call lightweight hunt,
+a 1,200-call stage/runtime hunt, three cache-shape specimens, 60 diagnostic
+parser pairs, and a 600-call retained-runtime-trace follow-up. Plans have fixed
+counts/thresholds; no measured outlier was excluded. The parser comparison uses
+balanced randomized order, five warmup pairs, shared isolated GOCACHE and equal
+normalized output for all 120 measured invocations. Rebuilding through the
+packaged tool reproduced both measured binary hashes. There is no same-binary
+control or confidence interval for this exploratory comparison. Cache correctness
+under tool changes is untested. No original 300 ms Go call recurred. No verified
+OS thread-state trace is claimed. Detailed raw system traces remain local.
+
+Verification: 17 profile/evidence tests and all 18 make docs checks passed.
+The packaged builder reproduced both measured binary hashes; capture stdout
+comparisons and the retained runtime trace parsed successfully. Production
+Receipt tests/race/DB integration were not rerun locally: Receipt Go source is
+unchanged. The full Go-distribution suite and invalidation under compiler changes
+were not run; this experiment is not a toolchain release candidate. Source/link checks do not certify
+that a beginner understands the explanation. The prose review checked the concrete
+writer/reader example, distinction between the two caches, waiting dependency,
+actual measured scope and reasons the experimental correction is not shipped.
+
+### Go probe diagnosis — 9. Revisit conditions
+
+Revisit the Go-cache experiment when upstream publishes a fix and its invalidation
+coverage can be checked, or a supported compiler-selection change can be tested
+independently. Revisit the 300 ms diagnosis when that same event has matching
+stage/child and runtime/OS evidence. Revisit Instruments after a successful small
+recording finalizes and contains the target, before another long capture. Revisit
+launcher bypass only with complete Go selection compatibility. Revisit more
+instrumentation when its added overhead or absent pre-main coverage prevents
+answering the remaining question.

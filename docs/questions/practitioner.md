@@ -440,3 +440,26 @@ failure retains the original launcher.
 **Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
 
 </details>
+
+
+### Which cache rejected the compiler record?
+<!-- check: guide/16-resolve-selected-git.md -->
+
+**Level:** Practitioner
+
+The Go investigation found a filename, a stat description and an empty third
+field after splitting a record. Which cache was involved, and why did Go start
+Clang again?
+
+<details>
+<summary>Answer</summary>
+
+It was Go's compiler-identity cache, not Receipt's saved test-result cache. The
+writer's final NUL separator made strings.Split retain an empty field. The reader
+expected filename/stat pairs, rejected the odd count and queried Clang again.
+The diagnostic correction demonstrated the repeated-work cause on a stable
+fixture; it did not reproduce or explain the earlier 300 ms event.
+
+**Learn more:** [What the next Go investigation found](../guide/16-resolve-selected-git.md#what-the-next-go-investigation-found)
+
+</details>

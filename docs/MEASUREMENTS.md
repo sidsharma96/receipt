@@ -1179,3 +1179,130 @@ This trial does not estimate cold caches, misses/post-execution elapsed savings,
 other operating systems, all Xcode installations, or a change in rare-tail rate.
 The [full review](PHASE-REVIEWS.md#selected-git-resolution-18-october-2026) records
 selection semantics, failure cases and verification.
+
+## Inside the Go environment probe, 19 October 2026
+
+A fresh investigation found a reproducible source of repeated work inside Go
+1.27.2: its compiler-ID cache reader rejects the trailing empty field written
+by its own serializer, then starts `/usr/bin/clang` again. This matches the
+already reported [Go issue 81553](https://github.com/golang/go/issues/81553).
+The issue and proposed [change 833424](https://go-review.googlesource.com/c/go/+/833424)
+were still open when checked on 19 October; the official review API reported
+status NEW. This record does not claim a released fix.
+[Chapter 16](guide/16-resolve-selected-git.md#what-the-next-go-investigation-found)
+walks through the example. This is a diagnostic Go experiment, not a shipped
+Receipt optimization or a complete explanation of the earlier 300 ms waits.
+
+The [retained evidence](measurements/go-env-diagnosis-2026-10-19/evidence.json)
+contains per-call metrics, selected complete stage records, binary/source hashes,
+parser-comparison pairs, and a matching Go runtime-trace summary. Full 22 MB stage
+logs and raw traces remain local. A five-second, 30-call Thread Activity smoke
+recording crashed with SIGSEGV in Instruments modeler/analysis frames while saving;
+it is explicitly unverified. No service reset or security change was made.
+
+### Separate the launcher, Go body and compiler subprocess
+
+The PATH executable is Go 1.22.1; configured GOTOOLCHAIN is go1.27.2+auto.
+Sixty balanced randomized launcher/direct-selected-toolchain pairs, after five
+warmups per version, gave means 32.874 → 26.078 ms elapsed and 31.798 → 25.182 ms
+process-tree CPU. Only raw GOGCCFLAGS temporary suffixes differed. This establishes
+roughly 6.8 ms routine handoff cost in that trial, not the rare-tail cause or a
+safe general tool-selection shortcut. No system Go/PATH configuration changed.
+
+A separate 600-call untraced hunt stopped at its fixed limit without a 200 ms
+call. Its largest call was 151.464 ms with 44.751 ms child CPU. Involuntary context
+switch counts were 865 versus the run's median 298. The count is consistent with
+more interruption but contains no duration or dependency information; zero block
+I/O counters do not rule out filesystem waits.
+
+The diagnostic builder overlays installed source only while compiling an
+isolated cmd/go executable; original source/binaries are not edited. It pins
+Go 1.27.2 source layout, preserves effective GOROOT with a linker setting, and
+uses a separate build-time module-cache setting because Go disallows overlays
+inside its active module cache. Runtime settings are inherited. The optional
+runtime-trace path is passed only to the diagnostic child. Its stdout is compared
+to stock Go after the existing recognized temporary GOGCCFLAGS suffix is replaced;
+all other fields must match. This is probe-output comparison, not a full Receipt
+manifest/key compatibility test.
+
+In a 1,200-call diagnostic hunt with Go runtime tracing enabled, every call
+started one compiler child. No call reached the predefined 200 ms threshold.
+The largest call was 106.519 ms with 59.794 ms process-tree CPU and 0.070292 ms
+of Go GC pauses. It spent 33.838 ms before the first base-package marker,
+52.444 ms around the compiler subprocess, and 6.179 ms after the exit marker.
+The remaining time is other marked work. The early interval includes launch,
+loader/runtime and earlier package initialization; it is not pure loader time.
+The post-marker interval includes diagnostic serialization and trace finalization.
+Compiler child CPU was 29.309 ms; these nested values must not be added together.
+The trace adds overhead and this rebuilt binary bypasses the old Go launcher.
+
+The initial harness overwrote its trace each call, so no runtime trace is claimed
+for that 106.519 ms specimen. The packaged harness now retains the largest call's
+trace. A separate 600-call follow-up, with a 100 ms stop threshold, completed all
+calls and peaked at 54.244 ms. Its saved matching runtime trace parsed successfully.
+The compiler marker interval was 31.964 ms in the runtime trace versus 31.957 ms
+in diagnostic timestamps. The syscall-delay profile attributed 28.18 ms to
+syscall.Wait4 through Cmd.Wait → gccToolID → gccCompilerID. This directly shows
+Go waiting for the compiler child in that specimen. It does not show whether
+Clang itself was running, runnable or blocked; an OS trace is still needed for
+that distinction. Go 1.27's parsed debug export uses `-d=parsed`, not `-d=1`.
+
+### Prove why the compiler query repeats
+
+The writer in Go's
+[gccCompilerID source](https://go.dev/src/cmd/go/internal/work/exec.go#L2690)
+stores filename, NUL, stat description, NUL, then the binary compiler ID. NUL is
+a zero byte used here as a separator. Removing the final ID leaves a separator
+at the end. strings.Split preserves an empty final field, so a single filename/
+stat pair becomes three fields. The reader's odd-field check rejects it before
+validation. A second reader problem advances one field instead of one two-field
+pair. Both are described in the upstream issue; our markers observed
+compiler_cache_odd_fields_3 and a compiler child on three consecutive warm calls.
+
+A diagnostic-only variant removes the trailing separator before splitting and
+advances by two fields. Two rebuilt diagnostic binaries with identical flags and
+instrumentation were compared in 60 balanced randomized pairs, with five warmup
+pairs and one shared isolated GOCACHE. Runtime tracing was off. No outliers were
+excluded. Packaged builder smoke tests reproduced both measured binary SHA-256s.
+
+| Standalone diagnostic go env, arithmetic means | Original parser | Experimental parser |
+| --- | ---: | ---: |
+| External elapsed, including time wrapper | 29.299 ms | 11.540 ms |
+| Process-tree CPU | 27.459 ms | 9.730 ms |
+| Reported maximum RSS, decimal MB | 16.722 MB | 16.042 MB |
+| Compiler children per call | 1 | 0 |
+
+All normalized output fields matched across all 120 measured invocations.
+The original variant rejected one cache record per call; the experimental variant
+validated cached compiler identity and launched no compiler. This isolates the
+repeated-work mechanism on this stable fixture. The comparison has no same-binary
+control, grouped confidence interval, cold-cache trial or whole-Receipt timing.
+RSS is the time tool's maximum-resident report, not summed simultaneous tree RAM;
+CPU milliseconds are not hardware cycles. No 300 ms call occurred here.
+
+The experimental parser is not installed or adopted by Receipt. Compiler
+replacement, malformed cache records and changing developer-tool selection were
+not tested for the patched Go cache. In particular, a compiler behind an unchanged
+system launcher needs careful invalidation when developer tools change. Equal
+probe outputs on a fixed setup do not establish safe reuse across those changes.
+Fresh probe behavior and Receipt keys remain unchanged in production.
+
+### Reproduce the isolated diagnosis
+
+Use a Go 1.27.2 GOROOT and fresh output directories. The build script asserts the
+expected source text before applying overlays and never edits the installation.
+
+```sh
+python3 scripts/profile/build_go_env_diagnostic.py GOROOT BEFORE
+python3 scripts/profile/build_go_env_diagnostic.py GOROOT AFTER --fix-cache-parser
+python3 scripts/profile/capture_go_env_wait.py GOROOT/bin/go BEFORE/go-diagnostic CAPTURE --trace
+python3 scripts/profile/compare_go_env_parser.py BEFORE/go-diagnostic AFTER/go-fixed-parser COMPARISON
+```
+
+For a retained trace, `go tool trace -pprof=syscall CAPTURE/largest.trace` produces
+a profile for go tool pprof; `go tool trace -d=parsed` exports parsed events in
+this version. Capture limits default to 1,200 calls / first 200 ms call. Captures
+retain PID and timestamps and stop on changed output or a failed child. The
+runtime trace begins at main, so it cannot explain pre-main gaps by itself.
+The [nine-question diagnosis review](PHASE-REVIEWS.md#go-probe-localization-19-october-2026)
+records decisions, verification and untested cases.
