@@ -602,3 +602,178 @@ adjacency and the fallback threshold. Existing settings/freshness/failure tests
 also pass. Fuzzing is sampled evidence, not an exhaustive proof. Windows, cold
 storage, energy, large Python environments, uv/Rust replay and adversarial
 concurrent changes were not measured; database/Rust opt-ins were not run locally.
+
+## Controlled Git discovery rerun, 18 October 2026
+
+The first recorded Go pair in the larger adjacent-pair run took 107.256 ms
+before and 91.594 ms after: a 15.662 ms saving. That is one observation, not a
+stable estimate. We repeated comparisons and included a control that compares
+the old binary with itself. A nonzero control difference exposes timing variation
+that cannot have come from the optimization.
+
+This amendment qualifies the earlier ten-pair experiment; it does not replace its
+raw evidence. Production code is unchanged. Both binaries were rebuilt from
+isolated exports of `97b833e` and `4cbf0d7` with the same Go toolchain and flags.
+The later probe-normalization change is absent from both. The only production
+difference is initial-root reuse.
+
+### Protocol and reproduction
+
+The macOS harness is
+[`discovery_controlled.py`](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/discovery_controlled.py).
+It writes its fixed counts and analysis plan before measuring. It creates one
+temporary Git repository with 256 × 4 KiB inputs, go.mod, a Go test, .gitignore
+and an ignored file. The cache lives outside that repository. The old binary
+populates the Go and generic-command entries; both binaries then replay them.
+One inherited environment snapshot is used for all child calls. Full keys must
+match before and after measurement, and every measured invocation must be a hit
+with no execution stage. Temporary paths mean keys need not repeat between
+separate experiments.
+
+The first run uses three blocks, each containing 20 Go pairs, 20 generic pairs
+and 10 Go control pairs. Within each case/block, old-first and new-first orders
+are balanced, randomly arranged with seed 20261018, then interleaved with the
+other cases and 20 direct root queries. Each pair's calls are adjacent. Three
+warmup pairs per case/block are excluded in advance. That produces 300 measured
+hits, 54 excluded warmup hits and 60 direct root queries.
+
+After inspecting the first control's long tail, we explicitly chose one
+diagnostic follow-up with mirrored groups of four calls. A group runs
+old/new/new/old or new/old/old/new; each label's two observations are averaged
+before subtraction. Both labels occupy the same average position, cancelling
+a linear drift across those four positions. Sudden pauses or nonlinear drift
+remain. Counts were fixed before the follow-up: three blocks of 20 Go groups,
+10 generic groups and 20 Go control groups, again balanced by order and
+interleaved. This produces 600 measured hits, another 54 excluded warmup hits
+and 60 direct root queries. The follow-up was motivated by the first result;
+it was not independently planned before seeing that result. Neither run removes
+outliers or stops early. Both are published:
+
+- [Adjacent-pair records and summaries](measurements/discovery-controlled-2026-10-18/comparison.json).
+- [Mirrored-group records and summaries](measurements/discovery-controlled-2026-10-18/quartets.json).
+
+Build separate source exports with these commands in each export's root,
+choosing a different absolute output path for each binary:
+
+```sh
+git archive 97b833e | tar -x -C /path/to/before-source
+git archive 4cbf0d7 | tar -x -C /path/to/after-source
+# In each source directory:
+go build -trimpath -buildvcs=false -ldflags=-linkmode=external -o /absolute/path/to/binary ./cmd/receipt
+# From the current repository:
+python3 scripts/profile/discovery_controlled.py /path/to/before /path/to/after /tmp/discovery-pairs.json
+python3 scripts/profile/discovery_controlled.py /path/to/before /path/to/after /tmp/discovery-quartets.json --quartets
+python3 -m unittest discover -s scripts/profile -p 'test_discovery_controlled.py'
+```
+
+Create the two empty source directories before exporting. Use matching toolchains,
+flags and environment; do not compare binaries built from current main, because
+that includes a later change.
+
+### What the measurements mean
+
+The primary estimate is the arithmetic mean of old-minus-new Receipt duration
+within each pair or group. Positive means saved time. Receipt duration includes
+its own work and waiting; an external monotonic timer additionally includes the
+Python launcher, `time` wrapper and process startup/exit. The JSON preserves both.
+Stage durations identify where Receipt waited or worked, not CPU time in that
+stage. `outside_discovery_ms` is each invocation's total minus discovery.
+These paired means add exactly; independently computed medians need not.
+
+CPU is the Python parent's change in waited-child user plus system time,
+including the wrapper and waited descendants. It has finer reporting resolution
+than the original experiment's hundredth-second `time` output. CPU time is not a
+hardware cycle count. Peak RSS comes from macOS `/usr/bin/time -l`, in decimal MB;
+it is not simultaneous whole-process-tree RAM or total allocated bytes.
+
+For each metric the harness resamples the paired differences 5,000 times and
+reports a central 95% bootstrap interval. Resampling means repeatedly drawing
+from the observed data to see how the average changes. It also groups five
+successive comparisons within each case/block and resamples those group means.
+The tables use this latter interval to retain some short-range dependence.
+There are only 12 groups for 60 comparisons and six for 30 comparisons; neither
+method models all drift or establishes a 95% guarantee for other machines.
+The raw JSON also records individual-pair intervals, medians, ranges, order
+differences and all three block means. Controls are a check on the method, not
+a correction to subtract automatically from another case's estimate.
+
+### Results and uncertainty
+
+The follow-up's mirrored-group means are the clearest estimate from this session:
+
+| Case / metric | Before mean | After mean | Mean saving | Approximate 95% interval for saving |
+| --- | ---: | ---: | ---: | ---: |
+| Go Receipt duration | 122.67 ms | 106.37 ms | 16.29 ms | 12.15 to 20.80 ms |
+| Go discovery | 35.21 ms | 18.02 ms | 17.19 ms | 15.19 to 19.95 ms |
+| Go outside discovery | 87.46 ms | 88.35 ms | −0.89 ms | −4.34 to 2.15 ms |
+| Go toolchain stage | 41.19 ms | 42.30 ms | −1.11 ms | −4.05 to 1.83 ms |
+| Go process CPU | 112.60 ms | 97.23 ms | 15.37 ms | 13.42 to 17.49 ms |
+| Go peak RSS | 17.794 MB | 17.746 MB | 0.048 MB | −0.017 to 0.114 MB |
+| Generic Receipt duration | 67.76 ms | 50.44 ms | 17.33 ms | 14.46 to 20.87 ms |
+| Generic discovery | 33.27 ms | 16.41 ms | 16.86 ms | 16.07 to 17.55 ms |
+| Generic process CPU | 62.15 ms | 47.72 ms | 14.43 ms | 13.66 to 15.05 ms |
+| Generic peak RSS | 17.706 MB | 17.531 MB | 0.175 MB | 0.077 to 0.268 MB |
+| Same-binary Go control duration | 120.66 ms | 119.29 ms | 1.36 ms | −1.87 to 4.92 ms |
+| Same-binary Go control CPU | 110.06 ms | 110.29 ms | −0.22 ms | −1.75 to 1.57 ms |
+
+The Go total saving is about 13% of this run's baseline mean; generic is about
+26%. The additive Go accounting is 17.19 ms saved in discovery plus −0.89 ms
+outside discovery = 16.29 ms total, subject to displayed rounding. Unchanged
+toolchain work has no clear improvement. Direct root queries independently took
+a median 15.72 ms (mean 17.19, range 13.88–38.51); this agrees with removing one
+query but is not an exact subtraction because the launcher and context differ.
+Go peak RAM has no clear change; generic saves less than 0.2 MB, about 1%.
+Removing a sequential child need not change the largest resident-memory peak.
+
+The first adjacent-pair run remains relevant:
+
+| Case | Comparisons | Mean duration saving | Approximate 95% grouped interval |
+| --- | ---: | ---: | ---: |
+| Go | 60 pairs | 14.44 ms | 9.89 to 18.65 ms |
+| Generic | 60 pairs | 17.72 ms | 14.21 to 21.76 ms |
+| Same-binary Go control | 30 pairs | −7.78 ms | −19.18 to −0.53 ms |
+
+The control's interval excludes zero despite comparing the same executable.
+Its ordinary individual-pair interval includes zero (−22.09 to 0.94 ms), and
+its median difference is only −1.38 ms. One control pair took 107.61 versus
+288.07 ms. All such observations remain in the estimate. This demonstrates
+sensitivity to long pauses, limited samples and interval assumptions. We did
+not establish which OS activity caused those pauses. The first control's CPU
+difference was only 0.19 ms, with interval −2.87 to 3.17 ms. That is consistent
+with elapsed-time noise without a corresponding CPU-work difference.
+
+The follow-up control's interval includes zero, and its median difference is
+0.001 ms. This is reassuring, not proof that all bias disappeared. Its block
+means are −3.03, 1.43 and 5.69 ms, so drift remains visible. Go savings by block
+are 18.33, 16.09 and 14.46 ms; Go order means are 16.10 and 16.49 ms. Generic
+order means still differ (20.55 versus 14.10 ms). The first run's Go order means
+were 10.97 versus 17.90 ms. Mirroring improved that observed Go imbalance but
+cannot guarantee the same result in another session. We do not pool the two
+protocols or claim that a control interval containing zero validates every
+other interval.
+
+Both experiments ran on the same Apple M1, Darwin arm64, Go 1.27.2 machine.
+Power snapshots show AC power and charging; no thermal/performance warning was
+recorded, but CPU power status was unavailable. One-minute load averages ranged
+from 4.71 to 5.79 in the first run and 3.67 to 3.81 in the follow-up. The host
+was not isolated, clock-locked or pinned to particular cores. Caches were warm.
+These samples support roughly 15–17 ms saved by removing the root query here;
+they do not support attributing the original Go median reduction of 59.29 ms
+to root reuse. More samples alone do not remove uncontrolled system variation.
+
+Across both runs, all 900 measured invocations were verified hits and full
+old/new Go and generic keys matched at both ends of each experiment. Existing
+nested-directory and mutation tests are historical evidence from the original
+implementation; this rerun does not repeat them. No production code changed.
+Three harness tests check constant/zero/negative estimator behavior, percentile
+interpolation and cancellation of linear drift by mirrored positions. A separate
+raw-record audit checks counts/order balance, individual hits, group arithmetic,
+stage decomposition and regenerated summary values. These checks validate the
+recorded arithmetic, not bootstrap coverage or representativeness.
+
+Unmeasured cases remain cold storage, other operating systems, network
+filesystems, large repositories, cache misses, adversarial mutations, energy
+and exact syscall/cycle counts. Repeat on an otherwise quiet host and multiple
+sessions/machines before making a broader latency promise. If controls again
+show a material apparent effect, inspect distributions and system traces before
+treating a narrow interval as reliable.

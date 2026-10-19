@@ -396,3 +396,26 @@ Receipt meets both needs with one exclusive lifecycle lock for every upload. The
 **Learn more:** [11. Defending the design](../guide/11-defending-the-design.md#11-defending-the-design) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L337-L380)
 
 </details>
+
+### What does a same-binary timing control tell us?
+<!-- check: guide/14-reuse-the-git-root.md -->
+
+**Level:** Practitioner
+
+The old/new Go comparison appears faster, but comparing the old binary with
+itself also produces a nonzero difference. Can we credit the whole old/new
+difference to the code change?
+
+<details>
+<summary>Answer</summary>
+
+No. Identical code cannot explain a control difference, so scheduling, waiting
+or other variation is affecting the measurement. Keep those observations,
+inspect the distribution and improve the comparison controls. Mirrored
+old/new/new/old groups cancel linear drift within the four positions, but not
+sudden pauses. A follow-up control interval including zero is reassuring;
+it does not prove every estimated saving is unbiased or portable.
+
+**Learn more:** [Repeat with controls before attributing the gain](../guide/14-reuse-the-git-root.md#repeat-with-controls-before-attributing-the-gain)
+
+</details>

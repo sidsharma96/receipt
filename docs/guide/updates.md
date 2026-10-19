@@ -333,3 +333,14 @@ normalization time from 42.64 to 18.56 µs and allocations by about 68%; no whol
 speedup was established. Probe commands remain fresh and unchanged. All 60 old-entry
 replays succeeded with matching keys. The [full review](../PHASE-REVIEWS.md#toolchain-probe-normalization-18-october-2026)
 records differential/fuzz evidence, the legacy fallback and remaining limits.
+
+## 18 October 2026: controlled Git discovery rerun
+
+[Chapter 14](14-reuse-the-git-root.md#repeat-with-controls-before-attributing-the-gain)
+now explains randomized pairs, same-binary controls and a mirrored follow-up.
+Across 900 measured hits, keys remained compatible. The follow-up supports about
+16 ms saved per Go hit and 15 ms CPU, with no clear Go peak-RAM reduction.
+The initial control exposed long-tail noise; both datasets and their uncertainty
+remain published. The [nine-question amendment](../PHASE-REVIEWS.md#controlled-git-discovery-rerun-18-october-2026)
+records the protocol change and limits. This updates measurement evidence;
+production code is unchanged.

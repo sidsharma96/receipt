@@ -111,7 +111,7 @@ root. The earlier configuration root query remains outside `fingerprint` and
 `discovery`. Compare whole Receipt duration too; the diagnostic labels do not
 cover every operation and nested stages must not be added to their parents.
 
-## Compare the same cache hits
+## Initial ten-pair experiment (historical)
 
 The comparison created entries with the unmodified CLI from commit `97b833e`,
 then alternated ten old/new pairs for each command form. All **60 expected hits**
@@ -137,6 +137,75 @@ records, ranges and reproduction instructions are in the
 [measurement reference](../MEASUREMENTS.md#git-root-reuse-18-october-2026).
 No cold-device, network-filesystem or power measurements were made. We removed
 one Git invocation; we did not measure exact filesystem syscall savings.
+
+## Repeat with controls before attributing the gain
+
+In the larger rerun, one Go hit took 107.256 ms with the old binary and
+91.594 ms with the new one: a saving of 15.662 ms. Another pair could differ
+because the operating system made one process wait longer. Repeating the pair
+helps measure this variation; it does not automatically remove it.
+
+On 18 October we first measured 60 Go pairs and 60 generic pairs with balanced,
+randomized run order. We also measured 30 pairs using **the old binary for both
+labels**. This is a control: any apparent saving there cannot come from our
+code change. Go saved an average 14.44 ms, but the control showed an apparent
+7.78 ms slowdown, including one 288 ms hit. We retained every observation.
+
+That result motivated one fixed follow-up. Each comparison used four calls:
+
+~~~text
+Order A: old -> new -> new -> old
+Order B: new -> old -> old -> new
+
+Compare average(old's two times) − average(new's two times).
+Both labels are equally early and late within the group.
+~~~
+
+If the machine gradually slows during those four calls, the ordering cancels
+a straight-line trend. It cannot cancel a sudden pause. We randomized and
+balanced the two orders across three blocks, warmed both binaries first, and
+used identical builds of the two original revisions. The later probe
+optimization was absent. The follow-up measured 60 Go groups, 30 generic groups
+and 60 same-binary control groups.
+
+| Follow-up result | Average saving | Approximate 95% interval |
+| --- | ---: | ---: |
+| Go whole hit | 16.29 ms | 12.15 to 20.80 ms |
+| Go discovery | 17.19 ms | 15.19 to 19.95 ms |
+| Go work outside discovery | −0.89 ms | −4.34 to 2.15 ms |
+| Go process CPU | 15.37 ms | 13.42 to 17.49 ms |
+| Generic whole hit | 17.33 ms | 14.46 to 20.87 ms |
+| Same-binary Go control | 1.36 ms | −1.87 to 4.92 ms |
+
+A negative saving means the second label was slower. An interval spanning zero
+does not clearly distinguish a saving from no change in this experiment.
+The intervals come from repeatedly resampling groups of nearby observations;
+they describe uncertainty under that method's assumptions, not guaranteed
+bounds for every machine. The first control even produced an interval excluding
+zero despite identical code. Its long pauses and the few available groups made
+that interval unreliable as a universal precision claim.
+
+The follow-up control includes zero, but its block averages still vary.
+Our defensible conclusion is **roughly 15–17 ms saved per warm hit here**, chiefly
+from removing one Git query. Direct root queries took a median 15.72 ms.
+The Go total saving now agrees with discovery's contribution; work outside
+discovery shows no clear gain. The original apparent 59.29 ms whole-hit reduction
+cannot be credited to this optimization.
+
+Go mean peak RAM was 17.794 → 17.746 MB, with no clear change. Generic peak RAM
+fell about 0.175 MB, under 1%. CPU time measures processor work, while latency
+also includes waiting; neither is a direct hardware-cycle or energy measurement.
+All 900 measured calls across both protocols replayed old cache entries, and
+full keys matched at both ends. Stable keys still do not prove deterministic
+test outputs.
+
+The [measurement reference](../MEASUREMENTS.md#controlled-git-discovery-rerun-18-october-2026)
+preserves both raw datasets, the protocol change, arithmetic checks, machine
+conditions and reproduction commands. The host was not isolated and caches
+were warm. More samples improved this estimate; cold storage, other machines
+and background-load effects still need separate evidence. The
+[dated review amendment](../PHASE-REVIEWS.md#controlled-git-discovery-rerun-18-october-2026)
+records the decisions and limits without rewriting the original review.
 
 ## Choose the next question from evidence
 
@@ -209,6 +278,28 @@ still set the same peak. Saving a process can reduce CPU and waiting without
 reducing that maximum.
 
 **Learn more:** [14. Reuse the Git root](../guide/14-reuse-the-git-root.md)
+
+</details>
+
+### What does a same-binary timing control tell us?
+
+**Level:** Practitioner
+
+The old/new Go comparison appears faster, but comparing the old binary with
+itself also produces a nonzero difference. Can we credit the whole old/new
+difference to the code change?
+
+<details>
+<summary>Answer</summary>
+
+No. Identical code cannot explain a control difference, so scheduling, waiting
+or other variation is affecting the measurement. Keep those observations,
+inspect the distribution and improve the comparison controls. Mirrored
+old/new/new/old groups cancel linear drift within the four positions, but not
+sudden pauses. A follow-up control interval including zero is reassuring;
+it does not prove every estimated saving is unbiased or portable.
+
+**Learn more:** [Repeat with controls before attributing the gain](../guide/14-reuse-the-git-root.md#repeat-with-controls-before-attributing-the-gain)
 
 </details>
 

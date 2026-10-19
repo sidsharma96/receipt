@@ -146,7 +146,7 @@ class SourceChecks(unittest.TestCase):
                 actual = (REPOSITORY / current).read_text()
                 self.assertIn(re.sub(r"\s+", " ", event[3]).strip(),
                               re.sub(r"\s+", " ", actual), current)
-        self.assertEqual(excerpts, 22)
+        self.assertEqual(excerpts, 23)
 
     def test_all_seven_reviews_keep_nine_questions(self):
         source = (DOCS / "PHASE-REVIEWS.md").read_text()

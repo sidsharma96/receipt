@@ -3038,3 +3038,134 @@ anchors, attributed excerpts, synchronized questions and built links. The in-app
 browser disallows local-file URLs, so a local browser preview was not performed;
 the published HTTPS chapter will be inspected after deployment. Automated checks
 do not establish teaching quality or complete accessibility.
+
+## Controlled Git discovery rerun, 18 October 2026
+
+This is a measurement amendment to the original Git-root review, not a new
+production optimization. One adjacent Go pair took 107.256 → 91.594 ms, a
+15.662 ms saving. The experiment asks whether repeated observations support
+that saving and whether unchanged work or host pauses distort it.
+[Chapter 14](guide/14-reuse-the-git-root.md#repeat-with-controls-before-attributing-the-gain)
+teaches the comparison; the [measurement reference](MEASUREMENTS.md#controlled-git-discovery-rerun-18-october-2026)
+contains both protocols, raw records, estimates and reproduction instructions.
+
+### Discovery rerun — 1. Data structures
+
+The Python harness stores each comparison's block, order, case and per-call
+metrics in dictionaries, then writes JSON records. Mirrored comparisons retain
+all four original calls as well as each label's average. Lists preserve run order;
+they allow inspection of a long pause rather than hiding it behind a median.
+Full key strings are retained for compatibility checks. Production manifests,
+path maps and root strings are unchanged.
+
+### Discovery rerun — 2. Architecture and extension boundaries
+
+The harness builds no production behavior into its analysis. We export two
+original revisions, build with identical flags, populate entries with the old
+binary, warm both binaries, then replay and measure them. Three blocks contain
+randomized, balanced old/new orders and same-old-binary controls. A control
+compares identical code; any difference must have another cause.
+
+After the first control exposed a long tail, one fixed follow-up used the
+sequence old/new/new/old or its reverse. It averages each label's two calls
+before computing the difference. Both labels occupy average position 2.5,
+cancelling a linear change across the four positions. Future fixtures can use
+the same harness, but different systems need different resource collection.
+The existing production call remains unchanged in
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333):
+
+```go
+m, e := fingerprint.BuildAtRoot(ctx, root, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
+```
+
+The supplied root skips one initial query. It does not remember a previous
+invocation's file list. Chapter 14 explains the unchanged fresh post-run scan.
+
+### Discovery rerun — 3. Primitives and concurrency
+
+Child processes run sequentially; a monotonic clock measures external elapsed
+time, Receipt's timings measure internal stages, and waited-child resource usage
+measures user plus system CPU. The harness adds no network traffic or parallel
+benchmark workers. Randomization distributes execution order; it cannot stop
+other applications or control OS scheduling. Power/thermal/load snapshots
+record context without changing user settings.
+
+### Discovery rerun — 4. Pitfalls and debugging
+
+The initial same-binary control showed −7.78 ms apparent savings, with one
+107.61 versus 288.07 ms pair. Its grouped interval excluded zero while the
+ordinary paired interval included zero. This warns against treating one
+resampling method as calibrated certainty. Every outlier remains. We did not
+identify the OS cause of each pause. The follow-up control includes zero, but
+block and order differences remain. We neither subtract the control from the
+treatment automatically nor pool the two protocols.
+
+### Discovery rerun — 5. Hot and cold costs
+
+On warm replay, follow-up Go means were 122.67 → 106.37 ms: 16.29 ms saved,
+with an approximate grouped interval 12.15–20.80 ms. Discovery saved 17.19 ms;
+outside discovery changed by −0.89 ms, with an interval including zero.
+Process CPU saved 15.37 ms. Peak Go RSS changed 17.794 → 17.746 MB, with no
+clear reduction. Generic replay saved 17.33 ms and 14.43 ms CPU; peak RSS fell
+0.175 MB. Direct root queries had a 15.72 ms median. These measurements support
+the cost of one removed query. Cold storage and executed-command paths were
+not measured.
+
+### Discovery rerun — 6. Guarantees, assumptions and non-goals
+
+All 900 measured calls replayed old entries without an execution stage.
+Full Go/generic keys matched at the start and end of both experiments.
+Those are scoped observations, not proof across every repository or concurrent
+mutation. The source comparison isolates root reuse from later probe work.
+Stable keys do not prove deterministic command output. CPU seconds are not
+cycles; RSS is not simultaneous process-tree memory; a bootstrap interval is
+not a universal bound. The machine remained shared with other applications.
+
+### Discovery rerun — 7. Alternatives and decisions
+
+The initial plan used adjacent pairs, 60 per treatment case and 30 controls.
+After its control result, we chose a separately fixed mirrored follow-up with
+more controls, retaining the first dataset and documenting the adaptation.
+Mirroring addresses linear drift but doubles calls per comparison and still
+allows abrupt pauses. Dropping slow observations or rerunning until an interval
+looked favorable was rejected for this investigation. An isolated host,
+multiple sessions and system traces would improve attribution but remain
+follow-up work. This records decisions in this rerun, not a reconstruction of
+the original optimization's decision history.
+
+### Discovery rerun — 8. Evidence and remaining risks
+
+The first run has 300 measured hits and the follow-up 600, each with 54 excluded
+warmup hits and 60 direct queries. Counts were fixed before each run. Both use
+Apple M1/Darwin arm64, Go 1.27.2 and matching build flags. The follow-up Go
+same-binary control is 1.36 ms with interval −1.87–4.92 ms; this supports a
+cautious 15–17 ms estimate, not the original apparent 59.29 ms reduction.
+Only six or twelve groups feed each grouped interval, limiting precision.
+Raw values include every measured outlier and machine-state snapshot.
+
+Harness checks cover constant positive/negative/zero effects, interpolated
+percentiles, mirrored linear-drift cancellation, raw-record counts and order,
+per-call execution-stage absence, aggregation and regenerated summary values.
+They check arithmetic, not statistical coverage. Existing production behavior
+tests were not rerun for this measurement-only amendment. Other OSes, cold or
+network storage, large repositories, misses, concurrent mutation, power and
+exact syscalls/cycles remain unmeasured. No new production guarantee is claimed.
+
+### Discovery rerun — 9. Revisit conditions
+
+Repeat across quiet sessions and representative machines before promising a
+general latency percentage. Investigate system traces if same-binary controls
+again suggest a material effect. Revisit the remaining file-list subprocess if
+large-workspace profiles show it dominates; preserve Git ignore/index behavior.
+Revisit interval methods if serial dependence lasts beyond five comparisons
+or if many more independent sessions become available. Preserve the original
+results and append new evidence when conclusions change.
+
+Verification for this amendment: all four harness/record-audit tests passed.
+After correcting the new excerpt's symbol attribution and increasing the
+expected excerpt count, make docs passed all 18 documentation checks, including
+source anchors, excerpt accuracy, synchronized questions and built links.
+The prose review checked the concrete example, ordering trace, control failure,
+costs, alternatives and limitations. Automated checks do not establish teaching
+quality. Published-page inspection follows deployment; no local browser layout
+verification is claimed.
