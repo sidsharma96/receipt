@@ -25,6 +25,8 @@
 
 - [15. Measure toolchain probe overhead](guide/15-measure-toolchain-probe-overhead.md)
 
+- [16. Resolve the selected Git once](guide/16-resolve-selected-git.md)
+
 # Defending the design
 
 - [Defending Receipt's design](DESIGN-DEFENSE.md)

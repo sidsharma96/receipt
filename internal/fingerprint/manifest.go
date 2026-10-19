@@ -76,7 +76,17 @@ func (m Manifest) Key() string {
 }
 
 func commandOutput(ctx context.Context, dir string, args ...string) ([]byte, error) {
-	c := exec.CommandContext(ctx, args[0], args[1:]...)
+	path := args[0]
+	if path == "git" {
+		if selected, ok := ctx.Value(gitKey{}).(gitSelection); ok {
+			if selected.err != nil {
+				return nil, fmt.Errorf("probe git: %w", selected.err)
+			}
+			path = selected.path
+		}
+	}
+	c := exec.CommandContext(ctx, path, args[1:]...)
+	c.Args[0] = args[0]
 	c.Dir = dir
 	b, err := c.Output()
 	if err != nil {

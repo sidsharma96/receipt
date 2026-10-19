@@ -4,6 +4,7 @@ Usage: discovery_controlled.py BEFORE AFTER OUTPUT [--quartets]
 Build BEFORE from 97b833e and AFTER from 4cbf0d7, with identical flags/toolchain.
 No source changes, packages, power settings or user processes are modified.
 """
+import argparse
 import hashlib
 import json
 import os
@@ -13,7 +14,6 @@ import re
 import resource
 import statistics
 import subprocess
-import sys
 import tempfile
 import time
 
@@ -61,9 +61,17 @@ def summary(pairs):
 
 
 def main():
-    before,after = [str(Path(p).resolve()) for p in sys.argv[1:3]]
-    output = Path(sys.argv[3]); output.parent.mkdir(parents=True,exist_ok=True)
-    quartets = '--quartets' in sys.argv[4:]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('before')
+    parser.add_argument('after')
+    parser.add_argument('output')
+    parser.add_argument('--quartets', action='store_true')
+    parser.add_argument('--before-revision', default='97b833e')
+    parser.add_argument('--after-revision', default='4cbf0d7')
+    options = parser.parse_args()
+    before,after = [str(Path(p).resolve()) for p in [options.before, options.after]]
+    output = Path(options.output); output.parent.mkdir(parents=True,exist_ok=True)
+    quartets = options.quartets
     counts = {'go':20,'generic':10,'go-aa':20} if quartets else PAIRS
     env = dict(os.environ)
     rng = random.Random(SEED)
@@ -75,7 +83,7 @@ def main():
     report = {'protocol':{'seed':SEED,'blocks':BLOCKS,'pairs_per_block':counts,'design':'mirrored quartets' if quartets else 'adjacent pairs','warmup_pairs_per_case_per_block':WARMUP_PAIRS,
                'bootstrap_replicates':BOOTSTRAPS,'chunk_size_pairs':CHUNK,'primary':'paired arithmetic mean saving in Receipt duration',
                'exclusions':'none; only prespecified warmups excluded','environment':'one inherited environment snapshot for every child',
-               'before_revision':'97b833e','after_revision':'4cbf0d7','build_flags':'-trimpath -buildvcs=false -ldflags=-linkmode=external'},
+               'before_revision':options.before_revision,'after_revision':options.after_revision,'build_flags':'-trimpath -buildvcs=false -ldflags=-linkmode=external'},
               'go':run(['go','version']).stdout.strip(),'git':run(['git','--version']).stdout.strip(),
               'platform':run(['uname','-sm']).stdout.strip(),'cpu':run(['sysctl','-n','machdep.cpu.brand_string']).stdout.strip(),
               'binary_sha256':{v:hashlib.sha256(Path(p).read_bytes()).hexdigest() for v,p in [('before',before),('after',after)]},
@@ -96,7 +104,7 @@ def main():
         metrics = {'receipt_ms':timing['duration_ns']/1e6,'external_ms':elapsed,
             'cpu_ms':1000*((usage.ru_utime-start_usage.ru_utime)+(usage.ru_stime-start_usage.ru_stime)),
             'rss_mb':rss/1e6}
-        for stage in ['discovery','toolchain','input_files','executable']:
+        for stage in ['discovery','toolchain','input_files','executable','git_selection']:
             metrics[stage+'_ms'] = stages.get(stage,{}).get('ns',0)/1e6
         metrics['outside_discovery_ms'] = metrics['receipt_ms']-metrics['discovery_ms']
         return {'metrics':metrics,'timing':timing}

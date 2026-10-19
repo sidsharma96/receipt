@@ -29,7 +29,7 @@ and uploaded. Otherwise Receipt does not save a reusable result. Storage or
 network failures can still prevent a save.
 
 Receipt [records the inputs again](../GLOSSARY.md#stability-check) after execution. Actual excerpt from
-[`fingerprint.Build` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L321-L322):
+[`fingerprint.Build` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L322-L323):
 
 ```go
 after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
@@ -60,7 +60,7 @@ and replays the output and exit code if the check allows it. Pytest does not
 start. If status is unavailable or the key is quarantined, Receipt executes
 instead. With no local copy, a remote hit can supply the saved result.
 
-Actual decision from [`s.replay` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L306-L308):
+Actual decision from [`s.replay` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L307-L309):
 
 ```go
 if hit && !o.verify {

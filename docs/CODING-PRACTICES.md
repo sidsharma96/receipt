@@ -270,3 +270,19 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
   normalization time/allocations from fresh subprocess cost and whole-hit latency.
 - Probe commands, output fields and freshness remain unchanged. A local
   normalization optimization does not authorize caching probe results.
+
+
+## Invocation-local Git executable selection (18 October 2026)
+
+- `WithGit` attaches an immutable path/error selection to one run/explain context;
+  start each invocation from a fresh context. No global or persistent cache.
+- Resolve only the exact PATH-selected `/usr/bin/git` on Darwin through system
+  `/usr/bin/xcrun --find git`. Inherit developer selection/environment; retain
+  custom executables, wrappers and symlink spelling. Do not rewrite PATH.
+- An unavailable/unusable resolver answer retains the original launcher. Preserve
+  initial lookup errors, cancellation, argv, working directory and Git options.
+- Keep root and file observations fresh after execution; executable path reuse
+  does not permit probe-output reuse. Assume stable tool selection for one
+  invocation, without claiming executable-byte pinning or filesystem snapshots.
+- Include `git_selection` in whole-invocation cost. It is outside fingerprint and
+  discovery; comparisons must include this resolver cost, not just list timings.

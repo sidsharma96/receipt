@@ -373,3 +373,13 @@ or hashing. A 1,000-hit diagnostic control preserved full keys and reduced routi
 cost through direct Git, but did not eliminate slow hits. The
 [nine-question review](../PHASE-REVIEWS.md#startup-outlier-diagnosis-18-october-2026)
 records the evidence, capture failures and remaining OS uncertainty.
+
+## 18 October 2026: resolve the selected Git once per invocation
+
+New [Chapter 16](16-resolve-selected-git.md) implements invocation-local executable
+selection: custom Git choices stay selected, while Apple's launcher can resolve
+through system xcrun once. Root/file observations stay fresh. A 600-hit controlled
+comparison includes resolution cost, preserves old keys/entries and finds roughly
+11–13.5 ms lower mean elapsed time and 9 ms less CPU, with a small RSS increase.
+The [nine-question review](../PHASE-REVIEWS.md#selected-git-resolution-18-october-2026)
+records code, tradeoffs, intervals, controls, verification and remaining limits.

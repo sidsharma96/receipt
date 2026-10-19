@@ -95,7 +95,7 @@ serving Machine when it starts.
 Receipt itself speaks plain HTTP. The container starts it with
 [`--listen 0.0.0.0:7777`](https://github.com/sidsharma96/receipt/blob/main/deploy/fly/Dockerfile#L20),
 so it accepts connections on every interface inside the Machine, and it serves
-without TLS ([`srv.Serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L555-L555)).
+without TLS ([`srv.Serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L556-L556)).
 Fly's proxy accepts HTTPS on port 443, terminates TLS
 ([`handlers`](https://github.com/sidsharma96/receipt/blob/main/deploy/fly/api.toml#L41-L42)),
 and forwards plain HTTP to port 7777. Clients therefore use an `https://` URL,

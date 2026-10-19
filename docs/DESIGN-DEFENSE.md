@@ -248,7 +248,7 @@ The decisions are ordered so that each one depends only on earlier ones.
 **Decision.** The key is the SHA-256 of a manifest: a JSON record of everything
 Receipt knows to record about one test invocation. The
 [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
-type has these fields, and [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L97-L143)
+type has these fields, and [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L107-L153)
 fills them.
 
 | Field or input kind | Contents |
@@ -262,16 +262,16 @@ fills them.
 | `executable` input | The absolute path of the resolved command and the SHA-256 of its bytes. |
 | `toolchain` inputs | A runtime probe: Python version and installed distributions, `go env -json`, or the Cargo tool, metadata and source hashes. |
 
-[`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L145-L191)
-collects the paths. [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L193-L215)
+[`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L155-L201)
+collects the paths. [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L203-L225)
 hashes each one as `SHA-256(octal permission bits + NUL byte + file bytes)`, so
 `chmod +x` changes the key. A tracked file that was deleted hashes as
 `SHA-256("deleted")`. That marker cannot equal a real file's hash except by a
 SHA-256 collision, because every real preimage contains a NUL byte after the
 permission digits and the string `deleted` contains none. Symlinks, submodules
 and other non-regular files make `Build` fail, and Receipt then runs the command
-uncached. [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L217-L230)
-hashes the environment, and [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L269-L292)
+uncached. [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L227-L240)
+hashes the environment, and [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L279-L302)
 selects the runtime probe.
 
 **Alternatives.**
@@ -403,10 +403,10 @@ measurements show hashing, not reading, is the bottleneck.
 **Decision.** Since 15 October 2026, Receipt's own bearer-token variable,
 [`TokenEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L40-L43),
 is never an environment input, and the test command does not inherit it.
-[`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L217-L230)
+[`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L227-L240)
 always skips it, and [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
 removes it from the child's environment in `Run`. The client still reads it,
-through [`os.Getenv(fingerprint.TokenEnvironment)`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L285-L287) in `run`,
+through [`os.Getenv(fingerprint.TokenEnvironment)`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L286-L288) in `run`,
 to authenticate to the server.
 
 **What happened before.** Every environment variable was hashed into the
@@ -457,7 +457,7 @@ is needed.
 
 ### D5. Why scan the inputs twice, and what can the two scans miss?
 
-**Decision.** On a miss, [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L314-L325)
+**Decision.** On a miss, [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L315-L326)
 builds the manifest again after the command finishes and publishes only if the
 key is unchanged. For example, `uv run` may install packages during the first
 run, which changes the Python probe.
@@ -496,7 +496,7 @@ may use at most one of them. Passing two prints "choose only one of --bypass,
 --refresh, --verify" and runs nothing ([`modes`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L257-L265)).
 
 - `--bypass` runs the command directly and returns its exit code. It computes
-  no key and reads or writes no cache ([`o.bypass`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L270-L273)).
+  no key and reads or writes no cache ([`o.bypass`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L270-L274)).
 - `--verify` changes only what happens on a hit, whether the hit came from the
   local cache or from the server. Receipt runs the tests again, scans the inputs
   again and then decides in [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L163-L191).
@@ -586,7 +586,7 @@ then open a half-written file.
 A partial file can never appear under the final name, because the bytes were
 synced before the name existed. Local `.pending-*` leftovers do not count
 towards the size limit. Since 15 October 2026,
-[`removeStalePending`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L353-L365)
+[`removeStalePending`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L354-L366)
 in `prune` deletes any that are more than an hour old. A younger one may belong
 to a publication still running in another process, which removes its own file
 within seconds.
@@ -601,7 +601,7 @@ once per shard.
 
 ### D8. How does the local cache stay bounded, and why do quarantine markers win?
 
-**Decision.** After each successful publish, [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L367-L418)
+**Decision.** After each successful publish, [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L368-L419)
 lists `entries/`, sorts by modification time and deletes the oldest until the
 total is at most `max_bytes` (1 GiB by default). Each hit touches the entry's
 modification time in [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L141-L161),
@@ -1012,7 +1012,7 @@ counting files it already deleted until the next run or restart.
 | Storage deadline | 25 s per admitted request | [`context.WithTimeout`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L216-L219) |
 | Authentication deadline | 2 s | [`context.WithTimeout`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L49-L59) |
 | Database pool | 16 open, 4 idle, 5-minute lifetime, shared by `serve` and every CLI command | [`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L26-L33) |
-| HTTP server | header 5 s, read 30 s, write 30 s, idle 60 s, headers 16 KiB | [`http.Server`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L540-L540) |
+| HTTP server | header 5 s, read 30 s, write 30 s, idle 60 s, headers 16 KiB | [`http.Server`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L541-L541) |
 | Request body | 32 MiB | [`cacheAPI.putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L346-L353) |
 | Client timeout | 10 s per request, redirects refused | [`http.Client`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L54-L58) |
 | Go memory target | `GOMEMLIMIT=320MiB` in production | [`GOMEMLIMIT=320MiB`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service#L13) |
@@ -1123,7 +1123,7 @@ signal number, as a shell does: 139 for a `SIGSEGV` crash, 137 for `SIGKILL`
 from the kernel's out-of-memory killer. If Receipt itself cancelled the command,
 after Ctrl-C or `SIGTERM`, `Run` reports 130 however the command ended, even if
 it caught `SIGTERM` and exited 0, and `run` returns 130 too
-([`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L314-L320)).
+([`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L315-L321)).
 Interrupted and failed runs are never stored. Before 15 October 2026 every
 signal death was reported as 130.
 
@@ -1324,12 +1324,12 @@ development Mac now defaults to 1.27.2. Fix: pin one version, or add a
 
 ### G20. Small hygiene items
 
-- [`outDiscard`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L335-L346)
+- [`outDiscard`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L336-L347)
   duplicates `io.Discard`.
 - [`commandPrune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L28-L36)
   is an untyped constant inside the typed `commandName` block.
 - The comment above the `extra_inputs` loop in
-  [`range extra` loop in `discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L145-L163)
+  [`range extra` loop in `discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L155-L173)
   describes `.gitignore` and matches nothing there.
 
 ### G21. Operations

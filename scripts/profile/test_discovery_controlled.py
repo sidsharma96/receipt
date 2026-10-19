@@ -68,6 +68,39 @@ class EstimatorTests(unittest.TestCase):
                                 self.assertEqual(value, statistics.fmean(r['metrics'][metric] for r in runs if r['label'] == label))
             self.assertEqual(hits, expected_hits)
 
+    def test_selected_git_records_include_runtime_resolution(self):
+        directory = Path(__file__).resolve().parents[2] / 'docs/measurements/git-selection-2026-10-18'
+        data = json.loads((directory / 'controlled.json').read_text())
+        self.assertTrue(data['completed'])
+        self.assertEqual(data['protocol']['before_revision'], '7ba3cfe')
+        for keys in data['keys'].values():
+            self.assertEqual(keys['before'], keys['after'])
+        runs = 0
+        for case, expected in [('go', 60), ('generic', 30), ('go-aa', 60)]:
+            pairs = [p for p in data['pairs'] if p['case'] == case]
+            self.assertEqual(len(pairs), expected)
+            self.assertEqual(experiment.summary(pairs), data['summary'][case])
+            for block in range(3):
+                for order in ['before-first', 'after-first']:
+                    self.assertEqual(sum(p['block'] == block and p['order'] == order for p in pairs), expected // 6)
+            for pair in pairs:
+                first = 'before' if pair['order'] == 'before-first' else 'after'
+                other = 'after' if first == 'before' else 'before'
+                self.assertEqual([r['label'] for r in pair['runs']], [first, other, other, first])
+                for run in pair['runs']:
+                    runs += 1
+                    self.assertFalse(run['timing']['failed'])
+                    self.assertEqual(run['timing']['exit_code'], 0)
+                    stages = {s['stage']:s for s in run['timing']['stages']}
+                    self.assertNotIn('execution', stages)
+                    if case != 'go-aa' and run['label'] == 'after':
+                        self.assertEqual(stages['git_selection']['calls'], 1)
+                        self.assertGreater(run['metrics']['git_selection_ms'], 0)
+                        self.assertLess(stages['git_selection']['ns'], run['timing']['duration_ns'])
+                    else:
+                        self.assertNotIn('git_selection', stages)
+        self.assertEqual(runs, 600)
+
 
 if __name__ == '__main__':
     unittest.main()

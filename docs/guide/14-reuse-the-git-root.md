@@ -14,6 +14,11 @@ Current update (18 October): [Chapter 15](15-measure-toolchain-probe-overhead.md
 measures fresh probe costs and reduces local Go normalization allocations. Probe
 commands and freshness remain unchanged; no whole-hit speedup was established.
 
+Current implementation (18 October): [Chapter 16](16-resolve-selected-git.md)
+resolves discovery's selected Git once per run/explain invocation, preserving
+custom paths and fresh repository observations. The investigations below remain
+historical evidence; their preselected-path timings exclude resolution cost.
+
 ## Follow the calls before deleting one
 
 Git runs as a separate process: the operating system starts a program, Receipt
@@ -54,7 +59,7 @@ does not alter how that map is filled or sorted into the manifest.
 ## Pass an observation to the code that needs it
 
 The initial fingerprint call in
-[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333):
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334):
 
 ```go
 m, e := fingerprint.BuildAtRoot(ctx, root, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
@@ -67,7 +72,7 @@ file enumeration, file hashing, environment collection and executable/probe code
 No manifest field or encoding changes.
 
 When tests have executed, the call remains
-[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333):
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334):
 
 ```go
 after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)

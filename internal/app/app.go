@@ -271,6 +271,7 @@ func run(ctx context.Context, mode commandName, args []string, out, errOut io.Wr
 		r, e := runner.Run(ctx, dir, command, out, errOut)
 		return r.ExitCode, e
 	}
+	ctx = fingerprint.WithGit(ctx)
 	root, cfg, e := settings(ctx, dir)
 	if e != nil {
 		return 0, e

@@ -14,7 +14,7 @@ Alice runs `uv run pytest`, the tests pass, and ten minutes later she runs the s
 
 Receipt wraps the test command. Before running it, Receipt describes the run: the command arguments, the repository files, hashes of the environment values, the working directory, the platform and runtime information such as the Python packages. If a successful run with exactly the same description was saved earlier, Receipt prints that run's saved output and exit code instead of starting pytest. Finding such a result is a cache hit; having to run the command is a cache miss. To do this safely Receipt must name every input that could change the result, which is why it records so much more than the command line.
 
-**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333)
+**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334)
 
 </details>
 
@@ -262,7 +262,7 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 `internal/fingerprint` describes the inputs and calculates the key, starting at `Build` and `Manifest.Key`. `internal/app` reads the command line and combines lookup, execution, verification and publication, starting at `run`. `internal/runner` starts the test command and captures its output. `internal/cache` stores results locally, over HTTP and in shared storage. `internal/strictjson` checks JSON structure, and `internal/auth` defines credentials and permissions. All of these packages run inside one client or server process; a package is not a separate service.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L100-L143)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L110-L153)
 
 </details>
 
@@ -575,5 +575,25 @@ path-length refusal. This keeps unusual input behavior while ordinary paths avoi
 recompiling a pattern.
 
 **Learn more:** [15. Measure toolchain probe overhead](../guide/15-measure-toolchain-probe-overhead.md)
+
+</details>
+
+
+### Does selecting Git once keep its old file list?
+<!-- check: guide/16-resolve-selected-git.md -->
+
+**Level:** Newcomer
+
+Tests create a new file. Does keeping the selected Git path let Receipt reuse
+the pre-test file list?
+
+<details>
+<summary>Answer</summary>
+
+No. The saved value identifies the program to run. After execution Receipt asks
+that program for the root and file list again, then reads and hashes the inputs.
+A new invocation chooses its program again too.
+
+**Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
 
 </details>

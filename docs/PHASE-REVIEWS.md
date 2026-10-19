@@ -2437,7 +2437,7 @@ A local hit rebuilds a manifest of named input hashes and decodes a checksummed
 JSON result. `fileInput` reads a byte slice, copies it behind a permission prefix,
 and hashes the combination. An 8 MiB fixture allocated about 16 MiB per call.
 The actual excerpt and explanation are in the chapter, attributed to
-[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L190-L214).
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L200-L224).
 A streaming hasher is a candidate for bounded temporary memory, not a way to avoid
 reading declared bytes. Primary-key B-trees map result keys, credential IDs and
 (key,digest) evidence pairs to rows. No JSON-path index is needed by current queries.
@@ -2568,7 +2568,7 @@ For a file containing `abc` with mode `0600`, the old implementation made bytes
 into one SHA-256 state through a reusable byte slice capped at 32 KiB. Small
 files use a smaller buffer. No chunk digests are combined, so the algorithm is
 unchanged. The actual code excerpts in Chapter 12 are attributed to
-[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L190-L214)
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L200-L224)
 and [`hashFile`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/file_hash.go#L12-L28).
 The manifest's fields, sorting and JSON encoding are unchanged.
 
@@ -2827,7 +2827,7 @@ Settings resolves the root and reads configuration; the initial CLI fingerprint
 uses `BuildAtRoot`; both that entry point and `Build` share `buildAtRoot` for
 listing, hashing, environment collection and probes. The post-run caller retains
 `Build`, which resolves Git root anew. The actual initial call in
-[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333)
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334)
 is `fingerprint.BuildAtRoot(ctx, root, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)`.
 The root must come from this invocation's settings discovery. The API comment
 forbids retaining it across execution or invocations; it is a caller contract,
@@ -3072,7 +3072,7 @@ before computing the difference. Both labels occupy average position 2.5,
 cancelling a linear change across the four positions. Future fixtures can use
 the same harness, but different systems need different resource collection.
 The existing production call remains unchanged in
-[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333):
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334):
 
 ```go
 m, e := fingerprint.BuildAtRoot(ctx, root, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
@@ -3381,3 +3381,146 @@ make docs passed all 18 checks. Production tests were not rerun locally for
 this diagnostic-only change; repository CI follows the push. OS recording
 coverage/finalization failures remain explicit and are not validated by these
 tests. Automated documentation checks do not establish teaching quality.
+
+## Selected Git resolution, 18 October 2026
+
+Run `receipt run -- go test ./...` with Apple's launcher first in PATH. Receipt
+now selects its discovery program, asks it for the root, lists and hashes files,
+then looks up the key. On a miss it executes the user's command and asks the same
+selected program for a fresh root and file list. Another invocation selects again.
+[Chapter 16](guide/16-resolve-selected-git.md) teaches this sequence; the
+[measurement record](MEASUREMENTS.md#invocation-local-git-selection-18-october-2026)
+contains the full protocol and raw observations. The earlier diagnostic overlays
+remain historical evidence, not this production benchmark's baseline.
+
+### Git selection — 1. Data structures
+
+A private `gitSelection` holds one path string and the initial lookup error.
+A private context key attaches that immutable value to one invocation. It retains
+neither file lists nor probe output. For example, a selected `/custom/bin/git`
+remains that path even if the wrapper eventually runs Apple's Git. This small
+value avoids global state and invalidation rules across invocations. The existing
+manifest structures and serialization are unchanged.
+
+### Git selection — 2. Architecture and boundaries
+
+After argument validation and the bypass branch, run/explain attaches the
+selection before settings' root lookup. `commandOutput` uses it only for Git;
+Go/Python probes and the actual user command retain their execution path.
+`BuildAtRoot` still reuses only the initial root; post-execution `Build` resolves
+root and lists files afresh. Cache-management commands and callers that do not
+attach `WithGit` retain the prior boundary. This is an explicit opt-in API, not
+an automatic persistent tool manager.
+
+The attachment in
+[`WithGit`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/git.go#L22-L34):
+
+```go
+return context.WithValue(ctx, gitKey{}, gitSelection{path: path, err: err})
+```
+
+`ctx` carries cancellation and timing too; the returned context adds one selected
+path/error without changing process environment or manifest inputs. Reattaching
+to the same context is a no-op. Each CLI invocation starts with a new context.
+
+### Git selection — 3. Primitives and concurrency
+
+Go's `exec.LookPath` performs the initial PATH lookup. Only Darwin plus the exact
+`/usr/bin/git` path permits system `/usr/bin/xcrun --find git`. Its normal inherited
+environment keeps the active developer selection, including DEVELOPER_DIR.
+An absolute executable answer permits direct subprocess launch. Commands retain
+argv[0], arguments, working directory and inherited environment. No new network
+operation, worker, pool, mutex or mutable shared cache is introduced. Sequential
+Git calls still wait for process output/exit, and their contexts propagate
+cancellation. The existing timing trace uses its existing mutex for aggregation.
+
+### Git selection — 4. Pitfalls and debugging
+
+Do not follow custom symlinks to recognize Apple's launcher: that would bypass
+user selection. Do not resolve via a PATH-provided xcrun or hardcode this machine's
+Xcode directory. A failed resolver, relative/multiline/missing/non-executable
+answer or answer naming the launcher retains the original path. Failure of that
+original Git remains an ordinary discovery failure; there is no fallback to a
+different installation. A cancelled context still prevents subsequent Git launch.
+
+Selecting once assumes the chosen installation remains appropriate for this
+invocation. Changing the system developer directory during tests will take effect
+on the next invocation rather than the final scan. Replacing/deleting executable
+bytes can still race execution; a path is not an open executable snapshot.
+An unusable developer selection is tested; an Xcode license prompt, removal
+between validation and exec, and every possible SDK/toolchain selection are not.
+
+### Git selection — 5. Hot and cold costs
+
+Hits perform one selection plus two Git commands; misses perform one selection
+plus four Git commands around execution. Custom/non-Darwin selection adds no
+xcrun process. Apple selection adds one resolver process and bypasses two or four
+launcher resolutions. It does not reduce file bytes read, probe counts or SQL
+operations. Selection averaged about 11 ms here. Including it, mean warm-hit
+elapsed fell 103.04 → 91.70 ms for Go and 57.56 → 44.06 ms for generic, with about
+9 ms less process-tree CPU. Peak RSS increased 0.076/0.116 MB; no memory saving
+is claimed. Miss/cold-disk costs and hardware cycles were not benchmarked.
+
+### Git selection — 6. Guarantees and assumptions
+
+Custom wrappers/symlink spelling, developer selection at invocation start, Git
+arguments/environment, initial lookup errors, context cancellation and fresh
+root/file observations are preserved by the implemented boundaries and regression
+tests. Full manifests/keys match under the tested conditions, and old entries
+replay in new binaries. There is no key/schema bump. Equal recorded inputs do not
+prove deterministic outputs. This does not create hermetic execution, pin tool
+bytes, make a filesystem snapshot or guarantee removal of rare 300 ms delays.
+Stable tool selection within one invocation is an explicit assumption.
+
+### Git selection — 7. Alternatives and decisions
+
+These are comparisons made for this implementation. A preselected hardcoded path
+is cheap but violates other developer installations. Resolving through xcrun for
+every Git command repeats the cost we want to amortize. A persistent/global cache
+needs invalidation when PATH or developer selection changes; invocation-local
+selection avoids that lifetime. Always using the launcher preserves existing
+behavior but retains measured routine overhead. Replacing Git discovery with
+filesystem/index parsing would duplicate Git's ignore/index semantics. Caching
+file lists or mutable probes is deferred because fresh inputs can change keys.
+
+### Git selection — 8. Evidence, failures and remaining risks
+
+Differential tests cover root and nested directories, full sorted manifests/keys,
+ignored/extra/deleted inputs and unusual filenames. Wrapper tests exercise direct
+output, key equality, distinct invocation choices and custom symlink spelling.
+Resolver cases cover custom/other-platform paths, valid direct answer, failure,
+relative/multiline/missing answers and launcher retention. The real Apple test
+checks current developer-directory selection and a new invocation's invalid
+developer-directory fallback; it skips when Apple tools are unavailable. Existing
+app regressions check wrapper call counts and post-execution nested-root changes.
+
+The controlled run used 600 hits, balanced randomized mirrored quartets, three
+blocks, the same inherited environment and no outlier exclusions. Keys matched
+at both ends; old entries seeded the cache; all runs hit without execution.
+The old/old elapsed interval includes zero. Go and generic effect intervals
+favor the change; host activity and long-tail uncertainty remain. A cancelled
+resolver itself, every alternate developer installation and tool replacement at
+each possible race point are not exhaustively exercised. No claim of resolved
+kernel-level waiting attribution is added.
+
+Verification: `make check`, `make race` and `make build` passed locally. All 12 profile
+estimator/evidence checks and all 18 `make docs` checks passed. The final added
+wrapper/lifetime tests also passed the fingerprint race suite.
+PostgreSQL integration was not run locally: storage/query behavior is unchanged,
+and no disposable DB was selected. CI provides its configured database coverage.
+The prose was reviewed against the style-guide checklist: concrete execution
+trace, attributed excerpts, selection failure example and costs/alternatives are
+beside their limits. Automated checks establish source/link consistency, not
+teaching quality. Published rendering is checked after deployment.
+
+### Git selection — 9. Revisit conditions
+
+Revisit the exact-path guard if Apple changes the system launcher's behavior or
+a supported user selection yields different results. Revisit invocation lifetime
+if a real caller must switch developer tools mid-run; do not silently cache
+across calls. Revisit the resolver if cold selections, another installation or
+other machines erase the CPU/latency saving. Revisit memory work separately if
+RSS is a constraint. Revisit the remaining tail only with matching stage/CPU/OS
+evidence; unrelated slow probes and hashing remain possible. Consider a broader
+discovery implementation only with independent compatibility coverage of Git
+semantics and a demonstrated workload benefit.

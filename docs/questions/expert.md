@@ -17,7 +17,7 @@ Before 15 October 2026 the token was hashed like any other variable. The manifes
 
 **Common wrong answer.** "Ignoring the token in the key is enough." Then a test that reads the token could behave differently under one key, so the child must lose the variable too.
 
-**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L217-L230) · [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
+**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L227-L240) · [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
 
 </details>
 
@@ -201,7 +201,7 @@ Each fetched result carries the full manifest: the absolute repository and worki
 
 So "never plaintext" means "not stored verbatim". It is not confidentiality for low-entropy values. The mitigations are `ignore_environment` and running tests in a small, explicit environment. There is no listing endpoint, so a reader must already know a key.
 
-**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L217-L230) · [`digest`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L158-L161)
+**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L227-L240) · [`digest`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L158-L161)
 
 </details>
 
@@ -451,5 +451,26 @@ A defensible choice, ordered by how soon it hurts:
 (Keeping `RECEIPT_TOKEN` out of keys, giving credential issuance its own lock key and replacing per-upload scans with running totals were on this list until they were done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason and a purge command for expired credential rows before the 1,024 cap. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
 
 **Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [G21. Operations](../DESIGN-DEFENSE.md#g21-operations)
+
+</details>
+
+### Does a faster mean prove startup outliers are fixed?
+<!-- check: guide/16-resolve-selected-git.md -->
+
+**Level:** Expert
+
+The new binary has a lower mean latency with a positive savings interval. Does
+that establish that the rare 300 ms delay cannot happen again?
+
+<details>
+<summary>Answer</summary>
+
+No. The controlled run estimates routine warm-hit cost on one host. A confidence
+interval from those observations does not bound every scheduler, filesystem or
+probe delay. The new binary still had slow hits. Diagnosing a particular rare
+wait requires evidence covering that call's stage and time interval; mean savings
+do not identify its kernel cause.
+
+**Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
 
 </details>

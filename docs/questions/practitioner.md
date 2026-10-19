@@ -35,7 +35,7 @@ For each file, `fileInput` hashes the octal permission bits, a zero byte, and th
 
 There is no modification-time cache. Every run reads and hashes every byte of every discovered file and the command binary, so the work grows with total repository size. A miss does this twice: once before execution and once after, to check that the inputs did not change during the run.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L145-L191) · [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L193-L215)
+**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L155-L201) · [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L203-L225)
 
 </details>
 
@@ -52,7 +52,7 @@ A cached result is only safe to reuse when Receipt can name the inputs that deci
 
 Any other command makes `toolchainProbe` return an error. `run` reports "inputs unavailable; running uncached" and executes the command without lookup or storage, so an unsupported command is never silently cached. `--allow-generic` is an explicit opt-in: the key then covers only files, environment and the executable's bytes, and the user accepts responsibility for any input outside those.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L269-L293) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L287-L295)
+**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L279-L303) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L288-L296)
 
 </details>
 
@@ -105,7 +105,7 @@ Walk through `receipt run -- uv run pytest` on a miss that succeeds, with a remo
 
 On a miss, Receipt runs the command, streaming output while capturing a bounded copy. It builds the manifest again and calls the run stable only if that succeeds with the same key. It records the history file used by `receipt explain`. A successful, stable run goes to `runSession.publish`, which stores the result locally, uploads it to the server, and only then prunes the local cache. A failed upload is reported on stderr but does not change the exit code.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L333) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
 
 </details>
 
@@ -139,7 +139,7 @@ How does local pruning choose which entries to delete, when does it run, and wha
 
 Only `entries/` is counted. Files in `history/` and `quarantine/` are never counted or removed, so they grow without a bound. Keeping quarantine markers is deliberate: deleting one would let a key with contradictory evidence be replayed again.
 
-**Learn more:** [D8. How does the local cache stay bounded?](../DESIGN-DEFENSE.md#d8-how-does-the-local-cache-stay-bounded-and-why-do-quarantine-markers-win) · [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L367-L418)
+**Learn more:** [D8. How does the local cache stay bounded?](../DESIGN-DEFENSE.md#d8-how-does-the-local-cache-stay-bounded-and-why-do-quarantine-markers-win) · [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L368-L419)
 
 </details>
 
@@ -283,7 +283,7 @@ The legacy mode compares the whole `Authorization` header in constant time again
 
 Credential mode stores each credential as a row with its scopes, expiry and revocation time. Those rows live in PostgreSQL, so `serve` refuses `--credentials` without `--postgres`. The modes do not mix: `HandlerAuthorized` uses only the database authenticator and never falls back to the shared token, so a server in credential mode rejects the old token. A fallback would let anyone holding the old shared secret bypass scopes and revocation.
 
-**Learn more:** [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [Start and administer locally](../SERVICE-CREDENTIALS.md#start-and-administer-locally) · [`serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L473-L497) · [`HandlerAuthorized`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L13-L22)
+**Learn more:** [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [Start and administer locally](../SERVICE-CREDENTIALS.md#start-and-administer-locally) · [`serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L474-L498) · [`HandlerAuthorized`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L13-L22)
 
 </details>
 
@@ -417,5 +417,26 @@ sudden pauses. A follow-up control interval including zero is reassuring;
 it does not prove every estimated saving is unbiased or portable.
 
 **Learn more:** [Repeat with controls before attributing the gain](../guide/14-reuse-the-git-root.md#repeat-with-controls-before-attributing-the-gain)
+
+</details>
+
+
+### Which Git paths may bypass the Apple launcher?
+<!-- check: guide/16-resolve-selected-git.md -->
+
+**Level:** Practitioner
+
+Your PATH selects `/custom/bin/git`, a wrapper around Apple's Git. Should Receipt
+follow that wrapper to choose a faster executable?
+
+<details>
+<summary>Answer</summary>
+
+No. The wrapper may implement user behavior. Only the exact selected path
+`/usr/bin/git` on macOS is eligible for system xcrun resolution. Other selected
+paths, including custom symlinks, keep their spelling and behavior. Resolver
+failure retains the original launcher.
+
+**Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
 
 </details>

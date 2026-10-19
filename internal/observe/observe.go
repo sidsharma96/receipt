@@ -45,10 +45,12 @@ const (
 	Executable
 	// Toolchain includes the non-Cargo runtime probe and output normalization.
 	Toolchain
+	// GitSelection includes invocation-local lookup and optional Apple resolution.
+	GitSelection
 	stageCount
 )
 
-var names = [stageCount]string{"authentication", "db_pool", "db_lock", "fs_lock", "sql", "files", "inventory", "fingerprint", "execution", "lookup", "cargo_tools", "cargo_metadata", "cargo_sources", "discovery", "input_files", "executable", "toolchain"}
+var names = [stageCount]string{"authentication", "db_pool", "db_lock", "fs_lock", "sql", "files", "inventory", "fingerprint", "execution", "lookup", "cargo_tools", "cargo_metadata", "cargo_sources", "discovery", "input_files", "executable", "toolchain", "git_selection"}
 
 // Timing aggregates repeated calls to one boundary, in nanoseconds.
 type Timing struct {

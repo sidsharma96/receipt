@@ -1086,3 +1086,96 @@ CPU, faults, I/O counters and scheduling around Go startup and file work as well
 as Git. A successful complete OS capture is still needed to assign the waiting
 to a specific kernel dependency. Caching mutable toolchain probes would need a
 freshness contract; these results do not justify changing it.
+
+## Invocation-local Git selection, 18 October 2026
+
+Current implementation: [Chapter 16](guide/16-resolve-selected-git.md) selects Git
+once per run/explain invocation. It resolves Apple's exact `/usr/bin/git` launcher
+through system xcrun and keeps other PATH choices. This supersedes the experimental
+preselected-path proposal above; historical diagnostic results retain their scope.
+
+The baseline is production `7ba3cfe`, which already uses two Git commands per hit.
+The candidate is the production diff in this commit, with runtime resolution cost
+included. Neither binary uses tracing or a build overlay. Both use Go 1.27.2 and
+`-trimpath -buildvcs=false -ldflags=-linkmode=external` on Darwin arm64, Apple M1,
+Git 2.54.0 (Apple Git-157). PATH selects `/usr/bin/git`; xcrun selects
+`/Applications/Xcode.app/Contents/Developer/usr/bin/git`. The battery was discharging;
+no thermal/performance warning was reported. Load, hashes, keys and all observations
+are in the [raw record](measurements/git-selection-2026-10-18/controlled.json).
+
+Three blocks contain 60 Go, 30 generic and 60 old/old control quartets in total.
+Each quartet has order ABBA or BAAB, balanced and randomized within blocks.
+There are 600 measured hits: 240 Go comparisons, 120 generic comparisons and
+240 old/old calls. Three warmup pairs per case per block are excluded by design.
+A pilot was interrupted after overlapping local verification was noticed; the
+reported final run began after those checks finished and excluded no completed
+measurement or outlier. The final schedule and sample counts were fixed in advance.
+Every child receives the same inherited environment snapshot. The 256 × 4 KiB
+fixture also has a tiny Go test and ignored file; binary/cache paths are external.
+
+The primary estimate averages each label's two calls within a quartet, then
+averages old minus new across quartets. The table gives arithmetic means and
+95% bootstrap intervals from groups of five neighboring quartets within each
+block (5,000 resamples). Positive savings favor the candidate.
+
+| Case / metric | Old mean | New mean | Mean saving | Grouped 95% interval |
+| --- | ---: | ---: | ---: | ---: |
+| Go Receipt elapsed, ms | 103.040 | 91.697 | 11.343 | 9.028–14.022 |
+| Go external elapsed, ms | 113.368 | 102.162 | 11.206 | 8.918–13.928 |
+| Go process-tree CPU, ms | 97.197 | 88.018 | 9.179 | 7.684–10.936 |
+| Go peak RSS, decimal MB | 17.641 | 17.717 | −0.076 | −0.122–−0.029 |
+| Generic Receipt elapsed, ms | 57.562 | 44.064 | 13.499 | 9.763–19.085 |
+| Generic external elapsed, ms | 70.546 | 55.498 | 15.048 | 9.556–24.347 |
+| Generic process-tree CPU, ms | 52.386 | 42.978 | 9.408 | 8.163–10.851 |
+| Generic peak RSS, decimal MB | 17.599 | 17.714 | −0.116 | −0.208–−0.019 |
+| Old/old Receipt elapsed, ms | 101.514 | 103.875 | −2.361 | −6.880–1.634 |
+| Old/old CPU, ms | 96.982 | 97.303 | −0.321 | −2.004–1.266 |
+| Old/old peak RSS, decimal MB | 17.676 | 17.661 | 0.016 | −0.052–0.080 |
+
+Receipt elapsed is its own total timing span, including selection. External time
+also includes process launch and `/usr/bin/time`. CPU is the difference in Python's
+cumulative RUSAGE_CHILDREN user+system time across the process tree, including the
+timing wrapper. RSS is `/usr/bin/time -l`'s maximum resident set report: it is not
+allocation volume or summed simultaneous tree memory. We did not measure hardware
+cycles, energy, or physical I/O operations in this trial. Avoid claiming those
+quantities from CPU milliseconds alone.
+
+The new selection span averaged 11.004 ms (Go) and 11.340 ms (generic). Go's
+file-list discovery averaged 17.724 → 7.252 ms; generic 20.222 → 7.800 ms.
+The root query before fingerprint also benefits, while resolution adds cost
+outside fingerprint/discovery. Go's outside-discovery difference is only 0.871 ms
+with interval −0.899–3.107 ms; neither that nor the fresh probe stage establishes
+an independent Go-probe improvement. Do not sum nested spans.
+
+Go elapsed savings by block were 12.292, 11.296 and 10.440 ms. Generic savings
+were 20.363, 9.998 and 10.134 ms; its first block had slower old observations.
+The group interval models only some serial dependence and cannot remove shared
+host scheduling, page-cache or background-process effects. The old/old interval
+contains zero but remains wide. Both effect intervals favor the change in this
+run; they are not guarantees for other machines or tail quantiles. Raw individual
+hits, rather than quartet averages, retain the full outliers. New Go hits still
+exhibited large delays. The prior OS attribution uncertainty remains unresolved.
+
+Full Go and generic keys matched across binaries before and after measurement.
+The candidate replayed entries populated by the baseline, and every measured
+invocation succeeded without an execution stage. Unit tests compare complete
+manifests after sorting input order, plus their keys, under ordinary and selected
+Git from root/nested directories; wrapper tests also compare keys. No schema,
+key version, environment exclusion or probe normalization changes. This evidence
+covers input compatibility, not deterministic command output.
+
+Reproduce with two identically built exports (baseline `7ba3cfe`, candidate this
+commit), then run:
+
+```sh
+python3 scripts/profile/discovery_controlled.py BEFORE AFTER OUTPUT.json \
+  --quartets --before-revision 7ba3cfe --after-revision CANDIDATE
+```
+
+The harness now accepts revision metadata and reports `git_selection`; historical
+defaults remain for replaying the earlier root experiment. It writes its plan
+before observations. Do not run test suites or builds alongside measurements.
+This trial does not estimate cold caches, misses/post-execution elapsed savings,
+other operating systems, all Xcode installations, or a change in rare-tail rate.
+The [full review](PHASE-REVIEWS.md#selected-git-resolution-18-october-2026) records
+selection semantics, failure cases and verification.

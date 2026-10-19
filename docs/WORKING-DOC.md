@@ -30,4 +30,6 @@ Read the chapters in order to understand the program. Each ends with a few quest
 14. [Reuse the Git root within one invocation](guide/14-reuse-the-git-root.md): remove one redundant Git process while preserving fresh file discovery and post-run validation.
 15. [Measure toolchain probe overhead](guide/15-measure-toolchain-probe-overhead.md): separate process cost from local normalization, preserve keys, and distinguish local savings from whole-hit latency.
 
+16. [Resolve the selected Git once](guide/16-resolve-selected-git.md): keep custom Git choices, resolve Apple’s launcher per invocation, and measure resolution cost with compatible keys.
+
 To inspect setup commands, use the [README](https://github.com/sidsharma96/receipt/blob/main/README.md). To examine the full nine-question phase reviews, test records, and dated decisions, use the [review reference](PHASE-REVIEWS.md). The reference preserves earlier claims and their amendments. This guide describes current behaviour directly so you do not have to reconstruct it from history. Dated changes to the guide itself are in [Updates and documentation records](guide/updates.md).

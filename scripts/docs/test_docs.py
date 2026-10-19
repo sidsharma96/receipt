@@ -123,7 +123,7 @@ class SourceChecks(unittest.TestCase):
         excerpts = []
         for chapter in sorted((DOCS / "guide").glob("*.md")):
             excerpts += re.findall(pattern, chapter.read_text(), re.DOTALL)
-        self.assertEqual(len(excerpts), 19)
+        self.assertEqual(len(excerpts), 21)
         for path, start, end, excerpt in excerpts:
             lines = (REPOSITORY / path).read_text().splitlines()
             covered = "\n".join(lines[int(start) - 1:int(end or start)])
@@ -146,7 +146,7 @@ class SourceChecks(unittest.TestCase):
                 actual = (REPOSITORY / current).read_text()
                 self.assertIn(re.sub(r"\s+", " ", event[3]).strip(),
                               re.sub(r"\s+", " ", actual), current)
-        self.assertEqual(excerpts, 23)
+        self.assertEqual(excerpts, 24)
 
     def test_all_seven_reviews_keep_nine_questions(self):
         source = (DOCS / "PHASE-REVIEWS.md").read_text()
