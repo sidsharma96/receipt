@@ -498,3 +498,19 @@ No. Reading may wait for bytes to arrive. Decode then checks the saved result st
 **Learn more:** [18. Trace the actual Go HTTP client](../guide/18-trace-go-http.md)
 
 </details>
+
+### Why measure both CPU and transferred bytes?
+<!-- check: guide/19-compare-gzip-responses.md -->
+
+**Level:** Practitioner
+
+Gzip sends fewer bytes. Does that alone prove it makes every Receipt hit faster and cheaper?
+
+<details>
+<summary>Answer</summary>
+
+No. The server spends CPU compressing, the client spends CPU decompressing, and encoder buffers consume memory. A fast local link can have little transfer time to save. Measure latency and resources at both ends under the network conditions that matter.
+
+**Learn more:** [19. Compare gzip and uncompressed responses](../guide/19-compare-gzip-responses.md)
+
+</details>

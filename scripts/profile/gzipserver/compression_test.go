@@ -57,15 +57,18 @@ func TestCompressionPreservesRealRemoteResult(t *testing.T) {
 }
 
 func TestErrorsAndUnrequestedCompressionStayPlain(t *testing.T) {
-	for _, status := range []int{http.StatusUnauthorized, http.StatusConflict, http.StatusNotFound, http.StatusNoContent, http.StatusOK} {
-		var events bytes.Buffer
-		handler := compression(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(status) }), true, &events)
-		request := httptest.NewRequest(http.MethodGet, "http://localhost/v1/entries/key", nil)
-		request.Header.Set("Accept-Encoding", "identity")
-		out := httptest.NewRecorder()
-		handler.ServeHTTP(out, request)
-		if out.Code != status || out.Header().Get("Content-Encoding") != "" {
-			t.Fatal("status or identity response changed")
+	for _, encoding := range []string{"identity", "gzip"} {
+		for _, status := range []int{http.StatusUnauthorized, http.StatusConflict, http.StatusNotFound, http.StatusNoContent, http.StatusOK} {
+			var events bytes.Buffer
+			handler := compression(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(status) }), true, &events)
+			request := httptest.NewRequest(http.MethodGet, "http://localhost/v1/entries/key", nil)
+			request.Header.Set("Accept-Encoding", encoding)
+			out := httptest.NewRecorder()
+			handler.ServeHTTP(out, request)
+			wantGzip := encoding == "gzip" && status == http.StatusOK
+			if out.Code != status || (out.Header().Get("Content-Encoding") == "gzip") != wantGzip {
+				t.Fatal("status or negotiated encoding changed")
+			}
 		}
 	}
 	for _, payload := range []string{"not a gzip stream", "\x1f\x8b\x08"} {

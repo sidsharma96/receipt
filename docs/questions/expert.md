@@ -533,3 +533,19 @@ No. The client waits while the server works, and server writes can overlap clien
 **Learn more:** [18. Trace the actual Go HTTP client](../guide/18-trace-go-http.md)
 
 </details>
+
+### Does controlled delay prove the live Caddy deployment is faster?
+<!-- check: guide/19-compare-gzip-responses.md -->
+
+**Level:** Expert
+
+The experiment adds delay to an isolated Linux link and measures a gzip improvement. Can we report the same saving for the production droplet?
+
+<details>
+<summary>Answer</summary>
+
+No. The fixture uses the current Receipt disk handler and a standard-library gzip encoder. Production has Caddy, PostgreSQL, a real network path and an older modified server build. Controlled results isolate a mechanism; deployment-specific results need another measured comparison.
+
+**Learn more:** [19. Compare gzip and uncompressed responses](../guide/19-compare-gzip-responses.md)
+
+</details>

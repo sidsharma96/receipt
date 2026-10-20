@@ -632,3 +632,19 @@ No. The pool belongs to that process. When Receipt exits, that process and its c
 **Learn more:** [18. Trace the actual Go HTTP client](../guide/18-trace-go-http.md)
 
 </details>
+
+### Does gzip change the saved test result?
+<!-- check: guide/19-compare-gzip-responses.md -->
+
+**Level:** Newcomer
+
+Receipt sends the same result once as plain JSON and once compressed with gzip. After decompression, what should the client see?
+
+<details>
+<summary>Answer</summary>
+
+Exactly the same bytes. Compression changes how the response travels, not the saved result or the test inputs. Receipt still validates the decompressed result before replaying it.
+
+**Learn more:** [19. Compare gzip and uncompressed responses](../guide/19-compare-gzip-responses.md)
+
+</details>

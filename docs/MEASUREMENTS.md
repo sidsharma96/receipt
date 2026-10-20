@@ -1875,4 +1875,119 @@ Stock/traced full keys must match before and after measurement, as must every
 decoded-body hash and replayed stdout hash. The declared stock client binary
 remains fixed while the diagnostic binary runs separately. No private key,
 certificate content, token, response payload or arbitrary stderr enters the
-published artifact. The results and new teaching chapter follow after CI.
+published artifact. Completed results are recorded below.
+
+## Gzip comparison results, 20 October 2026
+
+The protocol above completed on [Linux CI run 39467320436](https://github.com/sidsharma96/receipt/actions/runs/39467320436),
+source 8a0055df101d4c43fb44ed2668bf5957f1f232c2. Environment: Ubuntu 24.04,
+image 20261012.334.1, Go 1.22.12 linux/amd64, two CPUs, Intel Xeon Platinum 8573C.
+This differs from earlier baseline hardware and topology. Compare variants within
+this job, not absolute latency against previous Internet jobs.
+
+[All 360 client calls and 18 server batches](measurements/gzip-2026-10-20/client.json)
+and the [recomputed summary](measurements/gzip-2026-10-20/summary.json) retain
+complete distributions, paired deltas, block means, body hashes, full keys and
+binary hashes. The summary records the client file SHA-256. No measured failures,
+execution fallbacks or outliers were removed. Thirty-six warmups were excluded
+by the predeclared protocol. Every traced response was HTTP/2.0 with a fresh
+connection. Every encoded identity body was 62,728 bytes; every gzip body was
+19,073 bytes: 69.594% fewer body bytes. Both decoded hashes were
+c8c667503eacca2f81b830b49f751cedd5d8cdbe65a35ea6d0d677a714d99031.
+
+| Added RTT | Variant | CLI median / mean / p95 ms | Client mean CPU ms | Client mean peak RSS MB | Encoded body B |
+| --- | --- | ---: | ---: | ---: | ---: |
+| 0 ms | Identity | 69.490 / 81.561 / 78.127 | 62.556 | 16.565 | 62,728 |
+| 0 ms | Gzip | 71.312 / 71.275 / 73.559 | 63.127 | 16.551 | 19,073 |
+| 24 ms | Identity | 192.336 / 192.899 / 194.201 | 66.641 | 16.487 | 62,728 |
+| 24 ms | Gzip | 169.238 / 172.745 / 172.743 | 66.780 | 16.507 | 19,073 |
+| 64 ms | Identity | 392.384 / 392.544 / 393.957 | 66.962 | 16.487 | 62,728 |
+| 64 ms | Gzip | 329.189 / 329.619 / 331.125 | 67.549 | 16.493 | 19,073 |
+
+Each row represents 60 calls. Client CPU is GNU time/RUSAGE child-inclusive work;
+peak RSS is GNU time's per-invocation native KiB report converted to decimal MB.
+It is not retained heap, simultaneous process-tree memory, or measured cycles.
+Both variants have the same observers; common overhead is uncalibrated.
+
+| Added RTT | Variant | Server mean CPU per call ms | Mean server peak RSS MB |
+| --- | --- | ---: | ---: |
+| 0 ms | Identity | 9.360 | 15.260 |
+| 0 ms | Gzip | 10.897 | 15.031 |
+| 24 ms | Identity | 9.853 | 15.192 |
+| 24 ms | Gzip | 11.246 | 14.965 |
+| 64 ms | Identity | 10.299 | 15.224 |
+| 64 ms | Gzip | 11.417 | 15.106 |
+
+Each server row averages three fresh processes, each with twenty measured calls
+and two preceding warmups. Getrusage CPU deltas span only the twenty-call interval
+and include TLS, handler/compression, runtime and diagnostics; they are divided by
+twenty. Peak RSS is the process lifetime high-water mark, including setup/warmups,
+converted from Linux KiB to decimal MB. These are three peaks, not sixty independent
+memory samples. Slightly lower gzip RSS does not prove a compression memory saving;
+allocations and retained heap were not measured. Server CPU adds 1.12–1.54 ms/call.
+
+Paired gzip-minus-identity elapsed results (60 adjacent pairs per condition):
+
+| Added RTT | Mean / median / p95 delta ms | Range ms | Block mean deltas ms |
+| --- | ---: | ---: | --- |
+| 0 ms | −10.286 / +1.489 / +3.977 | −387.266…+4.532 | −14.341, +1.392, −17.908 |
+| 24 ms | −20.154 / −23.078 / −20.445 | −35.043…+171.256 | −13.953, −23.305, −23.203 |
+| 64 ms | −62.925 / −63.185 / −61.419 | −65.580…−47.584 | −63.235, −62.649, −62.891 |
+
+The zero-delay mean is skewed by identity lookup stalls; it is not a ten-ms
+compression benefit. Four calls had lookup residuals above 50 ms (lookup minus
+request-start-through-body-close):
+
+| One-way delay | Variant / block / pair | CLI ms | HTTP ms | Lookup outside HTTP ms |
+| --- | --- | ---: | ---: | ---: |
+| 0 ms | Identity / 0 / 13 | 190.96 | 19.71 | 72.76 |
+| 0 ms | Identity / 0 / 14 | 275.02 | 21.10 | 198.06 |
+| 0 ms | Identity / 2 / 6 | 461.48 | 20.87 | 361.37 |
+| 12 ms | Gzip / 0 / 6 | 363.55 | 118.70 | 159.63 |
+
+Residuals include local cache access/publication and diagnostic work on either
+side of the HTTP span. We did not instrument exact disk calls or OS waits, so
+these cannot be assigned to fsync, GC or another mechanism. No DNS runs for the
+private-IP URL. All samples remain retained. Per-condition median body-read times
+were identity/gzip 0.208/0.845 ms, 48.019/24.048 ms and 128.044/64.075 ms. Median
+Decode times stayed around 7 ms. Matching connection and TLS spans were essentially
+equal; the phase evidence localizes the main delayed-link saving to body reading.
+No packet capture proves a particular congestion/window/flow-control explanation.
+
+All four before/after stock/traced keys matched
+7426222aec4aae7c08a50e0fe69143b148867cf4cd7afbba049c30fcd42192af, as did all
+replay stdout hashes and exit statuses. The test certificate is explicitly
+fingerprinted, so this is a new fixture identity relative to earlier experiments.
+The stock client remains declared while the diagnostic build runs separately.
+This establishes this comparison's compatibility, not deterministic execution
+or permission to omit changed dependencies.
+
+Reproduction: dispatch profile-gzip.yml on trusted main, download its numeric
+artifact, then run `python3 scripts/profile/summarize_gzip.py RAW_DIRECTORY NEW_OUTPUT_DIRECTORY`.
+RAW_DIRECTORY contains results.json and plan.json from the artifact. Run
+`python3 scripts/profile/gzip_figure.py` to rebuild the figure from committed data.
+The workflow requires preinstalled sudo/ip/tc; no packages are installed. Private
+namespace/veth resources are removed on normal completion/finally cleanup. Fixture
+startup/shutdown faults and forced runner cancellation are not fault-injected.
+Test certificates/private keys and disposable tokens stay outside the artifact.
+
+The fixture uses token-authorized Disk/Handler without a ConflictStore or shared
+quarantine/status contract; only empty-cache entry fetches are measured. It uses
+a new standard-library level-5 gzip encoder
+per response and a test TLS chain. It has no PostgreSQL, production Caddy, Internet
+loss/bandwidth constraints or DNS. Caddy supports negotiated compression, but its
+[v2.10.2 gzip implementation](https://github.com/caddyserver/caddy/blob/v2.10.2/modules/caddyhttp/encode/gzip/gzip.go)
+uses a different library; equal level numbers do not establish equal performance.
+These are candidate-selection results, not a deployed performance guarantee.
+
+Verification: local lint passed with zero issues; the overlay cache/fixture race
+suites passed locally and on Linux. Fixture tests cover decoded result identity,
+body accounting, negotiated gzip/identity, status preservation and invalid/truncated
+gzip rejection. All 32 profiling/evidence checks pass, including full counts,
+resource intervals, summary/hash recomputation and rejection of missing calls or
+changed decoded bodies. All nine helper-policy checks pass. The book builds
+and all 18 documentation checks pass. Desktop/phone local renders were inspected
+without page overflow and comprehension answers opened on click. The
+[teaching chapter](guide/19-compare-gzip-responses.md) and
+[nine-question review](PHASE-REVIEWS.md#controlled-gzip-comparison-20-october-2026)
+explain decisions, scope and remaining risks. No production compression was enabled.

@@ -1,5 +1,10 @@
 # 18. Trace the actual Go HTTP client
 
+Follow-up: [Chapter 19](19-compare-gzip-responses.md) now compares gzip and
+identity responses on a controlled Linux link. It preserves decoded results and
+keys while measuring transfer savings, CPU cost, memory and outliers. The live
+service remains unchanged; the measurements below retain their original scope.
+
 A GitHub runner starts Receipt with an empty local cache. Receipt builds the
 input key, then asks the droplet for a saved result. In one measured fetch,
 the HTTP part took **172 ms** and the entire CLI invocation took **228 ms**.

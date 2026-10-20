@@ -4216,3 +4216,209 @@ Revisit the overlay whenever source anchors, HTTP defaults, callback ordering or
 response format changes; reject unsupported evidence rather than silently
 relabeling it. Revisit uncertainty with repeated matched runs before making a
 numerical optimization or capacity promise.
+
+## Controlled gzip comparison, 20 October 2026
+
+A Receipt result contains 62,728 bytes in its HTTP envelope. The identity server
+sends all those bytes; the gzip server sends 19,073. Receipt's HTTP transport
+reconstructs the same original bytes, then normal validation accepts the same
+result. On the controlled 24 ms round-trip link, median whole-command latency
+fell from 192 to 169 ms while server CPU rose about 1.4 ms/request. On the link
+without added delay, a typical gzip call was slower. Follow the measured arrows
+and common-scale bars in [Chapter 19](guide/19-compare-gzip-responses.md) and its
+[figure](assets/gzip-comparison.svg). This phase implements an experiment and
+teaching material; the production droplet and Caddy remain unchanged.
+
+### Gzip comparison — 1. Data structures and reasons
+
+The fixture's response wrapper owns the original ResponseWriter, an encoded-body
+counter, a SHA-256 hasher, decoded-byte count, optional gzip encoder and fixed
+status/failure flags. The counter counts bytes accepted by the HTTP writer after
+compression, including encoder-close bytes. The hasher sees the original payload;
+the client independently hashes decompressed bytes while reading. No payload is
+retained in measurement JSON. A fixed resource struct carries Getrusage CPU and
+peak-RSS values. The existing HTTP event slice/mutex remains bounded at 64 events;
+compression diagnostics add decoded SHA-256 and Go's Uncompressed flag.
+
+Python keeps complete numeric per-call rows, eighteen server resource intervals
+and a map keyed by block/pair to compare adjacent variants. A set of decoded
+hashes must contain exactly one value. Retaining all rows permits recomputation
+and exposes stalls that would disappear behind selected examples. The normal
+Manifest, Result, envelopes and key serialization do not change.
+
+### Gzip comparison — 2. Architecture, execution and extension boundaries
+
+The manual main-only workflow builds stock Receipt, the diagnostic overlay and
+a separate fixture server. It prepares the existing self-CI checkout, generates
+a temporary TLS test certificate, explicitly declares its public file as an input
+and seeds the resulting new fixture key locally. The stock executable remains
+the declared extra input; the diagnostic executable runs separately. The server
+loads that exact entry through Disk and serves requests through cache.Handler.
+The gzip middleware compresses successful eligible GET bodies as they are written;
+it does not cache precompressed responses or alter stored entries.
+
+The harness creates a private network namespace and veth cable on the disposable
+runner. It sets both cable ends to 0, 12 or 32 ms one-way delay. At each setting,
+three fresh server pairs receive twenty alternating identity/gzip pairs after
+two excluded warmups per variant. Each CLI gets an empty cache, a fresh process,
+the same environment and verified TLS. Server ports are fixed by variant.
+The controlled endpoint and current disk handler are explicit boundaries: this
+fixture does not implement or measure the live PostgreSQL/Caddy stack.
+
+### Gzip comparison — 3. Concurrency, networking and fundamental primitives
+
+The actual Go HTTP transport negotiates gzip and transparently decompresses it;
+no InsecureSkipVerify, redirect change or validation bypass is introduced. All
+measured requests used HTTP/2 and fresh connections. A random disposable token
+travels to the fixture through its private stdin configuration and to clients
+through the usual token environment; it is absent from logs/artifacts. Temporary
+key material is private and never published. The certificate is a test trust
+root declared identically for both variants, not a change to machine-wide trust.
+
+Each server uses Go's ordinary HTTP goroutines, a buffered completion channel
+and explicit Shutdown cancellation. A stdin control loop snapshots process
+resources without extra HTTP traffic. Requests are sequential at the harness,
+although TLS/HTTP/runtime work can overlap within each process. Only the private
+veth is shaped; production services and the runner's Internet link are unchanged.
+Fresh gzip encoders are allocated per response. No persistent client or encoder
+pool is implemented. The existing diagnostic mutex protects callback mutation.
+
+### Gzip comparison — 4. Pitfalls and debugging challenges
+
+Net/http body bytes are already decompressed for a negotiated gzip response, so
+client ReadAll length cannot establish transferred compressed bytes. The server
+counter is below compression; the client counter/hash is above decompression.
+From actual [`bodyCount.Write`](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/gzipserver/compression.go#L22-L26),
+`w.bytes += int64(n)` counts only bytes its downstream writer accepted. Headers,
+TLS/TCP overhead, retransmissions and billable traffic remain outside that count.
+The encoder must close before the server record is emitted so its checksum and
+trailing bytes are included.
+
+Four calls spent 73–361 ms in lookup outside the HTTP span. Local cache
+access/publication and diagnostic work sit in that remainder; exact disk/OS
+waiting is not traced. The zero-delay identity mean therefore exceeded gzip's
+mean despite a faster identity median. No outlier was removed. It would be
+incorrect to call this a zero-delay speedup, assign the residual to fsync or GC,
+or import Chapter 18's DNS explanation into a private-IP experiment with no DNS.
+Server handler time overlaps client waiting and must not be added to it.
+
+### Gzip comparison — 5. Hot/cold paths and costs
+
+Every measured fetch authenticates, reads/validates the stored result, encodes
+its response, optionally compresses it, establishes fresh TLS, reconstructs and
+validates the result on the client, publishes a local copy and replays output.
+Compression reduced body bytes 69.594%, from 62,728 to 19,073. At 24/64 ms added
+RTT, median body reading fell from 48.02/128.04 to 24.05/64.08 ms. Median paired
+whole-command deltas were −23.08/−63.18 ms; at zero added delay the delta was
++1.49 ms. Nearly unchanged TCP/TLS spans and roughly 7 ms Decode medians locate
+the main delayed-link benefit in body delivery, without proving packet mechanics.
+
+Client mean CPU increased 0.14–0.59 ms, server mean CPU 1.12–1.54 ms/request.
+Server CPU is a twenty-call Getrusage interval divided by twenty, including TLS,
+runtime and diagnostics, excluding warmups. Client mean peak RSS stayed around
+16.5 MB; server process peaks around 15 MB. Three fresh server processes per
+variant/condition establish only small-sample peak reports, not allocation or
+retained-heap savings. Peak RSS includes setup and warmups. Both observers are
+present on both paths and their common cost is uncalibrated. No CPU-cycle or
+physical-I/O savings claim follows. Cold startup, small/incompressible payloads,
+concurrent requests and production capacity remain unmeasured.
+
+### Gzip comparison — 6. Guarantees, assumptions and non-goals
+
+All 360 measured calls were successful validated hits, with one decoded byte
+count/hash, identical replay stdout hashes and zero exit statuses. All four
+stock/traced before/after full keys matched. The test certificate creates a new
+declared fixture identity relative to earlier baselines; keeping the stock client
+as the declared input is the deliberate diagnostic substitution already explained
+in Chapter 18. Compression changes the response representation, not these input
+declarations. Matching keys do not prove deterministic tests or authorize ignoring
+changed production dependencies.
+
+The handler's token check, client decompressed-body size limit and
+checksum/structure/key validation remain. Disk does not implement ConflictStore;
+this fixture does not provide shared quarantine/status behavior or checked-local
+measurements. Production policies are unchanged. Invalid/truncated gzip returns
+an error rather than a reusable result. The failed GET leaves the original
+server entry intact and supplies no reusable local result. Normal fallback
+execution can later publish an observation under existing conflict rules; a
+retry can fetch if the key remains usable. The full CLI fallback path is not
+timed here. The fixture handles only exact requested gzip and successful entry
+GETs; it is not a general content-negotiation implementation for deployment.
+Production compression, Caddy configuration, system-wide trust and package/tool
+selections remain unchanged. Non-goals include eliminating connection setup,
+implementing persistence, precompression, pooling or network placement changes.
+
+### Gzip comparison — 7. Alternatives and reasons
+
+The protocol chose an isolated delayed link so compression could be compared
+under fixed topology without changing the live service. Retrospective comparison:
+temporarily enabling live Caddy gzip would measure the actual deployment but
+would mix production implementation/traffic/path effects and require a separate
+bounded deployment comparison. The fixture instead isolates a mechanism. It
+cannot justify assigning its exact performance to Caddy, whose gzip library and
+encoder reuse policy differ. Both variants use the same binary; differing builds
+would add avoidable code-generation/input confounds.
+
+Precompressing the saved envelope could avoid repeat server compression, but
+adds storage, publication and representation-management work. Encoder pooling
+could reduce allocation work but retains buffers and needs ownership/budget
+rules; neither is implemented. Persistent connections could target setup costs
+but introduce a daemon's credential and lifecycle requirements. A lower/higher
+gzip level could trade CPU for size; only level 5 was measured. Identity is a
+valid choice for very low latency or poorly compressible payloads. Additional
+SQL indexes cannot remove a transfer delay and were not part of this experiment.
+
+### Gzip comparison — 8. Evidence, verification and remaining risks
+
+[Run 39467320436](https://github.com/sidsharma96/receipt/actions/runs/39467320436)
+completed on source 8a0055df101d4c43fb44ed2668bf5957f1f232c2, Go 1.22.12 linux/amd64,
+Ubuntu 24.04 image 20261012.334.1, two Intel Xeon Platinum 8573C CPUs. The
+[retained client evidence](measurements/gzip-2026-10-20/client.json) and
+[summary](measurements/gzip-2026-10-20/summary.json) preserve all 360 calls,
+18 server batches, body and binary hashes, full keys, distributions, paired
+comparisons and block means. Thirty-six warmups were excluded by the protocol.
+The curator rejects missing pairs, incomplete runs, changed keys, changed decoded
+hashes, wrong encodings, failed hits, execution fallback and unsupported callback
+counts. No failure or outlier was removed.
+
+Lint passed with zero issues. Cache and fixture race suites passed locally and
+on Linux. Two fixture tests cover real Remote.Get result identity/body counting,
+authorization on successful requests, gzip negotiation, identity/status handling
+and invalid/truncated gzip rejection. All nine helper-policy tests pass, including
+the new manual workflow's trusted-main guard. All 32 profiling/evidence tests
+pass after collection, including digest/summary recomputation and rejection of
+missing calls or changed bodies. The main chapter includes an actual attributed
+Go excerpt, text-equivalent measured illustration and three synchronized questions.
+The figure was rendered to PNG and inspected for scale, labels and arrow meaning.
+The book built and all 18 documentation checks passed. Clean headless local
+Chrome renders at 1200×1000 and 390×844 loaded the figures without page overflow;
+the first comprehension answer opened on click at both sizes. Desktop and phone
+screenshots were inspected. The scaled phone figure has a full text equivalent.
+This verifies local rendering, not authenticated live-site content.
+Automated checks cannot certify teaching quality or a production performance claim.
+
+Failure cases not timed/injected here include certificate failure, revoked or
+expired credentials, quarantined/corrupt/oversized successful payloads, client
+cancellation, partial writes, slow diagnostic pipes, fixture startup/shutdown
+failure, artifact-upload failure and forced-runner cleanup. The kernel/network
+configuration is not a model of every Internet path. There is no DNS, bandwidth
+cap or configured loss; no packet trace, allocator profile or cold-cache study.
+The same runner hosts both ends, so production contention/CPU separation differs.
+Only one payload and one job were measured. Server memory has only three fresh
+process samples per condition. Fixed port assignments are not randomized.
+
+### Gzip comparison — 9. Revisit conditions
+
+Revisit deployment when testing the intended Caddy build and actual authentication/
+storage path with bounded equivalent measurements. Revisit levels or precompression
+when server CPU, repeated reuse or payload size/compressibility changes. Revisit
+encoder pooling when allocation evidence justifies retained buffer memory and
+an explicit budget/ownership design. Revisit identity for low-delay or tiny/
+incompressible payloads; measure rather than assume compression always wins.
+Revisit packet-level transfer mechanisms if the round-trip pattern matters to
+an implementation decision. Revisit the 73–361 ms lookup residuals with exact
+local publication/syscall boundaries before naming a cause. Revisit uncertainty
+with repeated jobs and more server-memory samples before capacity claims.
+Revisit persistence only when repeated invocations justify its extra resident
+process and credential lifecycle. Preserve validation and quarantine checks in
+every candidate; latency is not permission to weaken them.

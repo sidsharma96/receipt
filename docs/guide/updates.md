@@ -427,3 +427,15 @@ and transfer costs, plus six DNS delays over 50 ms. They do not establish a
 production speedup or the packet-level cause. Full keys and replay stdout hashes
 matched for the declared fixture. The [nine-question review](../PHASE-REVIEWS.md#actual-go-http-trace-19-october-2026)
 records observer overhead, compatibility scope, verification and next decisions.
+
+## 20 October 2026: compare gzip on a controlled Linux link
+
+New [Chapter 19](19-compare-gzip-responses.md) follows the same result through
+identity and gzip responses. All 360 measured fetches preserved keys, decoded
+bytes and replay output. Gzip reduced body bytes 69.6% and median paired latency
+by about 23/63 ms on links with 24/64 ms added round-trip delay, while adding
+server CPU. With no added delay, the typical gzip call was slower. The chapter
+explains why retained local-lookup outliers make the zero-delay mean misleading.
+The [full nine-question review](../PHASE-REVIEWS.md#controlled-gzip-comparison-20-october-2026)
+records CPU/RAM boundaries, verification and limits. This is an isolated fixture;
+production Caddy and the droplet remain unchanged.

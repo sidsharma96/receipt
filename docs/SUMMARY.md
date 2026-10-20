@@ -28,6 +28,7 @@
 - [16. Resolve the selected Git once](guide/16-resolve-selected-git.md)
 - [17. Measure the Linux client and cache server](guide/17-measure-linux-client-and-server.md)
 - [18. Trace the actual Go HTTP client](guide/18-trace-go-http.md)
+- [19. Compare gzip and uncompressed responses](guide/19-compare-gzip-responses.md)
 
 # Defending the design
 
