@@ -1729,3 +1729,28 @@ work should trace the actual Go HTTP transport and response transfer; next clien
 CPU work should profile input handling/metadata on Linux. Preserve quarantine
 checks, declared inputs, fresh probes and the existing manifest/key format while
 doing so.
+
+## Go HTTP tracing protocol, 19 October 2026
+
+Follow-up to the Linux baseline: `scripts/profile/http_trace.py` builds an
+instrumented client using Go's build overlay mechanism. Production Go source,
+HTTP transport defaults and the droplet remain unchanged. The manual main-only
+`profile-http.yml` workflow runs three blocks of ten checked-local and ten
+remote-fetch hits per build, alternating stock and traced order. Each build/case
+also receives one excluded warmup per block. Every invocation is a fresh process.
+
+The overlay attaches standard-library httptrace callbacks to Receipt's actual
+request, then records body-read and Decode boundaries. Callback events are
+mutex-protected and capped at 64; records contain fixed operation labels,
+relative clocks, response status/protocol, byte counts, connection-reuse state
+and a format-validated server request ID. No tokens, URLs, addresses or payloads
+are retained. Failed hits stop the experiment rather than becoming silent test
+executions. Network-failure timing is outside this protocol.
+
+The workload's declared extra input remains the stock client binary. The traced
+binary executes from a separate directory outside the workload; replacing the
+declared stock binary would correctly change the key. The harness requires full
+stock/traced keys to match before and after measurement and all measured replayed
+stdout hashes to agree. This is a diagnostic substitution, not permission to
+omit changed production dependencies. Resource and latency results will include
+both builds so tracing overhead remains visible. No results are claimed yet.

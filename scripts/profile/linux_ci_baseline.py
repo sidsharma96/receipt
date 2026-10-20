@@ -67,7 +67,10 @@ def measure(args, env, case, block):
             'minor_faults': after.ru_minflt-before.ru_minflt, 'major_faults': after.ru_majflt-before.ru_majflt,
             'voluntary_switches': after.ru_nvcsw-before.ru_nvcsw,
             'involuntary_switches': after.ru_nivcsw-before.ru_nivcsw,
-            'returncode': p.returncode, 'hit': 'receipt: hit' in p.stderr, 'timing': timing}
+            'returncode': p.returncode, 'hit': 'receipt: hit' in p.stderr, 'timing': timing,
+            'stdout_sha256': hashlib.sha256(p.stdout.encode()).hexdigest(),
+            **({'http': [json.loads(line) for line in p.stderr.splitlines() if line.startswith('{"type":"diagnostic_http"')]}
+               if '{"type":"diagnostic_http"' in p.stderr else {})}
 
 
 def explain(env):
