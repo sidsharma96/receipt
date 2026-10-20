@@ -34,7 +34,7 @@ Python scripts. Those scripts support development, documentation and operations.
 | Build Receipt | `cmd/receipt/`, `internal/`, `go.mod`, `go.sum`; Go 1.22 or later. CI verifies Go 1.22.12. `make build` also uses Make; on macOS the current target uses the system linker and `codesign`. |
 | Run a normal cached client | A compatible OS, the Receipt binary, a writable cache directory, Git and a workload Git repository; the workload's command and toolchain, such as Go or Python/pytest/uv. HTTPS remote use also needs trusted CA certificates. Go is needed for a Go workload, not just to launch Receipt. |
 | Run the deployed shared server | The Receipt binary, writable output storage, PostgreSQL, database configuration and credentials. The current public HTTPS deployment also uses Caddy and systemd. The server does not need client workload toolchains or Python scripts. |
-| Build and check this book | `docs/`, `scripts/docs/`, the referenced application/deployment source, Make, Python 3 and mdBook 0.5.4. Python checks use the standard library; there is no pip dependency installation. |
+| Build and check this book | `docs/`, `scripts/docs/`, the referenced application/deployment source, Make, Python 3.11+ and mdBook 0.5.4. Python checks use the standard library; there is no pip dependency installation. |
 | Publish the book with current CI | The docs build tools, Node.js 22, Wrangler 4, and Cloudflare account ID/API-token secrets. These are deployment tools. |
 | Read the built book | A browser and the generated static site, or a Markdown reader for the source. No Python or Go runtime is needed to read it. |
 | Run current CI | Go, Git, Python 3 and the workflow configuration. The independent integration job also starts PostgreSQL; the cached job uses `deploy/ci/self_test.py`. |
@@ -43,8 +43,9 @@ The Go module has one third-party dependency, `github.com/lib/pq v1.10.9`.
 It is compiled into Receipt for PostgreSQL support; a local cache does not need
 a PostgreSQL server. Python in `scripts/profile/` is optional measurement tooling;
 Python in `deploy/digitalocean/` supports operator experiments and recovery.
-The Python fixture under `testdata/` supports tests. Keep these tools unless we
-also retire the workflows and checks that use them.
+The former Python file under `testdata/` was an unreferenced example workload;
+it is now local-only under `scripts/utils/examples/python-project/`. Keep shared
+tools while their documented workflows, checks or repeatable investigations use them.
 
 Raw JSON measurement records are no longer versioned or copied into the book.
 The dated results and figures remain; raw-evidence links point to their original
@@ -52,6 +53,49 @@ Git revision. New JSON/JSONL/NDJSON outputs belong in ignored `.tools/` or CI
 artifacts. This policy does not change Receipt's JSON configuration, cache files
 or HTTP format. See [measurement archive instructions](docs/MEASUREMENTS.md#where-raw-measurements-live)
 and [the dependency walkthrough](docs/guide/06-find-the-code-and-defend-a-decision.md#what-needs-to-be-installed).
+
+## Shared tools versus local utilities
+
+For example, `make docs` discovers Python tests under `scripts/docs/`. Those
+tests also read the Fly proposal's TOML templates. Moving either into an ignored
+directory would break a fresh checkout, even though neither runs inside Receipt.
+A personal throwaway probe has a different purpose: put it in `scripts/utils/`,
+which is ignored and rejected by the commit hook and CI even after a forced add.
+Create that local directory with `mkdir -p scripts/utils` after cloning if needed.
+Git does not save empty directories.
+
+Audit on 20 October 2026: the original 79 tracked Python files totaled about
+0.37 MB. The unreferenced example was moved to ignored local utilities, leaving
+78 versioned Python files after that deletion is committed. These files are
+helper source and examples, not raw measurement output:
+
+| Files | Role | Keep versioned? |
+|---|---|---|
+| `scripts/docs/` — 6 Python files | Book checks, question synchronization, review figures and their small inputs | Yes; `make docs` uses them |
+| `deploy/ci/` — 7 Python files | Current self-CI helper/tests and earlier provisioning/experiment tools | Yes while retaining those workflows and documented operator steps; current tests also import the old cleanup tool |
+| `scripts/check_source_artifacts.py` | Local hook and CI artifact policy | Yes |
+| `scripts/profile/` — 56 Python files | Six manual CI investigations, analysis, figure generators, historical evidence checks and earlier local benchmarks | Yes for repeatable shared investigations; optional for ordinary builds and book builds |
+| `scripts/measure_local.py` | The book's documented local measurement command | Yes while documenting that command |
+| `deploy/digitalocean/` — 7 Python files | Operator checks, experiments and backup/recovery helpers | Yes for documented operations; not application startup dependencies |
+| Former `testdata/python-project/test_demo.py` | Tiny unreferenced example workload | No; moved to ignored `scripts/utils/examples/python-project/` |
+
+The config audit found 10 YAML files and 3 TOML files:
+
+| Configuration | Role |
+|---|---|
+| `.github/workflows/receipt-ci.yml`, `docs.yml` | Automatic application CI and book build/publication |
+| Six `.github/workflows/profile-*.yml` files | Optional manual profiling jobs; their scripts must be present in a checkout |
+| `.github/workflows/remote-cache-experiment.yml` | Earlier experiment, triggered only on its named experiment branch |
+| `.golangci.yml` | Rules used by `make lint` |
+| `docs/book.toml` | Book build configuration |
+| `deploy/fly/api.toml`, `postgres.toml` | Never-deployed Fly proposal, still read by docs template checks |
+
+Optional features can be retired, but remove their callers, checks and current
+instructions together. Do not blanket-ignore Python, YAML or TOML. Shared
+profiling source and deployment templates remain versioned; only disposable
+local helpers belong in ignored `scripts/utils/`. Raw measurement output still
+belongs in `.tools/` or CI artifacts. Removing helper source would not speed up
+a deployed Receipt binary, which does not load those repository files.
 
 ## Commit rules
 

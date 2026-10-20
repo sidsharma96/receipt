@@ -59,3 +59,24 @@ class StagedPolicy(unittest.TestCase):
             path.write_bytes(b'x' * MAX_FILE_BYTES)
             subprocess.run(['git', 'add', path.name], cwd=root, check=True)
             self.assertEqual(violations(root, staged=True), [])
+
+
+class LocalUtilitiesPolicy(unittest.TestCase):
+    def test_ignored_python_utility_is_rejected_if_force_added(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(['git', 'init', '-q', str(root)], check=True)
+            (root / '.gitignore').write_text((REPOSITORY / '.gitignore').read_text())
+            utility = root / 'scripts/utils/local_probe.py'
+            utility.parent.mkdir(parents=True)
+            utility.write_text('print("local only")\n')
+            self.assertEqual(violations(root), [])
+            subprocess.run(['git', 'add', '-f', 'scripts/utils/local_probe.py'], cwd=root, check=True)
+            utility.unlink()
+            self.assertEqual(violations(root, staged=True), ['scripts/utils/local_probe.py'])
+            # Shared utilities next to the ignored directory remain eligible for commits.
+            shared = root / 'scripts/utils_shared.py'
+            shared.write_text('print("shared")\n')
+            subprocess.run(['git', 'rm', '--cached', 'scripts/utils/local_probe.py'], cwd=root, check=True, capture_output=True)
+            subprocess.run(['git', 'add', 'scripts/utils_shared.py'], cwd=root, check=True)
+            self.assertEqual(violations(root, staged=True), [])

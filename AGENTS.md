@@ -146,3 +146,16 @@ binary measurement evidence remains intentional historical documentation.
 A local hook is advisory and requires installation in every clone; CI is the
 shared check. Do not equate these checks with full tests or a server-side ban
 on every possible generated-data format.
+
+## Local utilities versus shared source, agreed 2026-10-20
+
+Use ignored `scripts/utils/` for disposable personal probes/helpers. The artifact
+checker rejects staged paths inside it, including forced additions. A fresh
+clone does not contain these local utilities; create the directory when needed.
+Do not make application, docs, CI or deployment steps depend on its contents.
+Promote a helper into a versioned, purpose-specific directory before making it a
+shared dependency. Keep shared Python source and YAML/TOML configuration versioned
+while their workflows, tests or documented investigations/operations use them.
+Optional execution alone is not evidence that source should be ignored. Retire
+obsolete features with their callers, tests and current instructions together;
+do not blanket-ignore script languages or configuration extensions.

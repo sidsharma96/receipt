@@ -493,3 +493,16 @@ the hook also checks staged whitespace. Ignore rules cover future profiler
 captures and deployment-tool state. The [Chapter 6 walkthrough](06-find-the-code-and-defend-a-decision.md#keep-generated-records-out-of-commits)
 explains staging and the [review amendment](../PHASE-REVIEWS.md#commit-guard-amendment-20-october-2026)
 records the boundaries and checks.
+
+## 20 October 2026: audit helper source and reserve local utilities
+
+[Chapter 6](06-find-the-code-and-defend-a-decision.md#which-helpers-belong-in-git)
+and the README now distinguish runtime dependencies, shared development tools,
+optional investigation/operation source and disposable local helpers. Audited
+79 Python files, 10 YAML files and 3 TOML files. Moved the unreferenced Python example
+to local-only `scripts/utils/examples/python-project/`, leaving 78 versioned
+Python files after committing the deletion. Added ignored
+`scripts/utils/` and a staged-path check so local helpers cannot accidentally
+enter commits. Shared scripts and config stay versioned; no workflows were
+retired. The [review](../PHASE-REVIEWS.md#local-utilities-and-config-audit-20-october-2026)
+records scope and limits.

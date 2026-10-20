@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep raw JSON and oversized files out of source and staged commits."""
+"""Keep local utilities, raw JSON and oversized files out of source and commits."""
 import argparse
 import os
 from pathlib import Path
@@ -8,6 +8,11 @@ import sys
 
 JSON_TYPES = {'.json', '.jsonl', '.ndjson'}
 MAX_FILE_BYTES = 1024 * 1024
+LOCAL_UTILITIES = 'scripts/utils'
+
+
+def local_utility(name):
+    return name == LOCAL_UTILITIES or name.startswith(LOCAL_UTILITIES + '/')
 
 
 def source_paths(root):
@@ -44,7 +49,7 @@ def staged_sizes(root):
 def violations(root, staged=False):
     sizes = staged_sizes(root) if staged else {name: (root / name).stat().st_size for name in source_paths(root)}
     return sorted(name for name, size in sizes.items()
-                  if Path(name).suffix.lower() in JSON_TYPES or size > MAX_FILE_BYTES)
+                  if local_utility(name) or Path(name).suffix.lower() in JSON_TYPES or size > MAX_FILE_BYTES)
 
 
 def main():
@@ -53,10 +58,10 @@ def main():
     args = parser.parse_args()
     paths = violations(Path(__file__).resolve().parents[1], staged=args.staged)
     if paths:
-        print('Source rejects JSON/JSONL/NDJSON and files over 1 MiB. Use .tools/ or a CI artifact:', file=sys.stderr)
+        print('Source rejects scripts/utils/, JSON/JSONL/NDJSON and files over 1 MiB. Keep local tools/output ignored:', file=sys.stderr)
         print('\n'.join(paths), file=sys.stderr)
         return 1
-    print('Source artifact policy passed: no JSON or files over 1 MiB.')
+    print('Source artifact policy passed: no local utilities, JSON or files over 1 MiB.')
     return 0
 
 

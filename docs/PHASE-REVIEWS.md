@@ -5111,3 +5111,102 @@ The 1 MiB tests also rejected a renamed oversized archive despite a smaller
 working copy, and accepted the exact size boundary. Enabled the hook in this
 clone after confirming there was no existing custom hooks path or pre-commit hook.
 The final staged artifact and whitespace checks passed before committing.
+
+## Local utilities and config audit, 20 October 2026
+
+A contributor runs `make docs`; the Python test discovery reads the Fly TOML
+proposal templates as well as the book source. A manual profiling workflow also
+needs its helper scripts in the runner's checkout. Neither is a Receipt runtime
+dependency, but hiding those sources would break the retained tools. Disposable
+personal scripts now have an ignored home, `scripts/utils/`, which must never
+be required by those shared steps. The [Chapter 6 lesson](guide/06-find-the-code-and-defend-a-decision.md#which-helpers-belong-in-git)
+explains the execution sequence; the README lists the inventory.
+
+### Utilities audit · 1. Data structures and reasons
+
+The existing checker maps staged file paths to their Git blob sizes. A path
+predicate now recognizes `scripts/utils` and its descendants, alongside the
+existing JSON and size rules. The concrete implementation is
+[`local_utility`](https://github.com/sidsharma96/receipt/blob/main/scripts/check_source_artifacts.py#L15-L16):
+`return name == LOCAL_UTILITIES or name.startswith(LOCAL_UTILITIES + '/')`.
+The slash matters: `scripts/utils_shared.py` remains valid shared source.
+
+### Utilities audit · 2. Flow and extension boundaries
+
+The ignore rule omits local utilities from ordinary staging; the existing hook
+and CI index check reject forced additions. No existing shared script moves into
+ignored storage. Promote a local helper into a purpose-specific tracked directory
+before making docs, CI or deployment depend on it. A fresh clone does not contain
+the local utilities directory; create it when first needed.
+
+### Utilities audit · 3. Concurrency and networking primitives
+
+This adds no runtime processes, threads or network requests. The existing checker
+uses local Git subprocesses to inspect the index. The audit read tracked paths,
+Python imports and textual references; it did not start any live profiling,
+provisioning, recovery or deployment workflow.
+
+### Utilities audit · 4. Pitfalls and debugging
+
+Not every optional script is disposable: current CI tests import the older
+cleanup tool, and docs tests open the never-deployed Fly templates. The Python
+example under `testdata/` has no references from the current automated tests;
+it moved, without byte changes, to ignored local
+`scripts/utils/examples/python-project/test_demo.py`, leaving 78 versioned Python
+files after committing its deletion. Text search alone
+cannot prove absence of dynamic callers or external operator use. We did not
+claim all remaining files are application requirements or all are recently used.
+
+### Utilities audit · 5. Hot/cold paths and costs
+
+Receipt's deployed binary does not load these repository scripts or configs;
+this is a source-management change, not a runtime optimization. At audit start,
+79 Python files occupied about 0.37 MB. Six docs files support the book, 56 profile
+files support optional investigations, seven CI files support current/earlier
+CI, seven DigitalOcean files support operators, two root scripts support policy
+and measurement, and one file is the Python example.
+
+### Utilities audit · 6. Guarantees, assumptions and non-goals
+
+The local hook and CI reject staged paths in `scripts/utils/` regardless of
+extension. They do not sandbox execution or prevent an ignored helper from
+printing secrets locally. This phase does not retire features, delete shared
+scripts, alter key encoding or blanket-ignore Python/YAML/TOML. Runtime package
+requirements remain distinct from the source needed to maintain the project.
+
+### Utilities audit · 7. Alternatives and reasons
+
+Retrospectively, ignoring all scripts would remove sources required by existing
+workflows. Ignoring all YAML/TOML would remove CI, lint and book configuration.
+Moving every optional tool into ignored storage would make documented benchmark
+reproduction and recovery depend on one developer's checkout. Retiring the old
+remote experiment or Fly proposal is possible, but should remove their callers,
+checks and current instructions together. No such retirement is implemented.
+
+### Utilities audit · 8. Evidence and remaining risks
+
+The inventory covers 79 Python files, 10 YAML files and 3 TOML files. The YAML
+set contains two automatic workflows, six manual profiling workflows, one old
+experiment-branch workflow and lint configuration. TOML covers mdBook and the two
+Fly templates. Validation results are appended below. The audit follows current
+repository references; it cannot establish whether an operator uses a script
+outside this repository. No live deployment or operator command was exercised.
+
+### Utilities audit · 9. Revisit conditions
+
+Promote a personal helper when someone else or an automated step needs it.
+Retire an optional tool when its experiment or operating procedure is explicitly
+retired, after checking imports, workflows, tests and current docs. Revisit the
+Fly templates together with their proposal and docs checks. A Go-only tooling
+policy would require replacing docs/CI helpers and checking the replacements;
+ignoring their source would not implement that policy.
+
+
+Verification on 20 October 2026: `make docs` passed all 23 checks, including five
+artifact-policy tests. The new test force-adds a Python utility, deletes its
+working copy and confirms the index check still rejects it; a similarly named
+shared script outside the directory remains allowed. `git check-ignore` confirmed
+Python/YAML/TOML paths under `scripts/utils/` are ignored. All nine CI-helper tests
+and a fresh `go test -count=1 -ldflags=-linkmode=external ./...` passed locally.
+The moved example's bytes match the prior Git version exactly, and
+`git diff --check` passed. No new performance or live-service measurements ran.

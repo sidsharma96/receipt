@@ -42,11 +42,10 @@ current credential-enabled deployment.
 | Repository part | Why we keep it | Needed by a built Receipt process? |
 |---|---|---|
 | `cmd/`, `internal/`, `go.mod`, `go.sum` | Build and test the Go program | Compiled into the executable; source files are not needed afterward |
-| `docs/`, `scripts/docs/` | Write, build and check the book | No; book checks need Python 3 and mdBook 0.5.4 |
+| `docs/`, `scripts/docs/` | Write, build and check the book | No; book checks need Python 3.11+ and mdBook 0.5.4 |
 | `deploy/ci/` | Run Receipt's CI cache helpers and policy tests | No; current CI uses these Python scripts |
 | `scripts/profile/`, `scripts/measure_local.py` | Repeat measurements and draw experimental figures | No; optional profiling tools |
 | `deploy/digitalocean/` | Configure deployment and perform operator checks/recovery | Selected configuration is used by deployment; Python scripts are operator tools |
-| `testdata/` | Small example workloads used by tests | No; keep it for development and verification |
 
 To build the book, `make docs` first asks mdBook to turn Markdown and pictures
 into a static website, then runs Python checks for links, excerpts, figures and
@@ -68,6 +67,39 @@ records checks and limitations. We kept Python rather than rewriting these tools
 in Go: it remains useful for docs and current CI, and replacing a script would
 require checking the replacement's behavior too. Revisit that choice if we
 retire those workflows or decide to require a Go-only development environment.
+
+## Which helpers belong in Git?
+
+Imagine a new contributor running `make docs`. Python discovers the docs tests,
+and one of them opens `deploy/fly/api.toml` and `postgres.toml` to check the
+proposal's templates. Those TOML files are not used by the deployed DigitalOcean
+server, but removing them would still break that documented docs build. Likewise,
+a manually started profiling workflow needs its Python entry point and helper
+files in the runner's checkout. Optional execution does not make shared source
+safe to ignore.
+
+Keep `scripts/docs/`, CI helpers, the artifact checker, lint configuration and
+`docs/book.toml` versioned. Keep shared profiling tools and deployment templates
+while their workflows, documented experiments or recovery procedures remain.
+The earlier remote-cache experiment and Fly proposal are optional features we
+could retire; doing so requires updating their callers, checks and instructions
+together. The audit found no current automated-test references to the tiny Python example
+under `testdata/`, so it moved to ignored local storage at
+`scripts/utils/examples/python-project/test_demo.py`. The [README inventory](https://github.com/sidsharma96/receipt/blob/main/README.md)
+lists all Python groups and the YAML/TOML roles as audited on 20 October 2026.
+
+For your own throwaway probe, create `scripts/utils/` and write it there. That
+directory is ignored; the commit checker also rejects any of its staged files,
+including a Python helper added with `git add -f`. A new clone will not contain
+these utilities. If a helper becomes necessary for CI, the docs or another
+contributor, move it into an appropriate versioned directory and review it as
+shared source. Keep its generated records in `.tools/` or CI artifacts.
+
+This choice affects source maintenance and repeatability. It does not remove
+work from a running Receipt binary, which does not load these repository scripts.
+We did not move existing shared scripts into ignored storage or silently disable
+manual investigations. Retire a feature explicitly if maintaining it is no
+longer worth its cost.
 
 ## Keep generated records out of commits
 

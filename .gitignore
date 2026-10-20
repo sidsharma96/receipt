@@ -20,3 +20,6 @@ __pycache__/
 *.pcapng
 /.wrangler/
 .DS_Store
+
+# Disposable personal helpers; shared tooling stays versioned in scripts/docs or scripts/profile.
+/scripts/utils/
