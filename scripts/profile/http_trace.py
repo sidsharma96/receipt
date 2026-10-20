@@ -15,7 +15,7 @@ SOURCE = base.SOURCE
 ci = base.ci
 
 
-def build(out, compression=False):
+def build(out, compression=False, identity=False):
     source = SOURCE / 'internal/cache/http.go'
     text = source.read_text()
     changes = {
@@ -28,6 +28,11 @@ def build(out, compression=False):
         if text.count(old) != 1:
             raise RuntimeError('HTTP source changed: review overlay anchor')
         text = text.replace(old, new)
+    if identity:
+        anchor = 'req.Header.Set("Content-Type", "application/json")'
+        if text.count(anchor) != 1:
+            raise RuntimeError('identity request anchor changed')
+        text = text.replace(anchor, anchor + '\n req.Header.Set("Accept-Encoding", "identity")')
     fragment = (SOURCE / 'scripts/profile/http_trace.go.inc').read_text()
     if compression:
         text = text.replace('"context"', '"context"\n "crypto/sha256"\n "encoding/hex"\n "hash"')

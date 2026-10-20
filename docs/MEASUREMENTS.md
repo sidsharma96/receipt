@@ -1991,3 +1991,36 @@ without page overflow and comprehension answers opened on click. The
 [teaching chapter](guide/19-compare-gzip-responses.md) and
 [nine-question review](PHASE-REVIEWS.md#controlled-gzip-comparison-20-october-2026)
 explain decisions, scope and remaining risks. No production compression was enabled.
+
+## Actual Caddy gzip protocol, 20 October 2026
+
+Follow-up to the controlled fixture: profile-caddy.yml will compare the actual
+HTTPS endpoint, deployed Caddy, older Receipt service and PostgreSQL. A temporary
+Caddy profile enables negotiated gzip only for successful JSON entry GETs. The
+original configuration is backed up, checked before replacement and restored at
+completion, with a 25-minute root-owned rollback timer as a fallback. Concurrent
+configuration edits cause restoration to refuse overwrite. Receipt/PostgreSQL
+binaries, credentials and service configuration remain unchanged.
+
+The two diagnostic builds share hashing/tracing code. The identity build explicitly
+requests Accept-Encoding: identity; the gzip build retains normal Go negotiation
+and automatic decompression. Both use fresh processes and empty local caches.
+Three blocks alternate variant order; each variant/block has two excluded warmups,
+five seconds idle before thirty measured hits and five seconds after. There are
+180 measured fetches, ninety per variant. The batch design permits separate
+server-resource windows; it is not a per-call randomized network experiment.
+
+Filtered Caddy logs remove the entire request object and response-header object
+before journal output. Only fixed clocks/status/size plus explicitly copied response
+request ID and encoding are exported. Caddy's size counter measures encoded HTTP
+body bytes, not TLS/TCP overhead. Exact response IDs join the client, Caddy and
+Receipt records. Client decoded-body hashes, replay hashes and six before/after
+stock/identity/gzip keys must match. No secret values or body bytes are retained.
+
+A root sampler reads Caddy/Receipt/PostgreSQL cgroup CPU microseconds, sampled
+process RSS and cgroup memory every 100 ms. Each case's resource window brackets
+its matched Caddy events with one second padding, includes background traffic/
+runtime work and reports any unmatched access records. Peak sampled RSS is not
+an exact lifetime peak or retained heap. Windows use only server clocks; client
+and server absolute timestamps are not subtracted. Results and the new chapter
+will distinguish measured observations from an isolated compression CPU cost.

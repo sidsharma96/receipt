@@ -1,0 +1,25 @@
+receipt.sidsharma.dev {
+	@entries {
+		method GET
+		path /v1/entries/*
+	}
+	encode @entries gzip {
+		match {
+			status 200
+			header Content-Type application/json*
+		}
+	}
+	log receipt_gzip {
+		output stderr
+		format filter {
+			wrap json
+			fields {
+				request delete
+				resp_headers delete
+			}
+		}
+	}
+	log_append request_id {http.response.header.X-Receipt-Request-ID}
+	log_append encoding {http.response.header.Content-Encoding}
+	reverse_proxy 127.0.0.1:7777
+}
