@@ -6,11 +6,10 @@ import os
 from pathlib import Path
 import platform
 import re
-import shutil
 import sys
 import tempfile
+import urllib.request
 import linux_ci_baseline as base
-import http_trace
 
 
 def main():
@@ -18,22 +17,32 @@ def main():
         raise RuntimeError('requires trusted main Linux CI')
     out = Path(sys.argv[1]).resolve()
     out.mkdir(parents=True, exist_ok=False)
-    if base.ci.main() != 0:
-        raise RuntimeError('self-CI setup failed')
-    env = base.ci.test_environment(str(Path(shutil.which('go')).resolve().parent), os.environ['ImageVersion'])
-    env['GOPROXY'] = 'off'
-    key = http_trace.key(base.ci.CLIENT, env)
-    fixture = base.ci.HOME / 'receipt/entries' / (key + '.json')
-    raw = fixture.read_bytes()
+    key = json.loads((base.SOURCE/'docs/measurements/application-profile-2026-10-20/server-metadata.json').read_text())['fixture_key']
+    def fetch():
+        request = urllib.request.Request(base.ci.REMOTE+'/v1/entries/'+key,
+            headers={'Authorization': 'Bearer '+os.environ['RECEIPT_SELF_CI_TOKEN'], 'Accept-Encoding': 'identity'})
+        opener = urllib.request.build_opener(base.ci.NoRedirect)
+        with opener.open(request,timeout=15) as response:
+            if response.status != 200:
+                raise RuntimeError('fixture is not reusable')
+            raw = response.read((32 << 20)+1)
+        if len(raw) > 32 << 20:
+            raise RuntimeError('oversized fixture')
+        return raw
+    raw = fetch()
     payload = json.loads(raw)['payload']
+    if payload['key'] != key:
+        raise RuntimeError('fixture key mismatch')
     metadata = {'source_commit': base.run(['git','rev-parse','HEAD']).stdout.strip(),
                 'run_id': os.environ['GITHUB_RUN_ID'], 'go_version': base.run(['go','version']).stdout.strip(),
                 'runner_image': os.environ['ImageVersion'], 'cpus': os.cpu_count(),
                 'key_before': key, 'body_bytes': len(raw), 'inputs': len(payload['manifest']['inputs']),
                 'fixture_sha256': hashlib.sha256(raw).hexdigest(),
-                'scope': 'Current-source isolated warm operations on self-CI result. Metadata rebuilt with json.Marshal, not original PostgreSQL JSONB bytes. No SQL, file I/O, auth, network or queue costs inside timed operations. Profiles perturb costs; unprofiled benchmarks are separate.'}
+                'scope': 'Current-source isolated warm operations on existing deployed self-CI result. GET only; no test execution or publication. Metadata rebuilt with json.Marshal, not original PostgreSQL JSONB bytes. No SQL, file I/O, auth, network or queue costs inside timed operations. Profiles perturb costs; unprofiled benchmarks are separate.'}
     with tempfile.TemporaryDirectory(prefix='receipt-app-profile-') as temporary:
         work = Path(temporary)
+        fixture = work/'fixture.json'
+        fixture.write_bytes(raw)
         source = base.SOURCE / 'internal/cache/store_test.go'
         text = source.read_text().replace('"context"','"context"\n "encoding/json"',1)
         replacement = work / 'store_test.go'
@@ -64,9 +73,11 @@ def main():
                 if kind == 'alloc': args.append('-alloc_space')
                 report = base.run(args+[str(binary),str(stem)+'.'+kind+'.pprof'])
                 (out/(name+'.'+kind+'.txt')).write_text(report.stdout)
-        metadata['key_after'] = http_trace.key(base.ci.CLIENT, env)
-        if metadata['key_after'] != key:
-            raise RuntimeError('fixture key drift')
+        after = fetch()
+        metadata['key_after'] = json.loads(after)['payload']['key']
+        metadata['fixture_after_sha256'] = hashlib.sha256(after).hexdigest()
+        if metadata['key_after'] != key or after != raw:
+            raise RuntimeError('fixture key or body drift')
     metadata['completed'] = True
     (out/'metadata.json').write_text(json.dumps(metadata,indent=2))
 
