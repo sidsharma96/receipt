@@ -1,0 +1,453 @@
+{
+  "scope": "Same-run matching public DNS reply transaction IDs/times to instrumented Go Read completion. Same-host packet and Go timestamps; small timestamp/observer error remains.",
+  "rows": [
+    {
+      "qtype": 1,
+      "read_ms": 0.204693,
+      "read_done_after_kernel_packet_ms": 0.02944,
+      "block": 0
+    },
+    {
+      "qtype": 28,
+      "read_ms": 99.252003,
+      "read_done_after_kernel_packet_ms": 0.08064,
+      "block": 0
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.171474,
+      "read_done_after_kernel_packet_ms": 0.032,
+      "block": 0
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.650143,
+      "read_done_after_kernel_packet_ms": 0.052992,
+      "block": 0
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.325953,
+      "read_done_after_kernel_packet_ms": 0.037888,
+      "block": 0
+    },
+    {
+      "qtype": 28,
+      "read_ms": 97.438237,
+      "read_done_after_kernel_packet_ms": 0.068352,
+      "block": 0
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.375916,
+      "read_done_after_kernel_packet_ms": 0.047872,
+      "block": 1
+    },
+    {
+      "qtype": 28,
+      "read_ms": 3.855919,
+      "read_done_after_kernel_packet_ms": 0.04224,
+      "block": 1
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.16968,
+      "read_done_after_kernel_packet_ms": 0.03968,
+      "block": 1
+    },
+    {
+      "qtype": 28,
+      "read_ms": 41.412456,
+      "read_done_after_kernel_packet_ms": 0.064,
+      "block": 1
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.112296,
+      "read_done_after_kernel_packet_ms": 0.019456,
+      "block": 1
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.073159,
+      "read_done_after_kernel_packet_ms": 0.03328,
+      "block": 1
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.150933,
+      "read_done_after_kernel_packet_ms": 0.024064,
+      "block": 2
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.510016,
+      "read_done_after_kernel_packet_ms": 0.044032,
+      "block": 2
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.131063,
+      "read_done_after_kernel_packet_ms": 0.020224,
+      "block": 2
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.593459,
+      "read_done_after_kernel_packet_ms": 0.033536,
+      "block": 2
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.233095,
+      "read_done_after_kernel_packet_ms": 0.028416,
+      "block": 2
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.665796,
+      "read_done_after_kernel_packet_ms": 0.044544,
+      "block": 2
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.189742,
+      "read_done_after_kernel_packet_ms": 0.032768,
+      "block": 3
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.210631,
+      "read_done_after_kernel_packet_ms": 0.072704,
+      "block": 3
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.80337,
+      "read_done_after_kernel_packet_ms": 0.032256,
+      "block": 3
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.291522,
+      "read_done_after_kernel_packet_ms": 0.02432,
+      "block": 3
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.420122,
+      "read_done_after_kernel_packet_ms": 0.045056,
+      "block": 3
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.16211,
+      "read_done_after_kernel_packet_ms": 0.022784,
+      "block": 3
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.439912,
+      "read_done_after_kernel_packet_ms": 0.049152,
+      "block": 4
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.081972,
+      "read_done_after_kernel_packet_ms": 0.026112,
+      "block": 4
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.117694,
+      "read_done_after_kernel_packet_ms": 0.018176,
+      "block": 4
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.737022,
+      "read_done_after_kernel_packet_ms": 0.030976,
+      "block": 4
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.180046,
+      "read_done_after_kernel_packet_ms": 0.025856,
+      "block": 4
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.035123,
+      "read_done_after_kernel_packet_ms": 0.044288,
+      "block": 4
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.325392,
+      "read_done_after_kernel_packet_ms": 0.029184,
+      "block": 5
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.239686,
+      "read_done_after_kernel_packet_ms": 0.04992,
+      "block": 5
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.205034,
+      "read_done_after_kernel_packet_ms": 0.054016,
+      "block": 5
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.862598,
+      "read_done_after_kernel_packet_ms": 0.045824,
+      "block": 5
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.336429,
+      "read_done_after_kernel_packet_ms": 0.184576,
+      "block": 5
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.731564,
+      "read_done_after_kernel_packet_ms": 0.04992,
+      "block": 5
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.127969,
+      "read_done_after_kernel_packet_ms": 0.020224,
+      "block": 6
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.15401,
+      "read_done_after_kernel_packet_ms": 0.045312,
+      "block": 6
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.185594,
+      "read_done_after_kernel_packet_ms": 0.065536,
+      "block": 6
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.652998,
+      "read_done_after_kernel_packet_ms": 0.038912,
+      "block": 6
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.177212,
+      "read_done_after_kernel_packet_ms": 0.046336,
+      "block": 6
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.339303,
+      "read_done_after_kernel_packet_ms": 0.031488,
+      "block": 6
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.178575,
+      "read_done_after_kernel_packet_ms": 0.0256,
+      "block": 7
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.72204,
+      "read_done_after_kernel_packet_ms": 0.053504,
+      "block": 7
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.211833,
+      "read_done_after_kernel_packet_ms": 0.022272,
+      "block": 7
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.537296,
+      "read_done_after_kernel_packet_ms": 0.04864,
+      "block": 7
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.011247,
+      "read_done_after_kernel_packet_ms": 0.080128,
+      "block": 7
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.959161,
+      "read_done_after_kernel_packet_ms": 0.0448,
+      "block": 7
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.01259,
+      "read_done_after_kernel_packet_ms": 0.03584,
+      "block": 8
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.320083,
+      "read_done_after_kernel_packet_ms": 0.042496,
+      "block": 8
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.518838,
+      "read_done_after_kernel_packet_ms": 0.050432,
+      "block": 8
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.17513,
+      "read_done_after_kernel_packet_ms": 0.038144,
+      "block": 8
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.841047,
+      "read_done_after_kernel_packet_ms": 0.033792,
+      "block": 8
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.185315,
+      "read_done_after_kernel_packet_ms": 0.039424,
+      "block": 8
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.133798,
+      "read_done_after_kernel_packet_ms": 0.022016,
+      "block": 9
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.897469,
+      "read_done_after_kernel_packet_ms": 0.044288,
+      "block": 9
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.256829,
+      "read_done_after_kernel_packet_ms": 0.047616,
+      "block": 9
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.423358,
+      "read_done_after_kernel_packet_ms": 0.043008,
+      "block": 9
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.153798,
+      "read_done_after_kernel_packet_ms": 0.02432,
+      "block": 9
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.398251,
+      "read_done_after_kernel_packet_ms": 0.043264,
+      "block": 9
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.304221,
+      "read_done_after_kernel_packet_ms": 0.038144,
+      "block": 10
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.86419,
+      "read_done_after_kernel_packet_ms": 0.029184,
+      "block": 10
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.235979,
+      "read_done_after_kernel_packet_ms": 0.04736,
+      "block": 10
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.628732,
+      "read_done_after_kernel_packet_ms": 0.057088,
+      "block": 10
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.173928,
+      "read_done_after_kernel_packet_ms": 0.04992,
+      "block": 10
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.700488,
+      "read_done_after_kernel_packet_ms": 0.032512,
+      "block": 10
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.304831,
+      "read_done_after_kernel_packet_ms": 0.025344,
+      "block": 11
+    },
+    {
+      "qtype": 28,
+      "read_ms": 1.626127,
+      "read_done_after_kernel_packet_ms": 0.031488,
+      "block": 11
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.197923,
+      "read_done_after_kernel_packet_ms": 0.027392,
+      "block": 11
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.153208,
+      "read_done_after_kernel_packet_ms": 0.04224,
+      "block": 11
+    },
+    {
+      "qtype": 1,
+      "read_ms": 0.17554,
+      "read_done_after_kernel_packet_ms": 0.025856,
+      "block": 11
+    },
+    {
+      "qtype": 28,
+      "read_ms": 2.195801,
+      "read_done_after_kernel_packet_ms": 0.0448,
+      "block": 11
+    }
+  ],
+  "matched_reads": 72,
+  "max_read_done_after_kernel_packet_ms": 0.184576,
+  "over50_reads": [
+    {
+      "qtype": 28,
+      "read_ms": 99.252003,
+      "read_done_after_kernel_packet_ms": 0.08064,
+      "block": 0
+    },
+    {
+      "qtype": 28,
+      "read_ms": 97.438237,
+      "read_done_after_kernel_packet_ms": 0.068352,
+      "block": 0
+    }
+  ]
+}

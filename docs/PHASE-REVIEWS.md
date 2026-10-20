@@ -4791,3 +4791,166 @@ reviewed against the prose checklist: the saved result stays the running example
 shape checking precedes its name, the actual excerpt explains raw-field copying,
 and alternatives preserve the same rejection requirements. Remote publication
 verification remains separate from these local checks.
+
+## Network stage deep dive, 20 October 2026
+
+One read-only Linux fetch took 391 ms before fingerprinting. Five independent
+threads investigated its DNS, TCP, TLS, first-response and body-read mechanisms;
+two coordinated CI runs then reproduced fresh-fetch medians 383/303 ms. The
+[teaching chapter](guide/22-explain-network-latency.md) follows an actual request
+beside the [timeline and window figure](assets/network-deep-dive.svg). This phase
+adds diagnostic tooling/evidence, not a production optimization. Existing
+historical measurements remain distinct jobs with their original scope.
+
+### Network deep dive — 1. Data structures and reasons
+
+A bounded mutex-protected event slice holds timestamp, process CPU, byte and
+socket samples. Fixed-field records omit headers, tokens and payload bytes.
+Streaming SHA-256 identifies body bytes; canonical Encode identifies the decoded
+result without persisting output. Maps join server request IDs and count DNS
+transaction pairs; lists preserve request repetitions and timing tails. A TLS
+session-cache control is process-local and never serialized. Kernel socket
+cookies and initial sequence state identify connections across NAT: source ports
+were rewritten and could not serve as the sole join key. A cookie identifies a
+connection, not each request on an already reused connection.
+
+### Network deep dive — 2. Architecture, flow and extension boundaries
+
+The CLI normally fingerprints inputs before contacting Caddy. These probes call
+actual Remote.Get/Check for an existing fixed key to isolate network operations.
+DNS completes, TCP connects, TLS verifies, the request travels to Caddy/Receipt,
+the backend reads/validates its result, and the client collects then checks the
+body. Current Remote.Get calls `io.ReadAll(io.LimitReader(resp.Body, MaxEntryBytes+1))`
+then `Decode`; the chapter includes the attributed actual excerpt from
+[`Remote.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L62-L86).
+A read wrapper measures collection; Close begins after Decode, so the gap from
+last read to Close is separately labeled rather than charged to network reading.
+Diagnostic source fragments compile under ignored .tools/ and add no product
+endpoint. Existing result validation, wire formats and fingerprint code remain
+untouched. Exact deployed modified source is still unavailable.
+
+### Network deep dive — 3. Concurrency, networking and primitives
+
+Fresh-process controls run sequentially in rotating blocks; persistent controls
+run 20 calls each and identify their first cold request separately. Go's HTTP/2
+transport/runtime can use multiple goroutines, so process CPU is not one thread's
+CPU. HTTPS certificate verification and redirect refusal remain enabled. TLS
+preloading uses the normal system trust store; resumption and reuse record their
+actual flags. DNS-only probes preserve UDP PacketConn behavior. Bounded selected
+DNS metadata and TCP header observers run on disposable CI; no packet bodies or
+pcaps are retained. A runtime-limited server tcp_probe capture observes incoming
+packet processing and sender state without restarting/reconfiguring the service.
+Observers are stopped on cleanup; their overhead remains in the evidence.
+
+### Network deep dive — 4. Pitfalls and debugging challenges
+
+A DNS lookup waits for both address families; an empty AAAA response can hold up
+a usable A response without any IPv6 TCP attempt. Duplicate any-interface packet
+observations are not automatically retransmissions. A callback includes local
+scheduling, so SYN/SYN-ACK capture is needed to identify the connection floor.
+Root preloading moves work outside TLS timing; it is not equal whole-process
+savings. Per-request server/first-byte intervals overlap and require matched
+residuals, not added totals. ReadAll and Decode are distinct. Go CPU profiles
+contain sparse samples; instruction presence cannot measure instruction cost.
+Port-only server joins fail across NAT; initial send sequence state provides an
+independent connection match. The first perf decode was attempted before SIGINT
+had finished flushing; it succeeded after completion. No incomplete data was used.
+
+### Network deep dive — 5. Hot/cold paths and costs
+
+Run1's fresh operation median 383.38 ms includes roughly65 ms TCP,81 ms TLS,
+92 ms first-byte waiting,130 ms body reads and10 ms result checking, with separate
+span medians not additive. Run2 independently yields303.32 ms on a51 ms path.
+DNS packets show a cold A request and occasional slow empty AAAA answers waiting
+upstream; instrumented reads resume within 0.185 ms of matched packet arrival.
+Initial trust loading costs~7–9 ms elapsed and3.13 MB of allocation per fresh
+process; warmed certificate arithmetic remains real CPU. Matched backend handlers
+cost~25 ms with the already-profiled strict JSON work. Body reads use~1–2 ms CPU
+while taking~102–130 ms elapsed. Fresh server windows start at 10 segments and
+grow with acknowledgments; warmed connection reads fall below~1.1 ms. These
+observations distinguish routine CPU from waiting without claiming an exact
+five-RTT decomposition for every historical request.
+
+### Network deep dive — 6. Guarantees, assumptions and non-goals
+
+Across240 authenticated operations,216 fetches preserve the same65,789 body
+bytes, checksum and canonical decoded hash;24 status checks return 204. The fixed
+key is validated through ordinary Remote.Get. No fingerprint scan comparison is
+claimed: requests intentionally bypass input collection to fetch an existing key.
+Stable keys do not prove deterministic test output. No execution, seeding, PUT,
+credential change, quarantine bypass, production configuration or binary change
+occurred. Trust preloading/resumption/reuse are diagnostic controls, not shipped
+features. The active native capture ended, temporary /run files were removed,
+and services retained their identities. Root CPU is measured process-wide; memory
+counters are allocated bytes, not peak/retained RAM. Runtime/capture/source/build
+and path differences constrain cross-run conclusions.
+
+### Network deep dive — 7. Alternatives and reasons
+
+These are retrospective comparisons. Permanent IP pinning or IPv4-only lookup
+could hide the observed DNS wait but changes updates/failover/address semantics.
+Resolver negative-cache behavior merits targeted investigation first. A resident
+helper or batched requests can preserve sockets and initialized trust, but adds
+lifetime, RAM, authorization freshness and failure handling. Moving root loading
+into independent fingerprinting might hide startup latency while retaining CPU
+and allocation; contention and local-hit waste need measurement. Cache placement
+near actual callers targets several RTT-sized waits. Compression reduces bytes
+and can cross a delivery-round threshold, with its already-measured CPU tradeoff.
+HTTP/2 receive-window tuning and ReadAll assembly are not supported first fixes;
+HTTP/1.1 and low read CPU weaken those explanations. P-384 disassembly identifies
+computation but does not justify custom crypto. JSON scan/allocation optimization
+remains a separate promising application change requiring differential tests.
+
+### Network deep dive — 8. Evidence, untested failures and risks
+
+All five investigator threads completed source reviews/proposals, then Linux
+runs 39483995128/39484842179 passed. Both use explicit CGO_ENABLED=0 at build time;
+this cannot recover historical resolver build choices from runtime settings.
+All 240 request IDs matched live server logs. The second capture matches101/101
+new sockets through SYN-ACK sequence state, preserving intermediate windows.
+DNS packet/user joins locate two >50 ms AAAA waits before packet arrival; the
+original tails lacked packet evidence and cannot be retroactively identified.
+Two coarse40-handshake profiles repeatedly identify P-384; actual second-binary
+objdump records multiplication/carry instructions, not their timing. Selected
+public packet metadata remains versioned; full diagnostic artifacts have seven-day
+CI retention and ignored local copies. Root/header observers add work; GRO/GSO,
+possible missing capture, NAT and timing boundaries remain documented limitations.
+There is no concurrent-load, complete loss-recovery, exact one-way latency,
+retained-heap, maximum-GC-pause, outage or production optimization experiment.
+
+### Network deep dive — 9. Conditions for revisiting decisions
+
+Revisit DNS policy when actual resolver configuration and valid negative-answer
+cache behavior explain repeated forwarding; do not trade future IPv6/failover
+support for a favorable benchmark alone. Revisit placement after controlling
+runner region/path, and persistent clients when repeated workloads justify their
+state/lifecycle cost. Revisit TCP tuning only with sender queue/retransmit evidence
+that contradicts ordinary startup behavior. Revisit parser and hash validation
+with equivalence tests and complete-path CPU/latency/allocation measurements.
+Revisit TLS/crypto costs with denser targeted profiling or a measured toolchain
+comparison; do not infer performance from machine-code appearance. Revisit
+logging/buffering if their measured boundaries grow, and all priorities under
+larger results, concurrency, other clients or a reproducible deployed source.
+
+Verification completed: all 46 profiling/evidence tests and18 book checks passed,
+including new body/decode separation, missing/duplicate packet projection,
+sequence-wrap/NAT matching and ambiguous-match refusal. Lint reports zero issues.
+The final bounded-mode probe cross-compiled with exact Go 1.22.12 for Linux/amd64.
+Both coordinated measurement workflows and their ordinary CI runs passed. Final
+helper cleanup/mode-validation and summary changes were checked locally; retained
+measurements keep their original source commits rather than implying they were
+collected after those maintenance edits. CPU counters mean process user/system
+time, not measured hardware cycles.
+
+The rendered diagram and local book were inspected at desktop and fresh 390-pixel
+phone viewports; answer controls opened by click and closed with Enter. A desktop
+page resized with its sidebar still open was unsuitable as a phone screenshot;
+fresh mobile state was checked instead. Main text and text equivalents retain
+all essential explanations without requiring the diagram to be enlarged. Native
+kernel sampling is inactive, its temporary files are removed, and the readonly
+server exports confirm the original process identities and executable hash.
+Draft review checked that each area starts from a concrete request, identifies
+which actor waits, separates measured boundaries from hypotheses, and pairs
+proposed fixes with their costs/revisit conditions. Automated checks establish
+links/excerpts/layout properties, not teaching quality. Live authenticated book
+inspection remains separate from local rendering and deployment success.

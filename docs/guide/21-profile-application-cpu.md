@@ -102,6 +102,9 @@ unwinding. It gives no evidence that the earlier macOS startup stalls were GC
 pauses. For this Linux cache-hit workload, parsing and repeated checking are
 more prominent CPU targets than those recognized GC stacks.
 
+Transport follow-up: [Chapter 22](22-explain-network-latency.md) reproduces
+300–383 ms Linux fetches and explains costs outside these application profiles.
+
 ## Choose a change without weakening the checks
 
 The largest measured area is strict JSON processing. A candidate is a shape

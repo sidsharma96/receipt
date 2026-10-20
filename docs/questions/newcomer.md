@@ -680,3 +680,19 @@ No. Allocation bytes count memory requested over the operation. Some objects bec
 **Learn more:** [21. Find the application work inside a cache hit](../guide/21-profile-application-cpu.md)
 
 </details>
+
+### Can an empty IPv6 answer delay an IPv4 connection?
+<!-- check: guide/22-explain-network-latency.md -->
+
+**Level:** Newcomer
+
+Go gets an IPv4 address quickly but is still waiting for the IPv6 DNS reply. Can lookup time include that wait even when the eventual connection uses IPv4?
+
+<details>
+<summary>Answer</summary>
+
+Yes. The reviewed lookup collects both A and AAAA completions. The AAAA reply may validly contain no address. Waiting for it is different from attempting and failing an IPv6 TCP connection.
+
+**Learn more:** [22. Explain the slow network hits](../guide/22-explain-network-latency.md)
+
+</details>

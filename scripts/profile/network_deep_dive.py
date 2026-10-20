@@ -88,24 +88,27 @@ def main():
                 if record is not None and len(packets)<30000:packets.append(record)
         reader=threading.Thread(target=receive,daemon=True);reader.start();time.sleep(.3)
         if tcpdump.poll() is not None:raise RuntimeError('TCP header observer did not start')
-        rows=[]
-        for block in range(12):
-            cases=[('fresh','fetch',False),('preload','fetch',False),('pinned','fetch',False),('fresh','status',False),('fresh','fetch',True)]
-            cases=cases[block%len(cases):]+cases[:block%len(cases)]
-            for mode,endpoint,h1 in cases:
-                args=[str(clients['network']),'-mode',mode,'-endpoint',endpoint,'-key',fixture]
-                if h1:args+=['-h1']
-                row=json.loads(run(args,env=clean).stdout);row.update(block=block,http1_control=h1)
-                if row['failed'] or row['trace']['status']!=(200 if endpoint=='fetch' else 204):raise RuntimeError('expected read-only hit')
-                rows.append(row)
-        for mode in ('fresh','resume','reuse'):
-            values=run([str(clients['network']),'-mode',mode,'-count','20','-key',fixture],env=clean)
-            for line in values.stdout.splitlines():
-                row=json.loads(line);row.update(block=12,http1_control=False,persistent_control=True)
-                if row['failed']:raise RuntimeError('persistent control failed')
-                rows.append(row)
-        run(['sudo','-n','kill','-INT','--','-'+str(tcpdump.pid)])
-        tcpdump.wait(timeout=10);reader.join(timeout=5)
+        try:
+            rows=[]
+            for block in range(12):
+                cases=[('fresh','fetch',False),('preload','fetch',False),('pinned','fetch',False),('fresh','status',False),('fresh','fetch',True)]
+                cases=cases[block%len(cases):]+cases[:block%len(cases)]
+                for mode,endpoint,h1 in cases:
+                    args=[str(clients['network']),'-mode',mode,'-endpoint',endpoint,'-key',fixture]
+                    if h1:args+=['-h1']
+                    row=json.loads(run(args,env=clean).stdout);row.update(block=block,http1_control=h1)
+                    if row['failed'] or row['trace']['status']!=(200 if endpoint=='fetch' else 204):raise RuntimeError('expected read-only hit')
+                    rows.append(row)
+            for mode in ('fresh','resume','reuse'):
+                values=run([str(clients['network']),'-mode',mode,'-count','20','-key',fixture],env=clean)
+                for line in values.stdout.splitlines():
+                    row=json.loads(line);row.update(block=12,http1_control=False,persistent_control=True)
+                    if row['failed']:raise RuntimeError('persistent control failed')
+                    rows.append(row)
+        finally:
+            if tcpdump.poll() is None:
+                subprocess.run(['sudo','-n','kill','-INT','--','-'+str(tcpdump.pid)],capture_output=True,timeout=10)
+            tcpdump.wait(timeout=10);reader.join(timeout=5)
         if reader.is_alive():raise RuntimeError('packet observer did not stop')
         (out/'tcp-packets.json').write_text(json.dumps({'scope':'TCP header text only, one public endpoint, snaplen96. No packet bodies retained. GRO/GSO can combine segments. Capture perturbs timing.','rows':packets},indent=2))
         fetches=[r for r in rows if r['endpoint']=='fetch']

@@ -2273,3 +2273,143 @@ validator. Their compatibility, latency, allocation and retained-memory effects
 remain unmeasured. Plain decoding is an intentionally weaker diagnostic baseline,
 not a proposed replacement. No load-capacity, outage, corrupt-input performance,
 heap-retention or maximum-pause claim follows from these warm success profiles.
+
+## Network stage deep dive, 20 October 2026
+
+Five separate investigation threads reviewed DNS, TCP, TLS, first response and
+body reads. The coordinator then ran read-only Linux CI jobs
+[39483995128](https://github.com/sidsharma96/receipt/actions/runs/39483995128)
+(source 1fc003e) and
+[39484842179](https://github.com/sidsharma96/receipt/actions/runs/39484842179)
+(source 4c3be3e). Both used Go 1.22.12 linux/amd64, Ubuntu 24.04 image
+20261018.339.1, two CPUs and CGO_ENABLED=0 at build time. CPU hosts were EPYC 7763
+and EPYC 9V74 respectively. The second recorded Linux 7.0.0-1017-azure; the
+existing server remained Linux 6.8.0-146-generic, Receipt Go 1.22.1 modifiedcbb0e61
+and Caddy 2.11.7 built with Go 1.26.8. Neither backend nor proxy was replaced.
+
+Build-setting amendment: historical helpers set CGO_ENABLED=0 in the *execution*
+environment after their clients were compiled. That does not establish whether
+those binaries had cgo support. Their resolver selection was not recorded. The
+new job explicitly builds without cgo and records Go resolver diagnostics,
+127.0.0.53 stub configuration and files,dns lookup order. It is a controlled
+client build, not a recovered exact historical resolver choice.
+
+Each job performs 60 fresh-process operations in rotating five-case order over
+12 blocks: default fetch, preloaded-normal-roots fetch, pinned-IP fetch, status
+and HTTP/1.1 fetch. It then performs20 sequential calls in each resident-process
+control: fresh connections, session resumption and connection reuse. All 120
+requests per job matched existing server-generated request IDs to journals.
+Every fetch uses actual cache.Remote.Get; status uses Check. Transport wrappers
+preserve HTTPS verification, redirects policy, limits and key checking while
+adding timers, process CPU counters, byte hashes and TCP_INFO. All authenticated controls request identity encoding. Direct IP is a
+diagnostic DialContext control retaining the hostname for TLS, not a product
+DNS-policy change. Instrumentation and system-wide runtime work perturb timing.
+
+The same existing key served216 fetches across both jobs, each65,789 bytes with
+body and canonical decoded SHA-256
+78a832337e0642b2d54ce5e5189e059877a13b140d0f37a13dd50763221b992a.
+Twenty-four status calls returned 204. No fallback execution, seeding, PUT,
+credential issuance or quarantine bypass occurred. The probes bypass fingerprint
+construction by requesting that fixed key; this is response compatibility evidence,
+not a new whole-CLI fingerprint comparison or deterministic-output guarantee.
+[Compatibility record](measurements/network-deep-dive-2026-10-20/compatibility.json).
+
+| Median within each job | Run 1 | Run 2 |
+|---|---:|---:|
+| Fresh fetch operation, excluding fingerprint | 383.38 ms | 303.32 ms |
+| TCP connect | 65.02 ms | 51.19 ms |
+| TLS | 81.32 ms | 64.05 ms |
+| First-byte interval | 92.38 ms | about 76 ms |
+| Matching fresh-fetch handler | 27.10 ms | 25.26 ms |
+| Per-request first-byte minus handler | 65.21 ms | 50.99 ms |
+| Body ReadAll | 129.97 ms | 101.71 ms |
+| Body-read process CPU | 1.69 ms | 1.14 ms |
+| Decode/validation gap after final read | 10.06 ms | 7.07 ms |
+| Warm reused-connection operation, n 19 | 100.39 ms | 79.79 ms |
+| Warm reused body read, n 19 | 1.08 ms | 0.27 ms |
+
+Separate span medians are not additive. Warm controls exclude only their first
+cold request; fresh-process rows exclude none. The persistent groups run later,
+so backend warming/order can contribute to aggregate differences. They demonstrate
+connection-state behavior, not a shipped product saving. Preloading also moves
+work outside the operation timer: run 1 preload operation371.75 ms becomes381.76 ms
+when each row includes its root-load duration. Run2 is293.83/301.78 ms. It does
+not remove normal trust verification or justify claiming the TLS reduction as
+an equal whole-process improvement.
+
+DNS-only diagnostics run 60 fresh processes per job, rotating default, instrumented
+both-family, A-only, AAAA-only and rooted-name controls. Their clean environment
+and warm OS/upstream caches are explicit differences from an arbitrary user
+invocation. In run 1, A-only median 0.68 ms, instrumented both-family median 23.51 ms,
+maximum111.09 ms; the rooted maximum127.997 ms. Slow reads correspond to AAAA
+while matching A replies arrive quickly. AAAA-only no-answer outcomes are expected
+for this name, not60 successful address answers or silent failed network requests.
+
+Run2 adds a bounded60-second/3000-packet metadata observer, selecting only this
+public DNS name. It retains380 field records, collapsed to 284 distinct observer
+records by an explicit50 us duplicate rule, not classified as retries. There are
+47 matched A and47 AAAA stub exchanges, one upstream A and47 upstream AAAA
+exchanges. This is packet coverage, not proof that every probe query was captured.
+Stub A median 0.174 ms/max91.626 ms; the initial A was forwarded upstream. Stub
+AAAA median 1.961/max99.185 ms; upstream AAAA median 1.660/max98.568 ms, all captured
+AAAA replies NOERROR with zero answers. All captured AAAA queries were forwarded.
+The trace does not establish why local negative caching did not answer them or
+where inside the upstream service its waiting occurred.
+
+Seventy-two instrumented Go reads join to stub replies by DNS transaction ID and
+time. Maximum read-completion after packet arrival is0.185 ms. Two matching
+AAAA reads above 50 ms finish0.069/0.081 ms after packet arrival. That directly
+locates those reproduced delays before arrival, rather than a long post-arrival
+Go scheduling delay. The first cold A lookup also takes an upstream round trip.
+The historical nine DNS spikes all appeared in block0, but lack packet evidence;
+these new results cannot retroactively assign their exact qtype/cause.
+
+TCP header-only capture uses one endpoint and snaplen 96; it retains no payload
+bytes or pcap. SYN/SYN-ACK intervals track Go connect: run 1 median 64.88 ms with
+median per-call Go-minus-wire0.14 ms; run 2 shows its own~51 ms baseline. GRO/GSO
+can combine segments, so capture rows are not physical packet counts. TCP_INFO
+on the receiving client measures its own outbound retransmissions/window and
+must not be presented as the response sender's congestion state.
+
+A bounded sport 443 tcp_probe trace on the server supplies sender state in run 2.
+After SIGINT, perf was allowed to flush before decoding; an immediate first read
+of the still-flushing file failed and was retried after completion. The runtime
+unit became inactive/successful; private /run files were exported then removed.
+101/101 new diagnostic sockets match using server SYN-ACK sequence+1 and initial
+snd_una/snd_nxt. Port-only joining failed because NAT rewrote source ports. The
+trace includes unrelated connections, which were excluded by matching. Selected
+fresh socket states grow cwnd 10→20→40→60, with intermediary states preserved.
+One reuse connection grows to 109. tcp_probe samples incoming-packet processing,
+not every send or every queue state; it has no complete retransmission history.
+Window growth, packet bursts,~2 RTT body reads and their collapse under reuse
+strongly support TCP startup/ACK gating. They do not isolate every effect of
+pacing, delayed ACKs, TLS records or proxy writes. HTTP/1.1 fresh body medians
+remain129.73/101.54 ms, weakening HTTP/2-specific flow-control attribution.
+
+Public TLS controls use credential-free401 identity responses, discarding bodies.
+Cold root-only medians are9.37/7.41 ms elapsed,10.35/7.89 ms CPU,~3.13 MB allocated
+and~31,266 allocations. Preloaded roots reduce TLS CPU/wall but still cost work
+outside that timer. Warm full handshakes in run 2 take54.46 ms versus51.26 ms
+resumed (all 19 warmed rows actually resumed); reused rows have no TLS handshake.
+MemStats and process-wide CPU accounting perturb measurements. Two separate
+40-handshake CPU profiles contain only 24/20 nominal10 ms samples, repeatedly
+identifying P-384 certificate arithmetic. Actual second-binary objdump shows
+MULQ/carry operations. Instruction presence is not an instruction timing profile;
+no crypto/assembly optimization is implemented. No hybrid post-quantum, network
+OCSP fetch or HTTP/2-preface-inside-TLS explanation fits the reviewed Go 1.22 path.
+
+Per-request records and full scope:
+[run 1](measurements/network-deep-dive-2026-10-20/run-1-summary.json),
+[run 2](measurements/network-deep-dive-2026-10-20/run-2-summary.json),
+[DNS packet pairs](measurements/network-deep-dive-2026-10-20/dns-packet-summary.json),
+[DNS packet/user joins](measurements/network-deep-dive-2026-10-20/dns-user-packet-match.json),
+[selected matched server TCP states](measurements/network-deep-dive-2026-10-20/server-tcp.json),
+[TLS machine code](measurements/network-deep-dive-2026-10-20/tls-assembly.json).
+Adjacent files preserve standalone DNS/TLS/TCP controls, server records, historical
+recomputations and downloadable symbol-only TLS CPU profiles. Full callback and
+packet-header artifacts remain in the linked CI jobs (seven-day retention) and
+ignored local experiment storage; published summaries preserve core joins and
+selected socket state, not every raw packet record. No server heap, concurrent
+load/capacity, exact one-way latency, comprehensive loss-recovery or cold-disk
+performance experiment was performed. The local report templates/fixtures and
+source-version reviews are separate from these completed Linux runs.

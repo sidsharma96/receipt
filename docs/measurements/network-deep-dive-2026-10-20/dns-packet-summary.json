@@ -1,0 +1,1311 @@
+{
+  "scope": "Only public endpoint DNS metadata. Identical any-interface observer records within50us collapsed for counting, not classified as retries. Missing packets/queries remain possible; pairing covers captured packets only. Upstream timings include network and resolver service.",
+  "raw_rows": 380,
+  "unique_rows": 284,
+  "pairs": [
+    {
+      "start_unix_ns": 1792525031745611776,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 98.16980361938477,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525031745611776,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 91.62640571594238,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525031745835520,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 97.85056114196777,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525031745968384,
+      "qtype": 1,
+      "leg": "upstream",
+      "elapsed_ms": 91.05062484741211,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525031897312768,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 99.18475151062012,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525031897312768,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.19669532775878906,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525031897664256,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 98.56772422790527,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032050062336,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1614093780517578,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032102308864,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.619577407836914,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032102535680,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.2989044189453125,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032160514560,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.3135204315185547,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032160514560,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 97.48172760009766,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032160717312,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 97.05591201782227,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032311524864,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 3.831624984741211,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032311524864,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.34737586975097656,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032311725568,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 3.523111343383789,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032367551232,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.14138221740722656,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032419896064,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 41.37086868286133,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032420092672,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 41.01300239562988,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032517733888,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.050638198852539,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032517733888,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.11014938354492188,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032518032128,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.6596317291259766,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032571890688,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.35762786865234375,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032571890688,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.1224021911621094,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032572137472,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.779317855834961,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032626038784,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1475811004638672,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032678445824,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.4998912811279297,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032678652416,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.1913776397705078,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032734596608,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.5723705291748047,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032734596608,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.13017654418945312,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032734980864,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.1022090911865234,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032789270528,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 3.2052993774414062,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032789284864,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.20694732666015625,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032789402880,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 2.9714107513427734,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032844644096,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.22220611572265625,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525032844644096,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.6374588012695312,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032844790528,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.3835430145263672,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525032898398720,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.1772384643554688,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032898641920,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.8396377563476562,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032955394048,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.7850399017333984,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525032955394048,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.15497207641601562,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525032955710464,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.3811588287353516,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "300"
+    },
+    {
+      "start_unix_ns": 1792525033010387200,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.2524127960205078,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033010444288,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.18143653869628906,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033010549760,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 0.9925365447998047,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033064765440,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.3914108276367188,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033064765952,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.28443336486816406,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033064943360,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.1162757873535156,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033118250496,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1628398895263672,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033170406656,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.1483898162841797,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033170415872,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.39958953857421875,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033170705408,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.7445087432861328,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033224664064,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.1545886993408203,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033224664064,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.118255615234375,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033224859648,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.8520355224609375,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033280070912,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.7161369323730469,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033280070912,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.11658668518066406,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033280383744,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.3179779052734375,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033335009792,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1773834228515625,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033387205120,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.009153366088867,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033387419136,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.6891956329345703,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033443956736,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.12040138244628906,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033443956736,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.6856193542480469,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033444300544,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.2617111206054688,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033497795584,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.3159046173095703,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033497797888,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.321481704711914,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033497986816,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 2.034425735473633,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033553412352,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1704692840576172,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033606873856,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.0399093627929688,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033607044096,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.7669200897216797,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033673373696,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.6934871673583984,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033673373696,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.17118453979492188,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033673672448,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.300811767578125,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033727175680,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.134561538696289,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033727175680,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.12969970703125,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033727406848,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.8267631530761719,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033781555712,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1418590545654297,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525033833841920,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.6378631591796875,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033834085632,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 2.263307571411133,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033894160384,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1475811004638672,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525033894160384,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.321004867553711,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033894488064,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.8689632415771484,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033949766400,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.20456314086914062,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525033949766400,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.9605159759521484,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525033949897728,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.7139911651611328,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "299"
+    },
+    {
+      "start_unix_ns": 1792525034004981760,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.17762184143066406,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034058470144,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.6887187957763672,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034058655488,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.3990402221679688,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034114935040,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.20813941955566406,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034114935040,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.5103092193603516,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034115069952,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 2.2840499877929688,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034170706944,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1494884490966797,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034170706944,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.6067028045654297,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034171042560,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.1749267578125,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034224397056,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.9268989562988281,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034224399360,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.12278556823730469,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034224661504,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.5752315521240234,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034278451968,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.0296573638916016,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034278614784,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.7552375793457031,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034335322368,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.4886856079101562,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034335337728,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.28133392333984375,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034335510272,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.2161731719970703,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034390000128,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1399517059326172,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034390000896,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.688241958618164,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034390301184,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.2989044189453125,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034443954944,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.9273757934570312,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034443954944,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.16021728515625,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034444340480,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.4514923095703125,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034499140864,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1685619354248047,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034552505600,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1266002655029297,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034552505856,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.8625259399414062,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034552804352,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.4739036560058594,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034606594560,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1842975616455078,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034606594560,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 3.528118133544922,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034606935552,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 3.102540969848633,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034662210304,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.398324966430664,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034662237184,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.21338462829589844,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034662374144,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.1250972747802734,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034716749312,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.14853477478027344,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034770222080,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.378225326538086,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034770419456,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 2.077817916870117,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034825726976,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.2162456512451172,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034825728768,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.489400863647461,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034825870336,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.2497901916503906,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525034879260416,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.8508434295654297,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034879279360,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.27060508728027344,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "296"
+    },
+    {
+      "start_unix_ns": 1792525034879428352,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.5926361083984375,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034933323264,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.21314620971679688,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "296"
+    },
+    {
+      "start_unix_ns": 1792525034985572352,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.5940666198730469,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525034985781504,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.2898445129394531,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "298"
+    },
+    {
+      "start_unix_ns": 1792525035042942976,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1418590545654297,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "296"
+    },
+    {
+      "start_unix_ns": 1792525035042942976,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.6791820526123047,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525035043276544,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.2497901916503906,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525035097857280,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 1.613616943359375,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "296"
+    },
+    {
+      "start_unix_ns": 1792525035097857280,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.29969215393066406,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "296"
+    },
+    {
+      "start_unix_ns": 1792525035098050560,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.3191699981689453,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "296"
+    },
+    {
+      "start_unix_ns": 1792525035152569088,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1888275146484375,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "296"
+    },
+    {
+      "start_unix_ns": 1792525035205944832,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.1359920501708984,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525035206155008,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.8377304077148438,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525035262971648,
+      "qtype": 28,
+      "leg": "stub",
+      "elapsed_ms": 2.2673606872558594,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    },
+    {
+      "start_unix_ns": 1792525035262971648,
+      "qtype": 1,
+      "leg": "stub",
+      "elapsed_ms": 0.1735687255859375,
+      "rcode": "0",
+      "answers": "1",
+      "ttl": "296"
+    },
+    {
+      "start_unix_ns": 1792525035263279872,
+      "qtype": 28,
+      "leg": "upstream",
+      "elapsed_ms": 1.857757568359375,
+      "rcode": "0",
+      "answers": "0",
+      "ttl": "297"
+    }
+  ],
+  "groups": {
+    "stub/1": {
+      "n": 47,
+      "median_ms": 0.1735687255859375,
+      "max_ms": 91.62640571594238,
+      "over50": 1
+    },
+    "stub/28": {
+      "n": 47,
+      "median_ms": 1.9605159759521484,
+      "max_ms": 99.18475151062012,
+      "over50": 3
+    },
+    "upstream/1": {
+      "n": 1,
+      "median_ms": 91.05062484741211,
+      "max_ms": 91.05062484741211,
+      "over50": 1
+    },
+    "upstream/28": {
+      "n": 47,
+      "median_ms": 1.6596317291259766,
+      "max_ms": 98.56772422790527,
+      "over50": 3
+    }
+  }
+}

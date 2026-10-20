@@ -546,3 +546,19 @@ No. The storage method also decodes and validates metadata in the Receipt proces
 **Learn more:** [21. Find the application work inside a cache hit](../guide/21-profile-application-cpu.md)
 
 </details>
+
+### Did preloading certificates eliminate their cost?
+<!-- check: guide/22-explain-network-latency.md -->
+
+**Level:** Practitioner
+
+A process loads the normal trust store before starting the TLS timer. TLS becomes faster. Has the process necessarily become equally faster overall?
+
+<details>
+<summary>Answer</summary>
+
+No. Loading moved outside the timer. Include its CPU, memory and elapsed time before claiming an overall improvement. A later request in a resident process can reuse initialized state, but a new process has to initialize again.
+
+**Learn more:** [22. Explain the slow network hits](../guide/22-explain-network-latency.md)
+
+</details>

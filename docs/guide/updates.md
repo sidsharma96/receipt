@@ -461,3 +461,14 @@ from pauses. The [full nine-question review](../PHASE-REVIEWS.md#application-cpu
 records deployed/current build scope, benchmark-selector correction, a quarantined
 seed attempt and the final read-only fixture workflow. This phase adds profiling
 tooling and evidence; production validation and deployment behavior remain unchanged.
+
+## 20 October 2026: explain slow Linux remote fetches
+
+New [Chapter 22](22-explain-network-latency.md) combines five investigation threads
+with two completed read-only Linux CI runs. It reproduces303–383 ms fetches,
+locates slow DNS replies upstream, matches TCP timing to packets, measures
+per-process trust-store setup, joins first-byte waiting to backend work, and
+observes sender-window growth during body delivery. It includes actual TLS
+machine-code evidence and distinguishes diagnostic connection reuse from a
+shipped feature. The [full nine-question review](../PHASE-REVIEWS.md#network-stage-deep-dive-20-october-2026)
+records compatibility, source/build boundaries, native-capture cleanup and limits.

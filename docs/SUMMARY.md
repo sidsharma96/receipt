@@ -31,6 +31,7 @@
 - [19. Compare gzip and uncompressed responses](guide/19-compare-gzip-responses.md)
 - [20. Test gzip on the actual Caddy deployment](guide/20-test-gzip-on-caddy.md)
 - [21. Find the application work inside a cache hit](guide/21-profile-application-cpu.md)
+- [22. Explain the slow network hits](guide/22-explain-network-latency.md)
 
 # Defending the design
 

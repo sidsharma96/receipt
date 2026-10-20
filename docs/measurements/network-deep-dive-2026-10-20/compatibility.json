@@ -1,0 +1,15 @@
+{
+  "requests": 240,
+  "fetches": 216,
+  "body_bytes": [
+    65789
+  ],
+  "body_sha256": [
+    "78a832337e0642b2d54ce5e5189e059877a13b140d0f37a13dd50763221b992a"
+  ],
+  "decoded_sha256": [
+    "78a832337e0642b2d54ce5e5189e059877a13b140d0f37a13dd50763221b992a"
+  ],
+  "fixture_key": "6ed67fa1038a474244a09954ae63b9093a0a1205dcfef9fc4888b399c7d9457c",
+  "scope": "All successful read-only Get results validated their requested fixed key. No fingerprint serialization or product change; no new whole-CLI key-compatibility claim or deterministic-output guarantee."
+}

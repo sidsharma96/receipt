@@ -38,4 +38,6 @@ Read the chapters in order to understand the program. Each ends with a few quest
 
 21. [Find the application work inside a cache hit](guide/21-profile-application-cpu.md): sample the deployed server CPU and isolate JSON decoding, validation and temporary allocations on Linux CI.
 
+22. [Explain the slow network hits](guide/22-explain-network-latency.md): trace DNS answers, TCP packets, TLS trust setup, matched server work and acknowledgment-dependent response delivery.
+
 To inspect setup commands, use the [README](https://github.com/sidsharma96/receipt/blob/main/README.md). To examine the full nine-question phase reviews, test records, and dated decisions, use the [review reference](PHASE-REVIEWS.md). The reference preserves earlier claims and their amendments. This guide describes current behaviour directly so you do not have to reconstruct it from history. Dated changes to the guide itself are in [Updates and documentation records](guide/updates.md).

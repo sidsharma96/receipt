@@ -87,6 +87,8 @@ func main(){
  endpoint:=flag.String("endpoint","fetch","fetch or status")
  key:=flag.String("key","","existing fixture key")
  flag.Parse()
+ if *mode!="fresh"&&*mode!="preload"&&*mode!="resume"&&*mode!="reuse"&&*mode!="pinned" {os.Exit(2)}
+ if *endpoint!="fetch"&&*endpoint!="status" {os.Exit(2)}
  if !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(*key)||*count<1||*count>100 {os.Exit(2)}
  token:=os.Getenv("RECEIPT_SELF_CI_TOKEN");if token==""{os.Exit(2)}
  rootsCPU:=cpuUS();rootsStart:=time.Now();var roots *x509.CertPool

@@ -581,3 +581,19 @@ No. That would count the same execution sample twice. Inclusive groups overlap, 
 **Learn more:** [21. Find the application work inside a cache hit](../guide/21-profile-application-cpu.md)
 
 </details>
+
+### Why does a port-only packet join fail across NAT?
+<!-- check: guide/22-explain-network-latency.md -->
+
+**Level:** Expert
+
+The runner records one source port, but the server observes another. Does that prove the packet and server socket cannot belong to the same connection?
+
+<details>
+<summary>Answer</summary>
+
+No. Network address translation can rewrite the port. This investigation matched the server SYN-ACK initial sequence number plus one to the initial server send state. The match identifies a connection; a reused connection still needs request IDs and boundaries to distinguish its requests.
+
+**Learn more:** [22. Explain the slow network hits](../guide/22-explain-network-latency.md)
+
+</details>

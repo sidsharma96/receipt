@@ -1,0 +1,4938 @@
+[
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 0,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 173074011,
+      "dns_done": 5067066,
+      "dns_start": 94109,
+      "first_byte": 173015585,
+      "got_conn": 120783446,
+      "tcp_done": 56437451,
+      "tcp_start": 5071512,
+      "tls_done": 120664530,
+      "tls_start": 56711807,
+      "written": 120860961
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3511952,
+      "allocations": 38193,
+      "process_cpu_ms": 14.112,
+      "wall_ms": 64.002776
+    },
+    "tls_version": 772,
+    "block": 0,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.253,
+      "wall_ms": 2.958482
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 0,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 0,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126984,
+      "allocations": 31268,
+      "process_cpu_ms": 8.032,
+      "wall_ms": 7.575433
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 0,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 161770086,
+      "dns_done": 2307559,
+      "dns_start": 99267,
+      "first_byte": 161712240,
+      "got_conn": 110194128,
+      "tcp_done": 53098353,
+      "tcp_start": 2311585,
+      "tls_done": 110100860,
+      "tls_start": 53187745,
+      "written": 110269840
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 413264,
+      "allocations": 7056,
+      "process_cpu_ms": 7.323,
+      "wall_ms": 56.935688
+    },
+    "tls_version": 772,
+    "block": 0,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.013,
+      "wall_ms": 2.878193
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 0,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 0,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126776,
+      "allocations": 31264,
+      "process_cpu_ms": 7.912,
+      "wall_ms": 7.417238
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 0,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 1,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 169990496,
+      "dns_done": 2227320,
+      "dns_start": 89954,
+      "first_byte": 169913271,
+      "got_conn": 117804422,
+      "tcp_done": 53425999,
+      "tcp_start": 2230615,
+      "tls_done": 117667019,
+      "tls_start": 53689069,
+      "written": 117884191
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3510784,
+      "allocations": 38182,
+      "process_cpu_ms": 14.069,
+      "wall_ms": 64.030979
+    },
+    "tls_version": 772,
+    "block": 1,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.283,
+      "wall_ms": 2.998382
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 1,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 1,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3128088,
+      "allocations": 31270,
+      "process_cpu_ms": 7.785,
+      "wall_ms": 7.328267
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 1,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 162657177,
+      "dns_done": 2914978,
+      "dns_start": 96472,
+      "first_byte": 162591830,
+      "got_conn": 111065988,
+      "tcp_done": 54002011,
+      "tcp_start": 2918253,
+      "tls_done": 110960531,
+      "tls_start": 54108158,
+      "written": 111134239
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 413264,
+      "allocations": 7055,
+      "process_cpu_ms": 7.245,
+      "wall_ms": 56.8772
+    },
+    "tls_version": 772,
+    "block": 1,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.249,
+      "wall_ms": 2.946966
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 1,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 1,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126584,
+      "allocations": 31260,
+      "process_cpu_ms": 7.737,
+      "wall_ms": 7.253736
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 1,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 2,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 169215465,
+      "dns_done": 2185297,
+      "dns_start": 84305,
+      "first_byte": 169147274,
+      "got_conn": 117109714,
+      "tcp_done": 53120626,
+      "tcp_start": 2188882,
+      "tls_done": 116990487,
+      "tls_start": 53399759,
+      "written": 117185426
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3510720,
+      "allocations": 38184,
+      "process_cpu_ms": 14.001,
+      "wall_ms": 63.634473
+    },
+    "tls_version": 772,
+    "block": 2,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.265,
+      "wall_ms": 2.965664
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 2,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 2,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127688,
+      "allocations": 31269,
+      "process_cpu_ms": 7.778,
+      "wall_ms": 7.30386
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 2,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 168459346,
+      "dns_done": 7833625,
+      "dns_start": 92237,
+      "first_byte": 168386879,
+      "got_conn": 116556415,
+      "tcp_done": 59070460,
+      "tcp_start": 7840846,
+      "tls_done": 116437098,
+      "tls_start": 59199852,
+      "written": 116623765
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 412816,
+      "allocations": 7055,
+      "process_cpu_ms": 7.494,
+      "wall_ms": 57.261642
+    },
+    "tls_version": 772,
+    "block": 2,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.223,
+      "wall_ms": 2.937122
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 2,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 2,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126776,
+      "allocations": 31266,
+      "process_cpu_ms": 7.905,
+      "wall_ms": 7.403277
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 2,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 3,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 169925889,
+      "dns_done": 2251235,
+      "dns_start": 84986,
+      "first_byte": 169851569,
+      "got_conn": 117837060,
+      "tcp_done": 53229026,
+      "tcp_start": 2257084,
+      "tls_done": 117642722,
+      "tls_start": 53540738,
+      "written": 117922626
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3511920,
+      "allocations": 38192,
+      "process_cpu_ms": 14.12,
+      "wall_ms": 64.2074
+    },
+    "tls_version": 772,
+    "block": 3,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.313,
+      "wall_ms": 2.999184
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 3,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 3,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126168,
+      "allocations": 31260,
+      "process_cpu_ms": 7.922,
+      "wall_ms": 7.437999
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 3,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 163183457,
+      "dns_done": 2231195,
+      "dns_start": 97274,
+      "first_byte": 163125612,
+      "got_conn": 111184173,
+      "tcp_done": 53594006,
+      "tcp_start": 2237314,
+      "tls_done": 111074691,
+      "tls_start": 53708706,
+      "written": 111269069
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 413264,
+      "allocations": 7055,
+      "process_cpu_ms": 7.262,
+      "wall_ms": 57.391012
+    },
+    "tls_version": 772,
+    "block": 3,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.311,
+      "wall_ms": 3.032032
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 3,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 3,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126824,
+      "allocations": 31265,
+      "process_cpu_ms": 7.999,
+      "wall_ms": 7.540521
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 3,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 4,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 173782551,
+      "dns_done": 6457126,
+      "dns_start": 263090,
+      "first_byte": 173715312,
+      "got_conn": 122052115,
+      "tcp_done": 57588575,
+      "tcp_start": 6460901,
+      "tls_done": 121955642,
+      "tls_start": 57879847,
+      "written": 122145023
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3511208,
+      "allocations": 38186,
+      "process_cpu_ms": 14.542,
+      "wall_ms": 64.095525
+    },
+    "tls_version": 772,
+    "block": 4,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.33,
+      "wall_ms": 3.012432
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 4,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 4,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127440,
+      "allocations": 31270,
+      "process_cpu_ms": 7.858,
+      "wall_ms": 7.394785
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 4,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 161948502,
+      "dns_done": 2001436,
+      "dns_start": 101310,
+      "first_byte": 161863436,
+      "got_conn": 110088832,
+      "tcp_done": 52953229,
+      "tcp_start": 2007475,
+      "tls_done": 109974333,
+      "tls_start": 53064324,
+      "written": 110179276
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 412816,
+      "allocations": 7055,
+      "process_cpu_ms": 7.496,
+      "wall_ms": 56.931692
+    },
+    "tls_version": 772,
+    "block": 4,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 2.92,
+      "wall_ms": 2.807759
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 4,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 4,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127800,
+      "allocations": 31270,
+      "process_cpu_ms": 7.798,
+      "wall_ms": 7.307896
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 4,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 5,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 169878856,
+      "dns_done": 1993684,
+      "dns_start": 84335,
+      "first_byte": 169824987,
+      "got_conn": 117533229,
+      "tcp_done": 53112323,
+      "tcp_start": 1997479,
+      "tls_done": 117406872,
+      "tls_start": 53429653,
+      "written": 117618715
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3512384,
+      "allocations": 38194,
+      "process_cpu_ms": 14.064,
+      "wall_ms": 64.015795
+    },
+    "tls_version": 772,
+    "block": 5,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.279,
+      "wall_ms": 2.99715
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 5,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 5,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127776,
+      "allocations": 31269,
+      "process_cpu_ms": 7.748,
+      "wall_ms": 7.26966
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 5,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 164261108,
+      "dns_done": 2350903,
+      "dns_start": 98596,
+      "first_byte": 164005459,
+      "got_conn": 112414869,
+      "tcp_done": 53743930,
+      "tcp_start": 2354449,
+      "tls_done": 111923491,
+      "tls_start": 53849907,
+      "written": 112521617
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 413264,
+      "allocations": 7056,
+      "process_cpu_ms": 8.022,
+      "wall_ms": 58.461689
+    },
+    "tls_version": 772,
+    "block": 5,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.285,
+      "wall_ms": 2.978762
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 5,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 5,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127720,
+      "allocations": 31270,
+      "process_cpu_ms": 7.78,
+      "wall_ms": 7.306214
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 5,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 6,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 168657939,
+      "dns_done": 2207070,
+      "dns_start": 86909,
+      "first_byte": 168570790,
+      "got_conn": 117017675,
+      "tcp_done": 52991734,
+      "tcp_start": 2213159,
+      "tls_done": 116873111,
+      "tls_start": 53268424,
+      "written": 117094509
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3511376,
+      "allocations": 38188,
+      "process_cpu_ms": 14.074,
+      "wall_ms": 63.656303
+    },
+    "tls_version": 772,
+    "block": 6,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.332,
+      "wall_ms": 3.052923
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 6,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 6,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127048,
+      "allocations": 31265,
+      "process_cpu_ms": 7.78,
+      "wall_ms": 7.30418
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 6,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 163735740,
+      "dns_done": 3046714,
+      "dns_start": 96363,
+      "first_byte": 163658054,
+      "got_conn": 111866946,
+      "tcp_done": 54017255,
+      "tcp_start": 3052653,
+      "tls_done": 111759958,
+      "tls_start": 54102921,
+      "written": 111958522
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 412720,
+      "allocations": 7053,
+      "process_cpu_ms": 7.776,
+      "wall_ms": 57.676926
+    },
+    "tls_version": 772,
+    "block": 6,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 2.935,
+      "wall_ms": 2.822001
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 6,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 6,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3128136,
+      "allocations": 31270,
+      "process_cpu_ms": 7.882,
+      "wall_ms": 7.420423
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 6,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 7,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 169383964,
+      "dns_done": 1945492,
+      "dns_start": 89483,
+      "first_byte": 169307741,
+      "got_conn": 117354645,
+      "tcp_done": 53115548,
+      "tcp_start": 1953223,
+      "tls_done": 117210852,
+      "tls_start": 53402593,
+      "written": 117431228
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3511200,
+      "allocations": 38185,
+      "process_cpu_ms": 14.077,
+      "wall_ms": 63.861668
+    },
+    "tls_version": 772,
+    "block": 7,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.294,
+      "wall_ms": 2.998733
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 7,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 7,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3128416,
+      "allocations": 31273,
+      "process_cpu_ms": 7.786,
+      "wall_ms": 7.278473
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 7,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 162850406,
+      "dns_done": 2054554,
+      "dns_start": 90984,
+      "first_byte": 162778830,
+      "got_conn": 110688970,
+      "tcp_done": 53352519,
+      "tcp_start": 2060763,
+      "tls_done": 110599358,
+      "tls_start": 53470704,
+      "written": 110752024
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 413168,
+      "allocations": 7054,
+      "process_cpu_ms": 7.216,
+      "wall_ms": 57.147061
+    },
+    "tls_version": 772,
+    "block": 7,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.278,
+      "wall_ms": 2.99764
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 7,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 7,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127184,
+      "allocations": 31269,
+      "process_cpu_ms": 7.833,
+      "wall_ms": 7.329989
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 7,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 8,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 170436836,
+      "dns_done": 2119540,
+      "dns_start": 87489,
+      "first_byte": 170383296,
+      "got_conn": 117703321,
+      "tcp_done": 53331107,
+      "tcp_start": 2125789,
+      "tls_done": 117551296,
+      "tls_start": 53675437,
+      "written": 117802168
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3508896,
+      "allocations": 38188,
+      "process_cpu_ms": 14.177,
+      "wall_ms": 63.935637
+    },
+    "tls_version": 772,
+    "block": 8,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.215,
+      "wall_ms": 2.944322
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 8,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 8,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127672,
+      "allocations": 31269,
+      "process_cpu_ms": 7.686,
+      "wall_ms": 7.203802
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 8,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 161862891,
+      "dns_done": 2381859,
+      "dns_start": 95121,
+      "first_byte": 161811134,
+      "got_conn": 110485468,
+      "tcp_done": 53386840,
+      "tcp_start": 2387267,
+      "tls_done": 110356036,
+      "tls_start": 53515350,
+      "written": 110575982
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 412816,
+      "allocations": 7054,
+      "process_cpu_ms": 7.217,
+      "wall_ms": 56.867696
+    },
+    "tls_version": 772,
+    "block": 8,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.288,
+      "wall_ms": 2.99682
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 8,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 8,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126520,
+      "allocations": 31262,
+      "process_cpu_ms": 7.802,
+      "wall_ms": 7.304852
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 8,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 9,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 168846931,
+      "dns_done": 2155553,
+      "dns_start": 85487,
+      "first_byte": 168790247,
+      "got_conn": 117173317,
+      "tcp_done": 53051063,
+      "tcp_start": 2158708,
+      "tls_done": 117043865,
+      "tls_start": 53318509,
+      "written": 117259054
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3512584,
+      "allocations": 38196,
+      "process_cpu_ms": 14.215,
+      "wall_ms": 63.769552
+    },
+    "tls_version": 772,
+    "block": 9,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.302,
+      "wall_ms": 3.049678
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 9,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 9,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126776,
+      "allocations": 31263,
+      "process_cpu_ms": 7.78,
+      "wall_ms": 7.356558
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 9,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 162153301,
+      "dns_done": 2439123,
+      "dns_start": 94720,
+      "first_byte": 162081084,
+      "got_conn": 110346692,
+      "tcp_done": 53339910,
+      "tcp_start": 2442388,
+      "tls_done": 110248326,
+      "tls_start": 53407710,
+      "written": 110408423
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 412624,
+      "allocations": 7053,
+      "process_cpu_ms": 7.201,
+      "wall_ms": 56.866164
+    },
+    "tls_version": 772,
+    "block": 9,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.246,
+      "wall_ms": 2.967196
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 9,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 9,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3125800,
+      "allocations": 31263,
+      "process_cpu_ms": 7.949,
+      "wall_ms": 7.434805
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 9,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 10,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 170613518,
+      "dns_done": 2688663,
+      "dns_start": 92026,
+      "first_byte": 170540660,
+      "got_conn": 118644025,
+      "tcp_done": 53936434,
+      "tcp_start": 2692088,
+      "tls_done": 118521834,
+      "tls_start": 54227055,
+      "written": 118727389
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3513120,
+      "allocations": 38197,
+      "process_cpu_ms": 14.067,
+      "wall_ms": 64.332766
+    },
+    "tls_version": 772,
+    "block": 10,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 2.967,
+      "wall_ms": 2.851414
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 10,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 10,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126720,
+      "allocations": 31267,
+      "process_cpu_ms": 7.781,
+      "wall_ms": 7.258463
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 10,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 167076506,
+      "dns_done": 2956019,
+      "dns_start": 94349,
+      "first_byte": 166995205,
+      "got_conn": 114645181,
+      "tcp_done": 57234780,
+      "tcp_start": 2961627,
+      "tls_done": 114522188,
+      "tls_start": 57328939,
+      "written": 114739220
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 412624,
+      "allocations": 7052,
+      "process_cpu_ms": 7.408,
+      "wall_ms": 57.218517
+    },
+    "tls_version": 772,
+    "block": 10,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.289,
+      "wall_ms": 3.004622
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 10,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 10,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126488,
+      "allocations": 31261,
+      "process_cpu_ms": 8.757,
+      "wall_ms": 8.326585
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 10,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 11,
+    "preload_control": false
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 175364383,
+      "dns_done": 2200770,
+      "dns_start": 86067,
+      "first_byte": 175307329,
+      "got_conn": 123197033,
+      "tcp_done": 53301253,
+      "tcp_start": 2206939,
+      "tls_done": 123072969,
+      "tls_start": 54228626,
+      "written": 123286215
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3511384,
+      "allocations": 38183,
+      "process_cpu_ms": 20.134,
+      "wall_ms": 68.880586
+    },
+    "tls_version": 772,
+    "block": 11,
+    "preload_control": false
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.359,
+      "wall_ms": 3.063605
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 11,
+    "preload_control": false
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": true,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 11,
+    "preload_control": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3127480,
+      "allocations": 31265,
+      "process_cpu_ms": 7.901,
+      "wall_ms": 7.402887
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 11,
+    "preload_control": true
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 164450970,
+      "dns_done": 2969966,
+      "dns_start": 100739,
+      "first_byte": 164376700,
+      "got_conn": 112638724,
+      "tcp_done": 53816593,
+      "tcp_start": 2974362,
+      "tls_done": 112469033,
+      "tls_start": 53897923,
+      "written": 112706584
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 412528,
+      "allocations": 7052,
+      "process_cpu_ms": 7.434,
+      "wall_ms": 58.661183
+    },
+    "tls_version": 772,
+    "block": 11,
+    "preload_control": true
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.248,
+      "wall_ms": 2.962815
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "block": 11,
+    "preload_control": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "roots",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "block": 11,
+    "root_only": true
+  },
+  {
+    "cost": {
+      "allocated_bytes": 3126568,
+      "allocations": 31268,
+      "process_cpu_ms": 7.91,
+      "wall_ms": 7.425911
+    },
+    "kind": "root_load",
+    "subjects": 122,
+    "block": 11,
+    "root_only": true
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "full",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 169492661,
+      "dns_done": 2489755,
+      "dns_start": 88090,
+      "first_byte": 169419913,
+      "got_conn": 117545386,
+      "tcp_done": 53510040,
+      "tcp_start": 2492850,
+      "tls_done": 117420921,
+      "tls_start": 53790225,
+      "written": 117624172
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3512216,
+      "allocations": 38187,
+      "process_cpu_ms": 14.084,
+      "wall_ms": 63.672739
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.305,
+      "wall_ms": 3.006349
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 163075513,
+      "dns_done": 4461884,
+      "dns_start": 44797,
+      "first_byte": 163015415,
+      "got_conn": 110987811,
+      "tcp_done": 55882451,
+      "tcp_start": 4483687,
+      "tls_done": 110882655,
+      "tls_start": 55929390,
+      "written": 111020659
+    },
+    "failed": false,
+    "i": 1,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115752,
+      "allocations": 750,
+      "process_cpu_ms": 3.947,
+      "wall_ms": 54.988517
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159915988,
+      "dns_done": 2121721,
+      "dns_start": 63274,
+      "first_byte": 159865132,
+      "got_conn": 107660215,
+      "tcp_done": 53098951,
+      "tcp_start": 2124936,
+      "tls_done": 107542661,
+      "tls_start": 53181784,
+      "written": 107691021
+    },
+    "failed": false,
+    "i": 2,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115544,
+      "allocations": 749,
+      "process_cpu_ms": 3.946,
+      "wall_ms": 54.393667
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 160998449,
+      "dns_done": 2562683,
+      "dns_start": 65857,
+      "first_byte": 160944158,
+      "got_conn": 109100206,
+      "tcp_done": 54360387,
+      "tcp_start": 2566589,
+      "tls_done": 108948021,
+      "tls_start": 54452233,
+      "written": 109133556
+    },
+    "failed": false,
+    "i": 3,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115496,
+      "allocations": 748,
+      "process_cpu_ms": 3.97,
+      "wall_ms": 54.579251
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 165948166,
+      "dns_done": 8296870,
+      "dns_start": 72157,
+      "first_byte": 165887446,
+      "got_conn": 113886431,
+      "tcp_done": 59278728,
+      "tcp_start": 8302068,
+      "tls_done": 113702488,
+      "tls_start": 59357855,
+      "written": 113915954
+    },
+    "failed": false,
+    "i": 4,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115464,
+      "allocations": 747,
+      "process_cpu_ms": 3.894,
+      "wall_ms": 54.461746
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 160881067,
+      "dns_done": 3022383,
+      "dns_start": 53890,
+      "first_byte": 160830101,
+      "got_conn": 108682217,
+      "tcp_done": 54065721,
+      "tcp_start": 3026349,
+      "tls_done": 108566166,
+      "tls_start": 54137377,
+      "written": 108713563
+    },
+    "failed": false,
+    "i": 5,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 748,
+      "process_cpu_ms": 3.891,
+      "wall_ms": 54.492182
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 163572297,
+      "dns_done": 5770801,
+      "dns_start": 59257,
+      "first_byte": 163511737,
+      "got_conn": 111707784,
+      "tcp_done": 57144597,
+      "tcp_start": 5774356,
+      "tls_done": 111605763,
+      "tls_start": 57218567,
+      "written": 111745119
+    },
+    "failed": false,
+    "i": 6,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 747,
+      "process_cpu_ms": 3.902,
+      "wall_ms": 54.414367
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 162420416,
+      "dns_done": 5079979,
+      "dns_start": 60850,
+      "first_byte": 162371353,
+      "got_conn": 110588248,
+      "tcp_done": 55950411,
+      "tcp_start": 5083654,
+      "tls_done": 110466789,
+      "tls_start": 56026894,
+      "written": 110623090
+    },
+    "failed": false,
+    "i": 7,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 747,
+      "process_cpu_ms": 3.871,
+      "wall_ms": 54.492722
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159722430,
+      "dns_done": 2592196,
+      "dns_start": 61621,
+      "first_byte": 159666818,
+      "got_conn": 107865617,
+      "tcp_done": 53442067,
+      "tcp_start": 2596303,
+      "tls_done": 107779159,
+      "tls_start": 53535846,
+      "written": 107898035
+    },
+    "failed": false,
+    "i": 8,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 747,
+      "process_cpu_ms": 3.956,
+      "wall_ms": 54.276922
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159905290,
+      "dns_done": 2572568,
+      "dns_start": 50945,
+      "first_byte": 159856397,
+      "got_conn": 108021778,
+      "tcp_done": 53589946,
+      "tcp_start": 2576053,
+      "tls_done": 107917714,
+      "tls_start": 53639399,
+      "written": 108057721
+    },
+    "failed": false,
+    "i": 9,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 747,
+      "process_cpu_ms": 3.827,
+      "wall_ms": 54.318895
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 158636603,
+      "dns_done": 1692575,
+      "dns_start": 72808,
+      "first_byte": 158593009,
+      "got_conn": 107093536,
+      "tcp_done": 52628966,
+      "tcp_start": 1695880,
+      "tls_done": 106953860,
+      "tls_start": 52717227,
+      "written": 107136220
+    },
+    "failed": false,
+    "i": 10,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 748,
+      "process_cpu_ms": 3.907,
+      "wall_ms": 54.307377
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 176091479,
+      "dns_done": 16932501,
+      "dns_start": 61842,
+      "first_byte": 176032503,
+      "got_conn": 123649059,
+      "tcp_done": 69011192,
+      "tcp_start": 16936738,
+      "tls_done": 123554539,
+      "tls_start": 69079403,
+      "written": 123678292
+    },
+    "failed": false,
+    "i": 11,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 747,
+      "process_cpu_ms": 3.831,
+      "wall_ms": 54.499993
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 158556855,
+      "dns_done": 1901154,
+      "dns_start": 54651,
+      "first_byte": 158507001,
+      "got_conn": 107300871,
+      "tcp_done": 52787088,
+      "tcp_start": 1904649,
+      "tls_done": 107147193,
+      "tls_start": 52833697,
+      "written": 107336684
+    },
+    "failed": false,
+    "i": 12,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 747,
+      "process_cpu_ms": 3.871,
+      "wall_ms": 54.399204
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159435425,
+      "dns_done": 1971317,
+      "dns_start": 94019,
+      "first_byte": 159382267,
+      "got_conn": 107507629,
+      "tcp_done": 52955507,
+      "tcp_start": 1975113,
+      "tls_done": 107408512,
+      "tls_start": 53000824,
+      "written": 107536161
+    },
+    "failed": false,
+    "i": 13,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 748,
+      "process_cpu_ms": 3.862,
+      "wall_ms": 54.438725
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159793765,
+      "dns_done": 2058096,
+      "dns_start": 79217,
+      "first_byte": 159675930,
+      "got_conn": 107788223,
+      "tcp_done": 53078779,
+      "tcp_start": 2061741,
+      "tls_done": 107625713,
+      "tls_start": 53150715,
+      "written": 107819159
+    },
+    "failed": false,
+    "i": 14,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 748,
+      "process_cpu_ms": 3.827,
+      "wall_ms": 54.571089
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 161163163,
+      "dns_done": 2065518,
+      "dns_start": 63384,
+      "first_byte": 161121482,
+      "got_conn": 108714056,
+      "tcp_done": 53573903,
+      "tcp_start": 2069013,
+      "tls_done": 108554900,
+      "tls_start": 53640632,
+      "written": 108747525
+    },
+    "failed": false,
+    "i": 15,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 747,
+      "process_cpu_ms": 3.861,
+      "wall_ms": 54.998763
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159813958,
+      "dns_done": 2344420,
+      "dns_start": 50785,
+      "first_byte": 159780438,
+      "got_conn": 108143710,
+      "tcp_done": 53640121,
+      "tcp_start": 2347715,
+      "tls_done": 107986167,
+      "tls_start": 53690115,
+      "written": 108180104
+    },
+    "failed": false,
+    "i": 16,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 747,
+      "process_cpu_ms": 3.871,
+      "wall_ms": 54.380317
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 160030805,
+      "dns_done": 2366793,
+      "dns_start": 49493,
+      "first_byte": 159944367,
+      "got_conn": 108375174,
+      "tcp_done": 53301559,
+      "tcp_start": 2369977,
+      "tls_done": 108275276,
+      "tls_start": 53403179,
+      "written": 108408193
+    },
+    "failed": false,
+    "i": 17,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115840,
+      "allocations": 752,
+      "process_cpu_ms": 5.157,
+      "wall_ms": 54.896163
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 160022862,
+      "dns_done": 2294104,
+      "dns_start": 48251,
+      "first_byte": 159959549,
+      "got_conn": 107894061,
+      "tcp_done": 53259093,
+      "tcp_start": 2297379,
+      "tls_done": 107800042,
+      "tls_start": 53325411,
+      "written": 107928002
+    },
+    "failed": false,
+    "i": 18,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115464,
+      "allocations": 748,
+      "process_cpu_ms": 3.88,
+      "wall_ms": 54.50076
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159327893,
+      "dns_done": 2203270,
+      "dns_start": 91355,
+      "first_byte": 159270478,
+      "got_conn": 107895654,
+      "tcp_done": 53269949,
+      "tcp_start": 2206745,
+      "tls_done": 107777068,
+      "tls_start": 53517375,
+      "written": 107931717
+    },
+    "failed": false,
+    "i": 19,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 115448,
+      "allocations": 748,
+      "process_cpu_ms": 4.038,
+      "wall_ms": 54.312232
+    },
+    "tls_version": 772,
+    "persistent_control": "full"
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "resume",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 172484944,
+      "dns_done": 5507430,
+      "dns_start": 97685,
+      "first_byte": 172415561,
+      "got_conn": 120595688,
+      "tcp_done": 56246754,
+      "tcp_start": 5511115,
+      "tls_done": 120403103,
+      "tls_start": 56533669,
+      "written": 120669798
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3513880,
+      "allocations": 38221,
+      "process_cpu_ms": 14.127,
+      "wall_ms": 63.972066
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.253,
+      "wall_ms": 2.95305
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 156317760,
+      "dns_done": 2600228,
+      "dns_start": 57275,
+      "first_byte": 155956967,
+      "got_conn": 104640027,
+      "tcp_done": 53496284,
+      "tcp_start": 2603874,
+      "tls_done": 104503204,
+      "tls_start": 53544926,
+      "written": 104676441
+    },
+    "failed": false,
+    "i": 1,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 36064,
+      "allocations": 571,
+      "process_cpu_ms": 0.468,
+      "wall_ms": 51.014171
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 156642540,
+      "dns_done": 1902706,
+      "dns_start": 72868,
+      "first_byte": 156588360,
+      "got_conn": 104676200,
+      "tcp_done": 53103813,
+      "tcp_start": 1906372,
+      "tls_done": 104572486,
+      "tls_start": 53198273,
+      "written": 104711121
+    },
+    "failed": false,
+    "i": 2,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 571,
+      "process_cpu_ms": 0.502,
+      "wall_ms": 51.404669
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 156247086,
+      "dns_done": 2355937,
+      "dns_start": 52368,
+      "first_byte": 156183362,
+      "got_conn": 104601300,
+      "tcp_done": 53369757,
+      "tcp_start": 2359372,
+      "tls_done": 104494432,
+      "tls_start": 53483185,
+      "written": 104630033
+    },
+    "failed": false,
+    "i": 3,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35472,
+      "allocations": 572,
+      "process_cpu_ms": 0.543,
+      "wall_ms": 51.041573
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 160490124,
+      "dns_done": 2696770,
+      "dns_start": 56734,
+      "first_byte": 160444576,
+      "got_conn": 108628930,
+      "tcp_done": 57408352,
+      "tcp_start": 2727856,
+      "tls_done": 108532337,
+      "tls_start": 57510483,
+      "written": 108663701
+    },
+    "failed": false,
+    "i": 4,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 570,
+      "process_cpu_ms": 0.529,
+      "wall_ms": 51.053721
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159412520,
+      "dns_done": 3875414,
+      "dns_start": 55152,
+      "first_byte": 159260855,
+      "got_conn": 106760233,
+      "tcp_done": 55188407,
+      "tcp_start": 3879861,
+      "tls_done": 106654116,
+      "tls_start": 55291671,
+      "written": 106796106
+    },
+    "failed": false,
+    "i": 5,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35872,
+      "allocations": 571,
+      "process_cpu_ms": 0.512,
+      "wall_ms": 51.401974
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 157714175,
+      "dns_done": 2029152,
+      "dns_start": 60389,
+      "first_byte": 157660835,
+      "got_conn": 106173104,
+      "tcp_done": 54613445,
+      "tcp_start": 2033018,
+      "tls_done": 106057603,
+      "tls_start": 54689358,
+      "written": 106201806
+    },
+    "failed": false,
+    "i": 6,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 571,
+      "process_cpu_ms": 0.525,
+      "wall_ms": 51.412071
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 157556723,
+      "dns_done": 4116762,
+      "dns_start": 47230,
+      "first_byte": 157515472,
+      "got_conn": 106157212,
+      "tcp_done": 54979649,
+      "tcp_start": 4120497,
+      "tls_done": 106033569,
+      "tls_start": 55073608,
+      "written": 106185544
+    },
+    "failed": false,
+    "i": 7,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 571,
+      "process_cpu_ms": 0.558,
+      "wall_ms": 51.009064
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 161030834,
+      "dns_done": 2256269,
+      "dns_start": 66659,
+      "first_byte": 160883716,
+      "got_conn": 108642289,
+      "tcp_done": 57108580,
+      "tcp_start": 2260155,
+      "tls_done": 108535351,
+      "tls_start": 57161338,
+      "written": 108680536
+    },
+    "failed": false,
+    "i": 8,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35520,
+      "allocations": 571,
+      "process_cpu_ms": 0.49,
+      "wall_ms": 51.409555
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159893540,
+      "dns_done": 2685433,
+      "dns_start": 49313,
+      "first_byte": 159832830,
+      "got_conn": 105184482,
+      "tcp_done": 53744681,
+      "tcp_start": 2689369,
+      "tls_done": 105069001,
+      "tls_start": 53888865,
+      "written": 105219744
+    },
+    "failed": false,
+    "i": 9,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 571,
+      "process_cpu_ms": 0.56,
+      "wall_ms": 51.218534
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 156758432,
+      "dns_done": 2352461,
+      "dns_start": 64866,
+      "first_byte": 156712594,
+      "got_conn": 104913112,
+      "tcp_done": 53364108,
+      "tcp_start": 2355506,
+      "tls_done": 104741257,
+      "tls_start": 53447642,
+      "written": 104969505
+    },
+    "failed": false,
+    "i": 10,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 571,
+      "process_cpu_ms": 0.488,
+      "wall_ms": 51.392461
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159795567,
+      "dns_done": 5940521,
+      "dns_start": 73730,
+      "first_byte": 159735488,
+      "got_conn": 108042373,
+      "tcp_done": 56774335,
+      "tcp_start": 5944477,
+      "tls_done": 107937287,
+      "tls_start": 56865791,
+      "written": 108089593
+    },
+    "failed": false,
+    "i": 11,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 570,
+      "process_cpu_ms": 0.531,
+      "wall_ms": 51.101582
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 159561388,
+      "dns_done": 2340133,
+      "dns_start": 48682,
+      "first_byte": 158958947,
+      "got_conn": 107790829,
+      "tcp_done": 56705102,
+      "tcp_start": 2344079,
+      "tls_done": 107692834,
+      "tls_start": 56789217,
+      "written": 107826952
+    },
+    "failed": false,
+    "i": 12,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 570,
+      "process_cpu_ms": 0.487,
+      "wall_ms": 50.934093
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 160547931,
+      "dns_done": 4471948,
+      "dns_start": 55823,
+      "first_byte": 160245303,
+      "got_conn": 108674498,
+      "tcp_done": 57275527,
+      "tcp_start": 4475223,
+      "tls_done": 108557194,
+      "tls_start": 57334394,
+      "written": 108712394
+    },
+    "failed": false,
+    "i": 13,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 571,
+      "process_cpu_ms": 0.47,
+      "wall_ms": 51.264832
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 160312189,
+      "dns_done": 5070353,
+      "dns_start": 58246,
+      "first_byte": 160248074,
+      "got_conn": 108040867,
+      "tcp_done": 56384466,
+      "tcp_start": 5074509,
+      "tls_done": 107876985,
+      "tls_start": 56500638,
+      "written": 108078583
+    },
+    "failed": false,
+    "i": 14,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 570,
+      "process_cpu_ms": 0.563,
+      "wall_ms": 51.468102
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 156932210,
+      "dns_done": 2278832,
+      "dns_start": 56203,
+      "first_byte": 156878060,
+      "got_conn": 104883538,
+      "tcp_done": 53361265,
+      "tcp_start": 2283049,
+      "tls_done": 104658485,
+      "tls_start": 53410488,
+      "written": 104948314
+    },
+    "failed": false,
+    "i": 15,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 571,
+      "process_cpu_ms": 0.408,
+      "wall_ms": 51.342316
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 156909985,
+      "dns_done": 2420492,
+      "dns_start": 48862,
+      "first_byte": 156640336,
+      "got_conn": 105455372,
+      "tcp_done": 54202248,
+      "tcp_start": 2423887,
+      "tls_done": 105352941,
+      "tls_start": 54250639,
+      "written": 105498626
+    },
+    "failed": false,
+    "i": 16,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 571,
+      "process_cpu_ms": 0.472,
+      "wall_ms": 51.136071
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 157217540,
+      "dns_done": 3004246,
+      "dns_start": 46709,
+      "first_byte": 157165112,
+      "got_conn": 105504986,
+      "tcp_done": 54028702,
+      "tcp_start": 3007861,
+      "tls_done": 105321174,
+      "tls_start": 54109571,
+      "written": 105546667
+    },
+    "failed": false,
+    "i": 17,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35872,
+      "allocations": 571,
+      "process_cpu_ms": 0.54,
+      "wall_ms": 51.313754
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 156315958,
+      "dns_done": 2266775,
+      "dns_start": 50014,
+      "first_byte": 156265734,
+      "got_conn": 104535322,
+      "tcp_done": 53234458,
+      "tcp_start": 2270420,
+      "tls_done": 104416987,
+      "tls_start": 53325873,
+      "written": 104560640
+    },
+    "failed": false,
+    "i": 18,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 570,
+      "process_cpu_ms": 0.51,
+      "wall_ms": 51.138494
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 160250819,
+      "dns_done": 2259283,
+      "dns_start": 56804,
+      "first_byte": 160197811,
+      "got_conn": 107876636,
+      "tcp_done": 56309416,
+      "tcp_start": 2262728,
+      "tls_done": 107763169,
+      "tls_start": 56360672,
+      "written": 107905109
+    },
+    "failed": false,
+    "i": 19,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": true,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 35424,
+      "allocations": 570,
+      "process_cpu_ms": 0.444,
+      "wall_ms": 51.44561
+    },
+    "tls_version": 772,
+    "persistent_control": "resume"
+  },
+  {
+    "arch": "amd64",
+    "cpus": 2,
+    "go": "go1.22.12",
+    "kind": "metadata",
+    "mode": "reuse",
+    "os": "linux",
+    "preload": false,
+    "scope": "public unauthenticated /v1/identity; no Receipt payload; per-process CPU includes other runtime goroutines; memstats instrumentation perturbs timing",
+    "persistent_control": "reuse"
+  },
+  {
+    "alpn": "h2",
+    "cipher": "TLS_AES_128_GCM_SHA256",
+    "events_ns": {
+      "closed": 169668326,
+      "dns_done": 2555512,
+      "dns_start": 87179,
+      "first_byte": 169598753,
+      "got_conn": 118104872,
+      "tcp_done": 53690772,
+      "tcp_start": 2558897,
+      "tls_done": 117998745,
+      "tls_start": 53995343,
+      "written": 118182837
+    },
+    "failed": false,
+    "i": 0,
+    "kind": "request",
+    "peer_certificates": [
+      {
+        "der_bytes": 923,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 656,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 682,
+        "public_key": "ECDSA",
+        "signature": "ECDSA-SHA384"
+      },
+      {
+        "der_bytes": 1140,
+        "public_key": "ECDSA",
+        "signature": "SHA256-RSA"
+      }
+    ],
+    "protocol": "HTTP/2.0",
+    "resumed": false,
+    "reused": false,
+    "status": 401,
+    "tls_cost": {
+      "allocated_bytes": 3511304,
+      "allocations": 38186,
+      "process_cpu_ms": 14.324,
+      "wall_ms": 64.025364
+    },
+    "tls_version": 772,
+    "persistent_control": "reuse"
+  },
+  {
+    "chain_lengths": [
+      4,
+      5
+    ],
+    "cost": {
+      "allocated_bytes": 67376,
+      "allocations": 216,
+      "process_cpu_ms": 3.233,
+      "wall_ms": 2.965919
+    },
+    "failed": false,
+    "kind": "warm_chain_verify",
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52097343,
+      "first_byte": 52036914,
+      "got_conn": 26109,
+      "written": 70644
+    },
+    "failed": false,
+    "i": 1,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 51957307,
+      "first_byte": 51928795,
+      "got_conn": 46298,
+      "written": 90554
+    },
+    "failed": false,
+    "i": 2,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 51805291,
+      "first_byte": 51737521,
+      "got_conn": 14431,
+      "written": 69122
+    },
+    "failed": false,
+    "i": 3,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52380132,
+      "first_byte": 52323128,
+      "got_conn": 25007,
+      "written": 82001
+    },
+    "failed": false,
+    "i": 4,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52064965,
+      "first_byte": 52035411,
+      "got_conn": 22543,
+      "written": 68110
+    },
+    "failed": false,
+    "i": 5,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52272163,
+      "first_byte": 52193656,
+      "got_conn": 15784,
+      "written": 73068
+    },
+    "failed": false,
+    "i": 6,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 51498689,
+      "first_byte": 51314476,
+      "got_conn": 19900,
+      "written": 75902
+    },
+    "failed": false,
+    "i": 7,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52320444,
+      "first_byte": 52261456,
+      "got_conn": 24006,
+      "written": 65347
+    },
+    "failed": false,
+    "i": 8,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 51892772,
+      "first_byte": 51789980,
+      "got_conn": 14432,
+      "written": 56744
+    },
+    "failed": false,
+    "i": 9,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 51994922,
+      "first_byte": 51952229,
+      "got_conn": 19529,
+      "written": 81461
+    },
+    "failed": false,
+    "i": 10,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52092627,
+      "first_byte": 52051416,
+      "got_conn": 14622,
+      "written": 63615
+    },
+    "failed": false,
+    "i": 11,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 51739124,
+      "first_byte": 51656442,
+      "got_conn": 17306,
+      "written": 53629
+    },
+    "failed": false,
+    "i": 12,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52068581,
+      "first_byte": 52038015,
+      "got_conn": 15353,
+      "written": 53178
+    },
+    "failed": false,
+    "i": 13,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52292784,
+      "first_byte": 52235078,
+      "got_conn": 14492,
+      "written": 69774
+    },
+    "failed": false,
+    "i": 14,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52211843,
+      "first_byte": 52142671,
+      "got_conn": 25778,
+      "written": 66518
+    },
+    "failed": false,
+    "i": 15,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52084674,
+      "first_byte": 52044455,
+      "got_conn": 14020,
+      "written": 51986
+    },
+    "failed": false,
+    "i": 16,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 51408374,
+      "first_byte": 51358291,
+      "got_conn": 17176,
+      "written": 62663
+    },
+    "failed": false,
+    "i": 17,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 52082752,
+      "first_byte": 52014101,
+      "got_conn": 33890,
+      "written": 77835
+    },
+    "failed": false,
+    "i": 18,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  },
+  {
+    "events_ns": {
+      "closed": 51950437,
+      "first_byte": 51873152,
+      "got_conn": 14692,
+      "written": 52708
+    },
+    "failed": false,
+    "i": 19,
+    "kind": "request",
+    "protocol": "HTTP/2.0",
+    "reused": true,
+    "status": 401,
+    "persistent_control": "reuse"
+  }
+]
