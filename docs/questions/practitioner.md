@@ -530,3 +530,19 @@ No. The process can retain buffers and other state from earlier requests. Its sa
 **Learn more:** [20. Test gzip on the actual Caddy deployment](../guide/20-test-gzip-on-caddy.md)
 
 </details>
+
+### Does storage-method CPU mean database waiting?
+<!-- check: guide/21-profile-application-cpu.md -->
+
+**Level:** Practitioner
+
+A CPU stack contains Postgres.Get and strictjson.Object. Is that evidence that PostgreSQL query execution used that CPU?
+
+<details>
+<summary>Answer</summary>
+
+No. The storage method also decodes and validates metadata in the Receipt process. A sampled call stack includes callers and their running children. Waiting for a database response is not running user CPU; separate timing and database evidence are needed.
+
+**Learn more:** [21. Find the application work inside a cache hit](../guide/21-profile-application-cpu.md)
+
+</details>

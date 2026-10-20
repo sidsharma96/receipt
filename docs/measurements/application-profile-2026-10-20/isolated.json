@@ -1,0 +1,342 @@
+{
+  "metadata": {
+    "source_commit": "ab6b61c74d433273c24dbc203fa6524b7a420d20",
+    "run_id": "39478817236",
+    "go_version": "go version go1.22.12 linux/amd64",
+    "runner_image": "20261018.339.1",
+    "cpus": 2,
+    "key_before": "6ed67fa1038a474244a09954ae63b9093a0a1205dcfef9fc4888b399c7d9457c",
+    "body_bytes": 65789,
+    "inputs": 396,
+    "fixture_sha256": "78a832337e0642b2d54ce5e5189e059877a13b140d0f37a13dd50763221b992a",
+    "scope": "Current-source isolated warm operations on existing deployed self-CI result. GET only; no test execution or publication. Metadata rebuilt with json.Marshal, not original PostgreSQL JSONB bytes. No SQL, file I/O, auth, network or queue costs inside timed operations. Profiles perturb costs; unprofiled benchmarks are separate.",
+    "key_after": "6ed67fa1038a474244a09954ae63b9093a0a1205dcfef9fc4888b399c7d9457c",
+    "fixture_after_sha256": "78a832337e0642b2d54ce5e5189e059877a13b140d0f37a13dd50763221b992a",
+    "completed": true
+  },
+  "unprofiled_rows": [
+    {
+      "operation": "Decode",
+      "iterations": 138,
+      "ns_per_op": 8271482,
+      "bytes_per_op": 2057782,
+      "allocations_per_op": 22993
+    },
+    {
+      "operation": "Decode",
+      "iterations": 144,
+      "ns_per_op": 8182050,
+      "bytes_per_op": 2068286,
+      "allocations_per_op": 22994
+    },
+    {
+      "operation": "Decode",
+      "iterations": 147,
+      "ns_per_op": 9824732,
+      "bytes_per_op": 2059714,
+      "allocations_per_op": 22992
+    },
+    {
+      "operation": "Decode",
+      "iterations": 146,
+      "ns_per_op": 8200112,
+      "bytes_per_op": 2068268,
+      "allocations_per_op": 22994
+    },
+    {
+      "operation": "Decode",
+      "iterations": 146,
+      "ns_per_op": 8114842,
+      "bytes_per_op": 2068199,
+      "allocations_per_op": 22994
+    },
+    {
+      "operation": "MetadataDecode",
+      "iterations": 157,
+      "ns_per_op": 7511298,
+      "bytes_per_op": 1987334,
+      "allocations_per_op": 23078
+    },
+    {
+      "operation": "MetadataDecode",
+      "iterations": 160,
+      "ns_per_op": 7481847,
+      "bytes_per_op": 1977112,
+      "allocations_per_op": 23077
+    },
+    {
+      "operation": "MetadataDecode",
+      "iterations": 159,
+      "ns_per_op": 7527595,
+      "bytes_per_op": 1980714,
+      "allocations_per_op": 23077
+    },
+    {
+      "operation": "MetadataDecode",
+      "iterations": 158,
+      "ns_per_op": 7474922,
+      "bytes_per_op": 1984453,
+      "allocations_per_op": 23078
+    },
+    {
+      "operation": "MetadataDecode",
+      "iterations": 159,
+      "ns_per_op": 7504077,
+      "bytes_per_op": 1988219,
+      "allocations_per_op": 23078
+    },
+    {
+      "operation": "Encode",
+      "iterations": 1083,
+      "ns_per_op": 1126707,
+      "bytes_per_op": 260970,
+      "allocations_per_op": 43
+    },
+    {
+      "operation": "Encode",
+      "iterations": 1105,
+      "ns_per_op": 1073470,
+      "bytes_per_op": 261160,
+      "allocations_per_op": 43
+    },
+    {
+      "operation": "Encode",
+      "iterations": 1089,
+      "ns_per_op": 1076326,
+      "bytes_per_op": 260735,
+      "allocations_per_op": 43
+    },
+    {
+      "operation": "Encode",
+      "iterations": 1105,
+      "ns_per_op": 1082093,
+      "bytes_per_op": 260099,
+      "allocations_per_op": 43
+    },
+    {
+      "operation": "Encode",
+      "iterations": 1078,
+      "ns_per_op": 1086019,
+      "bytes_per_op": 258949,
+      "allocations_per_op": 42
+    },
+    {
+      "operation": "ValidateManifest",
+      "iterations": 2992,
+      "ns_per_op": 391536,
+      "bytes_per_op": 24151,
+      "allocations_per_op": 27
+    },
+    {
+      "operation": "ValidateManifest",
+      "iterations": 2998,
+      "ns_per_op": 391072,
+      "bytes_per_op": 24141,
+      "allocations_per_op": 27
+    },
+    {
+      "operation": "ValidateManifest",
+      "iterations": 3020,
+      "ns_per_op": 390858,
+      "bytes_per_op": 24150,
+      "allocations_per_op": 27
+    },
+    {
+      "operation": "ValidateManifest",
+      "iterations": 3004,
+      "ns_per_op": 391777,
+      "bytes_per_op": 24139,
+      "allocations_per_op": 27
+    },
+    {
+      "operation": "ValidateManifest",
+      "iterations": 2984,
+      "ns_per_op": 393248,
+      "bytes_per_op": 24147,
+      "allocations_per_op": 27
+    },
+    {
+      "operation": "ValidateResult",
+      "iterations": 2137,
+      "ns_per_op": 555245,
+      "bytes_per_op": 110977,
+      "allocations_per_op": 35
+    },
+    {
+      "operation": "ValidateResult",
+      "iterations": 2095,
+      "ns_per_op": 560708,
+      "bytes_per_op": 110965,
+      "allocations_per_op": 35
+    },
+    {
+      "operation": "ValidateResult",
+      "iterations": 2013,
+      "ns_per_op": 569651,
+      "bytes_per_op": 110513,
+      "allocations_per_op": 35
+    },
+    {
+      "operation": "ValidateResult",
+      "iterations": 2089,
+      "ns_per_op": 557289,
+      "bytes_per_op": 110640,
+      "allocations_per_op": 35
+    },
+    {
+      "operation": "ValidateResult",
+      "iterations": 2096,
+      "ns_per_op": 557982,
+      "bytes_per_op": 111142,
+      "allocations_per_op": 35
+    },
+    {
+      "operation": "ManifestKey",
+      "iterations": 6496,
+      "ns_per_op": 162854,
+      "bytes_per_op": 85766,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "ManifestKey",
+      "iterations": 6525,
+      "ns_per_op": 163103,
+      "bytes_per_op": 85884,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "ManifestKey",
+      "iterations": 6762,
+      "ns_per_op": 163210,
+      "bytes_per_op": 86027,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "ManifestKey",
+      "iterations": 6896,
+      "ns_per_op": 162074,
+      "bytes_per_op": 85930,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "ManifestKey",
+      "iterations": 6535,
+      "ns_per_op": 161649,
+      "bytes_per_op": 85822,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "InputStrict",
+      "iterations": 168122,
+      "ns_per_op": 6943,
+      "bytes_per_op": 2288,
+      "allocations_per_op": 60
+    },
+    {
+      "operation": "InputStrict",
+      "iterations": 169440,
+      "ns_per_op": 6943,
+      "bytes_per_op": 2288,
+      "allocations_per_op": 60
+    },
+    {
+      "operation": "InputStrict",
+      "iterations": 168906,
+      "ns_per_op": 6930,
+      "bytes_per_op": 2288,
+      "allocations_per_op": 60
+    },
+    {
+      "operation": "InputStrict",
+      "iterations": 167880,
+      "ns_per_op": 6970,
+      "bytes_per_op": 2288,
+      "allocations_per_op": 60
+    },
+    {
+      "operation": "InputStrict",
+      "iterations": 169430,
+      "ns_per_op": 7275,
+      "bytes_per_op": 2288,
+      "allocations_per_op": 60
+    },
+    {
+      "operation": "InputPlain",
+      "iterations": 795618,
+      "ns_per_op": 1375,
+      "bytes_per_op": 360,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "InputPlain",
+      "iterations": 826566,
+      "ns_per_op": 1377,
+      "bytes_per_op": 360,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "InputPlain",
+      "iterations": 800719,
+      "ns_per_op": 1368,
+      "bytes_per_op": 360,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "InputPlain",
+      "iterations": 823713,
+      "ns_per_op": 1376,
+      "bytes_per_op": 360,
+      "allocations_per_op": 8
+    },
+    {
+      "operation": "InputPlain",
+      "iterations": 829894,
+      "ns_per_op": 1382,
+      "bytes_per_op": 360,
+      "allocations_per_op": 8
+    }
+  ],
+  "medians": {
+    "Decode": {
+      "ns_per_op": 8200112,
+      "bytes_per_op": 2068199,
+      "allocations_per_op": 22994
+    },
+    "MetadataDecode": {
+      "ns_per_op": 7504077,
+      "bytes_per_op": 1984453,
+      "allocations_per_op": 23078
+    },
+    "Encode": {
+      "ns_per_op": 1082093,
+      "bytes_per_op": 260735,
+      "allocations_per_op": 43
+    },
+    "ValidateManifest": {
+      "ns_per_op": 391536,
+      "bytes_per_op": 24147,
+      "allocations_per_op": 27
+    },
+    "ValidateResult": {
+      "ns_per_op": 557982,
+      "bytes_per_op": 110965,
+      "allocations_per_op": 35
+    },
+    "ManifestKey": {
+      "ns_per_op": 162854,
+      "bytes_per_op": 85884,
+      "allocations_per_op": 8
+    },
+    "InputStrict": {
+      "ns_per_op": 6943,
+      "bytes_per_op": 2288,
+      "allocations_per_op": 60
+    },
+    "InputPlain": {
+      "ns_per_op": 1376,
+      "bytes_per_op": 360,
+      "allocations_per_op": 8
+    }
+  },
+  "scope": "Five sequential unprofiled benchmark repetitions per operation; nested operations are not additive. Profiles include benchmark calibration and runtime work, and sample allocations at 65536-byte rate."
+}

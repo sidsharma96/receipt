@@ -35,6 +35,8 @@ LEVELS = ("Newcomer", "Practitioner", "Expert")
 # File types the published site may contain. Anything else under docs/ is a
 # script, configuration or data that does not belong in the book.
 SOURCE_TYPES = {".md", ".svg", ".json"}
+# Symbol-only CPU/allocation profiles are intentional downloadable evidence.
+PROFILE_TYPES = {".pprof"}
 BOOK_TYPES = {".html", ".css", ".js", ".svg", ".png", ".woff2", ".json", ".txt", ""}
 
 
@@ -123,7 +125,7 @@ class SourceChecks(unittest.TestCase):
         excerpts = []
         for chapter in sorted((DOCS / "guide").glob("*.md")):
             excerpts += re.findall(pattern, chapter.read_text(), re.DOTALL)
-        self.assertEqual(len(excerpts), 24)
+        self.assertEqual(len(excerpts), 25)
         for path, start, end, excerpt in excerpts:
             lines = (REPOSITORY / path).read_text().splitlines()
             covered = "\n".join(lines[int(start) - 1:int(end or start)])
@@ -146,7 +148,7 @@ class SourceChecks(unittest.TestCase):
                 actual = (REPOSITORY / current).read_text()
                 self.assertIn(re.sub(r"\s+", " ", event[3]).strip(),
                               re.sub(r"\s+", " ", actual), current)
-        self.assertEqual(excerpts, 24)
+        self.assertEqual(excerpts, 25)
 
     def test_all_seven_reviews_keep_nine_questions(self):
         source = (DOCS / "PHASE-REVIEWS.md").read_text()
@@ -193,6 +195,8 @@ class SourceChecks(unittest.TestCase):
                 if path.name == "book.toml":
                     continue
                 allowed = SOURCE_TYPES | ({".png"} if DOCS / "assets" in path.parents else set())
+                if DOCS / "measurements" in path.parents:
+                    allowed |= PROFILE_TYPES
                 self.assertIn(path.suffix, allowed)
                 self.assertFalse(path.name.startswith("."))
 
@@ -250,7 +254,8 @@ class BuiltBookChecks(unittest.TestCase):
         for path in sorted(BOOK.rglob("*")):
             if path.is_file():
                 with self.subTest(path=str(path.relative_to(BOOK))):
-                    self.assertIn(path.suffix, BOOK_TYPES)
+                    allowed = BOOK_TYPES | (PROFILE_TYPES if BOOK / "measurements" in path.parents else set())
+                    self.assertIn(path.suffix, allowed)
 
     def test_links_and_anchors_resolve_in_the_site(self):
         pages = {}

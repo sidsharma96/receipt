@@ -451,3 +451,13 @@ memory from compression effects. The temporary profile was restored afterward;
 production compression remains unconfigured. The
 [nine-question review](../PHASE-REVIEWS.md#actual-caddy-gzip-comparison-20-october-2026)
 records exact joins, resource windows, restoration proof and remaining limits.
+
+## 20 October 2026: locate application CPU and allocation costs
+
+New [Chapter 21](21-profile-application-cpu.md) follows actual Linux server samples
+into strict JSON checking, then isolates decoding and temporary allocation on
+Linux CI. It separates nested CPU attribution from elapsed time, and GC CPU
+from pauses. The [full nine-question review](../PHASE-REVIEWS.md#application-cpu-and-allocation-profiles-20-october-2026)
+records deployed/current build scope, benchmark-selector correction, a quarantined
+seed attempt and the final read-only fixture workflow. This phase adds profiling
+tooling and evidence; production validation and deployment behavior remain unchanged.

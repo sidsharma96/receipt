@@ -203,6 +203,10 @@ observation under existing conflict rules; a later retry can fetch if the key
 remains usable. Existing error behavior is preserved; this successful-hit run
 does not time outages, revoked credentials, corrupt gzip or fallback execution.
 
+Current follow-up: [Chapter 21](21-profile-application-cpu.md) samples the actual
+server and isolates application decoding/allocation costs. It does not adopt
+gzip or replace the deployed backend.
+
 ## What this tells us to do next
 
 The actual deployment confirms a large body-byte saving and working client

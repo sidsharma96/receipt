@@ -664,3 +664,19 @@ No. The client sees the original decoded bytes. Caddy counts the encoded body it
 **Learn more:** [20. Test gzip on the actual Caddy deployment](../guide/20-test-gzip-on-caddy.md)
 
 </details>
+
+### Is allocated memory the same as peak RAM?
+<!-- check: guide/21-profile-application-cpu.md -->
+
+**Level:** Newcomer
+
+A decoder receives a small response but allocates several times its size while working. Does that mean all of those bytes stay resident after the operation?
+
+<details>
+<summary>Answer</summary>
+
+No. Allocation bytes count memory requested over the operation. Some objects become unreachable and can be collected while others replace them. Peak resident RAM, retained heap and total allocation answer different questions.
+
+**Learn more:** [21. Find the application work inside a cache hit](../guide/21-profile-application-cpu.md)
+
+</details>

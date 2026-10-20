@@ -4641,3 +4641,153 @@ Revisit tooling whenever Caddy logging/placeholder schemas, root configuration
 or process identities change; fail closed on unsupported capture rather than
 silently reusing assumptions. Preserve authentication, quarantine and result
 validation in every candidate.
+
+## Application CPU and allocation profiles, 20 October 2026
+
+A Linux CI worker fetched a saved result from the existing server while Linux
+sampled the server's running functions. Most user CPU samples led through strict
+JSON checks. A separate current-source experiment decoded a saved result already
+in memory and measured temporary allocations. [Chapter 21](guide/21-profile-application-cpu.md)
+teaches that sequence beside the [CPU/sequence figure](assets/application-profile.svg).
+The [measurement reference](MEASUREMENTS.md#application-cpu-and-allocation-profiles-20-october-2026)
+records runs, build identities and failures. This phase implements diagnostic
+tooling and documentation, not a production optimization.
+
+### Application profiles — 1. Data structures and reasons
+
+A Result contains its Manifest, input key and output byte slices. JSON envelopes
+contain a payload and its checksum. The existing strict checker uses allowed-field
+and seen-name maps to reject unknown and duplicate fields. It temporarily stores
+each value as RawMessage bytes before decoding typed fields. Those buffers and
+repeated decoding are measured work, not a new design in this phase. Diagnostic
+lists preserve benchmark repetitions; symbol counters count leaf and inclusive
+CPU samples. Inclusive counters deduplicate recursive frames within one sample;
+ten samples without frames remain in the denominator.
+
+### Application profiles — 2. Architecture, flow and extension boundaries
+
+The actual service remains behind Caddy with PostgreSQL and file blobs. perf
+attaches to the existing process; sampled Postgres.Get stacks lead into JSON
+hooks. The isolated workflow downloads an existing result into private temporary
+storage, overlays benchmark code into store_test.go and builds a separate test
+executable. It times Decode, reconstructed metadata decoding, Encode, manifest
+validation, result validation, key construction and strict/plain input decoding.
+It fetches the same fixture again and checks identity. The ordinary executable
+and product interfaces gain no profiling endpoint or dependency. Reconstructed
+metadata is not byte-for-byte PostgreSQL JSONB, and current source is not the
+unknown modified deployed tree.
+
+### Application profiles — 3. Concurrency, networking and primitives
+
+Linux samples user CPU at a requested 997 Hz with frame-pointer call chains.
+A runtime-limited systemd unit bounds attachment; SIGINT flushes the capture.
+It observes all Receipt threads and can include background work. Sequential CI
+requests use the ordinary credential and verified HTTPS. The allocation harness
+uses redirect-refusing, bounded GET requests; the timed operations are in memory,
+without networking. Go benchmark loops are sequential, though runtime GC can use
+other threads. Separate CPU and sampled-allocation captures perturb execution;
+unprofiled benchmark repetitions supply the operation-time figures.
+
+### Application profiles — 4. Pitfalls and debugging challenges
+
+A storage function can spend CPU decoding metadata rather than waiting on SQL.
+Inclusive stacks overlap, and a CPU capture misses off-CPU waiting and kernel
+work. A GC assist stack is not evidence of a stop-the-world pause. Sampled byte
+allocations are not peak or retained RAM. First-run Decode profiles accidentally
+included MetadataDecode because Go splits benchmark selectors on slashes and
+an unanchored child expression matched both suffixes; final selection anchors
+both components and checks the resulting benchmark names. A subsequent seed
+attempt encountered quarantine and stopped before benchmarking. The final
+read-only harness neither bypasses quarantine nor republishes test observations.
+
+### Application profiles — 5. Hot/cold paths and costs
+
+The live hot path spends 68.9% of sampled user CPU stacks inside strictjson.Object
+and its children; 9.9% include Encode. The disjoint JSON leaf share is 53.3%.
+Regular-expression matching also appears prominently, while recognized GC
+worker/assist/start stacks cover 2.7%. These percentages have different overlap
+rules and cannot be added to predict a saving. No new optimization is timed.
+Benchmark compilation, fixture download, server setup and profiling startup are
+outside isolated operation timing. Detailed repeated-operation values and
+allocation evidence are in the linked measurement reference.
+
+### Application profiles — 6. Guarantees, assumptions and non-goals
+
+The diagnostic overlay leaves production parsing, acceptance rules, fingerprint
+serialization and key format intact. In current source,
+[`readField`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L63-L83)
+performs this bounded-by-caller field read:
+
+```go
+	var raw json.RawMessage
+	if err := d.Decode(&raw); err != nil {
+		return fmt.Errorf("field %q: %w", name, err)
+	}
+```
+
+It captures field bytes for shape/type checks; Object later decodes the original
+object into the supplied temporary Go value. Nested hooks repeat checks. This
+excerpt explains current source, not a reconstructed exact deployed revision.
+The live binary hash and PID stayed unchanged. A stable fixture key and decoded
+result do not establish deterministic execution output. A live CPU profile is
+not a capacity, network, GC-pause or crash-safety guarantee.
+
+### Application profiles — 7. Alternatives and reasons
+
+These comparisons are retrospective. A public pprof endpoint would provide Go
+runtime profiles but requires a deployment and access policy; Linux sampling
+answers the first live CPU question without adding that surface. An isolated
+instrumented server could give finer stage and allocation attribution, but
+requires matching the deployed source and environment. Plain JSON decoding is
+cheaper but omits required rejection behavior. A byte-scanning strict checker
+may reduce copying with substantial parser correctness obligations; an exact
+hash-byte validator is narrower but targets a smaller measured area. Encoded
+response caching introduces retained memory, quarantine/invalidation and
+credential-freshness rules. All production changes remain deferred.
+
+### Application profiles — 8. Evidence, untested failures and remaining risks
+
+The native capture contains 1,589 samples with zero reported loss and ten absent
+call chains; other chains may be incomplete. The tracing CI run completed 120
+measured hits with identical keys/replayed stdout; 60 traced requests matched
+server records. The live executable is Go 1.22.1 at modified base cbb0e61, while
+isolated profiles use current source and Go 1.22.12 on a disposable Ubuntu runner.
+The measurement reference preserves this distinction and excluded/failed runs.
+No server-side heap profile, GC-pause trace, adversarial decode-cost benchmark,
+concurrent-load test or remote end-to-end optimization comparison was performed.
+The ordinary cache/auth/quarantine tests are unchanged. Documentation and tooling
+verification are recorded below after completion.
+
+### Application profiles — 9. Conditions for revisiting decisions
+
+Revisit strict decoding after equivalent acceptance/rejection tests cover escaped
+names, UTF-8, duplicates, nulls, nesting and malformed values. Revisit exact hash
+validation after differential tests and whole-path measurements establish its
+value. Revisit cached encoded responses when their repeated CPU saving exceeds
+retained-memory and invalidation complexity. Revisit live profiling method if
+waiting dominates, stacks truncate materially, or deployed source becomes
+reproducible. Revisit all cost priorities with larger manifests/output, other
+client regions, concurrency, memory pressure or changed runtime versions.
+
+Verification completed locally: all 39 profiling/evidence tests, nine CI-helper
+policy tests and 18 documentation checks passed; lint reported zero issues.
+The benchmark overlay compiled and exercised all eight operations on a small
+local fixture, then the final Linux workflow completed five unprofiled
+repetitions per operation plus three separately selected CPU/allocation profiles.
+The exact downloaded fixture key and body hash matched before/after. Raw pprof
+files contain symbol/sample metadata and allocation-size labels, not heap contents;
+the book permits these downloads only beneath measurements/. The final evidence
+records current-source medians of 8.20 ms/2.07 MB/22,994 allocations for Decode,
+7.50 ms/1.98 MB for reconstructed metadata and 1.08 ms/0.261 MB for Encode.
+These nested operations are not additive request stages.
+
+The rendered SVG and local book were inspected at desktop and 390-pixel phone
+widths. The phone page had no horizontal overflow after assets loaded; answer
+controls opened by click and closed with Enter. Initial screenshots were taken
+before styles settled and discarded; the settled viewport images were inspected.
+The picture includes a text equivalent and a step sequence without requiring
+JavaScript. These layout checks do not prove teaching quality. The draft was
+reviewed against the prose checklist: the saved result stays the running example,
+shape checking precedes its name, the actual excerpt explains raw-field copying,
+and alternatives preserve the same rejection requirements. Remote publication
+verification remains separate from these local checks.

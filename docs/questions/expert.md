@@ -565,3 +565,19 @@ No. The window also includes TLS, proxying, background runtime work and possibly
 **Learn more:** [20. Test gzip on the actual Caddy deployment](../guide/20-test-gzip-on-caddy.md)
 
 </details>
+
+### Can inclusive profile percentages be added?
+<!-- check: guide/21-profile-application-cpu.md -->
+
+**Level:** Expert
+
+A sample contains both the strict JSON checker and a regular-expression matcher called underneath it. Can their inclusive percentages be added to estimate removable overhead?
+
+<details>
+<summary>Answer</summary>
+
+No. That would count the same execution sample twice. Inclusive groups overlap, and necessary validation is included in the measured work. A proposed change needs its own compatibility and before/after evidence; a profile alone cannot predict the saving.
+
+**Learn more:** [21. Find the application work inside a cache hit](../guide/21-profile-application-cpu.md)
+
+</details>

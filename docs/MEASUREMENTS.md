@@ -2170,3 +2170,106 @@ The [chapter](guide/20-test-gzip-on-caddy.md) and
 [nine-question review](PHASE-REVIEWS.md#actual-caddy-gzip-comparison-20-october-2026)
 record the learning path and untested cases. No live corruption, revocation,
 concurrency/load, packet capture, power-loss or timed-rollback-failure test was run.
+
+## Application CPU and allocation profiles, 20 October 2026
+
+The live executable was sampled on the existing one-vCPU Linux droplet using
+`perf record -e cpu-clock:u -F 997 -g --call-graph fp -p 26016`. A transient
+systemd unit bounded runtime to 610 seconds; the operator ended recording with
+SIGINT after the tracing CI run completed. Capture ran 18:46:53–18:48:39 UTC.
+There were 1,589 samples, zero reported lost samples and ten samples with no
+call chain. Other stacks can be truncated. The raw native capture remains in
+ignored local tooling storage; only symbol/numeric summaries are published.
+
+The executable hash remained
+f5e022b2b8ad1f499883aebd054a60ff7c0505fc74e5314f387fa7ba671005d5,
+PID 26016, Go 1.22.1, embedded revision
+cbb0e61e06f2af7f8e97cd205e0bbc1fe9143ece with vcs.modified=true. Exact deployed
+modified source is unavailable. No binary, service configuration, credential,
+Caddy setting or database schema was changed. The sampler became inactive and
+its private /run files were exported then removed. Receipt and Caddy stayed active.
+
+[Run 39477740620](https://github.com/sidsharma96/receipt/actions/runs/39477740620)
+completed 120 measured stock/traced hits, plus excluded warmups. All four keys
+and replay hashes matched. The 60 traced measured requests joined to Receipt's
+request IDs: 30 fetches and 30 status checks. Their profiled handler medians were
+27.94 ms and 1.04 ms. The surrounding journal interval also contains warmups and
+setup: 67 fetches, 66 status checks and two identity requests. Sampling is
+process-wide, not a profile restricted to those 30 measured fetches. Timing
+under profiling is not an unperturbed comparison to the preceding gzip job.
+
+Unweighted samples containing each function/group: Postgres.Get 1,283/1,589
+(80.7%); strictjson.Object 1,095 (68.9%); Encode 157 (9.9%); regular expressions
+251 (15.8%); recognized GC worker/assist/start stacks 43 (2.7%). These inclusive
+groups overlap. Disjoint leaf groups: encoding/json 847 (53.3%), regular
+expressions 243 (15.3%), SHA-256 63 (4.0%), mallocgc 58 (3.7%), remaining/missing
+378 (23.8%). This is user CPU sampling, not elapsed latency, kernel time or a
+GC pause trace. It cannot identify the cause of earlier macOS startup stalls.
+
+The [symbol summary](measurements/application-profile-2026-10-20/perf-summary.json),
+[perf report](measurements/application-profile-2026-10-20/server-top.json) and
+[capture/build metadata](measurements/application-profile-2026-10-20/server-metadata.json)
+retain the denominator and build scope. `scripts/profile/summarize_application_perf.py`
+counts each inclusive symbol at most once per sample and preserves missing
+frames in the denominator. Three parser tests check recursion, missing frames
+and rejection of wrong/empty event data.
+
+[Final run 39478817236](https://github.com/sidsharma96/receipt/actions/runs/39478817236)
+uses source ab6b61c, Go 1.22.12, Ubuntu image 20261018.339.1, two available CPUs
+and an AMD EPYC 7763 host. The existing remote fixture has 65,789 bytes and 396
+inputs. Key and complete body SHA-256 matched before/after. It is the same saved
+fixture requested by the live CPU experiment, though the profile code and runner
+are different. No tests were executed or observations published by the final
+allocation workflow. Five sequential unprofiled repetitions per operation give
+these medians; each repetition executes many iterations, not one network call:
+
+| In-memory operation | Median time | Bytes allocated/op | Allocations/op |
+|---|---:|---:|---:|
+| Decode | 8.20 ms | 2,068,199 | 22,994 |
+| MetadataDecode | 7.50 ms | 1,984,453 | 23,078 |
+| Encode | 1.08 ms | 260,735 | 43 |
+
+Additional medians: ValidateManifest 0.391536 ms, 24,147 B/op, 27 allocations/op; ValidateResult 0.557982 ms, 110,965 B/op, 35 allocations/op; ManifestKey 0.162854 ms, 85,884 B/op, 8 allocations/op; InputStrict 0.006943 ms, 2,288 B/op, 60 allocations/op; InputPlain 0.001376 ms, 360 B/op, 8 allocations/op.
+
+These operations nest and cannot be added to a request total. InputPlain
+removes the input hook and its semantic validation, so it is a weaker diagnostic
+cost floor. MetadataDecode reconstructs compact Go JSON from the decoded result;
+it is not the actual JSONB representation and excludes the remaining Get work.
+No process RSS or retained-heap comparison was made.
+
+The isolated Decode allocation profile samples at 65,536 bytes: decoder refill
+41.15%, RawMessage copying 16.54% of allocated bytes (disjoint flat attribution).
+The CPU profile's largest flat nodes are stateInString 17.97%, skip 16.49%,
+checkValid 9.86% and readValue 6.35%. Profile shares describe whole benchmark
+processes including calibration/setup and runtime activity; they are not precise
+per-operation measurements. CPU seconds can exceed elapsed seconds on two CPUs.
+
+[All rows and fixture/build metadata](measurements/application-profile-2026-10-20/isolated.json),
+[Decode CPU/allocation report](measurements/application-profile-2026-10-20/Decode.json),
+[metadata report](measurements/application-profile-2026-10-20/MetadataDecode.json)
+and [Encode report](measurements/application-profile-2026-10-20/Encode.json)
+retain the detailed evidence. The raw symbol-only Go
+[CPU profile](measurements/application-profile-2026-10-20/Decode.cpu.pprof) and
+[allocation profile](measurements/application-profile-2026-10-20/Decode.alloc.pprof)
+are also published for pprof inspection. They contain sampled function locations,
+not captured heap contents, credentials or the decoded fixture. The other two
+operations' profiles are adjacent files with the same suffixes.
+
+
+The first isolated run, 39477955480, supplied valid unprofiled benchmark rows,
+but its CPU/allocation profile selector for Decode also matched MetadataDecode.
+Those mixed profiles are excluded from final attribution. The selector now
+anchors each slash-separated Go benchmark component and verifies that exactly
+one requested benchmark name ran. Run 39478456525 stopped before benchmarking:
+the ordinary self-CI seeding helper encountered a quarantined key after differing
+successful test observations. No quarantine was cleared or bypassed. The final
+harness fetches an existing reusable fixture with GET only; it does not execute
+tests or publish observations. This preserves the distinction between stable
+input keys and potentially different test output, including elapsed-time text.
+
+No production optimization was implemented. Follow-up candidates are a strict
+shape checker with fewer raw-field copies and an exact lowercase SHA-256 byte
+validator. Their compatibility, latency, allocation and retained-memory effects
+remain unmeasured. Plain decoding is an intentionally weaker diagnostic baseline,
+not a proposed replacement. No load-capacity, outage, corrupt-input performance,
+heap-retention or maximum-pause claim follows from these warm success profiles.

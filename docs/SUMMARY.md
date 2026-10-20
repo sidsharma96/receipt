@@ -30,6 +30,7 @@
 - [18. Trace the actual Go HTTP client](guide/18-trace-go-http.md)
 - [19. Compare gzip and uncompressed responses](guide/19-compare-gzip-responses.md)
 - [20. Test gzip on the actual Caddy deployment](guide/20-test-gzip-on-caddy.md)
+- [21. Find the application work inside a cache hit](guide/21-profile-application-cpu.md)
 
 # Defending the design
 
