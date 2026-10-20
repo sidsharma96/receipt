@@ -13,6 +13,15 @@ class WorkflowPolicy(unittest.TestCase):
         refs = re.findall(r"github\.ref == '([^']+)'", text)
         self.assertEqual(refs, ['refs/heads/main'])
 
+    def test_manual_profile_stays_on_trusted_main(self):
+        text = (WORKFLOW.parent / 'profile-linux.yml').read_text()
+        self.assertIn('workflow_dispatch:', text)
+        self.assertNotIn('pull_request', text)
+        refs = re.findall(r"github\.ref == '([^']+)'", text)
+        self.assertEqual(refs, ['refs/heads/main'])
+        self.assertIn('contents: read', text)
+        self.assertIn('RECEIPT_SELF_CI_TOKEN:', text)
+
 
 if __name__ == '__main__':
     unittest.main()
