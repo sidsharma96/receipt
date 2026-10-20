@@ -15,7 +15,7 @@ SOURCE = base.SOURCE
 ci = base.ci
 
 
-def build(out):
+def build(out, compression=False):
     source = SOURCE / 'internal/cache/http.go'
     text = source.read_text()
     changes = {
@@ -28,8 +28,23 @@ def build(out):
         if text.count(old) != 1:
             raise RuntimeError('HTTP source changed: review overlay anchor')
         text = text.replace(old, new)
+    fragment = (SOURCE / 'scripts/profile/http_trace.go.inc').read_text()
+    if compression:
+        text = text.replace('"context"', '"context"\n "crypto/sha256"\n "encoding/hex"\n "hash"')
+        changes = {
+            'body io.ReadCloser': 'body io.ReadCloser\n digest hash.Hash\n uncompressed bool',
+            'd.bytes += int64(n)': '_, _ = d.digest.Write(p[:n])\n d.bytes += int64(n)',
+            'Events []diagnosticHTTPEvent': 'DecodedSHA256 string `json:"decoded_sha256"`\n Uncompressed bool `json:"uncompressed"`\n Events []diagnosticHTTPEvent',
+            'd.bytes,d.events}': 'd.bytes,hex.EncodeToString(d.digest.Sum(nil)),d.uncompressed,d.events}',
+            'kind:kind}': 'kind:kind,digest:sha256.New()}',
+            'd.status = resp.StatusCode': 'd.uncompressed = resp.Uncompressed\n d.status = resp.StatusCode',
+        }
+        for old, new in changes.items():
+            if fragment.count(old) != 1:
+                raise RuntimeError('compression diagnostic anchor changed')
+            fragment = fragment.replace(old, new)
     replacement = out / 'http.go'
-    replacement.write_text(text + '\n' + (SOURCE / 'scripts/profile/http_trace.go.inc').read_text())
+    replacement.write_text(text + '\n' + fragment)
     base.run(['gofmt', '-w', str(replacement)])
     overlay = out / 'overlay.json'
     test_source = SOURCE / 'internal/cache/diagnostics_test.go'

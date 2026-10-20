@@ -1840,3 +1840,39 @@ checks validate the complete evidence and attribution boundaries. The full
 records verification and limits: one warm sequential runner, no outage/cold-load
 or capacity test, no resolver or packet capture, no exact source for the deployed
 modified service, and no measured compression or persistent-client benefit.
+
+## Gzip comparison protocol, 20 October 2026
+
+The manual main-only profile-gzip.yml workflow compares identity and gzip
+responses on one disposable Ubuntu runner. It seeds the real self-CI result,
+then serves it through current Receipt Disk/Handler behind a temporary verified
+TLS endpoint in a private network namespace. The live droplet and its Caddy
+configuration remain unchanged. A private veth link receives 0, 12 or 32 ms
+one-way netem delay, approximating 0, 24 or 64 ms added round-trip delay without
+shaping the runner's Internet connection. No bandwidth cap or packet loss is added.
+
+Each delay has three blocks of twenty alternating pairs, with two excluded
+warmups per variant/block: 360 measured fetches, 180 per variant. Both clients
+use the same diagnostic build, default gzip negotiation, full validation and a
+fresh empty local cache. Both servers use the same binary, cache entry and test
+certificate; one enables streaming standard-library gzip level 5. A fresh
+encoder is allocated per response; this fixture does not model Caddy's encoder
+implementation or reuse policy. Each block starts a fresh server pair, so RAM
+high-water marks do not carry between variants. Distinct ports identify the two
+servers; assignment is fixed and disclosed rather than assumed irrelevant.
+
+Per-call data contains client wall/CPU/peak-RSS measurements, fixed HTTP clocks,
+decoded-body SHA-256 and byte count, plus server pre/post-compression body bytes,
+decoded SHA-256, status and handler time. Transferred bytes mean encoded HTTP
+body bytes, excluding headers, TLS records, TCP/IP overhead and retransmissions.
+Server CPU is measured over the twenty-call interval after warmups, including
+TLS, handler/compression and diagnostic work. Its peak RSS includes setup and
+warmups. Both variants use identical observers; their common cost is uncalibrated.
+
+The temporary certificate is explicitly declared as an input and its path is
+in the shared environment. That creates a new fixture key, seeded locally.
+Stock/traced full keys must match before and after measurement, as must every
+decoded-body hash and replayed stdout hash. The declared stock client binary
+remains fixed while the diagnostic binary runs separately. No private key,
+certificate content, token, response payload or arbitrary stderr enters the
+published artifact. The results and new teaching chapter follow after CI.

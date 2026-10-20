@@ -17,6 +17,7 @@ class WorkflowPolicy(unittest.TestCase):
         text = (WORKFLOW.parent / 'profile-linux.yml').read_text()
         self.check_manual(text)
         self.check_manual((WORKFLOW.parent / 'profile-http.yml').read_text())
+        self.check_manual((WORKFLOW.parent / 'profile-gzip.yml').read_text())
 
     def check_manual(self, text):
         self.assertIn('workflow_dispatch:', text)

@@ -1,0 +1,34 @@
+name: Gzip response comparison
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gzip-response-comparison
+  cancel-in-progress: false
+jobs:
+  client:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.22.12'
+          cache: false
+      - run: go build -trimpath -buildvcs=false -o /tmp/receipt-self-client ./cmd/receipt
+      - name: Compare gzip and identity on an isolated delayed HTTPS link
+        run: python3 scripts/profile/gzip_compare.py "$RUNNER_TEMP/receipt-gzip-profile"
+        env:
+          RECEIPT_SELF_CI_TOKEN: ${{ secrets.RECEIPT_SELF_CI_TOKEN }}
+      - name: Preserve numeric evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: gzip-response-comparison
+          path: ${{ runner.temp }}/receipt-gzip-profile
+          retention-days: 7
+          if-no-files-found: error
