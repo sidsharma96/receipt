@@ -75,6 +75,26 @@ def explain(env):
     return re.search(r'key: ([a-f0-9]{64})', p.stdout).group(1)
 
 
+def transport_samples(env, key):
+    # Separate diagnostic: curl's DNS/TLS implementation differs from Go's.
+    result = []
+    fields = {'status': 'http_code', 'dns_s': 'time_namelookup', 'connected_s': 'time_connect',
+              'tls_ready_s': 'time_appconnect', 'first_byte_s': 'time_starttransfer',
+              'total_s': 'time_total', 'download_bytes': 'size_download'}
+    template = '{' + ','.join(json.dumps(name) + ':%{' + variable + '}' for name, variable in fields.items()) + '}'
+    header = 'header = ' + json.dumps('Authorization: Bearer ' + env['RECEIPT_TOKEN']) + '\n'
+    for case, route, expected in [('status', '/v1/status/', 204), ('fetch', '/v1/entries/', 200)]:
+        for i in range(10):
+            p = run(['curl', '--silent', '--show-error', '--connect-timeout', '5', '--max-time', '15',
+                     '--config', '-', '--output', '/dev/null', '--write-out', template, ci.REMOTE + route + key],
+                    input=header, env=env)
+            row = json.loads(p.stdout)
+            if row['status'] != expected:
+                raise RuntimeError('transport diagnostic returned unexpected status')
+            result.append({'case': case, 'i': i, **row})
+    return result
+
+
 def main():
     if platform.system() != 'Linux' or os.environ.get('GITHUB_REF') != 'refs/heads/main':
         raise RuntimeError('run only on the trusted disposable Linux main-branch workflow')
@@ -129,6 +149,8 @@ def main():
             if report['key_after'] != key_before:
                 raise RuntimeError('fixture identity changed during measurement')
             report['summary'] = distributions(report['rows'])
+            report['transport'] = {'scope': '20 separate fresh curl processes, verified HTTPS, same endpoint/key/token; not Go httptrace or measured Receipt calls.',
+                                   'rows': transport_samples(env, key_before)}
             tracer = shutil.which('strace')
             if tracer:
                 p = subprocess.run([tracer, '-f', '-c', '-o', str(out / 'strace-local.txt'), ci.CLIENT,

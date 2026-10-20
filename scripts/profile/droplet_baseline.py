@@ -17,8 +17,8 @@ def run(args):
 
 
 def sql(statement):
-    prefix = "SET default_transaction_read_only=on; SET statement_timeout='3s'; "
-    value = run(['runuser', '-u', 'postgres', '--', 'psql', '-X', '-qAt', '-v', 'ON_ERROR_STOP=1', '-d', 'receipt', '-c', prefix + statement])
+    prefix = "BEGIN READ ONLY; SET LOCAL statement_timeout='3s'; "
+    value = run(['runuser', '-u', 'postgres', '--', 'psql', '-X', '-qAt', '-v', 'ON_ERROR_STOP=1', '-d', 'receipt', '-c', prefix + statement + '; COMMIT'])
     return value
 
 
