@@ -517,3 +517,19 @@ large-table or high-concurrency performance.
 **Learn more:** [17. Measure the Linux client and cache server](../guide/17-measure-linux-client-and-server.md)
 
 </details>
+
+### Can we add the server handler time to client HTTP phases?
+<!-- check: guide/18-trace-go-http.md -->
+
+**Level:** Expert
+
+An exact request ID matches a server handler duration to a traced client request. Is the server duration an extra piece to add to DNS, TCP, TLS, first-byte waiting and body reading?
+
+<details>
+<summary>Answer</summary>
+
+No. The client waits while the server works, and server writes can overlap client response transfer. Adding both would count overlapping elapsed time twice. Matching IDs identifies the same request, but does not turn two clocks into an additive timeline.
+
+**Learn more:** [18. Trace the actual Go HTTP client](../guide/18-trace-go-http.md)
+
+</details>

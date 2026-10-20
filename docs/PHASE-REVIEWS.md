@@ -4013,3 +4013,206 @@ change. Revisit server conclusions after recording a known deployed build and
 controlled comparison; do not attribute current-main guarantees to this modified
 old artifact. Revisit cold startup, memory and throughput with dedicated bounded
 tests rather than extrapolating warm sequential hits.
+
+## Actual Go HTTP trace, 19 October 2026
+
+A fresh Linux CI invocation found its saved test result on the droplet. For one
+actual request, DNS finished around 3 ms, TCP around 27 ms, TLS around 65 ms,
+the first response byte arrived around 116 ms, body reading finished around
+164 ms and validation finished around 172 ms. The whole CLI took 228 ms.
+The response's request ID matched a 26 ms server handler. That handler runs
+while the client waits/receives, so its time is not another piece to add.
+[Chapter 18](guide/18-trace-go-http.md) teaches this sequence beside the
+[actual timeline](assets/go-http-trace.svg).
+
+This phase implements diagnostic tooling and documentation, not a production
+optimization. Earlier baseline/Mac reviews remain historical. Publication and
+commit/push were explicitly authorized by the user; the droplet service,
+credentials, system packages and configuration were not changed.
+
+### HTTP trace — 1. Data structures and reasons
+
+The overlay's diagnosticHTTP has a start clock, a bounded slice of named events,
+a mutex, response metadata, byte count and the original response body. A slice
+preserves event order, including repeated events; a map would silently erase
+retry evidence. There are at most 64 events. The ordinary caller alone reads the
+body and counts returned bytes. Callback-owned fields and event append/encoding
+use the mutex. The server ID is retained only if its format matches the existing
+server-generated nonce/sequence convention. No addresses, tokens, request
+headers, keys or body content are collected by this trace.
+
+Python stores numeric per-call records and matches fixed-schema server records
+by exact ID. The curator validates event order and requires one callback per
+analyzed boundary; retries/overlap fail attribution rather than becoming an
+invented serial duration. JSON evidence keeps clocks and IDs available for audit.
+The normal Result/Manifest structures and serialized key representation do not
+change.
+
+### HTTP trace — 2. Architecture, execution and boundaries
+
+The manual main-only workflow builds the ordinary client, then a separate build
+using a temporary Go overlay. The builder checks every replacement anchor occurs
+exactly once, refusing source drift. From actual
+[`text.count` in build](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/http_trace.py#L27-L30):
+
+```python
+    for old, new in changes.items():
+        if text.count(old) != 1:
+            raise RuntimeError('HTTP source changed: review overlay anchor')
+        text = text.replace(old, new)
+```
+
+This substitutes instrumentation during compilation without editing production
+source. It is deliberately tied to the present HTTP implementation, not a
+reusable interface promising compatibility with arbitrary future clients.
+The ordinary self-CI helper clones committed source, prepares dependencies,
+declares inputs and seeds a reusable entry. The harness launches alternating
+stock/traced fresh processes for checked-local status requests and empty-cache
+fetches. The overlay attaches httptrace to the existing request, wraps the body
+without changing Read/Close results, and marks ReadAll and Decode separately.
+Read-only SSH collects server summaries; matching IDs joins the exact requests.
+The curator retains every successful measured call and scoped evidence.
+
+### HTTP trace — 3. Concurrency, networking and primitives
+
+Go's existing default HTTP transport, verified HTTPS, bearer authentication,
+ten-second client timeout and redirect refusal remain. All measured Go requests
+used HTTP/2 with an unreused connection. A new CLI cannot inherit the prior
+process's connection pool. Diagnostic callbacks may execute concurrently, so a
+mutex protects event mutation. Body consumption remains serial as in Remote.Get;
+no new worker pool, daemon, network route or production synchronization is added.
+Race tests exercise existing cache behavior and the overlay's concurrent bounded
+event collector. Synchronous stderr diagnostics add observer cost, measured
+against stock calls but not assumed free. All temporary build/cache locations
+are outside the fingerprinted checkout.
+
+### HTTP trace — 4. Pitfalls and debugging challenges
+
+First response byte means the first header byte, not the complete saved result.
+Timing only c.Do would miss body transfer and Decode. First-byte waiting combines
+network, proxy and server work; body reading combines delivery and client work.
+Server handler time overlaps these intervals. Exact IDs solve request matching,
+not cross-clock synchronization or causal packet attribution. We never subtract
+absolute client/server timestamps to create a one-way network delay.
+
+Six DNS spans exceeded 50 ms, compared with roughly 2 ms medians. This localizes
+variation to the DNS boundary without identifying resolver queues, retransmits
+or scheduling. The new runner had roughly 24 ms TCP spans versus about 64 ms in
+the earlier curl run; source and network path also differ, so cross-run totals
+are not a before/after speedup. Multiple connection attempts, callback truncation
+or missing server IDs cause analysis failure. Network failures stop successful-hit
+measurement; their partial traces are not analyzed by this protocol.
+
+### HTTP trace — 5. Hot/cold paths and costs
+
+Thirty traced samples per path gave median status HTTP time 91.42 ms and fetch
+171.45 ms. Fetch spans: DNS 2.12, TCP 23.99, TLS 38.64, write-to-first-byte 49.03,
+body read 47.84 and Decode 8.74 ms. Matched handler medians were 1.06 ms status
+and 24.85 ms fetch. Fetch bodies were 60,238 bytes returned by net/http; wire
+bytes/compression were not measured. Fingerprinting remained about 46 ms.
+Status lookup had a median 8.81 ms outside the HTTP span; fetch had 2.40 ms.
+Those residuals include local work and diagnostic emission, not exact function
+CPU attribution. Server SQL median was 1.09 ms for fetch, authentication 0.67 ms,
+files 0.10 ms; remaining handler work is not separately profiled.
+
+Ordinary whole-CLI medians were 153.30 ms checked-local and 228.79 ms fetch;
+mean CPU 82.86/87.23 ms and peak resident RAM reports 16.26/16.49 MB. Traced means
+added roughly 0.61/0.98 ms CPU and 0.069/0.063 MB peak RAM in adjacent pairs.
+Paired median elapsed differences were +0.96/+1.18 ms, but wide paired ranges
+include network variability. All measured Linux input-block counts and major
+faults were zero; output blocks were 120 status/240 fetch, not physical-I/O
+transactions. No CPU-cycle, retained-heap, cold-cache or concurrency claim follows.
+
+### HTTP trace — 6. Guarantees, assumptions and non-goals
+
+All four full keys (stock/traced, before/after) matched, and every measured call
+was a successful hit with identical replay stdout hash. The declared stock CLIENT
+extra input stayed unchanged; the diagnostic executable was launched separately.
+This makes this controlled substitution compatible with the seeded fixture.
+It does not mean changed Receipt binaries should be excluded from production
+fingerprints or that stable input keys prove deterministic output.
+
+The production client and droplet remain unchanged. Existing body-size limits,
+key/result validation and quarantine checks remain. Exact ID matches tie observed
+server summaries to these requests, but do not prove current-main implementation
+of the deployed older modified service. The server PID/start/binary hash were
+stable through the capture. Non-goals include optimizing HTTPS, implementing
+compression/persistence, changing cache identity, disabling validation/security,
+proving remote availability and establishing capacity.
+
+### HTTP trace — 7. Alternatives and reasons
+
+Retrospective comparison: curl timings were a useful separate transport clue,
+but use a different client implementation and cannot establish Go body/Decode
+costs. The Go overlay answers that question directly. Always-on production traces
+would add an output/API/overhead contract; an isolated build keeps this diagnostic
+out of normal invocation behavior. Packet capture could reveal retransmission,
+congestion and DNS traffic, but adds collection privileges, sensitive capture
+boundaries and interpretation work. It remains appropriate if those mechanisms
+must be identified; this experiment makes no claim to replace it.
+
+A persistent client could reuse connections across invocations, but adds process
+lifecycle, credentials, cancellation and recovery requirements. A new http.Client
+variable alone cannot survive CLI exit. Compression could reduce transferred
+bytes but needs a controlled compatibility/CPU/memory comparison. Placement
+could shorten network exchange but needs explicit region/path controls. Extra
+indexes are unsupported by the earlier indexed warm point plans and this small
+matched SQL cost. Skipping authentication or quarantine checks is not an
+acceptable latency shortcut. These are comparisons, not implemented savings.
+
+### HTTP trace — 8. Evidence, verification and remaining risks
+
+[Run 39372867217](https://github.com/sidsharma96/receipt/actions/runs/39372867217)
+completed on Ubuntu 24.04, image 20261012.334.1, Go 1.22.12 linux/amd64, source
+2cb12eb45b225a35f6803b5fc4bf68409bd580e9. Three blocks × two paths × two builds ×
+ten measured calls yielded 120 hits, plus twelve excluded warmups. No measured
+failure or outlier was removed. All 60 traced calls matched server operation,
+status and ID. [Client evidence](measurements/http-trace-2026-10-19/client.json)
+and [recomputed summary](measurements/http-trace-2026-10-19/summary.json) retain
+full distributions, paired comparisons, server events, identity checks and hashes.
+Raw build files, tokens, response bodies and unmatched server traffic are absent
+from the published book.
+
+The overlay cache race suite passed locally and on Linux. Two diagnostic tests
+verify body/result bytes, bearer authentication, same-process connection reuse,
+unsafe-ID rejection and bounded concurrent event mutation. All nine CI helper/
+workflow checks passed, covering both main-only manual profiling workflows.
+All 28 profiling/evidence checks passed after evidence collection, including
+exact cardinalities, digest/summary recomputation, no execution fallback and
+rejection of repeated/reordered callback boundaries. The SVG was rendered and
+inspected; an initial clipped right-hand label was corrected and rechecked.
+The chapter includes a phone-readable text equivalent, actual attributed Go
+excerpts and three synchronized comprehension questions. The documentation build and all 18 checks passed. A clean headless local Chrome
+render at 1200 px and 390 px had no page overflow, loaded the figures, and opened
+the first comprehension answer on click. Desktop and phone screenshots were
+inspected; the phone has the full text equivalent beneath the scaled timeline.
+This is local rendering verification, not authenticated live-site inspection.
+Automated source checks cannot certify teaching quality or prove causal
+performance attribution.
+
+Unmeasured failure modes include DNS/network outages, certificate errors,
+expired/revoked tokens, quarantined/corrupt/oversize payloads under this profiling
+harness, callback retry/overlap attribution, slow diagnostic writers, artifact
+upload failure, cold start, large datasets and concurrent clients. Existing
+product tests exercise some of those behaviors; this successful-hit experiment
+does not measure their cost. Runner hardware model/region/topology were not
+captured by this new harness. CPU/resource observers remain present in both
+builds; their common cost is not calibrated. The stock/traced pairs are adjacent,
+not simultaneous identical network conditions. Actual deployed modified source
+is still unknown and was not replaced.
+
+### HTTP trace — 9. Revisit conditions
+
+Revisit connection reuse when multiple invocations justify a persistent client
+and its lifecycle/security costs. Revisit transport placement and compression
+with fixed source/workload, controlled endpoint placement, payload/wire-byte
+measurements and repeated jobs. Revisit DNS with bounded resolver/packet/OS
+observations when its tail threatens the latency target. Revisit validation with
+CPU profiles if larger results make its roughly 9 ms contribution material.
+Revisit server encoding/write boundaries with a known deployed build before
+assigning its remaining handler time. Revisit indexes when table size, predicates
+or concurrency change, not because HTTPS is slower than a warm indexed query.
+Revisit the overlay whenever source anchors, HTTP defaults, callback ordering or
+response format changes; reject unsupported evidence rather than silently
+relabeling it. Revisit uncertainty with repeated matched runs before making a
+numerical optimization or capacity promise.

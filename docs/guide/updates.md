@@ -416,3 +416,14 @@ better next targets than the Mac startup tail. The
 records the full environment, CPU/RAM/I/O evidence, older deployed-build scope,
 verification and remaining experiments. No production optimization or droplet
 redeployment was implemented.
+
+## 19 October 2026: trace Go HTTP requests and match the droplet
+
+New [Chapter 18](18-trace-go-http.md) follows one actual Linux Go HTTP request
+through DNS, TCP, TLS, first-byte waiting, body reading and validation. An isolated
+diagnostic build completed 120 measured stock/traced hits; all 60 traced calls
+matched exact droplet request IDs. The measurements identify fresh connection
+and transfer costs, plus six DNS delays over 50 ms. They do not establish a
+production speedup or the packet-level cause. Full keys and replay stdout hashes
+matched for the declared fixture. The [nine-question review](../PHASE-REVIEWS.md#actual-go-http-trace-19-october-2026)
+records observer overhead, compatibility scope, verification and next decisions.

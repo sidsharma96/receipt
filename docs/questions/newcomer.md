@@ -616,3 +616,19 @@ the test command there on a miss. The droplet stores and returns reported result
 **Learn more:** [17. Measure the Linux client and cache server](../guide/17-measure-linux-client-and-server.md)
 
 </details>
+
+### Why does the next CLI invocation need another connection?
+<!-- check: guide/18-trace-go-http.md -->
+
+**Level:** Newcomer
+
+Receipt fetches a result, exits, then starts again. Can its old Go HTTP connection pool serve the new process?
+
+<details>
+<summary>Answer</summary>
+
+No. The pool belongs to that process. When Receipt exits, that process and its connections go away. A new invocation must establish its own connection. Keeping a process alive could allow reuse, but it would add lifecycle and security decisions.
+
+**Learn more:** [18. Trace the actual Go HTTP client](../guide/18-trace-go-http.md)
+
+</details>

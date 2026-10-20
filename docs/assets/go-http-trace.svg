@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 410" role="img" aria-labelledby="title desc">
+<title id="title">One Go HTTP remote fetch: 172 milliseconds</title>
+<desc id="desc">The GitHub client spends about 3 milliseconds on DNS, 24 connecting, 38 on TLS, 50 to first byte, 48 reading and 8 decoding. The matching server handler takes 26 milliseconds within the client wait and transfer; it must not be added.</desc>
+<rect width="960" height="410" rx="14" fill="#111827"/>
+<g font-family="system-ui,sans-serif" fill="#e5e7eb">
+<text x="36" y="40" font-size="23" font-weight="bold">Follow one real Go HTTP fetch on Linux CI</text>
+<text x="36" y="68" font-size="16">Client clocks relative to request start • HTTP/2 • 60,238 body bytes</text>
+<text x="36" y="105" font-size="16">GitHub runner</text>
+<rect x="70" y="150" width="774.21" height="54" fill="#4b5563"/>
+<rect x="70.49" y="150" width="14.65" height="54" fill="#89b4fa"/>
+<path d="M 77.81 150 V 128 H 36" fill="none" stroke="#89b4fa"/>
+<text x="36" y="120" font-size="14" fill="#89b4fa">DNS 3.3 ms</text>
+<rect x="85.15" y="150" width="107.67" height="54" fill="#74c7ec"/>
+<text x="138.99" y="173" text-anchor="middle" fill="#111827" font-size="15" font-weight="bold">TCP</text>
+<text x="138.99" y="193" text-anchor="middle" fill="#111827" font-size="14">23.9 ms</text>
+<rect x="192.90" y="150" width="171.41" height="54" fill="#cba6f7"/>
+<text x="278.61" y="173" text-anchor="middle" fill="#111827" font-size="15" font-weight="bold">TLS</text>
+<text x="278.61" y="193" text-anchor="middle" fill="#111827" font-size="14">38.1 ms</text>
+<rect x="365.00" y="150" width="225.79" height="54" fill="#f9e2af"/>
+<text x="477.90" y="173" text-anchor="middle" fill="#111827" font-size="15" font-weight="bold">First byte</text>
+<text x="477.90" y="193" text-anchor="middle" fill="#111827" font-size="14">50.2 ms</text>
+<rect x="591.04" y="150" width="215.34" height="54" fill="#a6e3a1"/>
+<text x="698.71" y="173" text-anchor="middle" fill="#111827" font-size="15" font-weight="bold">Body read</text>
+<text x="698.71" y="193" text-anchor="middle" fill="#111827" font-size="14">47.9 ms</text>
+<rect x="806.38" y="150" width="37.81" height="54" fill="#fab387"/>
+<path d="M 825.29 150 V 128 H 846" fill="none" stroke="#fab387"/>
+<text x="846" y="120" font-size="14" fill="#fab387">Decode 8.4 ms</text>
+<path d="M70.0 208 v8" stroke="#9ca3af"/>
+<text x="70.0" y="238" text-anchor="middle" font-size="14">0 ms</text>
+<path d="M250.0 208 v8" stroke="#9ca3af"/>
+<text x="250.0" y="238" text-anchor="middle" font-size="14">40 ms</text>
+<path d="M430.0 208 v8" stroke="#9ca3af"/>
+<text x="430.0" y="238" text-anchor="middle" font-size="14">80 ms</text>
+<path d="M610.0 208 v8" stroke="#9ca3af"/>
+<text x="610.0" y="238" text-anchor="middle" font-size="14">120 ms</text>
+<path d="M790.0 208 v8" stroke="#9ca3af"/>
+<text x="790.0" y="238" text-anchor="middle" font-size="14">160 ms</text>
+<text x="36" y="275" font-size="16">Gray slivers: setup and gaps between measured operations.</text>
+<path d="M 36 295 H 924" stroke="#4b5563"/>
+<text x="36" y="324" font-size="18">Matched droplet handler: 26.0 ms</text>
+<text x="36" y="350" font-size="16">The server works while the client waits and receives bytes. These times overlap.</text>
+<text x="36" y="378" font-size="15">172 ms HTTP span; 228 ms whole CLI invocation. One request, not an average.</text>
+</g></svg>

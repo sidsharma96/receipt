@@ -1,5 +1,10 @@
 # 17. Measure the Linux client and cache server
 
+Current follow-up: [Chapter 18](18-trace-go-http.md) now traces Receipt’s actual
+Go HTTP client and matches 60 requests to exact server log entries. It separates
+connection setup, body transfer and validation, and identifies DNS tail delays.
+The measurements below remain the earlier baseline, not a speedup comparison.
+
 GitHub starts an Ubuntu runner for our test job. That runner builds Receipt and
 launches `receipt run --remote https://receipt.sidsharma.dev -- go test -count=1 ./...`.
 Receipt reads the checkout, hashes its inputs and checks Go's settings **on the

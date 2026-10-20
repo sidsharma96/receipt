@@ -1,4 +1,4 @@
-// Diagnostic overlay fragment, appended to internal/cache/http.go by http_trace.py.
+// Diagnostic overlay fragment (.go.inc), appended to internal/cache/http.go by http_trace.py.
 // Never compiled into the ordinary Receipt binary.
 type diagnosticHTTP struct {
  mu sync.Mutex

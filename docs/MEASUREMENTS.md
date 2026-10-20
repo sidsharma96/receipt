@@ -1753,4 +1753,90 @@ declared stock binary would correctly change the key. The harness requires full
 stock/traced keys to match before and after measurement and all measured replayed
 stdout hashes to agree. This is a diagnostic substitution, not permission to
 omit changed production dependencies. Resource and latency results will include
-both builds so tracing overhead remains visible. No results are claimed yet.
+both builds so tracing overhead remains visible. This protocol was recorded
+before the run; the results below complete it.
+
+## Go HTTP tracing results, 19 October 2026
+
+The protocol above completed on [Linux CI run 39372867217](https://github.com/sidsharma96/receipt/actions/runs/39372867217),
+source 2cb12eb45b225a35f6803b5fc4bf68409bd580e9, Go 1.22.12 linux/amd64,
+Ubuntu 24.04 image 20261012.334.1. The experiment ran on 20 October UTC,
+19 October in the operator's America/Los_Angeles timezone. See
+[Chapter 18](guide/18-trace-go-http.md) for the concrete execution sequence.
+
+Retained [client calls](measurements/http-trace-2026-10-19/client.json) contain
+all 120 measured hits. The [validated summary](measurements/http-trace-2026-10-19/summary.json)
+contains exactly matched server logs for all 60 traced calls, complete phase
+distributions, paired stock/traced comparisons, representative actual requests,
+full before/after keys and stable server process/binary identity. The client file
+hash is recorded in the summary. No credentials, body bytes, arbitrary stderr or
+unmatched server traffic are published. The server was observed read-only.
+
+Median traced phases in ms (30 status, 30 fetch):
+
+| Boundary | Status | Fetch |
+| --- | ---: | ---: |
+| DNS | 2.198 | 2.117 |
+| TCP | 24.047 | 23.986 |
+| TLS | 38.221 | 38.642 |
+| Request written to first header byte | 25.828 | 49.035 |
+| First header byte to headers returned | 0.026 | 0.028 |
+| Body read | No body | 47.843 |
+| Decode | Outside this status request | 8.743 |
+| Request start through body close | 91.423 | 171.451 |
+| Matching server handler, overlapping client span | 1.057 | 24.846 |
+| Lookup outside that HTTP span, residual | 8.806 | 2.398 |
+
+Every trace used HTTP/2.0 with reused=false. Status bodies had zero bytes;
+fetch bodies had 60,238 bytes returned by net/http. No assumption about wire
+compression is made. Five status DNS lookups and one fetch DNS lookup exceeded
+50 ms; maxima were 85.561 and 72.510 ms. No packet/resolver trace identifies their
+cause. Every connection attempt count was one; the curator rejects multiple
+attempts rather than incorrectly pairing overlapping callbacks. All traces fit
+the 64-event cap. Source semantics were checked against the official
+[Go 1.22.12 httptrace implementation](https://raw.githubusercontent.com/golang/go/go1.22.12/src/net/http/httptrace/trace.go).
+
+Whole-process comparison, including GNU time and Receipt stage diagnostics:
+
+| Build/path | Median elapsed ms | Mean CPU ms | Mean peak RSS MB |
+| --- | ---: | ---: | ---: |
+| Stock checked-local | 153.298 | 82.864 | 16.259 |
+| Traced checked-local | 154.446 | 83.479 | 16.328 |
+| Stock remote-fetch | 228.788 | 87.234 | 16.488 |
+| Traced remote-fetch | 228.349 | 88.213 | 16.551 |
+
+Adjacent paired traced-minus-stock mean CPU differences: +0.614 ms status,
++0.979 ms fetch; mean peak RSS differences: +0.069 MB and +0.063 MB. Median paired
+latency differences: +0.962 and +1.181 ms. Pairwise latency ranges were
+−71.800…+82.994 ms and −61.517…+42.513 ms. These include network variation and
+are not precise causal overhead estimates. Both observers are enabled on both
+builds. CPU is child-inclusive process time, not cycle counts; peak RSS is GNU
+time's report, not heap allocation or the sum of simultaneous process memories.
+Every measured call reported zero input blocks and zero major faults; output
+blocks were 120 checked-local and 240 fetch. These are OS accounting counters,
+not physical-I/O counts or a claim that no files were accessed.
+
+Full keys matched stock/traced before/after and all replay stdout hashes matched.
+The stock CLIENT binary remains the workload's declared extra input while the
+traced executable is launched separately. Its distinct binary hash is retained;
+this deliberate diagnostic substitution is not a production dependency omission.
+The server's older modified binary was not replaced. Matching fetch-stage medians
+were authentication 0.666 ms, SQL 1.089 ms and file work 0.100 ms; remaining
+handler time is not function-profiled. Do not add overlapping server/client spans
+or compare this runner's lower total to earlier runners as an optimization.
+
+Reproduce with the main-only manual profile-http.yml workflow and its existing
+CI secret. Retrieve its numeric artifact, collect read-only server snapshots and
+fixed-schema request logs over the same window using droplet_baseline.py, then
+run summarize_http_trace.py RAW_DIRECTORY NEW_OUTPUT_DIRECTORY. Its expected raw
+layout is client/results.json plus server-before.json, server-after.json and
+server-logs.json. Raw build files and overlay source stay outside the artifact
+and book. Run http_trace_figure.py to regenerate the representative timeline.
+
+The overlay cache race suite passed locally and on Linux, including two new
+checks for bytes/authentication/reuse and concurrent bounded events. Python
+checks validate the complete evidence and attribution boundaries. The full
+[nine-question review](PHASE-REVIEWS.md#actual-go-http-trace-19-october-2026)
+records verification and limits: one warm sequential runner, no outage/cold-load
+or capacity test, no resolver or packet capture, no exact source for the deployed
+modified service, and no measured compression or persistent-client benefit.

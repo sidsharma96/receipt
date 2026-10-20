@@ -482,3 +482,19 @@ A standalone local hit and a checked-local hit therefore have different costs.
 **Learn more:** [17. Measure the Linux client and cache server](../guide/17-measure-linux-client-and-server.md)
 
 </details>
+
+### Does reading a response body measure JSON validation?
+<!-- check: guide/18-trace-go-http.md -->
+
+**Level:** Practitioner
+
+The client has received the response headers. It reads the body bytes, then calls Decode. Are those one operation?
+
+<details>
+<summary>Answer</summary>
+
+No. Reading may wait for bytes to arrive. Decode then checks the saved result structure, checksums and relationships. Separate boundaries show whether the client waits for transfer or spends time validating bytes already in memory.
+
+**Learn more:** [18. Trace the actual Go HTTP client](../guide/18-trace-go-http.md)
+
+</details>
