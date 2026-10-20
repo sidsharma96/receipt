@@ -514,3 +514,19 @@ No. The server spends CPU compressing, the client spends CPU decompressing, and 
 **Learn more:** [19. Compare gzip and uncompressed responses](../guide/19-compare-gzip-responses.md)
 
 </details>
+
+### Can pooled server memory belong to only one variant?
+<!-- check: guide/20-test-gzip-on-caddy.md -->
+
+**Level:** Practitioner
+
+One long-running Caddy process serves identity, then gzip, then identity again. Can the final identity memory reading be treated as a fresh process with no gzip buffers?
+
+<details>
+<summary>Answer</summary>
+
+No. The process can retain buffers and other state from earlier requests. Its sampled memory describes that running process, not an independent allocation cost for the current encoding. Fresh processes or allocation profiles answer different memory questions.
+
+**Learn more:** [20. Test gzip on the actual Caddy deployment](../guide/20-test-gzip-on-caddy.md)
+
+</details>

@@ -1,5 +1,10 @@
 # 19. Compare gzip and uncompressed responses
 
+Actual-deployment follow-up: [Chapter 20](20-test-gzip-on-caddy.md) now compares
+the real Caddy/Receipt/PostgreSQL endpoint from Linux CI. Its short network path
+shows a large body-byte reduction but a much smaller latency difference and
+higher observed Caddy CPU. The temporary profile was restored afterward.
+
 Receipt fetches a saved result over a link with about 24 ms round-trip delay.
 Sending its plain response body took 62,728 bytes. Sending the same result with
 gzip took 19,073 bytes. The client reconstructed the same original bytes and

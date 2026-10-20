@@ -648,3 +648,19 @@ Exactly the same bytes. Compression changes how the response travels, not the sa
 **Learn more:** [19. Compare gzip and uncompressed responses](../guide/19-compare-gzip-responses.md)
 
 </details>
+
+### Why count bytes at Caddy as well as the client?
+<!-- check: guide/20-test-gzip-on-caddy.md -->
+
+**Level:** Newcomer
+
+Go automatically decompresses a gzip response before Receipt reads its body. Does the client body length tell us how many compressed body bytes crossed the link?
+
+<details>
+<summary>Answer</summary>
+
+No. The client sees the original decoded bytes. Caddy counts the encoded body it writes; matching the response request ID joins that byte count to the client result. Neither count includes all TLS, TCP or network headers.
+
+**Learn more:** [20. Test gzip on the actual Caddy deployment](../guide/20-test-gzip-on-caddy.md)
+
+</details>

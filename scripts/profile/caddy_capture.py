@@ -113,13 +113,20 @@ def export():
             if unit=='caddy' and event.get('logger')=='http.log.access.receipt_gzip':
                 # No arbitrary fields are copied, even if Caddy's runtime schema changes.
                 request_id=event.get('request_id','')
-                if not isinstance(request_id,str) or not re.fullmatch('[a-f0-9]{32}-[a-f0-9]{1,16}',request_id): continue
-                caddy.append({k:event.get(k) for k in ('ts','duration','status','size','request_id','encoding')})
+                if not isinstance(request_id,str) or not re.fullmatch('[a-f0-9]{32}-[a-f0-9]{1,16}',request_id):
+                    request_id=''
+                record={k:event.get(k) for k in ('ts','duration','status','size','encoding')}
+                record['request_id']=request_id
+                if record['encoding'] not in ('','gzip'):
+                    record['encoding']='other'
+                caddy.append(record)
             if unit=='receipt' and set(event)=={'version','request_id','operation','status','duration_ns','stages'}:
                 receipt.append(event)
     samples=[json.loads(line) for line in (STATE/'samples.jsonl').read_text().splitlines()]
     print(json.dumps({'metadata':meta,'restoration':json.loads((STATE/'restored.json').read_text()),
-                      'samples':samples,'caddy':caddy,'receipt':receipt}))
+                      'samples':samples,'caddy':caddy,'receipt':receipt,
+                      'final_binary_sha256':{name:digest(Path(path).read_bytes()) for name,path in
+                        [('caddy','/usr/bin/caddy'),('receipt','/usr/local/bin/receipt')]}}))
 
 if __name__=='__main__':
     {'prepare':prepare,'restore':restore,'sample':sample,'export':export}[sys.argv[1]]()

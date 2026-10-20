@@ -2024,3 +2024,149 @@ runtime work and reports any unmatched access records. Peak sampled RSS is not
 an exact lifetime peak or retained heap. Windows use only server clocks; client
 and server absolute timestamps are not subtracted. Results and the new chapter
 will distinguish measured observations from an isolated compression CPU cost.
+
+## Actual Caddy gzip results, 20 October 2026
+
+[Run 39471579585](https://github.com/sidsharma96/receipt/actions/runs/39471579585)
+completed on source d335e9c8f9389e41c27ec8894e24b094886c24a4. Client: Ubuntu 24.04,
+image 20261012.334.1, Go 1.22.12 linux/amd64, two AMD EPYC 7763 CPUs. Server:
+actual Caddy v2.11.7, existing verified HTTPS endpoint and credential/PostgreSQL
+Receipt deployment. The Receipt artifact is still the older modified binary
+recorded in Chapter 17, SHA-256 f5e022b2b8ad1f499883aebd054a60ff7c0505fc74e5314f387fa7ba671005d5.
+Caddy binary SHA-256 is 678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9.
+Both hashes matched again after the run. No backend deployment occurred.
+
+[Client calls](measurements/caddy-gzip-2026-10-20/client.json),
+[sanitized server records and samples](measurements/caddy-gzip-2026-10-20/server.json)
+and [recomputed summary](measurements/caddy-gzip-2026-10-20/summary.json) retain
+all 180 measured hits, 2,534 server resource samples, matched Caddy/Receipt
+records, full keys, body/replay/binary hashes and resource windows. The summary
+records both source evidence file hashes. Twelve warmups were excluded by protocol.
+No failed call, fallback execution or outlier was removed. All 180 measured IDs
+matched client, Caddy and Receipt status/operation. No extra Caddy request fell
+inside the six padded resource windows, including records without a valid
+response ID (the exporter retains those anonymously; none occurred here).
+
+| Metric, 90 calls per encoding | Identity | Gzip |
+| --- | ---: | ---: |
+| Whole CLI median ms | 120.528 | 118.220 |
+| Whole CLI mean ms | 125.299 | 118.524 |
+| Whole CLI p95 ms | 160.817 | 130.643 |
+| Whole CLI maximum ms | 238.787 | 141.937 |
+| Mean client CPU ms | 90.860 | 90.590 |
+| Mean reported client peak RSS MB | 16.523 | 16.534 |
+| Median encoded body bytes | 64,252 | 20,040 |
+| Encoded byte range | 64,252 | 20,040–20,045 |
+| Decoded bytes | 64,252 | 64,252 |
+| Median TCP ms | 1.873 | 1.858 |
+| Median TLS ms | 16.587 | 16.246 |
+| Median write-to-first-byte ms | 27.065 | 27.285 |
+| Median body read ms | 3.548 | 1.683 |
+| Median Decode ms | 9.448 | 9.155 |
+| Median complete HTTP span ms | 61.607 | 59.552 |
+| Median lookup outside HTTP span ms | 2.583 | 2.654 |
+| Matching Caddy median duration ms | 26.546 | 26.796 |
+| Matching Receipt median duration ms | 25.108 | 23.790 |
+
+Mean encoded-byte reduction is 68.810%. Counts are Caddy's encoded HTTP body
+writes, excluding headers, TLS/TCP/IP framing and retransmissions. They are not
+packet/billing counters. Variable gzip stream sizes reconstructed identical
+bytes; no encoder-flush cause was investigated. Phase medians are not additive,
+and server handler spans overlap client waiting. Client CPU includes child
+processes; GNU time peak RSS is a native KiB report converted to decimal MB,
+not retained heap or exact simultaneous process-tree memory. Both builds carry
+the same trace/hash observer; common overhead and the tiny explicit-header
+instruction difference are not A/A-calibrated.
+
+DNS median was about 2.10 ms in both encodings. Identity mean/max were
+7.934/123.683 ms; gzip mean/max 2.521/20.363 ms. Three identity calls in block 0
+exceeded 50 ms DNS (51.670, 79.215 and 123.683 ms), with CLI times 168.40, 201.33
+and 238.79 ms. These are retained. Compression does not remove DNS; the 6.775 ms
+mean and observed p95 differences are not isolated compression savings.
+
+| Block | Identity CLI median ms | Gzip CLI median ms | Difference of medians, gzip minus identity ms |
+| --- | ---: | ---: | ---: |
+| 0 | 121.068 | 120.238 | −0.829 |
+| 1 | 121.354 | 115.649 | −5.705 |
+| 2 | 119.239 | 118.674 | −0.565 |
+
+These are batched distributions, not adjacent request pairs. The order reversed
+in block 1 but did not randomize every call. The short ~1.9 ms connection path
+contrasts with earlier runners' ~24/~64 ms spans; topology was not recorded well
+enough to assign a region or compare absolute job totals as a speedup.
+
+Server CPU windows bracket matched Caddy event envelopes with one-second padding,
+rounded outward to 100 ms samples. Thirty measured hits occupy each window;
+no unmatched access traffic was observed. Cgroup usage deltas include TLS,
+proxy/backend work, background runtime/database work and diagnostics. They are
+observed budgets, not isolated per-request compression costs.
+
+| Service | Identity mean window CPU / measured hit ms | Gzip mean window CPU / measured hit ms |
+| --- | ---: | ---: |
+| Caddy | 3.449 | 5.086 |
+| Receipt | 22.418 | 21.934 |
+| PostgreSQL | 1.685 | 1.738 |
+
+Caddy's per-block identity/gzip CPU budgets were 3.347/5.383, 3.521/4.676 and
+3.479/5.198 ms/hit. Gzip was higher in all three windows; the pooled mean
+increase was 1.636 ms/hit. Backend changes are not evidence that compression
+optimizes Receipt or PostgreSQL. We did not collect CPU cycles or function profiles.
+
+| Batch in chronological order | Caddy sampled max RSS MB | Caddy sampled max cgroup memory MB |
+| --- | ---: | ---: |
+| Identity 0 | 55.017 | 15.364 |
+| Gzip 0 | 55.742 | 16.032 |
+| Gzip 1 | 56.701 | 16.998 |
+| Identity 1 | 57.655 | 17.940 |
+| Identity 2 | 58.819 | 19.157 |
+| Gzip 2 | 59.138 | 19.493 |
+
+These are samples of one long-lived Caddy process, not independent per-variant
+peaks. Buffer/pool/runtime state can carry into later identity windows. Across
+all measured windows Receipt's sampled maximum RSS was 13.206 MB, PostgreSQL
+parent RSS 32.416 MB. PostgreSQL worker/group memory is represented separately
+by its cgroup counter (maximum 32.387 MB). RSS and cgroup accounting have different
+ownership/shared-page scopes; do not add or subtract them as an allocator budget.
+No allocation, retained-heap or causal compression RAM saving was established.
+
+All six stock/identity/gzip before/after keys matched
+3c576cd8c993be38c46dc198e43ca5b1ba34eb64699a3bbe08ecc6932cc8db9e.
+All decoded bodies matched SHA-256
+7f645f7cfde5b7ac850d24cc993ac7ec4e1e72283a9f6a89b37051dfd5a48b5a;
+all replay stdout hashes and exit statuses matched. The stock client stays a
+declared input while the diagnostic builds run separately. Encoding is a
+transport choice, not a change to command/manifest identity. This is fixture
+compatibility, not deterministic execution or permission to ignore changed inputs.
+
+The original Caddyfile SHA-256 before/after was
+e72e66c66fded6cdb4f019120c182d42fba66dfb3f2ef37fb4c6232faa073859;
+the temporary profile was ef3870340fe7fb364a56ffc0b2bccf503094dd99d414562c6473499b2d9ea721.
+Caddy stayed active; the [private admin-API loaded-config check](measurements/caddy-gzip-2026-10-20/restoration-check.json)
+matched the adapted restored source exactly; only its canonical hash is retained. A post-restore unauthenticated identity probe
+returned the expected 401. The sampler and rollback timer were confirmed inactive. Root-only
+session backup/capture files were exported and removed after the restoration
+check; no profiling unit remains active. Production compression was not left enabled.
+
+Reproduce only as an authorized operator: prepare a new root-owned /run session
+with caddy_capture.py and Caddyfile.gzip-profile, validate/reload with the helper,
+start the bounded sampler, then dispatch profile-caddy.yml on trusted main.
+Restore before analysis, stop sampling and export fixed-schema numeric server
+records. Raw local layout for summarize_caddy.py is client/results.json plus
+server.json; export includes final binary hashes. The helper intentionally refuses
+an existing session or unexpected original configuration. Do not reuse it blindly
+against a changed deployment. caddy_figure.py regenerates the figure from the
+committed summary. Requests/response headers are filtered before journal output;
+no credentials, URLs, addresses or body content enter the published evidence.
+
+The overlay cache race suite passed locally and on Linux; all nine CI helper/
+policy checks and all 36 profiling/evidence checks pass after collection. Checks
+cover exact matching/counts, hashes, response encoding/byte accounting, original
+configuration restoration, binary identity, resource-window bracketing, privacy
+configuration and rejection of concurrent config overwrite or missing/wrong data.
+The book built and all 18 documentation checks passed. Desktop/phone local
+renders were inspected with no page overflow; comprehension answers opened
+on click and closed with Enter.
+The [chapter](guide/20-test-gzip-on-caddy.md) and
+[nine-question review](PHASE-REVIEWS.md#actual-caddy-gzip-comparison-20-october-2026)
+record the learning path and untested cases. No live corruption, revocation,
+concurrency/load, packet capture, power-loss or timed-rollback-failure test was run.

@@ -549,3 +549,19 @@ No. The fixture uses the current Receipt disk handler and a standard-library gzi
 **Learn more:** [19. Compare gzip and uncompressed responses](../guide/19-compare-gzip-responses.md)
 
 </details>
+
+### Does a server CPU window isolate compression work?
+<!-- check: guide/20-test-gzip-on-caddy.md -->
+
+**Level:** Expert
+
+Thirty measured gzip requests fall inside a server CPU accounting window. Does dividing that window CPU by thirty give the exact compression CPU per request?
+
+<details>
+<summary>Answer</summary>
+
+No. The window also includes TLS, proxying, background runtime work and possibly unrelated traffic. It provides an observed resource budget for that interval. Request-ID matching can identify extra HTTP traffic, but does not erase other background work.
+
+**Learn more:** [20. Test gzip on the actual Caddy deployment](../guide/20-test-gzip-on-caddy.md)
+
+</details>

@@ -29,6 +29,7 @@
 - [17. Measure the Linux client and cache server](guide/17-measure-linux-client-and-server.md)
 - [18. Trace the actual Go HTTP client](guide/18-trace-go-http.md)
 - [19. Compare gzip and uncompressed responses](guide/19-compare-gzip-responses.md)
+- [20. Test gzip on the actual Caddy deployment](guide/20-test-gzip-on-caddy.md)
 
 # Defending the design
 

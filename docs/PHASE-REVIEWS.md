@@ -4422,3 +4422,222 @@ with repeated jobs and more server-memory samples before capacity claims.
 Revisit persistence only when repeated invocations justify its extra resident
 process and credential lifecycle. Preserve validation and quarantine checks in
 every candidate; latency is not permission to weaken them.
+
+## Actual Caddy gzip comparison, 20 October 2026
+
+The actual cache endpoint returned the same 64,252-byte saved result to a Linux
+CI client in two encodings. Caddy wrote 64,252 bytes for identity and 20,040–20,045
+for gzip. Go reconstructed identical bytes and Receipt validated/replayed the
+same result. This runner's median TCP span was about 1.9 ms; whole-command medians
+were 120.53/118.22 ms. Observed Caddy CPU was higher with gzip. The
+[teaching chapter](guide/20-test-gzip-on-caddy.md) follows that sequence beside
+the [measured figure](assets/caddy-gzip-comparison.svg).
+
+The user explicitly authorized testing the actual deployment and publishing the
+book. This phase used a temporary, reversible Caddy profile with bounded rollback,
+then restored the original configuration. Receipt/PostgreSQL binaries, credentials
+and service configuration were not changed. This is a completed live experiment,
+not adoption of gzip as the production default. Prior controlled measurements
+remain historical and keep their original scope.
+
+### Actual Caddy — 1. Data structures and reasons
+
+Client records retain the existing bounded, mutex-protected event slice and
+streaming decoded-byte SHA-256. The identity overlay adds one explicit encoding
+request; the gzip build keeps Go's normal negotiation. Server records are fixed
+numeric/opaque-ID objects. A map by server-generated request ID joins the Go,
+Caddy and Receipt records. Lists preserve all 180 calls, including outliers,
+plus resource samples so the windows can be recomputed. No decoded payload is
+retained. Resource values distinguish service CPU microseconds, process RSS KiB
+and cgroup-owned bytes rather than conflating their memory scopes.
+
+The operator helper keeps original/profile configuration hashes and a root-only
+backup, then uses a compare-before-restore guard. This identifies the authorized
+profile and prevents overwriting an unrelated concurrent edit. It is not a
+system-wide lock or crash-durable transaction. Existing Result/Manifest/key
+structures and wire schemas remain unchanged.
+
+### Actual Caddy — 2. Architecture, flow and extension boundaries
+
+The main-only workflow prepares the real self-CI workload and unchanged declared
+stock client input. Two diagnostic clients target the same HTTPS URL, certificate,
+credential, Caddy process and deployed Receipt/PostgreSQL backend. Identity sets
+Accept-Encoding: identity; gzip uses standard Go negotiation/decompression. Every
+measured CLI is fresh and starts with an empty local cache. The observer attaches
+only to request/body/Decode boundaries; it does not replace the transport.
+
+The temporary profile's [`encode`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/Caddyfile.gzip-profile#L6-L11)
+selects successful JSON responses under an entry-GET matcher. It is separate
+from the ordinary deployment Caddyfile. Caddy forwards the unchanged result and
+optionally compresses its representation; the client decompresses and validates
+before local publication/replay. Existing authentication and shared conflict
+behavior remain on the actual backend, unlike the earlier disk-only fixture.
+
+The helper validates before reload and schedules a 25-minute fallback restore.
+After CI completes, the operator restores original file bytes, checks active
+service/hash, stops capture and exports fixed fields. Exact response IDs connect
+encoded Caddy body sizes to decoded client hashes and Receipt handler records.
+These tools are tied to this known original Caddyfile and deployment; they refuse
+unexpected configuration rather than claiming general administrative reuse.
+
+### Actual Caddy — 3. Concurrency, networking and primitives
+
+The real endpoint uses verified HTTPS and all measured requests used HTTP/2 with
+fresh connections. There is no certificate bypass, endpoint relocation, DNS
+pinning or authorization change. Existing CI cache credentials remain in the
+trusted main-only environment; SSH/root access is not added to CI. The operator
+uses existing administrator SSH separately for configuration and observation.
+No packages or toolchains are installed. No new application route is exposed.
+
+A root sampler reads /proc and cgroup counters every 100 ms, outside the measured
+service groups. Its scheduling cost can still compete on the same server CPU;
+that observer cost is not calibrated. Client callbacks retain their mutex and
+64-event bound. The case schedule is three thirty-call batches per encoding,
+with reversed order in block 1 and idle gaps to separate resource windows.
+It is not per-call randomization. Caddy's existing connection/encoder pools and
+runtime state are shared across encodings in one process.
+
+### Actual Caddy — 4. Pitfalls and debugging challenges
+
+Go ReadAll sees decompressed bytes, so the compressed size must come from Caddy's
+encoded writer counter. Access logging normally includes request details; the
+profile removes whole request/response-header objects before journal encoding.
+Only the response request ID and encoding are copied explicitly. The exporter
+keeps fixed numeric fields and validates IDs; no-ID records are retained with an
+empty ID so they can still count as unmatched resource-window traffic. No token,
+URL, address or payload is published. An unauthenticated probe verified 401 and
+the absence of request/response-header objects in the profiling record.
+
+Three long DNS calls landed in the first identity batch, up to 123.68 ms, while
+gzip's maximum was 20.36 ms. Both DNS medians were about 2.10 ms. All outliers are
+retained. Neither gzip nor its configuration removes DNS; attributing all mean/
+p95 improvement to compression would be incorrect. No callback overlap/retry is
+silently paired: the curator requires supported counts/order for reported spans.
+Server handler time overlaps client waiting; server and CI absolute clocks are
+not subtracted. Resource windows use Caddy and sampler clocks on the same server.
+
+### Actual Caddy — 5. Hot/cold paths and costs
+
+Ninety identity/ninety gzip fetches reduced mean body bytes 68.810%. Median body
+reading fell 3.55→1.68 ms. TCP stayed about 1.9 ms, TLS about 16 ms and Decode
+about 9 ms. CLI medians were 120.53→118.22 ms; means 125.30→118.52 ms and p95
+160.82→130.64 ms include uneven DNS tails. Block median differences were −0.83,
+−5.70 and −0.57 ms, showing uncertainty beyond one aggregate number. These
+phase medians are not additive and do not establish packet mechanisms.
+
+Mean client CPU was 90.86/90.59 ms, reported peak resident RAM 16.52/16.53 MB;
+small differences do not prove CPU or memory savings. Service CPU window budgets
+per measured hit were Caddy 3.45/5.09, Receipt 22.42/21.93 and PostgreSQL 1.68/1.74 ms.
+All three gzip Caddy windows were higher, but padded windows also include TLS,
+proxying, background runtime/database work and diagnostics. Zero unmatched Caddy
+requests were observed inside them; non-HTTP background work remains.
+
+Caddy's sampled maximum RSS rose chronologically 55.02→55.74→56.70→57.66→58.82→59.14 MB
+through both encodings. Those are one process's inherited state, not independent
+allocation/retained-heap measurements. Cgroup memory ownership differs from RSS;
+the reference preserves both without adding/subtracting them. Receipt's handler
+medians remained about 25 ms and Caddy about 27 ms. No current-source function
+profile assigns that older modified backend's remaining CPU work.
+
+### Actual Caddy — 6. Guarantees, assumptions and non-goals
+
+All 180 measured calls were validated successful remote hits, with equal decoded
+bytes/hash, equal replay stdout hash and exit code zero. All six stock/identity/
+gzip before/after keys matched. The stock binary remains declared while traced
+builds execute separately, as in prior diagnostic work; this does not authorize
+omitting changed production dependencies. Stable inputs do not prove deterministic
+test output. The small variation in gzip stream length does not violate decoded
+result identity; its exact compressor/flush cause was not investigated.
+
+Original Caddyfile hash matched after restoration; Caddy’s private admin API
+loaded configuration matched the adapted restored source exactly. Caddy remained
+active and a post-restore unauthenticated probe returned 401. Caddy/Receipt file hashes matched
+before/after and observed process identities stayed stable. The rollback timer
+and sampler were confirmed inactive. Root-only session files were exported and removed
+after confirming restoration and inactive profiling units. Configuration validation/atomic replacement
+and compare-before-restore do not promise power-loss recovery or immunity to
+operator edits. A concurrent different config is protected by refusing overwrite;
+manual intervention would then be necessary.
+
+A failed GET/decompression/validation supplies no reusable local result and does
+not mutate the server entry. Normal fallback can execute and later publish under
+existing conflict rules; retry remains subject to a usable/nonquarantined key.
+This run does not time those failures. Non-goals include deploying a new Receipt
+server, enabling gzip permanently, changing cache identity/security, proving
+capacity or eliminating connection setup. Backend guarantees are scoped to the
+observed older modified artifact, not assumed from current-main source.
+
+### Actual Caddy — 7. Alternatives and reasons
+
+The selected comparison keeps one real URL/backend and changes negotiated response
+encoding. Retrospective comparison: two servers/ports would add topology and
+pool-state confounds; a fixture could control delay better but would not answer
+the actual Caddy deployment question. Whole batches permit meaningful resource
+windows without exposing an administrative metric API to CI. Adjacent randomized
+calls would better balance network variation but make coarse server CPU allocation
+between variants harder. The current batch reversal helps only partially.
+
+Permanent compression would reduce body bytes but costs proxy CPU and has little
+observed latency gain on this short path. It requires an adoption decision based
+on client placement and load, not an automatic conclusion from the earlier delayed
+fixture. Precompression could move repeated CPU work to publication at the cost
+of stored representations and write logic. Encoder pooling already belongs to
+Caddy's implementation; this experiment does not redesign it. Persistent clients
+could avoid setup but add resident memory, cancellation and credential lifecycle.
+None is implemented here. Lower/higher levels and small/incompressible payloads
+were not compared. Skipping validation/auth/quarantine is not a performance option.
+
+### Actual Caddy — 8. Evidence, verification and remaining risks
+
+[Run 39471579585](https://github.com/sidsharma96/receipt/actions/runs/39471579585)
+completed on source d335e9c8f9389e41c27ec8894e24b094886c24a4, Ubuntu 24.04 image
+20261012.334.1, Go 1.22.12 linux/amd64 and two AMD EPYC 7763 CPUs. The actual
+Caddy version was v2.11.7. [Client evidence](measurements/caddy-gzip-2026-10-20/client.json),
+[server capture](measurements/caddy-gzip-2026-10-20/server.json) and
+[summary](measurements/caddy-gzip-2026-10-20/summary.json) retain 180 measured hits,
+2,534 resource samples, all exact joins, hashes, six resource windows and complete
+distributions. Twelve warmups were excluded by protocol. No failure or outlier
+was removed. Export was amended to retain anonymous no-ID access records safely;
+none were present. The summary recomputes from retained evidence and verifies
+restoration, binary identity and supported span counts.
+
+Caddy adapted/validated the profile before reload. Local and Linux overlay cache
+race suites passed. All nine CI helper-policy checks and 36 profiling/evidence
+checks pass, covering exact joins/counts/digests, encoding/body accounting,
+resource bracketing, original config/binary identities, privacy configuration,
+refusal to overwrite concurrent edits and rejection of missing/wrong request data.
+No production Go code changed. The measured SVG was rendered to PNG and inspected
+for readable labels, common byte/latency scales, shared-process chronology and
+clear actor arrows. The book built and all 18 documentation checks passed. Clean headless local
+Chrome renders at 1200×1000 and 390×844 loaded the figures without page overflow.
+The first comprehension answer opened on click and closed with Enter at both
+widths; desktop and phone screenshots were inspected. A text equivalent follows
+the scaled SVG. This verifies local rendering, not authenticated live-site
+content. Automated checks cannot certify teaching quality or causal attribution.
+
+Untested cases include live corrupt/truncated gzip, revoked/expired credentials,
+quarantined results, payload-size extremes, client cancellation, overload,
+concurrent clients, background traffic interference, slow diagnostic writers,
+fixture/workflow timeouts, artifact upload failure, timer-triggered restoration,
+power loss and concurrent config changes during a live restore. The pure guard
+unit test covers refusal but does not inject that situation into production.
+No packet capture, CPU cycles, allocation profile, cold caches, regional placement
+control or throughput/capacity claim is included. Only one runner and one saved
+payload were measured, with batch scheduling and inherited server pool state.
+
+### Actual Caddy — 9. Revisit conditions
+
+Revisit adoption when client placement, bandwidth budget and server CPU/load
+justify the tradeoff. Repeat known-region/placement jobs and randomized request
+comparisons before numerical latency promises. Revisit CPU attribution with a
+bounded Caddy profile or quieter controlled service when the extra observed
+budget affects capacity. Revisit memory with allocation profiles or deliberately
+separate/restarted instances rather than subtracting inherited RSS samples.
+Revisit compression level or precompression for repeated large responses if its
+CPU cost matters. Revisit packet mechanics if the near-one-round-trip body-read
+pattern drives a transport change. Revisit backend profiling on a known deployed
+build before assigning its roughly 25 ms handler cost to source functions.
+Revisit tooling whenever Caddy logging/placeholder schemas, root configuration
+or process identities change; fail closed on unsupported capture rather than
+silently reusing assumptions. Preserve authentication, quarantine and result
+validation in every candidate.

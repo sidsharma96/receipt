@@ -439,3 +439,15 @@ explains why retained local-lookup outliers make the zero-delay mean misleading.
 The [full nine-question review](../PHASE-REVIEWS.md#controlled-gzip-comparison-20-october-2026)
 records CPU/RAM boundaries, verification and limits. This is an isolated fixture;
 production Caddy and the droplet remain unchanged.
+
+## 20 October 2026: compare gzip through the actual Caddy deployment
+
+New [Chapter 20](20-test-gzip-on-caddy.md) follows 180 Linux CI fetches through
+the real Caddy/Receipt/PostgreSQL endpoint. All keys, decoded bodies and replay
+hashes matched. Caddy sent 68.8% fewer body bytes with gzip; this runner's short
+~1.9 ms connection path showed only a small median latency difference and higher
+observed Caddy CPU. The chapter separates DNS-tail imbalance and shared-process
+memory from compression effects. The temporary profile was restored afterward;
+production compression remains unconfigured. The
+[nine-question review](../PHASE-REVIEWS.md#actual-caddy-gzip-comparison-20-october-2026)
+records exact joins, resource windows, restoration proof and remaining limits.
