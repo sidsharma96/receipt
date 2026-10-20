@@ -1490,3 +1490,242 @@ results are recorded in the [full dated review](PHASE-REVIEWS.md#five-thousand-h
 Timeouts, failed commands, all-system-sampler failures and cleanup after forced
 termination were not exercised. Timing/resource observations do not prove those
 failure paths correct. This is diagnostic tooling, not production supervision.
+
+## Linux CI client and deployed cache baseline, 19 October 2026
+
+A fresh GitHub runner executes the Receipt client; the droplet serves its cache
+requests. In the second session, a local hit took median 61.265 ms, a local hit
+with a shared quarantine check 275.596 ms, and an empty-local-cache remote fetch
+427.360 ms. The client collected inputs on the runner in all three cases. No
+remote execution occurred. [Chapter 17](guide/17-measure-linux-client-and-server.md)
+walks through the locations and the resulting priorities.
+
+### Sources, setup and what the experiment measures
+
+The manual [workflow](https://github.com/sidsharma96/receipt/blob/main/.github/workflows/profile-linux.yml)
+uses the ordinary cached CI job's Ubuntu 24.04 runner, Go 1.22.12 setup and client
+build flags `-trimpath -buildvcs=false`. It receives the existing CI token only on
+main, with read-only repository permissions, and uploads numeric artifacts for
+seven days. It adds no recurring schedule or pull-request credential access.
+The [capture script](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/linux_ci_baseline.py)
+invokes the existing deploy/ci/self_test.py helper to prepare the fixed checkout,
+HOME, module source and extra-input declarations. The helper initially populates
+the local cache through a remote hit or test execution on a miss; it need not
+execute tests when a normal CI job has already published that key.
+
+The wrapped command/probe environment has CGO_ENABLED=0, GOTOOLCHAIN=local,
+GOPROXY=off after dependency preparation, a fixed PATH/HOME/GOCACHE/GOPATH,
+LANG=C, TZ=UTC and the runner image as an input. Client compilation uses the
+ordinary CI build environment, not an added CGO build override. Database/Cargo
+opt-in settings are absent from the cached test command. The independent normal
+CI job still runs uncached PostgreSQL and race tests.
+
+Two separately allocated runner jobs reported two logical CPUs, the AMD EPYC
+7763 host model and image 20261012.334.1. That model name is not an allocation of
+64 cores to the job. The source revisions differ only in diagnostic files:
+
+| Session | Source | Workflow run | Retained full client evidence |
+| --- | --- | --- | --- |
+| 1 | de5b850 | [39353959080](https://github.com/sidsharma96/receipt/actions/runs/39353959080) | [client-1.json](measurements/linux-baseline-2026-10-19/client-1.json) |
+| 2 | 6bf27c1 | [39354403055](https://github.com/sidsharma96/receipt/actions/runs/39354403055) | [client-2.json](measurements/linux-baseline-2026-10-19/client-2.json) |
+
+Both Go client binaries have the same SHA-256. Tracked input bytes were
+15,452,451 and 15,453,916; the 1,465-byte difference is not a production
+optimization. Full keys intentionally differ between these revisions, while
+before/after keys match within each session. Inventories count Git blobs only:
+14,847,124 bytes were under docs/. Generated configuration, external lib/pq
+source, the client/Git/shell binaries and separately hashed Go executable add
+inputs beyond that total.
+
+Each fixed plan uses three blocks with rotating case order: local, checked-local,
+remote-fetch; then checked-local, remote-fetch, local; then remote-fetch, local,
+checked-local. Every block has 100/20/10 measured calls respectively and three
+warmups per case. Remote-fetch calls use a fresh empty cache directory outside
+the checkout, cleaned after measurement. All 780 measured calls succeeded and
+replayed a hit; no execution stage or failed trace was accepted. Builds,
+dependency preparation, initial helper calls, 54 warmups and separate diagnostics
+are outside the sample counts. No outlier was excluded or used to stop the run.
+
+This is a **warm baseline**, not a cold-runner or full workflow-duration estimate.
+Repeated calls warm OS caches. Each measured invocation adds --timings and a GNU
+time wrapper to the normal workload. Their observer cost has no A/A calibration.
+Different runner/network conditions and two slightly different tracked input sets
+prevent a controlled before/after optimization claim or population confidence
+interval. Distributions remain separated by session.
+
+### Client CPU, RAM, latency and stages
+
+| Session / case | Calls | Median elapsed, ms | Mean elapsed, ms | Mean CPU, ms | Mean reported peak RSS, MB |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 local | 300 | 59.121 | 59.448 | 62.290 | 14.732 |
+| 1 checked-local | 60 | 194.290 | 205.616 | 81.363 | 16.269 |
+| 1 remote-fetch | 30 | 294.858 | 305.396 | 86.243 | 16.420 |
+| 2 local | 300 | 61.265 | 61.183 | 64.157 | 14.714 |
+| 2 checked-local | 60 | 275.596 | 284.282 | 84.862 | 16.292 |
+| 2 remote-fetch | 30 | 427.360 | 435.111 | 88.969 | 16.419 |
+
+CPU is the delta of Python RUSAGE_CHILDREN around one sequential GNU-time/Receipt
+process tree, with no other child work launched during that interval. CPU time
+can exceed elapsed time when threads/processes run on two processors. Peak RSS
+comes from GNU time's maximum-resident-set report, converted from KiB to decimal
+MB; it is not simultaneous process-tree memory, allocation bytes or hardware
+cycles. The external elapsed clock includes the wrapper, startup and diagnostics.
+
+In the second session, median stage durations were:
+
+| Stage | Local, ms | Checked local, ms | Remote fetch, ms |
+| --- | ---: | ---: | ---: |
+| Fingerprint total | 45.590 | 46.201 | 45.802 |
+| Input files | 28.034 | 28.251 | 28.139 |
+| Go executable hash | 9.116 | 9.152 | 9.151 |
+| Toolchain probe | 5.472 | 5.663 | 5.578 |
+| Discovery | 2.746 | 2.905 | 2.663 |
+| Git selection | 0.013 | 0.015 | 0.014 |
+| Lookup | 7.997 | 219.634 | 373.691 |
+
+Fingerprint contains several rows; these marginal medians must not be summed as
+independent elapsed work. Toolchain is the complete fresh Go probe stage and
+normalization, not a separately instrumented go-env child. Its maximum over all
+780 calls was 8.121 ms. This does not rule out every future Linux stall, but it
+does not reproduce the Mac's Go-boundary tail. Input reading/hashing is the
+largest measured fingerprint stage; per-function CPU attribution still needs a
+matching profile. The local lookup includes metadata decoding/validation.
+
+All measured child filesystem-input counters were zero on these warm runs.
+Median output counters were 112 for local/checked-local and 232 for remote-fetch.
+These are Linux OS-accounting counters, not a count of every read/write syscall
+or proof of no I/O work. The separate strace summaries report open/stat/read
+calls and one fsync in the sampled local hit. They also contain a detached-task
+notice; retain them as perturbed diagnostics, not a complete I/O inventory or
+unperturbed latency measurement. Thread wait durations overlap, so strace's large
+futex percentage is not evidence that a Receipt lock is the CPU bottleneck.
+
+The summaries are retained as [strace-1.json](measurements/linux-baseline-2026-10-19/strace-1.json)
+and [strace-2.json](measurements/linux-baseline-2026-10-19/strace-2.json). No syscall
+arguments, environment, test output or bearer token is in these artifacts.
+
+### Separate transport diagnostic
+
+Session two adds ten status and ten fetch requests in separate fresh curl
+processes, using the same verified HTTPS endpoint, key and existing CI token.
+The token goes through stdin configuration, never argv or the artifact. Response
+bodies go to /dev/null. No redirects or TLS-verification bypass are enabled.
+curl is not Go httptrace: its resolver, TLS and HTTP behavior can differ.
+
+The following are medians of **per-request** derived intervals, not differences
+between marginal medians of cumulative clocks:
+
+| curl phase | Status, ms | Fetch, ms |
+| --- | ---: | ---: |
+| DNS | 2.897 | 2.996 |
+| Connect after DNS | 63.576 | 63.912 |
+| TLS after connection | 69.473 | 69.676 |
+| TLS-ready to first response byte | 64.987 | 84.577 |
+| First byte to completion | 0.022 | 127.581 |
+| Whole request | 200.644 | 350.882 |
+
+Status returned 204 with no body; fetch returned 200 with 57,821 downloaded body
+bytes. Request-to-first-byte includes network transit and server work, and the
+last interval is not pure bandwidth. This makes transport setup and response
+transfer a stronger lead for remote latency than the 5–6 ms Go probe. It does not
+prove a specific TCP mechanism, identify a runner region, or establish savings
+from keep-alive, compression or relocation. Those remain separate experiments.
+
+### Deployed server: read-only observation, not a replacement
+
+The droplet reported Linux 6.8.0-146-generic, one logical CPU and about 2 GB RAM.
+The Receipt PID and installed binary hash remained stable across both windows.
+The binary reports Go 1.22.1, base revision cbb0e61 and vcs.modified=true. That
+metadata cannot identify the exact source tree. Its observed public schema has
+entries, evidence, credentials and storage policy tables, without current source's
+receipt_storage_usage_v6 table. Do not describe it as the latest main server or
+assume current server-side accounting changes were measured. No service, binary,
+configuration, credentials, index, power setting or security setting was changed.
+Normal CI and the bounded profile do make ordinary cache requests/publications.
+
+The [curated server record and summary](measurements/linux-baseline-2026-10-19/summary.json)
+contains raw numeric snapshots, all sanitized request events, query plans and
+client artifact hashes. Scripts/profile/droplet_baseline.py reads /proc and
+systemd properties, exports only the fixed request-log schema and runs SQL inside
+BEGIN READ ONLY with a three-second statement timeout. It exports no raw journal
+message, cached result body, credential hash or subject.
+
+The first resource window was 160.178 seconds; Receipt accrued 0.93 CPU seconds,
+with RSS 8,524 → 11,588 KiB, zero read_bytes and 4,096 write_bytes. The second
+service-resource window was 101.630 seconds, beginning after helper startup;
+its request-log window begins earlier. Cgroup CPU deltas were Receipt 1.056 s,
+Caddy 0.352 s and PostgreSQL 0.330 s. At the end, charged cgroup memory was about
+7.3/15.5/30.8 MB respectively; Receipt RSS was 12,440 KiB, with zero read_bytes
+and 8,192 write_bytes during that window. Cgroup memory and RSS have different
+accounting boundaries; do not add or equate them. See the
+[Linux process-stat](https://man7.org/linux/man-pages/man5/proc_pid_stat.5.html)
+and [process-I/O](https://man7.org/linux/man-pages/man5/proc_pid_io.5.html)
+references for the counter interfaces.
+
+These windows include idle time, background database work and unrelated normal
+CI requests. They are not isolated per-request CPU bills or a throughput limit.
+The request logs explicitly include misses and publications outside measured hit
+rows. No request ID is claimed to match a particular client timing row.
+
+| Handler | Window 1 successes / median | Window 2 successes / median |
+| --- | --- | --- |
+| Shared status | 69 / 0.941 ms | 79 / 0.978 ms |
+| Fetch | 40 / 22.901 ms | 49 / 20.147 ms |
+| Publish | 1 / 159.746 ms | 2 / 261.932 ms |
+
+The second window also contains two 404 fetches and three successful identity
+requests. Publish has only three observations across windows and is not a write
+benchmark. Fetch-stage medians were authentication about 0.6 ms, SQL about 1 ms,
+file I/O/verification about 0.1 ms and lock/pool spans below 1 ms. Most handler
+time is outside those measured spans, including metadata/response processing;
+a CPU profile is needed before assigning the remainder to a function. Handler
+logging is synchronous after the duration boundary, and Caddy/TLS/network/client
+work are outside it.
+
+### Actual PostgreSQL plans
+
+The existing-key SELECTs used these plans on PostgreSQL 16.15:
+
+| Query | Plan / existing index | Actual rows | Execution, ms | Shared hit/read blocks |
+| --- | --- | ---: | ---: | --- |
+| Result lookup | Index Scan / receipt_entries_v2_pkey | 1 | 0.056 | 2 / 0 |
+| Status | Index Scan / receipt_entries_v2_pkey | 1 | 0.065 | 2 / 0 |
+| Authentication | Index Scan / receipt_credentials_v5_pkey | 1 | 0.055 | 2 / 0 |
+
+The exact query is run through EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON); identifiers
+in Index Cond are redacted in published evidence. Live table estimates at capture
+were 29 entries, 29 evidence rows and nine credentials. These are warm point
+lookups in a tiny deployed dataset, not a large-table or concurrency benchmark.
+The result plan does not cover transfer/Go decoding of the metadata or HTTP
+response encoding. Existing primary keys support these predicates; adding an
+index is not justified by these observations. Other maintenance/query shapes
+and future growth need their own plans. No synthetic table, schema migration,
+ANALYZE/VACUUM or production index change was performed.
+
+### Reproduction, verification and decisions
+
+Run the manual workflow only on trusted main:
+
+```sh
+gh workflow run profile-linux.yml --ref main
+gh run download RUN_ID -n linux-client-baseline -D NEW_CAPTURE
+```
+
+Local administrator observation uses the documented SSH identity and host;
+pipe scripts/profile/droplet_baseline.py to `sudo python3 - snapshot`, `plans`, or
+`logs SINCE_UNIX_SECONDS`. Snapshots and read-only plans do not require a new
+API credential. Keep raw observations outside docs until reviewed.
+Scripts/profile/summarize_linux_baseline.py curates the two session directories
+and snapshots into a new output directory, and linux_baseline_figure.py draws
+its location diagram. All compact client rows and fixed-shape server events are
+retained; test output and arbitrary errors are not copied.
+
+Both workflow runs succeeded, all 780 measured hits passed their guards, each
+session kept the full key stable, and Go client binary hashes match across runs.
+The normal CI helper-policy tests passed. The [dated review](PHASE-REVIEWS.md#linux-ci-and-droplet-baseline-19-october-2026)
+records evidence tests, documentation checks, visual review and publication.
+No production optimization or droplet redeployment was implemented. Next latency
+work should trace the actual Go HTTP transport and response transfer; next client
+CPU work should profile input handling/metadata on Linux. Preserve quarantine
+checks, declared inputs, fresh probes and the existing manifest/key format while
+doing so.

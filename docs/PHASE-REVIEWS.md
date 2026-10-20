@@ -3813,3 +3813,203 @@ when a supported upstream fix and its invalidation coverage can be evaluated.
 Use a droplet only to compare Linux behavior, not to claim a cause for this Mac.
 Revisit the run budget if another session yields no examples; preserve all calls
 and avoid turning this burst's observed frequency into a guaranteed sample count.
+
+## Linux CI and droplet baseline, 19 October 2026
+
+A GitHub runner fingerprints the repository and either replays a result or runs
+its own Go tests. The droplet only serves the shared-cache API. In the second
+Linux session the three hit paths took median 61 ms local, 276 ms checked-local
+and 427 ms remote-fetch, while the Go toolchain-probe stage stayed around 5–6 ms.
+The [chapter](guide/17-measure-linux-client-and-server.md) follows those locations;
+the [measurement reference](MEASUREMENTS.md#linux-ci-client-and-deployed-cache-baseline-19-october-2026)
+retains protocols, all calls, resource windows and actual plans. This implements
+a repeatable diagnostic workflow and documentation, not a production optimization
+or droplet redeployment. Mac measurements remain historical.
+
+### Linux baseline — 1. Data structures
+
+Each call is a JSON record with case/block/order, clocks, OS resource deltas,
+hit/exit status and Receipt's fixed timing stages. A fixed plan records rotating
+case order and counts before preparation. There are two independent session
+records, rather than a pooled distribution that conceals their different remote
+latencies. The server record keeps before/after PID/start/binary identity and
+resource counters, plus fixed-schema request events with timestamps and request
+IDs. The record deliberately excludes arbitrary journal messages, request values,
+credentials, environments, manifests and response bodies. Actual point-query
+plans retain plan nodes and buffer counters while redacting sample identifiers.
+A summary links artifact hashes and committed Git-blob inventories. JSON is
+simple to inspect and recheck; analysis memory is outside the measured clients.
+
+### Linux baseline — 2. Flow and boundaries
+
+The manual main-only workflow uses the existing CI checkout/setup-go/build steps.
+The capture invokes self_test.main to prepare its normal fixed checkout, home,
+module source, configuration and seeded local cache. It then runs three blocks
+of local, checked-local and empty-local-cache remote-fetch hits in rotating order.
+Each block warms each case three times and records 100/20/10 calls. A guard rejects
+failed commands, absent hits or execution stages instead of labelling fallback
+execution as cache latency. Before/after full keys must match within each session.
+
+The cache remote is attached in
+[`subprocess.run` in self_test.main](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py#L82-L86):
+
+```python
+        args = [CLIENT, 'run', '--cache-dir', str(HOME / 'receipt')]
+        if ready:
+            args += ['--remote', REMOTE]
+        started = time.monotonic()
+        result = subprocess.run(args + ['--'] + COMMAND, cwd=ROOT, env=env)
+```
+
+The executable and working directory belong to the runner. The optional URL
+selects cache storage; it does not move subprocess.run or COMMAND to the droplet.
+Droplet snapshots and request summaries are observed separately. They are not
+assigned to individual client calls by an unproven clock join. The two production
+Go client binaries match byte-for-byte, but tracked diagnostic files differ by
+1,465 bytes between revisions, so full keys legitimately differ across sessions.
+Other CI projects, cold first calls, unsupported commands and capacity tests are
+outside these boundaries.
+
+### Linux baseline — 3. Concurrency, networking and primitives
+
+Measured client calls are sequential; no build or analysis work runs alongside
+them on the runner. GNU time reports peak RSS and Python RUSAGE_CHILDREN provides
+CPU/I/O deltas around each process tree. Temporary cache directories isolate
+remote fetches and are cleaned after each measured call. No daemon, probe cache
+or parallel hashing is added. HTTPS uses the normal CI token/remote and maintains
+certificate verification. Tokens remain in the child environment as in ordinary
+CI; curl diagnostics receive their header through stdin, not argv or artifacts.
+The manual workflow has read-only repository permissions, a main-branch guard,
+a concurrency group and a bounded timeout. Its setup preserves the independent
+uncached correctness job.
+
+Server observation reads /proc, systemd and the existing journal. Query planning
+uses BEGIN READ ONLY and a three-second statement timeout. No new API credential,
+schema, index, permission, installed tool or service configuration is introduced.
+Normal CI and bounded profiling requests can publish cache entries through the
+existing API. This is not a load test against production.
+
+### Linux baseline — 4. Pitfalls and debugging
+
+Warm repeated calls are not a cold first invocation or full CI-job duration.
+--timings, GNU time and strace add different observer costs; there is no A/A
+calibration. strace is separate and contains a detached-task notice; its overlapping
+thread-wait percentages cannot identify Receipt's CPU bottleneck or a complete
+I/O inventory. RUSAGE CPU can exceed wall time on two CPUs; RSS is neither total
+allocation nor simultaneous memory summed across descendants. Zero physical
+input counters do not mean zero filesystem calls.
+
+Server windows include unrelated normal CI, idle time and background database
+work. The second service snapshot starts after helper startup, unlike its earlier
+log-window boundary. Cgroup memory, process RSS and client peak RSS cover different
+objects. Request IDs exist, but no exact client-to-server matching is claimed.
+curl's resolver/TLS/HTTP implementation differs from Go's. Phase clocks are
+cumulative until per-request differences are computed; marginal medians are not
+additive. Embedded server vcs.modified=true prevents exact source attribution.
+Its missing usage-v6 table means current server-accounting behavior must not be
+assumed present. No deployment repair was mixed into the baseline.
+
+### Linux baseline — 5. Hot and cold paths and costs
+
+All 780 measured calls were hits: 600 local, 120 checked-local and 60 remote-fetch.
+Session one medians were 59.121/194.290/294.858 ms; session two medians were
+61.265/275.596/427.360 ms. Mean process-tree CPU stayed much closer across sessions:
+local 62.290→64.157 ms, checked-local 81.363→84.862 ms and remote-fetch
+86.243→88.969 ms. These arrows compare sessions, not optimization savings.
+Reported mean peak RSS was about 14.7 MB locally and 16.4 MB for remote fetches.
+
+Fingerprint medians stayed near 45–46 ms, including input files near 28 ms, the
+Go executable near 9 ms, toolchain probes near 5–6 ms and discovery near 3 ms.
+The maximum probe-stage duration was 8.121 ms, so the Mac's Go-boundary tail did
+not recur in this scope. The largest client stage suggests input handling as the
+next CPU-profile target, not a proven per-function SHA-cycle percentage.
+
+Separate curl diagnostics in session two spent median about 136 ms reaching TLS
+readiness, 201 ms completing status and 351 ms completing a 57,821-byte fetch.
+Server successful status/fetch handler medians were about 1/20–23 ms. Actual
+point-query plans used primary-key indexes in about 0.06 ms. These boundaries
+make transport and transfer strong latency leads. The server still spends time
+in metadata/response processing outside its measured SQL/file spans; a matching
+CPU profile is needed to assign that work. Three observed publications are not
+a cold-write benchmark or a server-capacity estimate.
+
+### Linux baseline — 6. Guarantees, assumptions and non-goals
+
+Every retained client call succeeded and had a hit without execution; full keys
+remained stable within each session. Equal keys are not deterministic-output
+proof. Matching client binary hashes establish identical Go client artifacts,
+not identical runner or network conditions. Source inputs intentionally changed
+between sessions; no key-compatibility change was implemented. Deployed server
+PID/start/binary identity stayed stable. The public schema and embedded modified
+build are recorded rather than assuming the droplet runs latest main.
+
+No 503 saturation claim, throughput ceiling, steady tail probability, confidence
+interval, memory-pressure guarantee, native wait-state cause or hardware-cycle
+measurement follows from these samples. Fresh probes, all declared inputs,
+quarantine checks and existing protocol remain intact. No production optimization
+or droplet update is claimed. The baseline identifies the next experiment; it
+does not certify a deployment or a future transport change.
+
+### Linux baseline — 7. Alternatives and decisions
+
+The actual existing CI helper was reused instead of substituting the small Mac
+fixture or treating the droplet as the test runner. Three hit cases separate
+local retrieval, shared-status checks and empty-cache remote fetches. Rotating
+case order reduces a fixed ordering bias but is not a randomized A/A comparison.
+After session one revealed a large remote gap, separate curl timings were added
+to session two; they are not silently mixed into the 780-call Receipt baseline.
+Retrospectively, Go httptrace would give closer transport attribution but requires
+additional instrumentation; that is the next latency experiment, rather than
+assuming curl's exact timings belong to Go.
+
+Retrospectively, persistent connections across invocations, a closer server or
+compression might reduce different parts of the remote cost. They require
+separate correctness/deployment/measurement work; none is an implemented saving.
+Skipping quarantine checks or ignoring declared inputs is not an acceptable
+shortcut. Extra SQL indexes lack support from the current warm point plans.
+A new server build must be explicitly compared, not silently swapped into the
+same baseline. Client CPU profiles should target input and metadata handling
+before adding further Go-probe or Git micro-optimizations.
+
+### Linux baseline — 8. Evidence, verification and remaining risks
+
+The two [workflow runs](https://github.com/sidsharma96/receipt/actions/runs/39353959080)
+and [second run](https://github.com/sidsharma96/receipt/actions/runs/39354403055)
+completed successfully. All fixed-count hits, normal warmup guards and before/after
+key checks passed. The [retained evidence](measurements/linux-baseline-2026-10-19/summary.json)
+links both full client artifacts by hash, all sanitized server events, resource
+snapshots, read-only actual plans and separate strace summaries. No failed or
+slow measured call was removed. Nine helper-policy tests passed, including the
+new manual workflow's main-only secret guard. All 24 profiling/evidence checks
+passed, including coverage,
+identities, ordered transport clocks, actual indexes and scoped server records.
+
+The SVG was rendered to PNG and inspected for actor locations, arrows, readable
+labels and nonadditive timing captions. The chapter supplies a text equivalent,
+explains CPU versus elapsed time, separates the three hit paths and keeps cold,
+server-version and transport limitations beside claims. Documentation build and
+checks passed: make docs built the book and all 18 checks succeeded. Source/link checks do
+not establish teaching quality or causal attribution. Production Go source is
+unchanged; the ordinary CI workflows provide their configured Go/PostgreSQL/race
+coverage. No new local production Go/race suite was run for these Python/YAML
+and documentation changes.
+
+Unexercised cases include missing/expired credentials, network outages, quarantined
+results, child timeout cleanup, artifact-upload failures, high concurrency, cold
+OS caches, alternative CI hardware/regions and large production tables. Existing
+product tests may cover some behavior, but this experiment does not measure
+those cases. The exact source of the modified deployed binary remains unknown.
+
+### Linux baseline — 9. Revisit conditions
+
+Revisit remote latency with tracing inside the actual Go HTTP client, retaining
+connection/first-byte/body timings and matching request IDs. Consider connection
+reuse, payload compression or placement only after that experiment isolates the
+relevant cost and preserves authentication/quarantine behavior. Revisit client
+CPU work with profiles on these declared inputs; revisit input selection only
+with an explicit dependency contract and independent correctness evidence.
+Revisit SQL/index choices when data volume, predicates or concurrent traffic
+change. Revisit server conclusions after recording a known deployed build and
+controlled comparison; do not attribute current-main guarantees to this modified
+old artifact. Revisit cold startup, memory and throughput with dedicated bounded
+tests rather than extrapolating warm sequential hits.

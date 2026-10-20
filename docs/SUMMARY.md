@@ -26,6 +26,7 @@
 - [15. Measure toolchain probe overhead](guide/15-measure-toolchain-probe-overhead.md)
 
 - [16. Resolve the selected Git once](guide/16-resolve-selected-git.md)
+- [17. Measure the Linux client and cache server](guide/17-measure-linux-client-and-server.md)
 
 # Defending the design
 

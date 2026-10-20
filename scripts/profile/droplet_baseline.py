@@ -29,9 +29,16 @@ def snapshot():
     ticks = os.sysconf('SC_CLK_TCK')
     status = Path(f'/proc/{pid}/status').read_text()
     memory = {k: int(v) for k, v in re.findall(r'^(VmRSS|VmHWM|RssAnon|RssFile):\s*(\d+) kB', status, re.M)}
+    services = {}
+    for unit in ('receipt', 'caddy', 'postgresql@16-main'):
+        fields = run(['systemctl', 'show', unit, '-p', 'MainPID', '-p', 'CPUUsageNSec', '-p', 'MemoryCurrent'])
+        services[unit] = {key: int(value) if value.isdigit() else None
+                          for key, value in (line.split('=', 1) for line in fields.splitlines())}
     return {'unix_ns': time.time_ns(), 'pid': pid, 'start_ticks': int(stat[19]),
             'cpu_seconds': (int(stat[11])+int(stat[12])) / ticks, 'memory_kb': memory,
-            'io': {k: int(v) for k, v in usage.items()},
+            'io': {k: int(v) for k, v in usage.items()}, 'services': services,
+            'host_cpu_ticks': [int(v) for v in Path('/proc/stat').read_text().splitlines()[0].split()[1:]],
+            'clock_ticks_per_second': ticks,
             'host': {'cpus': os.cpu_count(), 'memory_kb': {k: int(v) for k, v in re.findall(r'^(MemTotal|MemAvailable|SwapTotal):\s*(\d+) kB', Path('/proc/meminfo').read_text(), re.M)},
                      'load': os.getloadavg(), 'kernel': run(['uname', '-srmo'])},
             'binary_sha256': hashlib.sha256(Path('/usr/local/bin/receipt').read_bytes()).hexdigest()}

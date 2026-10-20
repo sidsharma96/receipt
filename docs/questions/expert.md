@@ -496,3 +496,24 @@ cost. A matching native thread-state trace is needed to identify the wait.
 **Learn more:** [A longer local run reproduced the stalls](../guide/16-resolve-selected-git.md#a-longer-local-run-reproduced-the-stalls)
 
 </details>
+
+### What does a fast indexed plan fail to measure?
+<!-- check: guide/17-measure-linux-client-and-server.md -->
+
+**Level:** Expert
+
+The droplet shows an indexed result lookup around 0.06 ms, but the remote-fetch
+client takes hundreds of milliseconds. Does another database index solve that gap?
+
+<details>
+<summary>Answer</summary>
+
+The plan covers PostgreSQL execution for that query and selected row; it does
+not cover the full HTTP connection, metadata processing or result transfer.
+The current point lookups already use primary-key indexes. Measure the other
+boundaries before changing indexes; the tiny warm dataset does not establish
+large-table or high-concurrency performance.
+
+**Learn more:** [17. Measure the Linux client and cache server](../guide/17-measure-linux-client-and-server.md)
+
+</details>

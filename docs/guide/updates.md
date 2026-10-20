@@ -404,3 +404,15 @@ by 4,000 calls with none. Full keys stayed compatible; no production optimizatio
 was added. The [nine-question review](../PHASE-REVIEWS.md#five-thousand-hit-local-stall-hunt-19-october-2026)
 records the CPU/RAM/latency evidence, machine-memory correlation, observer cost
 and the native waiting-state evidence still missing.
+
+## 19 October 2026: measure the actual Linux CI client and deployed cache
+
+New [Chapter 17](17-measure-linux-client-and-server.md) separates GitHub's client
+work from the droplet's cache service. Two Ubuntu jobs completed 780 measured
+hits: local medians stayed near 59–61 ms, while remote fetches varied from
+295 to 427 ms. Separate HTTPS timings and actual indexed SQL plans establish
+better next targets than the Mac startup tail. The
+[nine-question review](../PHASE-REVIEWS.md#linux-ci-and-droplet-baseline-19-october-2026)
+records the full environment, CPU/RAM/I/O evidence, older deployed-build scope,
+verification and remaining experiments. No production optimization or droplet
+redeployment was implemented.

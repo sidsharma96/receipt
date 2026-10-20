@@ -228,6 +228,10 @@ settings on one stable setup does not prove those cases. The
 contains the reproducible tools, raw metrics and remaining limits, with a
 [full review](../PHASE-REVIEWS.md#go-probe-localization-19-october-2026).
 
+The [Linux baseline in Chapter 17](17-measure-linux-client-and-server.md) now separates
+CI client costs from the deployed cache server. The Mac observations below remain
+historical evidence for that machine, not a substitute for the CI workload.
+
 ## A longer local run reproduced the stalls
 
 In a later run on 19 October, call 688 spent **1,675 ms** inside the Go probe,

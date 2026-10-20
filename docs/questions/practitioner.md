@@ -463,3 +463,22 @@ fixture; it did not reproduce or explain the earlier 300 ms event.
 **Learn more:** [What the next Go investigation found](../guide/16-resolve-selected-git.md#what-the-next-go-investigation-found)
 
 </details>
+
+### Why can a local copy still incur HTTPS cost?
+<!-- check: guide/17-measure-linux-client-and-server.md -->
+
+**Level:** Practitioner
+
+A local result already exists, but Receipt also has a shared remote configured.
+Can it skip the network request just because those output bytes are on disk?
+
+<details>
+<summary>Answer</summary>
+
+No. It checks whether the shared key is quarantined before local replay. Without
+that check it could reuse a result other clients have reported as conflicting.
+A standalone local hit and a checked-local hit therefore have different costs.
+
+**Learn more:** [17. Measure the Linux client and cache server](../guide/17-measure-linux-client-and-server.md)
+
+</details>

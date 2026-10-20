@@ -597,3 +597,22 @@ A new invocation chooses its program again too.
 **Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
 
 </details>
+
+### Where does a CI cache miss execute?
+<!-- check: guide/17-measure-linux-client-and-server.md -->
+
+**Level:** Newcomer
+
+A GitHub runner launches Receipt with the droplet URL through --remote. No
+usable saved result exists. Which machine executes go test?
+
+<details>
+<summary>Answer</summary>
+
+The GitHub runner does. --remote selects the shared cache server, not a remote
+execution machine. The runner collects inputs, looks up a result and executes
+the test command there on a miss. The droplet stores and returns reported results.
+
+**Learn more:** [17. Measure the Linux client and cache server](../guide/17-measure-linux-client-and-server.md)
+
+</details>
