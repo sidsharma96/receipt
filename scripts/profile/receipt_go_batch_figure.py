@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-data = json.loads((ROOT / 'docs/measurements/receipt-go-batch-2026-10-19/evidence.json').read_text())
+data = json.loads((ROOT / '.tools/measurements/receipt-go-batch-2026-10-19/evidence.json').read_text())
 row = max(data['rows'], key=lambda r: r['go']['wall_ms'])
 go = row['go']
 system = data['system_samples'][89]

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-d = json.loads((ROOT/'docs/measurements/application-profile-2026-10-20/perf-summary.json').read_text())
+d = json.loads((ROOT/'.tools/measurements/application-profile-2026-10-20/perf-summary.json').read_text())
 g = d['leaf_groups']; n = d['samples']
 rows = [('JSON functions',g['encoding/json.']),('Regular expressions',g['regexp.']+g['regexp/']),('SHA-256',g['crypto/sha256.']),('Allocator',g['runtime.mallocgc'])]
 rows.append(('Other / missing frames',n-sum(v for _,v in rows)))

@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-s=json.loads((ROOT/'docs/measurements/caddy-gzip-2026-10-20/summary.json').read_text())
+s=json.loads((ROOT/'.tools/measurements/caddy-gzip-2026-10-20/summary.json').read_text())
 svg=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 650" role="img" aria-labelledby="title desc">',
 '<title id="title">Actual Caddy gzip: fewer bytes, a small latency difference on this short path</title>',
 '<desc id="desc">Identity writes 64,252 body bytes; gzip writes about 20,040. Both decode identically. Median CLI latency is 120.53 versus 118.22 milliseconds. One Caddy process carries memory between batches: sampled maximum RSS grows from 55 to 59 megabytes across both encodings.</desc>',

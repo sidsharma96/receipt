@@ -19,7 +19,7 @@ Read the chapters in order to understand the program. Each ends with a few quest
 3. [Delete old data without breaking a reader](guide/03-delete-old-data-without-breaking-a-reader.md): cleanup, locks, and storage limits.
 4. [Check data before accepting it](guide/04-check-data-before-accepting-it.md): strict JSON and value rules.
 5. [Give callers different permissions](guide/05-give-callers-different-permissions.md): credentials, scopes, and revocation.
-6. [Find the code and defend a decision](guide/06-find-the-code-and-defend-a-decision.md): the packages and how to explain a choice.
+6. [Find the code and defend a decision](guide/06-find-the-code-and-defend-a-decision.md): the packages, runtime versus development dependencies, and how to explain a choice.
 7. [Find where the time went](guide/07-find-where-the-time-went.md): request timings and local measurements.
 8. [Check what a Rust test depends on](guide/08-check-what-a-rust-test-depends-on.md): the bounded Cargo adapter.
 9. [Follow a request to the deployed server](guide/09-follow-a-request-to-the-deployed-server.md): DNS, HTTPS, Caddy, and recovery.

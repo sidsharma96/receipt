@@ -249,7 +249,7 @@ For this small warmed suite, two direct runs averaged about 140 ms, while two
 Receipt hits averaged about 556 ms. Tool and input checks cost more than the
 tests they skipped. Other verification overlapped, so these are exploratory
 observations, not a performance distribution. See the
-[raw samples](measurements/phase-7-cargo-2026-10-09.json),
+[raw samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/phase-7-cargo-2026-10-09.json),
 [supported Cargo contract](CARGO.md), and
 [Phase 7 review](PHASE-REVIEWS.md#phase-7-review-bounded-cargo-support).
 
@@ -282,7 +282,7 @@ Order was not randomized, and other desktop activity was not isolated.
 The new stage timers show roughly 267–270 ms per hit checking tools, 46–60 ms
 querying metadata, and less than 1 ms on the extra source scan. These are nested
 inside fingerprint time and must not be added to it. See the
-[raw sequential record](measurements/cargo-hardening-2026-10-09.json) and
+[raw sequential record](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/cargo-hardening-2026-10-09.json) and
 [comparison figure](PHASE-REVIEWS.md#figure-7-cargo-hardening-cost).
 
 Separately, the offline automated fixture copied prepared memchr 2.8.3 into a

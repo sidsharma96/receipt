@@ -10,7 +10,7 @@ import caddy_capture
 from summarize_caddy import summarize
 
 ROOT=Path(__file__).resolve().parents[2]
-DATA=ROOT/'docs/measurements/caddy-gzip-2026-10-20'
+DATA=ROOT/'.tools/measurements/caddy-gzip-2026-10-20'
 
 
 class CaddyComparison(unittest.TestCase):
@@ -33,7 +33,7 @@ class CaddyComparison(unittest.TestCase):
             self.assertEqual(config.read_bytes(),b'concurrent change')
 
     def evidence(self):
-        if not DATA.exists(): self.skipTest('CI evidence not yet collected')
+        if not DATA.exists(): self.skipTest('restore historical measurements: python3 scripts/profile/restore_measurements.py')
         return json.loads((DATA/'client.json').read_text()),json.loads((DATA/'server.json').read_text())
 
     def test_full_evidence_recomputes(self):

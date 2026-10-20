@@ -2,6 +2,7 @@
 """Linux CI profiles of real cache-result decoding; no fixture/token in artifacts."""
 import hashlib
 import json
+from fixtures import APPLICATION_KEY
 import os
 from pathlib import Path
 import platform
@@ -17,7 +18,7 @@ def main():
         raise RuntimeError('requires trusted main Linux CI')
     out = Path(sys.argv[1]).resolve()
     out.mkdir(parents=True, exist_ok=False)
-    key = json.loads((base.SOURCE/'docs/measurements/application-profile-2026-10-20/server-metadata.json').read_text())['fixture_key']
+    key = APPLICATION_KEY
     def fetch():
         request = urllib.request.Request(base.ci.REMOTE+'/v1/entries/'+key,
             headers={'Authorization': 'Bearer '+os.environ['RECEIPT_SELF_CI_TOKEN'], 'Accept-Encoding': 'identity'})

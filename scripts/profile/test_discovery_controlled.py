@@ -38,8 +38,9 @@ class EstimatorTests(unittest.TestCase):
     def test_percentile_interpolates(self):
         self.assertEqual(experiment.percentile([30, 10, 20], 0.25), 15)
 
+    @unittest.skipUnless((Path(__file__).resolve().parents[2] / ".tools/measurements/discovery-controlled-2026-10-18").exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
     def test_committed_records(self):
-        directory = Path(__file__).resolve().parents[2] / 'docs/measurements/discovery-controlled-2026-10-18'
+        directory = Path(__file__).resolve().parents[2] / '.tools/measurements/discovery-controlled-2026-10-18'
         for name, expected_hits in [('comparison', 300), ('quartets', 600)]:
             data = json.loads((directory / (name + '.json')).read_text())
             self.assertTrue(data['completed'])
@@ -68,8 +69,9 @@ class EstimatorTests(unittest.TestCase):
                                 self.assertEqual(value, statistics.fmean(r['metrics'][metric] for r in runs if r['label'] == label))
             self.assertEqual(hits, expected_hits)
 
+    @unittest.skipUnless((Path(__file__).resolve().parents[2] / ".tools/measurements/git-selection-2026-10-18").exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
     def test_selected_git_records_include_runtime_resolution(self):
-        directory = Path(__file__).resolve().parents[2] / 'docs/measurements/git-selection-2026-10-18'
+        directory = Path(__file__).resolve().parents[2] / '.tools/measurements/git-selection-2026-10-18'
         data = json.loads((directory / 'controlled.json').read_text())
         self.assertTrue(data['completed'])
         self.assertEqual(data['protocol']['before_revision'], '7ba3cfe')

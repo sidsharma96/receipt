@@ -34,7 +34,7 @@ LINK_SLACK = 3
 LEVELS = ("Newcomer", "Practitioner", "Expert")
 # File types the published site may contain. Anything else under docs/ is a
 # script, configuration or data that does not belong in the book.
-SOURCE_TYPES = {".md", ".svg", ".json"}
+SOURCE_TYPES = {".md", ".svg"}
 # Symbol-only CPU/allocation profiles are intentional downloadable evidence.
 PROFILE_TYPES = {".pprof"}
 BOOK_TYPES = {".html", ".css", ".js", ".svg", ".png", ".woff2", ".json", ".txt", ""}

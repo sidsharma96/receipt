@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-s=json.loads((ROOT/'docs/measurements/http-trace-2026-10-19/summary.json').read_text())
+s=json.loads((ROOT/'.tools/measurements/http-trace-2026-10-19/summary.json').read_text())
 e=s['examples']['remote-fetch']
 t=e['client']['http'][0]
 clock={x['name']:x['ns']/1e6 for x in t['events']}

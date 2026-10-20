@@ -86,7 +86,7 @@ about 57 ms. These public 401 requests test TLS, not authenticated cache handlin
 
 Certificate cryptography also matters. Two coarse CPU profiles repeatedly locate
 P-384 arithmetic used during certificate verification. We inspected
-[the actual second probe's machine code](../measurements/network-deep-dive-2026-10-20/tls-assembly.json):
+[the actual second probe's machine code](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/tls-assembly.json):
 `MULQ` multiplies integer parts and carry-handling instructions combine the
 results. This is computation, not a hidden network sleep. The profiles contain
 only 20–24 CPU samples each, so they identify a function family without precise

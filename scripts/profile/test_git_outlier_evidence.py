@@ -3,9 +3,10 @@ import json
 from pathlib import Path
 import unittest
 
-DATA = Path(__file__).resolve().parents[2] / 'docs/measurements/git-outliers-2026-10-18'
+DATA = Path(__file__).resolve().parents[2] / '.tools/measurements/git-outliers-2026-10-18'
 
 
+@unittest.skipUnless(DATA.exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
 class OutlierEvidence(unittest.TestCase):
     def test_correlated_startup_cases(self):
         cases = json.loads((DATA / 'startup-cases.json').read_text())['cases']

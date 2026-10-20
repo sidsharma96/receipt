@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only Linux CI network diagnostics. No seeding, writes or token artifacts."""
 import json
+from fixtures import APPLICATION_KEY
 import os
 from pathlib import Path
 import platform
@@ -39,7 +40,7 @@ def main():
     if platform.system()!='Linux' or os.environ.get('GITHUB_REF')!='refs/heads/main':
         raise RuntimeError('trusted Linux main workflow required')
     out=Path(sys.argv[1]).resolve();out.mkdir(parents=True,exist_ok=False)
-    fixture=json.loads((SOURCE/'docs/measurements/application-profile-2026-10-20/server-metadata.json').read_text())['fixture_key']
+    fixture = APPLICATION_KEY
     metadata={'source_commit':run(['git','rev-parse','HEAD']).stdout.strip(),'run_id':os.environ['GITHUB_RUN_ID'],
               'go_version':run(['go','version']).stdout.strip(),'runner_image':os.environ['ImageVersion'],
               'cpu_model':re.search(r'^model name\s*:\s*(.*)$',Path('/proc/cpuinfo').read_text(),re.M).group(1),

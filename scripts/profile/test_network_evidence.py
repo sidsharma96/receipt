@@ -2,9 +2,10 @@ import json
 from pathlib import Path
 import unittest
 
-DATA=Path(__file__).resolve().parents[2]/'docs/measurements/network-deep-dive-2026-10-20'
+DATA=Path(__file__).resolve().parents[2]/'.tools/measurements/network-deep-dive-2026-10-20'
 
 
+@unittest.skipUnless(DATA.exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
 class RetainedEvidence(unittest.TestCase):
     def test_request_counts_and_compatibility_scope(self):
         for name in ('run-1-summary.json','run-2-summary.json'):

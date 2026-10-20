@@ -3,7 +3,7 @@
 from pathlib import Path
 import json
 ROOT = Path(__file__).resolve().parents[2]
-r = json.loads((ROOT / 'docs/measurements/linux-baseline-2026-10-19/summary.json').read_text())
+r = json.loads((ROOT / '.tools/measurements/linux-baseline-2026-10-19/summary.json').read_text())
 client = r['clients'][1]['summary']
 server = r['server']['windows'][1]['request_summary']
 local = client['local']['metrics']['elapsed_ms']['median']

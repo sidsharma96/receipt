@@ -72,7 +72,7 @@ formats. Existing Go and Python probes remain separate.
 Implemented opt-in CLI timings and redacted request summaries, a fixed-size
 per-operation recorder, and repeatable local/shared experiments. See the
 [nine-question Phase 6 review](../PHASE-REVIEWS.md#phase-6-review-find-where-the-time-went)
-and [raw samples](../measurements/phase-6-2026-10-09.json). Runner adapters, durable
+and [raw samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/phase-6-2026-10-09.json). Runner adapters, durable
 caller history and production deployment remain separate future work.
 
 ## 9 October 2026: separate teaching from the review record
@@ -472,3 +472,24 @@ observes sender-window growth during body delivery. It includes actual TLS
 machine-code evidence and distinguishes diagnostic connection reuse from a
 shipped feature. The [full nine-question review](../PHASE-REVIEWS.md#network-stage-deep-dive-20-october-2026)
 records compatibility, source/build boundaries, native-capture cleanup and limits.
+
+## 20 October 2026: separate source, tools and raw measurements
+
+[Chapter 6](06-find-the-code-and-defend-a-decision.md#what-needs-to-be-installed)
+now follows a built client, the deployed server and a book build through their
+actual dependencies. Removed 74 tracked JSON measurement records; evidence links
+point to their immutable Git revision, while optional tools read ignored local
+archives. Small exact teaching-figure inputs keep ordinary docs checks independent
+of that archive. Python remains for docs, CI and optional operator/profiling tools;
+it is not Receipt's application runtime. The
+[nine-question review](../PHASE-REVIEWS.md#source-artifact-cleanup-20-october-2026)
+records policy enforcement, verification and the effect on historical evidence.
+
+### Commit guard follow-up, 20 October 2026
+
+The cleanup now includes an opt-in local commit hook (`make hooks-install`) and
+a CI check of actual staged/index bytes. Both reject JSON and files over 1 MiB;
+the hook also checks staged whitespace. Ignore rules cover future profiler
+captures and deployment-tool state. The [Chapter 6 walkthrough](06-find-the-code-and-defend-a-decision.md#keep-generated-records-out-of-commits)
+explains staging and the [review amendment](../PHASE-REVIEWS.md#commit-guard-amendment-20-october-2026)
+records the boundaries and checks.

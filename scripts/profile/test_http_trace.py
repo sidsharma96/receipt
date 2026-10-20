@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 from summarize_http_trace import phases, summarize
 
-DATA = Path(__file__).resolve().parents[2]/'docs/measurements/http-trace-2026-10-19'
+DATA = Path(__file__).resolve().parents[2]/'.tools/measurements/http-trace-2026-10-19'
 
 
 class HTTPTrace(unittest.TestCase):
@@ -36,7 +36,7 @@ class HTTPTrace(unittest.TestCase):
 
     def test_retained_evidence(self):
         if not DATA.exists():
-            self.skipTest('CI evidence not yet collected')
+            self.skipTest('restore historical measurements: python3 scripts/profile/restore_measurements.py')
         client = json.loads((DATA/'client.json').read_text())
         retained = json.loads((DATA/'summary.json').read_text())
         self.assertEqual(retained['client_sha256'],hashlib.sha256((DATA/'client.json').read_bytes()).hexdigest())

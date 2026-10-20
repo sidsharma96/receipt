@@ -12,7 +12,7 @@ from html import escape
 from pathlib import Path
 import re
 import sys
-import json
+from figure_measurements import LOCAL_SAMPLES, UPLOAD_WAIT_SAMPLE, CARGO_SAMPLES, CARGO_WORKLOADS
 import statistics
 
 ROOT = Path(__file__).resolve().parents[2] / 'docs'
@@ -431,11 +431,10 @@ def issuance_failure():
 
 
 def local_measurements():
-    record = json.loads((ROOT/'measurements/phase-6-2026-10-09.json').read_text())
     d = Drawing('local-measurements', 330, 'A measured CodeCraft hit was faster, but still did input work', measured=True)
     d.text(25, 32, 'ONE CODECRAFT SELECTION · 15 PASSING TESTS', 14)
     for y, kind, label, color in [(100,'direct','Direct pytest',BLUE),(180,'miss','First Receipt run',GOLD),(260,'hit','Receipt hit',GREEN)]:
-        samples = [s['client_ns']/1e6 for s in record['local']['samples'] if s['kind']==kind]
+        samples = [s['client_ns']/1e6 for s in LOCAL_SAMPLES if s['kind']==kind]
         value = statistics.median(samples)
         d.text(25,y,label,16)
         d.rect(205,y-25,value*.66,36,'#edf3ef',color,2)
@@ -445,8 +444,7 @@ def local_measurements():
 
 
 def measured_wait():
-    record = json.loads((ROOT/'measurements/phase-6-2026-10-09.json').read_text())
-    sample = next(s for s in record['shared'] if s['store_entries']==128 and s['mode']=='write' and s['workers']==4)
+    sample = UPLOAD_WAIT_SAMPLE
     n=len(sample['sorted_client_ns'])
     total=statistics.mean(sample['sorted_client_ns'])/1e6
     wait=sample['server_stage_totals_ns']['db_lock']/n/1e6
@@ -501,11 +499,10 @@ def cargo_refusal():
 
 
 def cargo_cost():
-    record = json.loads((ROOT/'measurements/phase-7-cargo-2026-10-09.json').read_text())
     d = Drawing('cargo-cost', 335, 'A small warm Rust suite ran faster directly than through a Receipt hit', measured=True)
     d.text(25, 32, 'REGEX-SYNTAX · 147 TESTS · WARM BUILD CACHE', 14)
     for y, kind, label, color in [(100, 'direct', 'Direct (2 runs)', BLUE), (180, 'miss', 'Miss (1 run)', GOLD), (260, 'hit', 'Hit (2 runs)', GREEN)]:
-        value = statistics.mean(s['client_ns']/1e6 for s in record['samples'] if s['kind'] == kind)
+        value = statistics.mean(s['client_ns']/1e6 for s in CARGO_SAMPLES if s['kind'] == kind)
         d.text(25, y, label, 16)
         d.rect(195, y-25, value*.43, 36, '#edf3ef', color, 2)
         d.text(205+value*.43, y, f'{value:.0f} ms', 15, color)
@@ -535,10 +532,9 @@ def cargo_mutation():
 
 
 def cargo_hardening_cost():
-    record = json.loads((ROOT/'measurements/cargo-hardening-2026-10-09.json').read_text())
     d = Drawing('cargo-hardening-cost', 390, 'Sequential measurements show a benefit only for the longer-running selected suite', measured=True)
     d.text(25, 30, 'MEDIAN CLIENT TIME · FIVE DIRECT RUNS AND FIVE HITS PER SUITE', 14)
-    for top, workload in zip([70, 215], record['workloads']):
+    for top, workload in zip([70, 215], CARGO_WORKLOADS):
         d.text(25, top, workload['name'], 18)
         for offset, kind, label, color in [(38, 'direct', 'Direct', BLUE), (85, 'hit', 'Hit', GREEN)]:
             value = statistics.median(s['client_ns']/1e6 for s in workload['samples'] if s['kind'] == kind)

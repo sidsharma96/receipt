@@ -4,6 +4,50 @@ Phase 6, implemented 9 October 2026. Diagnostics are opt-in; no exporter, extern
 service, dependency installation or deployment is required. These records are
 not a durable audit trail and do not attribute uploads to a person.
 
+## Where raw measurements live
+
+For example, to check the old Linux request timings, follow a raw-evidence link
+below. It now opens the original JSON at immutable Git revision
+`f87c9b5eb6ee5ba74ac1837181189732ceaebf7b`. The explanation, results, diagrams and
+linked binary CPU profiles remain in the book. On 20 October 2026 we removed all
+74 tracked JSON files (19,834,591 bytes; 519,922 lines) from the current source
+tree. Git history still contains them; this cleanup does not shrink existing Git
+history or claim a measured runtime speedup.
+
+Ordinary `make build` and `make docs` do not need the old raw records. Small exact
+numeric inputs needed by checked historical teaching figures are retained in
+`scripts/docs/figure_measurements.py`, with their source revision. We did not
+rename the full JSON archives into another source format.
+
+To recompute optional historical evidence checks or regenerate experiment
+figures, restore the archive locally:
+
+```sh
+python3 scripts/profile/restore_measurements.py
+python3 -m unittest discover -s scripts/profile -p 'test_*.py'
+```
+
+The restore command reads existing Git objects and writes `.tools/measurements/`,
+which Git ignores. It makes no network requests and refuses to replace different
+local measurement contents. In a shallow checkout that lacks the revision,
+explicitly fetch it first with
+`git fetch origin f87c9b5eb6ee5ba74ac1837181189732ceaebf7b`.
+Evidence-only tests report a skip when their archive is absent; ordinary parser
+and policy tests still run. A partial or corrupted archive is an error, not a
+successful evidence check. Profiling figure generators also need their named
+local records; the normal book's figure checks do not.
+
+For a new investigation, write output beneath `.tools/` locally or use the
+workflow's CI artifact upload with a chosen retention period. Keep a small
+human-readable result and the artifact/run link in the book, rather than copying
+raw records into `docs/`. Enable the local hook with `make hooks-install`. It and CI run
+`python3 scripts/check_source_artifacts.py --staged` to reject staged JSON, JSONL,
+NDJSON and individual files over 1 MiB, even when someone bypasses `.gitignore`
+with a forced add. Generated mdBook search JSON, runtime cache
+files and the application's JSON protocol are still allowed outside source
+control. Historical links require access to GitHub; reading the retained book
+explanations and figures remains possible offline.
+
 ## Find one request
 
 Run the server with `--request-log` in addition to its normal configuration.
@@ -103,7 +147,7 @@ One-worker mixed samples alternate operations; four workers allow overlap.
 
 ## Recorded run, 9 October 2026
 
-Raw samples: [phase-6-2026-10-09.json](measurements/phase-6-2026-10-09.json).
+Raw samples: [phase-6-2026-10-09.json](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/phase-6-2026-10-09.json).
 Host: macOS arm64, Go 1.22.1, disposable PostgreSQL 14.17 with a Unix socket.
 The shared server used HTTP loopback, a 12-connection database pool and 16
 admission slots. No production service or practice exercise was edited.
@@ -161,21 +205,21 @@ repeat there before extrapolating JSON/runtime behavior.
 
 Evidence:
 
-- [Raw tool output](measurements/profiling-2026-10-18/tool-output.json): three
+- [Raw tool output](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/tool-output.json): three
   one-second benchmark repetitions per case, CPU/allocation reports, shared
   request samples, database/index definitions, text plans and `time -l` output.
-- [Local command samples](measurements/profiling-2026-10-18/local.json): five
+- [Local command samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/local.json): five
   direct runs, one miss and five hits; zero failed commands; all five hits skipped
   execution. The workload was `go test -count=1 ./internal/strictjson` in this
   checkout, with a fresh temporary external cache.
-- JSON plans: [lookup](measurements/profiling-2026-10-18/lookup.json),
-  [status](measurements/profiling-2026-10-18/status.json),
-  [authentication](measurements/profiling-2026-10-18/authentication.json),
-  [evidence](measurements/profiling-2026-10-18/evidence.json),
-  [recount](measurements/profiling-2026-10-18/recount.json),
-  [retention before](measurements/profiling-2026-10-18/retention-before.json),
-  [retention after](measurements/profiling-2026-10-18/retention-after.json), and
-  [broad retention](measurements/profiling-2026-10-18/retention-broad.json).
+- JSON plans: [lookup](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/lookup.json),
+  [status](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/status.json),
+  [authentication](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/authentication.json),
+  [evidence](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/evidence.json),
+  [recount](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/recount.json),
+  [retention before](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/retention-before.json),
+  [retention after](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/retention-after.json), and
+  [broad retention](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/retention-broad.json).
   JSON and text plans are separate executions, not identical timing samples.
 - [pprof screenshot](assets/profiling/decode-pprof.png) is the actual local Go
   profile viewer; the [source view](assets/profiling/decode-source.png) connects samples to code and inlined calls. [SQL screenshot](assets/profiling/query-plans.png) renders
@@ -222,7 +266,7 @@ built with Go 1.27.2 on the same macOS arm64 Apple M1 host. No compiler flags,
 hash/key format, executable-probe logic or benchmark workload changed. The
 benchmark comment changed to stop describing the old implementation as current.
 
-The [raw comparison](measurements/streaming-2026-10-18/comparison.json) contains
+The [raw comparison](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/streaming-2026-10-18/comparison.json) contains
 all 24 benchmark process reports, 17 CLI timing/resource reports, full keys,
 versions and the unabridged `/usr/bin/time -l` output. These are new matched
 measurements; do not compare them directly with the earlier profiling session's
@@ -333,8 +377,8 @@ paths nor payloads. They do not cover every fingerprint cost; do not sum medians
 or add them to their parent duration. Cargo's existing separate spans still apply.
 No new diagnostic fields enter a manifest, result identity or key.
 
-Evidence: [initial breakdown](measurements/executable-2026-10-18/baseline-breakdown.json)
-and [matched comparison](measurements/executable-2026-10-18/comparison.json).
+Evidence: [initial breakdown](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/executable-2026-10-18/baseline-breakdown.json)
+and [matched comparison](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/executable-2026-10-18/comparison.json).
 The initial breakdown ran eight direct commands, one miss and eight hits on
 this working checkout with instrumentation but before executable optimization;
 no files were edited during those invocations. The command was
@@ -434,7 +478,7 @@ An initial ten-sample read-only investigation in this repository measured
 Python's monotonic clock surrounded each subprocess. This separates the commands,
 not Git startup from its internal filesystem operations. The root calls were
 measured before the listing calls, so this initial investigation is not an
-alternating performance comparison. [Raw samples](measurements/discovery-2026-10-18/repository-breakdown.json).
+alternating performance comparison. [Raw samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/discovery-2026-10-18/repository-breakdown.json).
 
 The matched comparison used macOS arm64, Go 1.27.2 and Apple Git 2.54.0
 (Apple Git-157). Both CLIs were built with the external linker. The temporary Git
@@ -444,7 +488,7 @@ the cache; ten alternating before/after process pairs per case then replay those
 entries. Measurements run sequentially with local test/build work stopped, warm
 OS caches and uncontrolled background activity. No packages were installed.
 
-[Raw comparison](measurements/discovery-2026-10-18/comparison.json) records all 60
+[Raw comparison](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/discovery-2026-10-18/comparison.json) records all 60
 hits, full key comparisons for all three cases, timing stages, resource counters,
 platform versions and 20 separate Git-command resource measurements. All commands
 succeeded; every expected hit omitted execution. Both CLIs produced identical
@@ -507,14 +551,14 @@ regexp path; the threshold is not a path-length refusal. Probe commands, fields,
 JSON serialization, hashes, names and freshness are unchanged. No Python/Rust
 probe optimization or result caching was implemented.
 
-[Initial breakdown](measurements/probes-2026-10-18/initial-breakdown.json) records
+[Initial breakdown](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/probes-2026-10-18/initial-breakdown.json) records
 three 20-operation Go subbenchmarks: median subprocess/output capture 36.28 ms,
 local normalization 48.28 µs. Normalization includes JSON decode/encode and flag
 handling, but not the subprocess or output hash. The dominant cost is outside
 that local step; these independently measured subbenchmarks are not additive
 components of one cache-hit sample.
 
-[Matched raw comparison](measurements/probes-2026-10-18/comparison.json) records six
+[Matched raw comparison](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/probes-2026-10-18/comparison.json) records six
 alternating before/after normalization-process pairs, 50 standalone process
 samples and 60 cache hits. Environment: macOS arm64 Apple M1, Go 1.27.2,
 Python 3.14.2 with eight installed distributions. Existing Python was used without
@@ -649,8 +693,8 @@ and 60 direct root queries. The follow-up was motivated by the first result;
 it was not independently planned before seeing that result. Neither run removes
 outliers or stops early. Both are published:
 
-- [Adjacent-pair records and summaries](measurements/discovery-controlled-2026-10-18/comparison.json).
-- [Mirrored-group records and summaries](measurements/discovery-controlled-2026-10-18/quartets.json).
+- [Adjacent-pair records and summaries](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/discovery-controlled-2026-10-18/comparison.json).
+- [Mirrored-group records and summaries](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/discovery-controlled-2026-10-18/quartets.json).
 
 Build separate source exports with these commands in each export's root,
 choosing a different absolute output path for each binary:
@@ -827,9 +871,9 @@ or scheduling delay. No emitted child collection event is scoped evidence, not
 proof that every part of child memory management was free.
 
 Published records retain all calls, including outliers:
-[traced diagnostics](measurements/variance-diagnosis-2026-10-18/traced.json),
-[lighter diagnostics](measurements/variance-diagnosis-2026-10-18/light.json),
-and the [GC detection check](measurements/variance-diagnosis-2026-10-18/gc-positive-control.json).
+[traced diagnostics](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/variance-diagnosis-2026-10-18/traced.json),
+[lighter diagnostics](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/variance-diagnosis-2026-10-18/light.json),
+and the [GC detection check](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/variance-diagnosis-2026-10-18/gc-positive-control.json).
 Machine-local source paths were removed and the baseline revision annotated
 during export. Raw runtime and macOS traces stay local because they can contain
 paths and unrelated process information.
@@ -877,7 +921,7 @@ and the largest sum of active thread-state intervals for one Git process was
 35.31 ms: 27.16 running, 6.70 blocked, 1.33 runnable, plus small interruptions.
 Runnable means ready but waiting for CPU; blocked means waiting for an event.
 Intervals marked Unknown or Terminated were excluded, and totals across threads
-are not elapsed process duration. The [scoped system summary](measurements/variance-diagnosis-2026-10-18/system-summary.json)
+are not elapsed process duration. The [scoped system summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/variance-diagnosis-2026-10-18/system-summary.json)
 retains these observations without unrelated process data. No specific
 background application, disk operation or security service is established as
 the cause of the earlier spikes.
@@ -912,7 +956,7 @@ balanced by order, randomized with seed 20261018 and interleaved between root
 discovery and file listing. Three warmups per command/entry point were excluded.
 All 240 measured calls succeeded and each pair's output SHA-256 matched.
 The traces emitted no child_start events. Results and all Trace2 events are
-in the [raw comparison](measurements/git-trace2-2026-10-18/comparison.json).
+in the [raw comparison](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/git-trace2-2026-10-18/comparison.json).
 
 | Command / entry point | Outer median | Git-reported median | Child CPU median |
 | --- | ---: | ---: | ---: |
@@ -986,7 +1030,7 @@ These two reproduced outliers are primarily startup delays before Git's
 instrumented execution. They do not establish whether the Apple shim, dynamic
 loader, scheduling, page faults or another startup dependency caused that delay.
 
-The [selected captures and attempt record](measurements/git-outliers-2026-10-18/startup-cases.json)
+The [selected captures and attempt record](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/git-outliers-2026-10-18/startup-cases.json)
 preserve PID-aligned parent timestamps, full matching Git events and GC counters.
 The Git-clock origin is estimated from the final atexit event's timestamp minus
 its t_abs. Parent intervals use Go's monotonic clock; alignment uses wall-clock
@@ -1024,7 +1068,7 @@ diagnostic baseline. Current production already removed one root query, so
 this is not a measured 31 ms benefit for current main. The comparison has no
 same-binary control or prespecified confidence interval and runs on a shared
 host; it is an exploratory estimate. All observations remain in the
-[full paired records](measurements/git-outliers-2026-10-18/paired-replays.json).
+[full paired records](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/git-outliers-2026-10-18/paired-replays.json).
 
 The largest launcher hit spent 371.37 ms in go env -json, using 53.39 ms of child
 CPU. Its three Git calls took only 27.71, 23.18 and 22.29 ms. Receipt GC pauses
@@ -1101,7 +1145,7 @@ included. Neither binary uses tracing or a build overlay. Both use Go 1.27.2 and
 Git 2.54.0 (Apple Git-157). PATH selects `/usr/bin/git`; xcrun selects
 `/Applications/Xcode.app/Contents/Developer/usr/bin/git`. The battery was discharging;
 no thermal/performance warning was reported. Load, hashes, keys and all observations
-are in the [raw record](measurements/git-selection-2026-10-18/controlled.json).
+are in the [raw record](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/git-selection-2026-10-18/controlled.json).
 
 Three blocks contain 60 Go, 30 generic and 60 old/old control quartets in total.
 Each quartet has order ABBA or BAAB, balanced and randomized within blocks.
@@ -1193,7 +1237,7 @@ status NEW. This record does not claim a released fix.
 walks through the example. This is a diagnostic Go experiment, not a shipped
 Receipt optimization or a complete explanation of the earlier 300 ms waits.
 
-The [retained evidence](measurements/go-env-diagnosis-2026-10-19/evidence.json)
+The [retained evidence](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/go-env-diagnosis-2026-10-19/evidence.json)
 contains per-call metrics, selected complete stage records, binary/source hashes,
 parser-comparison pairs, and a matching Go runtime-trace summary. Full 22 MB stage
 logs and raw traces remain local. A five-second, 30-call Thread Activity smoke
@@ -1318,7 +1362,7 @@ scheduling and pipe-copy completion, not just instructions executing inside Go.
 ![Observed overlapping process-boundary timings](assets/receipt-go-batch-timeline.svg)
 
 The [teaching chapter](guide/16-resolve-selected-git.md#a-longer-local-run-reproduced-the-stalls)
-walks through that execution. The [compact evidence](measurements/receipt-go-batch-2026-10-19/evidence.json)
+walks through that execution. The [compact evidence](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/receipt-go-batch-2026-10-19/evidence.json)
 retains all 5,000 call records, Go PIDs and resource counters, ordered stage
 metrics, 527 machine samples and selected common process-name counters near slow
 calls. Raw JSONL records stay local; their SHA-256 hashes are in the evidence.
@@ -1526,8 +1570,8 @@ Two separately allocated runner jobs reported two logical CPUs, the AMD EPYC
 
 | Session | Source | Workflow run | Retained full client evidence |
 | --- | --- | --- | --- |
-| 1 | de5b850 | [39353959080](https://github.com/sidsharma96/receipt/actions/runs/39353959080) | [client-1.json](measurements/linux-baseline-2026-10-19/client-1.json) |
-| 2 | 6bf27c1 | [39354403055](https://github.com/sidsharma96/receipt/actions/runs/39354403055) | [client-2.json](measurements/linux-baseline-2026-10-19/client-2.json) |
+| 1 | de5b850 | [39353959080](https://github.com/sidsharma96/receipt/actions/runs/39353959080) | [client-1.json](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/linux-baseline-2026-10-19/client-1.json) |
+| 2 | 6bf27c1 | [39354403055](https://github.com/sidsharma96/receipt/actions/runs/39354403055) | [client-2.json](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/linux-baseline-2026-10-19/client-2.json) |
 
 Both Go client binaries have the same SHA-256. Tracked input bytes were
 15,452,451 and 15,453,916; the 1,465-byte difference is not a production
@@ -1600,8 +1644,8 @@ notice; retain them as perturbed diagnostics, not a complete I/O inventory or
 unperturbed latency measurement. Thread wait durations overlap, so strace's large
 futex percentage is not evidence that a Receipt lock is the CPU bottleneck.
 
-The summaries are retained as [strace-1.json](measurements/linux-baseline-2026-10-19/strace-1.json)
-and [strace-2.json](measurements/linux-baseline-2026-10-19/strace-2.json). No syscall
+The summaries are retained as [strace-1.json](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/linux-baseline-2026-10-19/strace-1.json)
+and [strace-2.json](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/linux-baseline-2026-10-19/strace-2.json). No syscall
 arguments, environment, test output or bearer token is in these artifacts.
 
 ### Separate transport diagnostic
@@ -1643,7 +1687,7 @@ assume current server-side accounting changes were measured. No service, binary,
 configuration, credentials, index, power setting or security setting was changed.
 Normal CI and the bounded profile do make ordinary cache requests/publications.
 
-The [curated server record and summary](measurements/linux-baseline-2026-10-19/summary.json)
+The [curated server record and summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/linux-baseline-2026-10-19/summary.json)
 contains raw numeric snapshots, all sanitized request events, query plans and
 client artifact hashes. Scripts/profile/droplet_baseline.py reads /proc and
 systemd properties, exports only the fixed request-log schema and runs SQL inside
@@ -1764,8 +1808,8 @@ Ubuntu 24.04 image 20261012.334.1. The experiment ran on 20 October UTC,
 19 October in the operator's America/Los_Angeles timezone. See
 [Chapter 18](guide/18-trace-go-http.md) for the concrete execution sequence.
 
-Retained [client calls](measurements/http-trace-2026-10-19/client.json) contain
-all 120 measured hits. The [validated summary](measurements/http-trace-2026-10-19/summary.json)
+Retained [client calls](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/http-trace-2026-10-19/client.json) contain
+all 120 measured hits. The [validated summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/http-trace-2026-10-19/summary.json)
 contains exactly matched server logs for all 60 traced calls, complete phase
 distributions, paired stock/traced comparisons, representative actual requests,
 full before/after keys and stable server process/binary identity. The client file
@@ -1885,8 +1929,8 @@ image 20261012.334.1, Go 1.22.12 linux/amd64, two CPUs, Intel Xeon Platinum 8573
 This differs from earlier baseline hardware and topology. Compare variants within
 this job, not absolute latency against previous Internet jobs.
 
-[All 360 client calls and 18 server batches](measurements/gzip-2026-10-20/client.json)
-and the [recomputed summary](measurements/gzip-2026-10-20/summary.json) retain
+[All 360 client calls and 18 server batches](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/gzip-2026-10-20/client.json)
+and the [recomputed summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/gzip-2026-10-20/summary.json) retain
 complete distributions, paired deltas, block means, body hashes, full keys and
 binary hashes. The summary records the client file SHA-256. No measured failures,
 execution fallbacks or outliers were removed. Thirty-six warmups were excluded
@@ -2036,9 +2080,9 @@ recorded in Chapter 17, SHA-256 f5e022b2b8ad1f499883aebd054a60ff7c0505fc74e5314f
 Caddy binary SHA-256 is 678ade3bfc088749c81a681adc603333ee0bb023b6a6cfe3c0f58bef8ff854e9.
 Both hashes matched again after the run. No backend deployment occurred.
 
-[Client calls](measurements/caddy-gzip-2026-10-20/client.json),
-[sanitized server records and samples](measurements/caddy-gzip-2026-10-20/server.json)
-and [recomputed summary](measurements/caddy-gzip-2026-10-20/summary.json) retain
+[Client calls](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/caddy-gzip-2026-10-20/client.json),
+[sanitized server records and samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/caddy-gzip-2026-10-20/server.json)
+and [recomputed summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/caddy-gzip-2026-10-20/summary.json) retain
 all 180 measured hits, 2,534 server resource samples, matched Caddy/Receipt
 records, full keys, body/replay/binary hashes and resource windows. The summary
 records both source evidence file hashes. Twelve warmups were excluded by protocol.
@@ -2141,7 +2185,7 @@ compatibility, not deterministic execution or permission to ignore changed input
 The original Caddyfile SHA-256 before/after was
 e72e66c66fded6cdb4f019120c182d42fba66dfb3f2ef37fb4c6232faa073859;
 the temporary profile was ef3870340fe7fb364a56ffc0b2bccf503094dd99d414562c6473499b2d9ea721.
-Caddy stayed active; the [private admin-API loaded-config check](measurements/caddy-gzip-2026-10-20/restoration-check.json)
+Caddy stayed active; the [private admin-API loaded-config check](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/caddy-gzip-2026-10-20/restoration-check.json)
 matched the adapted restored source exactly; only its canonical hash is retained. A post-restore unauthenticated identity probe
 returned the expected 401. The sampler and rollback timer were confirmed inactive. Root-only
 session backup/capture files were exported and removed after the restoration
@@ -2206,9 +2250,9 @@ expressions 243 (15.3%), SHA-256 63 (4.0%), mallocgc 58 (3.7%), remaining/missin
 378 (23.8%). This is user CPU sampling, not elapsed latency, kernel time or a
 GC pause trace. It cannot identify the cause of earlier macOS startup stalls.
 
-The [symbol summary](measurements/application-profile-2026-10-20/perf-summary.json),
-[perf report](measurements/application-profile-2026-10-20/server-top.json) and
-[capture/build metadata](measurements/application-profile-2026-10-20/server-metadata.json)
+The [symbol summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/application-profile-2026-10-20/perf-summary.json),
+[perf report](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/application-profile-2026-10-20/server-top.json) and
+[capture/build metadata](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/application-profile-2026-10-20/server-metadata.json)
 retain the denominator and build scope. `scripts/profile/summarize_application_perf.py`
 counts each inclusive symbol at most once per sample and preserves missing
 frames in the denominator. Three parser tests check recursion, missing frames
@@ -2244,10 +2288,10 @@ checkValid 9.86% and readValue 6.35%. Profile shares describe whole benchmark
 processes including calibration/setup and runtime activity; they are not precise
 per-operation measurements. CPU seconds can exceed elapsed seconds on two CPUs.
 
-[All rows and fixture/build metadata](measurements/application-profile-2026-10-20/isolated.json),
-[Decode CPU/allocation report](measurements/application-profile-2026-10-20/Decode.json),
-[metadata report](measurements/application-profile-2026-10-20/MetadataDecode.json)
-and [Encode report](measurements/application-profile-2026-10-20/Encode.json)
+[All rows and fixture/build metadata](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/application-profile-2026-10-20/isolated.json),
+[Decode CPU/allocation report](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/application-profile-2026-10-20/Decode.json),
+[metadata report](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/application-profile-2026-10-20/MetadataDecode.json)
+and [Encode report](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/application-profile-2026-10-20/Encode.json)
 retain the detailed evidence. The raw symbol-only Go
 [CPU profile](measurements/application-profile-2026-10-20/Decode.cpu.pprof) and
 [allocation profile](measurements/application-profile-2026-10-20/Decode.alloc.pprof)
@@ -2312,7 +2356,7 @@ Twenty-four status calls returned 204. No fallback execution, seeding, PUT,
 credential issuance or quarantine bypass occurred. The probes bypass fingerprint
 construction by requesting that fixed key; this is response compatibility evidence,
 not a new whole-CLI fingerprint comparison or deterministic-output guarantee.
-[Compatibility record](measurements/network-deep-dive-2026-10-20/compatibility.json).
+[Compatibility record](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/compatibility.json).
 
 | Median within each job | Run 1 | Run 2 |
 |---|---:|---:|
@@ -2399,12 +2443,12 @@ no crypto/assembly optimization is implemented. No hybrid post-quantum, network
 OCSP fetch or HTTP/2-preface-inside-TLS explanation fits the reviewed Go 1.22 path.
 
 Per-request records and full scope:
-[run 1](measurements/network-deep-dive-2026-10-20/run-1-summary.json),
-[run 2](measurements/network-deep-dive-2026-10-20/run-2-summary.json),
-[DNS packet pairs](measurements/network-deep-dive-2026-10-20/dns-packet-summary.json),
-[DNS packet/user joins](measurements/network-deep-dive-2026-10-20/dns-user-packet-match.json),
-[selected matched server TCP states](measurements/network-deep-dive-2026-10-20/server-tcp.json),
-[TLS machine code](measurements/network-deep-dive-2026-10-20/tls-assembly.json).
+[run 1](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/run-1-summary.json),
+[run 2](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/run-2-summary.json),
+[DNS packet pairs](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/dns-packet-summary.json),
+[DNS packet/user joins](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/dns-user-packet-match.json),
+[selected matched server TCP states](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/server-tcp.json),
+[TLS machine code](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/tls-assembly.json).
 Adjacent files preserve standalone DNS/TLS/TCP controls, server records, historical
 recomputations and downloadable symbol-only TLS CPU profiles. Full callback and
 packet-header artifacts remain in the linked CI jobs (seven-day retention) and

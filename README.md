@@ -22,6 +22,60 @@ and heading anchors resolve, and chapter questions match the bank. CI builds the
 same book on every push to `main` that touches the docs and deploys it to
 Cloudflare Pages.
 
+## What is required to run Receipt?
+
+For example, `receipt run -- go test ./...` starts the Receipt binary, asks Git
+which files belong to the workload, probes that workload's Go toolchain, and
+then replays a result or starts the tests. It does not run this repository's
+Python scripts. Those scripts support development, documentation and operations.
+
+| Task | Required inputs and tools |
+|---|---|
+| Build Receipt | `cmd/receipt/`, `internal/`, `go.mod`, `go.sum`; Go 1.22 or later. CI verifies Go 1.22.12. `make build` also uses Make; on macOS the current target uses the system linker and `codesign`. |
+| Run a normal cached client | A compatible OS, the Receipt binary, a writable cache directory, Git and a workload Git repository; the workload's command and toolchain, such as Go or Python/pytest/uv. HTTPS remote use also needs trusted CA certificates. Go is needed for a Go workload, not just to launch Receipt. |
+| Run the deployed shared server | The Receipt binary, writable output storage, PostgreSQL, database configuration and credentials. The current public HTTPS deployment also uses Caddy and systemd. The server does not need client workload toolchains or Python scripts. |
+| Build and check this book | `docs/`, `scripts/docs/`, the referenced application/deployment source, Make, Python 3 and mdBook 0.5.4. Python checks use the standard library; there is no pip dependency installation. |
+| Publish the book with current CI | The docs build tools, Node.js 22, Wrangler 4, and Cloudflare account ID/API-token secrets. These are deployment tools. |
+| Read the built book | A browser and the generated static site, or a Markdown reader for the source. No Python or Go runtime is needed to read it. |
+| Run current CI | Go, Git, Python 3 and the workflow configuration. The independent integration job also starts PostgreSQL; the cached job uses `deploy/ci/self_test.py`. |
+
+The Go module has one third-party dependency, `github.com/lib/pq v1.10.9`.
+It is compiled into Receipt for PostgreSQL support; a local cache does not need
+a PostgreSQL server. Python in `scripts/profile/` is optional measurement tooling;
+Python in `deploy/digitalocean/` supports operator experiments and recovery.
+The Python fixture under `testdata/` supports tests. Keep these tools unless we
+also retire the workflows and checks that use them.
+
+Raw JSON measurement records are no longer versioned or copied into the book.
+The dated results and figures remain; raw-evidence links point to their original
+Git revision. New JSON/JSONL/NDJSON outputs belong in ignored `.tools/` or CI
+artifacts. This policy does not change Receipt's JSON configuration, cache files
+or HTTP format. See [measurement archive instructions](docs/MEASUREMENTS.md#where-raw-measurements-live)
+and [the dependency walkthrough](docs/guide/06-find-the-code-and-defend-a-decision.md#what-needs-to-be-installed).
+
+## Commit rules
+
+After cloning, run `make hooks-install` once. For example, if you force-add a raw
+measurement file, the pre-commit hook rejects it before Git creates the commit.
+The hook examines the staged bytes, so editing or deleting your working copy
+after staging cannot conceal a forbidden file. GitHub CI repeats that check.
+
+- Commit source, teaching docs and intentional small assets. Review
+  `git diff --cached --stat` and `git diff --cached` before committing.
+- Keep JSON/JSONL/NDJSON, raw profiler captures and deployment-tool state in
+  ignored `.tools/` or CI artifacts. Do not rename archives to evade this rule.
+- Source files must be at most 1 MiB each. The hook and CI reject larger files,
+  regardless of extension. Discuss a legitimate larger asset before changing
+  the policy; no silent forced additions or new exceptions.
+- Run checks appropriate to the change; documentation changes require
+  `make docs`. The lightweight hook checks artifacts and staged whitespace;
+  it does not run the full test suite.
+
+The hook is versioned in `.githooks/`, but enabling it is local to each clone.
+It can be bypassed locally; CI remains the check on pushed commits. Ignore rules
+also cover future profiler captures, `.wrangler/` and macOS metadata. Existing
+intentional tracked binary profiles remain historical book evidence.
+
 ## Current state (15 October 2026)
 
 - Phases 1 to 7 are implemented: the local cache, PostgreSQL metadata with

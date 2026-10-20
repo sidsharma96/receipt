@@ -1,4 +1,4 @@
-.PHONY: build test race vet integration lint lint-install fmt fmt-check check docs
+.PHONY: build test race vet integration lint lint-install fmt fmt-check check docs hooks-install
 .DEFAULT_GOAL := build
 
 GOLANGCI_LINT_VERSION := v2.14.0
@@ -55,3 +55,7 @@ docs:
 	mdbook build docs
 	rm -f docs/book/book.toml
 	python3 -m unittest discover -s scripts/docs -p 'test_*.py'
+
+# Per-clone setup; Git does not enable versioned hooks automatically.
+hooks-install:
+	git config --local core.hooksPath .githooks

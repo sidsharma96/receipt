@@ -104,3 +104,45 @@ before/after costs. Keep prior measurements and dated reviews as history; update
 older chapters with current-status notes and links rather than making readers
 infer which optimization is now implemented. Append the full nine-question
 review and dated updates entry as usual.
+
+## Measurement artifacts and dependencies, agreed 2026-10-20
+
+Do not add JSON, JSONL or NDJSON files to source control, including raw benchmark
+records. Keep generated data under ignored `.tools/` locally or upload it as a
+CI artifact with an explicit retention period. `scripts/check_source_artifacts.py`
+enforces this rule in ordinary CI, including files added with `git add -f`.
+JSON remains Receipt's configuration, cache and wire format; do not remove or
+change JSON serialization to satisfy a source-artifact policy.
+
+Historical raw evidence is linked to immutable Git revision
+`f87c9b5eb6ee5ba74ac1837181189732ceaebf7b`. Optional evidence checks and profiling
+figure regeneration use `.tools/measurements/`; restore the old records with
+`python3 scripts/profile/restore_measurements.py` when that Git revision is
+available locally. Normal builds and docs checks must not require this archive
+or network access to historical measurements. Keep only the small exact numeric
+inputs needed for checked teaching figures in `scripts/docs/figure_measurements.py`.
+Do not move entire raw archives into another extension to bypass the policy.
+
+Receipt's application is Go. Keep Python docs checks and CI helpers while those
+workflows use them. Profiling and operator scripts are optional tools, not
+application runtime dependencies. Explain this distinction in the README and
+Chapter 6 when changing dependencies.
+
+## Commit hygiene, agreed 2026-10-20
+
+Before committing, inspect the staged diff and run checks appropriate to the
+change (`make docs` for documentation). Enable the versioned local hook once per
+clone with `make hooks-install`; do not silently replace an existing custom hook
+configuration. The hook checks the actual index using
+`python3 scripts/check_source_artifacts.py --staged`, then checks staged whitespace.
+CI repeats the index artifact check. Source files must be at most 1 MiB each,
+regardless of extension; discuss intentional larger assets before changing this
+rule. No forced additions, renamed archives or bypass flags as a workaround.
+
+Keep future raw profiler captures and deployment-tool state out of commits;
+`.gitignore` covers `.pprof`, `.trace`, `.pcap`, `.pcapng`, `.wrangler/` and
+`.DS_Store` in addition to the JSON and build-output rules. Existing tracked
+binary measurement evidence remains intentional historical documentation.
+A local hook is advisory and requires installation in every clone; CI is the
+shared check. Do not equate these checks with full tests or a server-side ban
+on every possible generated-data format.

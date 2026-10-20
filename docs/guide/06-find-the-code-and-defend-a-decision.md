@@ -13,6 +13,86 @@ The chapters explain behavior. To follow a change in the source, start with the 
 
 These boundaries keep responsibilities identifiable. They do not make future work automatic. A cloud output store must still solve publication, deletion, and failure handling. Another project may need different permissions and account rules. Receipt's current internal packages are not a ready-made shared identity platform.
 
+## What needs to be installed?
+
+Suppose you copy the built Receipt executable to a Linux runner and run
+`receipt run -- go test ./...` inside a Git repository. Receipt discovers the
+repository with Git, records the selected Go toolchain and input files, looks
+for a saved result, and starts `go test` only when it needs to execute. That
+runner needs Git and the workload's Go tools. It does not need this repository's
+Python profiling scripts. A Python/pytest workload needs its own Python
+environment instead; Receipt even probes that environment on an ordinary hit.
+
+The executable begins in [`main`](https://github.com/sidsharma96/receipt/blob/main/cmd/receipt/main.go#L9-L11),
+which calls `os.Exit(app.Main(os.Args[1:], os.Stdout, os.Stderr))`. This passes
+command arguments and the two output streams into the Go application. It does
+not hand control to a Python application. To rebuild the executable, retain
+`cmd/`, `internal/`, `go.mod` and `go.sum`; the module downloads the pinned
+PostgreSQL driver even when you intend to use only local files.
+
+A shared server has a different job. The deployed
+[service configuration](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service)
+starts `receipt serve`, which receives and saves results. It does not execute the
+client's tests. Our deployed server needs PostgreSQL and writable output
+storage, with Caddy providing HTTPS and systemd supervising the process. It does
+not need pytest, Cargo, Go's compiler or the profiling scripts to serve requests.
+Other server modes have different storage requirements; this describes the
+current credential-enabled deployment.
+
+| Repository part | Why we keep it | Needed by a built Receipt process? |
+|---|---|---|
+| `cmd/`, `internal/`, `go.mod`, `go.sum` | Build and test the Go program | Compiled into the executable; source files are not needed afterward |
+| `docs/`, `scripts/docs/` | Write, build and check the book | No; book checks need Python 3 and mdBook 0.5.4 |
+| `deploy/ci/` | Run Receipt's CI cache helpers and policy tests | No; current CI uses these Python scripts |
+| `scripts/profile/`, `scripts/measure_local.py` | Repeat measurements and draw experimental figures | No; optional profiling tools |
+| `deploy/digitalocean/` | Configure deployment and perform operator checks/recovery | Selected configuration is used by deployment; Python scripts are operator tools |
+| `testdata/` | Small example workloads used by tests | No; keep it for development and verification |
+
+To build the book, `make docs` first asks mdBook to turn Markdown and pictures
+into a static website, then runs Python checks for links, excerpts, figures and
+questions. The small exact values used by checked teaching figures live in
+`scripts/docs/figure_measurements.py`. The build does not fetch old benchmark
+records. Reading the finished site needs only a browser. Publishing through the current
+Cloudflare workflow additionally uses Node.js 22, Wrangler 4 and the Cloudflare
+account ID/API-token secrets; these tools do not run in Receipt.
+
+Raw measurements are different from these required sources. On 20 October 2026
+we removed 74 JSON evidence files from the current tree and linked readers to
+the same files in Git history. New raw output stays in ignored `.tools/` or CI
+artifacts, so it does not become part of every future source scan or book build.
+Deleting it does not erase earlier Git objects or make old clones smaller.
+[Archive instructions](../MEASUREMENTS.md#where-raw-measurements-live) explain how
+to restore evidence locally for the optional checks. The
+[cleanup review](../PHASE-REVIEWS.md#source-artifact-cleanup-20-october-2026)
+records checks and limitations. We kept Python rather than rewriting these tools
+in Go: it remains useful for docs and current CI, and replacing a script would
+require checking the replacement's behavior too. Revisit that choice if we
+retire those workflows or decide to require a Go-only development environment.
+
+## Keep generated records out of commits
+
+Suppose a benchmark writes a large `run.json`. Save it under `.tools/`, then put
+the result you want readers to learn in the chapter. Git ignores that local
+output. If someone force-adds the raw file anyway, a local commit check rejects
+it. Enable that check once after cloning with `make hooks-install`.
+
+A staged file is Git's saved copy of what will go into the next commit. Editing
+the working copy afterward does not change that staged copy. Our hook runs
+`python3 scripts/check_source_artifacts.py --staged` to inspect those staged
+contents, rejecting JSON/JSONL/NDJSON and any individual source file over 1 MiB.
+It also checks staged whitespace. CI repeats the artifact rule after checkout,
+so skipping the local hook does not produce a passing CI result. Existing small
+binary profiles remain historical evidence; future captures belong in ignored
+storage or CI artifacts.
+
+Before committing, inspect `git diff --cached --stat` and `git diff --cached`,
+then run the checks relevant to the change. Docs changes require `make docs`.
+The lightweight hook does not run application tests. Each clone needs the setup
+command, and the rules do not recognize every possible generated file. If a
+legitimate teaching image grows beyond 1 MiB, first try reducing it; discuss an
+explicit policy change if that is insufficient. Do not rename a raw archive or
+force-add it as an alternative.
+
 ## Frequently performed work versus occasional work
 
 People call frequently performed work the [hot path](../GLOSSARY.md#hot-path). In Receipt, input scanning and result lookup happen on normal commands. In credential mode, each server request also checks its credential. A cache hit avoids pytest, not all computation or disk access.

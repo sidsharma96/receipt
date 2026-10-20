@@ -4,9 +4,10 @@ import math
 from pathlib import Path
 import unittest
 
-DATA = Path(__file__).resolve().parents[2] / 'docs/measurements/receipt-go-batch-2026-10-19/evidence.json'
+DATA = Path(__file__).resolve().parents[2] / '.tools/measurements/receipt-go-batch-2026-10-19/evidence.json'
 
 
+@unittest.skipUnless(DATA.exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
 class ReceiptGoBatchEvidence(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

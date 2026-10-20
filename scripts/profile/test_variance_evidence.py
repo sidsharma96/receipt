@@ -5,10 +5,11 @@ import unittest
 import tempfile
 from summarize_system_trace import extract
 
-DATA = Path(__file__).resolve().parents[2] / 'docs/measurements/variance-diagnosis-2026-10-18'
+DATA = Path(__file__).resolve().parents[2] / '.tools/measurements/variance-diagnosis-2026-10-18'
 
 
 class DiagnosticEvidence(unittest.TestCase):
+    @unittest.skipUnless(DATA.exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
     def test_counts_and_success(self):
         for mode in ('light', 'traced'):
             data = json.loads((DATA / (mode + '.json')).read_text())
@@ -25,6 +26,7 @@ class DiagnosticEvidence(unittest.TestCase):
                     gc = next(e for e in row['events'] if e['type'] == 'diagnostic_gc')
                     self.assertEqual(gc['collections'], 1 if mode == 'light' else 2)
 
+    @unittest.skipUnless(DATA.exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
     def test_small_pauses_during_reproduced_spike(self):
         data = json.loads((DATA / 'light.json').read_text())
         row = next(r for r in data['records'] if r['index'] == 10)
@@ -59,6 +61,7 @@ class DiagnosticEvidence(unittest.TestCase):
         self.assertEqual(rows[1]['fields']['start']['text'], '10')
         self.assertEqual(rows[1]['fields']['state']['text'], 'Runnable')
 
+    @unittest.skipUnless(DATA.exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
     def test_child_gc_detection_positive_control(self):
         entries = json.loads((DATA / 'gc-positive-control.json').read_text())
         probe = next(e for e in entries if e.get('program') == 'go')

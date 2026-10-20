@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-D=ROOT/'docs/measurements/network-deep-dive-2026-10-20'
+D=ROOT/'.tools/measurements/network-deep-dive-2026-10-20'
 one=json.loads((D/'run-1-summary.json').read_text())['rows'][0]['metrics']
 two=json.loads((D/'run-2-summary.json').read_text())['groups']
 segments=[('DNS',one['dns_ms'],'#9575cd'),('TCP',one['tcp_ms'],'#1565c0'),('TLS',one['tls_ms'],'#00838f'),('First byte',one['first_byte_ms'],'#558b2f'),('Body',one['body_ms'],'#ef6c00'),('Decode',one['decode_gap_ms'],'#ad1457')]

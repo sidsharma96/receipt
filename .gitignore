@@ -7,3 +7,16 @@ __pycache__/
 .pytest_cache/
 /.tools/
 /docs/book/
+
+# Raw measurements and local JSON configuration belong in ignored output or CI artifacts.
+*.json
+*.jsonl
+*.ndjson
+
+# Local profiler captures and deployment-tool state (existing tracked evidence stays tracked).
+*.pprof
+*.trace
+*.pcap
+*.pcapng
+/.wrangler/
+.DS_Store

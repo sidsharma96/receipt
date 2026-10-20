@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-s=json.loads((ROOT/'docs/measurements/gzip-2026-10-20/summary.json').read_text())
+s=json.loads((ROOT/'.tools/measurements/gzip-2026-10-20/summary.json').read_text())
 svg=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" role="img" aria-labelledby="title desc">',
 '<title id="title">Gzip sends 70 percent fewer body bytes and helps on the delayed link</title>',
 '<desc id="desc">Identity transfers 62,728 body bytes; gzip transfers 19,073. Both decode to the same 62,728-byte result. Median whole-command latency is 69.5 versus 71.3 milliseconds without added delay, 192.3 versus 169.2 at 24 milliseconds added round-trip delay, and 392.4 versus 329.2 at 64 milliseconds.</desc>',

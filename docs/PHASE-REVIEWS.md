@@ -1599,7 +1599,7 @@ Compare the bars on one duration scale. The miss pays for execution and two inpu
 
 The bars use the recorded local samples. Direct execution and hits show medians; the miss is one sample. No exercise implementation or project configuration changed.
 
-Source: [measurement script](https://github.com/sidsharma96/receipt/blob/main/scripts/measure_local.py) and [raw samples](measurements/phase-6-2026-10-09.json).
+Source: [measurement script](https://github.com/sidsharma96/receipt/blob/main/scripts/measure_local.py) and [raw samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/phase-6-2026-10-09.json).
 <!-- review-figure:figure-6-local-measurements:end -->
 
 Shared experiments used 16 or 128 records, roughly 1 KiB outputs and one or four clients. They covered reads, duplicate writes, mixed reads/writes and reads started alongside dry-run collection. At 128 records and four clients, duplicate writes had a 74.67 ms median; their mean database-lock call took 54.56 ms. Those are different statistics, so the next picture compares means with means.
@@ -1617,7 +1617,7 @@ The shorter bar measures the advisory-lock call, including its database round tr
 
 The shorter duration is inside the whole request, not additional time. Collection and other writers use the same coordination rules; more clients do not make an exclusive section run in parallel.
 
-Source: [workload harness](https://github.com/sidsharma96/receipt/blob/main/internal/cache/measurement_test.go) and [raw samples](measurements/phase-6-2026-10-09.json).
+Source: [workload harness](https://github.com/sidsharma96/receipt/blob/main/internal/cache/measurement_test.go) and [raw samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/phase-6-2026-10-09.json).
 <!-- review-figure:figure-6-measured-wait:end -->
 
 ### 6. What are the guarantees, assumptions and non-goals?
@@ -1793,7 +1793,7 @@ Two direct warm runs averaged about 140 ms, one miss took 994 ms, and two hits
 averaged about 556 ms for regex-syntax's 147 library tests. All passed; the hits
 did not execute tests. The checks outweighed this small suite's runtime.
 Other verification work overlapped; this five-sample experiment is not a
-performance distribution. Source: [raw observations](measurements/phase-7-cargo-2026-10-09.json).
+performance distribution. Source: [raw observations](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/phase-7-cargo-2026-10-09.json).
 <!-- review-figure:figure-7-cargo-cost:end -->
 
 There is no new maintenance path. The extra scan's file/byte budgets bound that
@@ -1962,7 +1962,7 @@ Regex-syntax was quicker directly: 139 ms versus a 434 ms hit. Unicode-width too
 Both pairs use one scale and show median client durations. Each hit avoided
 test execution but still checked tools and inputs. The raw record retains every
 sample, including the first regex direct run at 332 ms; it was not discarded.
-Source: [sequential measurements](measurements/cargo-hardening-2026-10-09.json).
+Source: [sequential measurements](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/cargo-hardening-2026-10-09.json).
 <!-- review-figure:figure-7-cargo-hardening-cost:end -->
 
 Median tool-check time was about 270 ms for regex-syntax and 267 ms for
@@ -3778,7 +3778,7 @@ cache experiment remains separate from this run.
 
 ### Local stall hunt — 8. Evidence, verification and risks
 
-The committed [evidence](measurements/receipt-go-batch-2026-10-19/evidence.json)
+The committed [evidence](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/receipt-go-batch-2026-10-19/evidence.json)
 contains all compact rows, ordered counters and the fixed plan. Raw JSONL hashes
 identify the local originals. Three smoke hits checked parsing, keys and child
 usage before the full batch. Twenty profile/evidence tests passed, covering
@@ -3976,7 +3976,7 @@ before adding further Go-probe or Git micro-optimizations.
 The two [workflow runs](https://github.com/sidsharma96/receipt/actions/runs/39353959080)
 and [second run](https://github.com/sidsharma96/receipt/actions/runs/39354403055)
 completed successfully. All fixed-count hits, normal warmup guards and before/after
-key checks passed. The [retained evidence](measurements/linux-baseline-2026-10-19/summary.json)
+key checks passed. The [retained evidence](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/linux-baseline-2026-10-19/summary.json)
 links both full client artifacts by hash, all sanitized server events, resource
 snapshots, read-only actual plans and separate strace summaries. No failed or
 slow measured call was removed. Nine helper-policy tests passed, including the
@@ -4167,8 +4167,8 @@ completed on Ubuntu 24.04, image 20261012.334.1, Go 1.22.12 linux/amd64, source
 2cb12eb45b225a35f6803b5fc4bf68409bd580e9. Three blocks × two paths × two builds ×
 ten measured calls yielded 120 hits, plus twelve excluded warmups. No measured
 failure or outlier was removed. All 60 traced calls matched server operation,
-status and ID. [Client evidence](measurements/http-trace-2026-10-19/client.json)
-and [recomputed summary](measurements/http-trace-2026-10-19/summary.json) retain
+status and ID. [Client evidence](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/http-trace-2026-10-19/client.json)
+and [recomputed summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/http-trace-2026-10-19/summary.json) retain
 full distributions, paired comparisons, server events, identity checks and hashes.
 Raw build files, tokens, response bodies and unmatched server traffic are absent
 from the published book.
@@ -4373,8 +4373,8 @@ SQL indexes cannot remove a transfer delay and were not part of this experiment.
 [Run 39467320436](https://github.com/sidsharma96/receipt/actions/runs/39467320436)
 completed on source 8a0055df101d4c43fb44ed2668bf5957f1f232c2, Go 1.22.12 linux/amd64,
 Ubuntu 24.04 image 20261012.334.1, two Intel Xeon Platinum 8573C CPUs. The
-[retained client evidence](measurements/gzip-2026-10-20/client.json) and
-[summary](measurements/gzip-2026-10-20/summary.json) preserve all 360 calls,
+[retained client evidence](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/gzip-2026-10-20/client.json) and
+[summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/gzip-2026-10-20/summary.json) preserve all 360 calls,
 18 server batches, body and binary hashes, full keys, distributions, paired
 comparisons and block means. Thirty-six warmups were excluded by the protocol.
 The curator rejects missing pairs, incomplete runs, changed keys, changed decoded
@@ -4592,9 +4592,9 @@ were not compared. Skipping validation/auth/quarantine is not a performance opti
 [Run 39471579585](https://github.com/sidsharma96/receipt/actions/runs/39471579585)
 completed on source d335e9c8f9389e41c27ec8894e24b094886c24a4, Ubuntu 24.04 image
 20261012.334.1, Go 1.22.12 linux/amd64 and two AMD EPYC 7763 CPUs. The actual
-Caddy version was v2.11.7. [Client evidence](measurements/caddy-gzip-2026-10-20/client.json),
-[server capture](measurements/caddy-gzip-2026-10-20/server.json) and
-[summary](measurements/caddy-gzip-2026-10-20/summary.json) retain 180 measured hits,
+Caddy version was v2.11.7. [Client evidence](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/caddy-gzip-2026-10-20/client.json),
+[server capture](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/caddy-gzip-2026-10-20/server.json) and
+[summary](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/caddy-gzip-2026-10-20/summary.json) retain 180 measured hits,
 2,534 resource samples, all exact joins, hashes, six resource windows and complete
 distributions. Twelve warmups were excluded by protocol. No failure or outlier
 was removed. Export was amended to retain anonymous no-ID access records safely;
@@ -4954,3 +4954,160 @@ which actor waits, separates measured boundaries from hypotheses, and pairs
 proposed fixes with their costs/revisit conditions. Automated checks establish
 links/excerpts/layout properties, not teaching quality. Live authenticated book
 inspection remains separate from local rendering and deployment success.
+
+## Source artifact cleanup, 20 October 2026
+
+A developer running `make docs` should get a checked book without loading half a
+million lines of old JSON. The build now reads the retained Markdown and SVGs,
+regenerates checked review figures from small exact numeric inputs, and checks
+links and excerpts. Historical raw evidence opens at revision
+`f87c9b5eb6ee5ba74ac1837181189732ceaebf7b`; optional evidence tests restore it to
+ignored local storage. [Chapter 6](guide/06-find-the-code-and-defend-a-decision.md#what-needs-to-be-installed)
+explains which dependencies belong to the client, server, docs and tools.
+
+### Source cleanup · 1. Data structures and reasons
+
+The removed records were JSON objects and arrays containing measurements,
+metadata and summaries. The cleanup removes 74 files, 519,922 nonblank lines and
+19,834,591 bytes from the current source tree. This is a file inventory, not a
+measurement of peak process memory. `scripts/docs/figure_measurements.py` keeps
+only exact sample durations and the lock-duration total needed by four existing
+review figures. Its lists/dictionaries retain the original integer values and
+calculation order; it is not a copy of the full raw archive.
+
+### Source cleanup · 2. Architecture, flow and extension boundaries
+
+The application still builds from `cmd/`, `internal/`, `go.mod` and `go.sum`.
+The unchanged [`main`](https://github.com/sidsharma96/receipt/blob/main/cmd/receipt/main.go#L9-L11)
+passes control through `os.Exit(app.Main(os.Args[1:], os.Stdout, os.Stderr))`.
+The built process uses neither repository Python scripts nor historical JSON.
+The docs build uses Python and mdBook; current CI also uses Python helpers.
+Measurement readers now point to `.tools/measurements/`. The restore tool reads
+pinned Git objects and writes that directory; new investigations should use
+ignored output or retained CI artifacts, with a human-readable summary in docs.
+
+### Source cleanup · 3. Concurrency, networking and fundamental primitives
+
+No production concurrency or network behavior changes. The restore command runs
+Git subprocesses sequentially, reads the exact historical bytes, and creates
+local files with exclusive creation. It checks existing contents rather than
+overwriting a different local record. Historical evidence links use GitHub, but
+normal docs builds and local archive restoration make no network requests for
+that evidence. A shallow clone may need a separately requested Git fetch. The
+source policy inspects Git's tracked and nonignored paths; it does not scan
+runtime cache directories or generated book contents as source.
+
+### Source cleanup · 4. Pitfalls and debugging challenges
+
+Adding `.gitignore` alone would not stop an already tracked file or a forced add.
+`scripts/check_source_artifacts.py` rejects existing tracked JSON/JSONL/NDJSON,
+and ordinary CI runs it. Docs checks also run the policy and reject JSON in book
+source. Generated search JSON is still allowed in the ignored book output.
+Historical evidence tests skip only their optional evidence portions when their
+archive is absent; a present but corrupt or partial archive fails instead. Old
+GitHub links need repository access. Saved explanatory text and SVGs remain
+readable offline. A different extension is not permission to reintroduce raw
+archives; the repository instructions explicitly forbid that workaround.
+
+### Source cleanup · 5. Hot/cold paths and costs
+
+There is no claimed change to CPU, RAM or latency of a deployed Receipt binary.
+Building, reviewing and publishing the current source no longer includes these
+raw JSON records. Git history retains them, so this is not a repository-history
+size reduction. A full historical restore still writes about 19.8 MB into
+ignored local storage and an optional evidence suite still parses that data.
+Normal book checks use the small retained figure inputs instead. Existing
+runtime JSON cache, configuration and HTTP encoding continue unchanged.
+
+### Source cleanup · 6. Guarantees, assumptions and non-goals
+
+The current tree has no source JSON files. Ignore rules and the CI checker
+prevent ordinary and forced additions of the three named JSON extensions while
+that check remains enabled. They do not identify every possible raw-data format
+or remove JSON produced at runtime. This phase does not delete Python, change the key algorithm, rewrite wire
+formats, erase Git history, deploy a server or publish a book. Removing tracked
+inputs does change fingerprints when Receipt itself is the workload; an initial
+miss in its own CI is expected after the cleanup. A built client still needs Git and its workload's command/toolchain;
+Python is required when that workload is Python, independently of helper scripts.
+
+### Source cleanup · 7. Alternatives and reasons
+
+This is a retrospective comparison. Keeping all raw records beside the book
+would preserve offline raw-data access but retain the source/publishing bulk the
+user requested removing. Renaming or compressing the entire archives into other
+tracked files would preserve that same burden. Rewriting history would reduce
+some future clone sizes but change old commit identities and evidence links; it
+is outside this request. Rewriting every Python helper in Go would not remove
+a Receipt runtime dependency, because those helpers do not run inside Receipt;
+it would replace working docs/CI tooling and require separate verification.
+
+### Source cleanup · 8. Evidence, verification and remaining risks
+
+The following checks ran locally on 20 October 2026:
+
+- `make build` and `./receipt help` passed. A fresh
+  `go test -count=1 -ldflags=-linkmode=external ./...` passed on this Mac.
+- All 9 CI-helper tests passed.
+- `make docs` passed all 20 checks with the local archive removed. The built
+  `measurements/` directory contained no raw JSON. Checked review SVGs remained
+  byte-for-byte current after the figure-input change.
+- All 46 profiling tests passed with the historical archive; without it,
+  19 tests passed and 27 evidence-only tests explicitly skipped.
+- Restoring and comparing all 74 local records against `git show` confirmed exact
+  historical bytes. All Python sources parsed successfully.
+- The artifact-policy tests confirmed ignored outputs are allowed, forced adds
+  of all three JSON extensions are rejected, and pending deletions are allowed.
+  `git diff --check` passed.
+
+The inventory and original bytes are tied to the pinned revision. No performance benchmark,
+PostgreSQL integration run or deployment is claimed for this cleanup. Historical
+results remain historical; deleting their current copies does not invalidate
+or improve the measured behavior. The documentation checks verify links within
+the source/site but do not authenticate against every historical GitHub URL.
+
+### Source cleanup · 9. Revisit conditions
+
+If readers need raw evidence offline without Git history, provide a separate
+versioned release attachment rather than restoring archives to the book source.
+If artifact retention becomes insufficient, choose a durable evidence store and
+record its access and retention policy. If new docs figures need raw traces,
+extract only the exact values used by the explanation and cite their source.
+If we retire Python-based CI or docs checks, remove the now-unused helpers and
+update the dependency table after verifying their replacements. A desired
+history-size reduction needs a separate decision about changed commit IDs.
+
+### Commit guard amendment, 20 October 2026
+
+This amendment extends the cleanup review's nine answers. The checker reads a
+map of staged paths to blob sizes from `git ls-files --stage` and
+`git cat-file --batch-check`; blobs are Git's saved file contents. The local
+`.githooks/pre-commit` runs the checker with `--staged` before checking staged
+whitespace. `make hooks-install` enables it for one clone; ordinary CI repeats
+the index check. There is no production networking or concurrency change.
+
+The important failure case is a force-added `measurement.JSON` that is then
+deleted on disk. The staged copy would still enter the commit. The new index
+check rejects it, as well as a staged file over 1 MiB whose working copy was
+subsequently reduced. The per-file bound costs only Git metadata and size reads,
+not a read/decode of every measurement body. It applies to all source extensions;
+it cannot recognize a small archive disguised under another name. Ignore rules
+also cover new profiler captures and deployment-tool state; existing tracked
+binary profiles remain documented historical evidence.
+
+Retrospectively, ignore rules alone were insufficient because Git permits forced
+adds. A local-only hook would also be insufficient because users can skip it or
+forget installation; CI supplies the shared check. Neither is a configured
+server-side push prohibition. Revisit the 1 MiB bound if an intentional asset
+cannot reasonably be reduced, and review an explicit policy change rather than
+bypassing the hook. The detailed setup and review procedure are in the README
+and Chapter 6. Verification of the final commit-guard changes is recorded below.
+
+
+Commit-guard verification: `make docs` passed all 22 checks; all four artifact
+policy tests and all nine CI-helper tests passed. In a disposable Git repository,
+the installed hook rejected staged JSON even after its working copy was deleted,
+rejected staged trailing whitespace, and accepted a corrected source commit.
+The 1 MiB tests also rejected a renamed oversized archive despite a smaller
+working copy, and accepted the exact size boundary. Enabled the hook in this
+clone after confirming there was no existing custom hooks path or pre-commit hook.
+The final staged artifact and whitespace checks passed before committing.

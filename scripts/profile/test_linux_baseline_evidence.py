@@ -7,9 +7,10 @@ import unittest
 from linux_ci_baseline import distributions
 from summarize_linux_baseline import request_summary
 
-DATA = Path(__file__).resolve().parents[2] / 'docs/measurements/linux-baseline-2026-10-19'
+DATA = Path(__file__).resolve().parents[2] / '.tools/measurements/linux-baseline-2026-10-19'
 
 
+@unittest.skipUnless(DATA.exists(), "restore historical measurements: python3 scripts/profile/restore_measurements.py")
 class LinuxBaselineEvidence(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

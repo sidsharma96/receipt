@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 from summarize_gzip import span,summarize
 
-DATA=Path(__file__).resolve().parents[2]/'docs/measurements/gzip-2026-10-20'
+DATA=Path(__file__).resolve().parents[2]/'.tools/measurements/gzip-2026-10-20'
 
 
 class GzipComparison(unittest.TestCase):
@@ -20,7 +20,7 @@ class GzipComparison(unittest.TestCase):
             span({'events':[{'name':'start','ns':2},{'name':'end','ns':1}]},'start','end')
 
     def evidence(self):
-        if not DATA.exists(): self.skipTest('CI evidence not yet collected')
+        if not DATA.exists(): self.skipTest('restore historical measurements: python3 scripts/profile/restore_measurements.py')
         return json.loads((DATA/'client.json').read_text())
 
     def test_retained_evidence_and_recomputation(self):

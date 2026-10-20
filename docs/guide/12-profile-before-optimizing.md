@@ -161,7 +161,7 @@ errors, directories and symlinks. Existing encoding and input-change tests pass.
 We also built the previous commit's CLI and this implementation separately. The
 old CLI populated a temporary cache for a fixed Go project; the new CLI replayed
 that entry. Both `explain` commands reported the identical full 64-character key,
-recorded in the [raw comparison](../measurements/streaming-2026-10-18/comparison.json).
+recorded in the [raw comparison](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/streaming-2026-10-18/comparison.json).
 This checks compatibility at the complete command/cache boundary, beyond the
 unit-level hash comparison. Identical keys still do not prove deterministic tests.
 
