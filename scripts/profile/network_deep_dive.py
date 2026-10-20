@@ -58,7 +58,24 @@ def main():
             clients[name]=binary
         # DNS driver writes only resolver settings and fixed numeric event records.
         driver=clients['dns'].parent/'run_probe.py';driver.write_text((SOURCE/'scripts/profile/network_dns.py').read_text())
-        run(['python3',str(driver)])
+        fields=['frame.time_epoch','frame.interface_id','ip.src','ip.dst','ipv6.src','ipv6.dst','udp.srcport','udp.dstport','tcp.srcport','tcp.dstport','dns.id','dns.qry.type','dns.flags.response','dns.flags.rcode','dns.flags.truncated','dns.count.answers','dns.resp.ttl']
+        dns_args=['sudo','-n','tshark','-n','-l','-i','any','-a','duration:60','-c','3000','-s','512','-f','udp port 53 or tcp port 53','-Y','dns.qry.name == "receipt.sidsharma.dev"','-T','fields','-E','separator=/t']
+        for field in fields:dns_args+=['-e',field]
+        dns_capture=subprocess.Popen(dns_args,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,start_new_session=True)
+        dns_packets=[]
+        def dns_receive():
+            for line in dns_capture.stdout:
+                values=line.rstrip('\n').split('\t')
+                if len(values)==len(fields):dns_packets.append(dict(zip(fields,values)))
+        dns_reader=threading.Thread(target=dns_receive,daemon=True);dns_reader.start();time.sleep(1)
+        try:
+            if dns_capture.poll() is not None:raise RuntimeError('DNS metadata capture did not start')
+            run(['python3',str(driver)])
+        finally:
+            if dns_capture.poll() is None:
+                subprocess.run(['sudo','-n','kill','-INT','--','-'+str(dns_capture.pid)],capture_output=True,timeout=10)
+            dns_capture.wait(timeout=10);dns_reader.join(timeout=5)
+        (out/'dns-packets.json').write_text(json.dumps({'scope':'Selected DNS metadata fields for the public endpoint only. No packet body or pcap retained. Capture snaplen512 can omit large/fragmented records.','rows':dns_packets},indent=2))
         shutil.copy(driver.parent/'linux-probe.json',out/'dns.json')
         tcp=run(['python3',str(SOURCE/'scripts/profile/network_tcp.py')]);(out/'tcp.json').write_text(tcp.stdout)
         route=json.loads(run(['ip','-json','route','get','104.248.183.112']).stdout)[0]
@@ -111,6 +128,8 @@ def main():
         cpu=out/'tls-cpu.pprof'
         run([str(clients['tls']),'-mode','full','-n','40','-cpu-profile',str(cpu)],env=public_env)
         (out/'tls-cpu.txt').write_text(run(['go','tool','pprof','-top','-nodecount=40',str(clients['tls']),str(cpu)]).stdout)
+        (out/'p384-assembly.txt').write_text(run(['go','tool','objdump','-s','crypto/internal/nistec/fiat.p384Mul',str(clients['tls'])]).stdout)
+        metadata['cgo_enabled']=os.environ.get('CGO_ENABLED','default')
         metadata['probe_sha256']={name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in clients.items()}
     metadata['completed']=True;metadata['ended_unix_ns']=time.time_ns()
     (out/'metadata.json').write_text(json.dumps(metadata,indent=2))
