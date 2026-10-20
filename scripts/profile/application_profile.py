@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import sys
 import tempfile
@@ -50,13 +51,17 @@ def main():
         (out/'bench.txt').write_text(result.stdout)
         for name in ('Decode','MetadataDecode','Encode'):
             stem = out/name
-            base.run(common+['-test.bench=^BenchmarkApplicationProfile/'+name+'$', '-test.benchtime=5s',
+            profiled = base.run(common+['-test.bench=^BenchmarkApplicationProfile$/^'+name+'$', '-test.benchtime=5s',
                             '-test.cpuprofile='+str(stem)+'.cpu.pprof','-test.memprofile='+str(stem)+'.alloc.pprof',
                             '-test.memprofilerate=65536'],env=bench_env)
-            for kind,flag in (('cpu','-total_delay'),('alloc','-alloc_space')):
+            selected = set(re.findall(r'^BenchmarkApplicationProfile/([A-Za-z]+)-[0-9]+\s', profiled.stdout, re.M))
+            if selected != {name}:
+                raise RuntimeError('profile benchmark selection was not isolated')
+            (out/(name+'.profile-bench.txt')).write_text(profiled.stdout)
+            for kind in ('cpu','alloc'):
                 # CPU profile uses its default cpu sample index; allocation uses bytes.
                 args = ['go','tool','pprof','-top','-nodecount=35']
-                if kind == 'alloc': args.append(flag)
+                if kind == 'alloc': args.append('-alloc_space')
                 report = base.run(args+[str(binary),str(stem)+'.'+kind+'.pprof'])
                 (out/(name+'.'+kind+'.txt')).write_text(report.stdout)
         metadata['key_after'] = http_trace.key(base.ci.CLIENT, env)
