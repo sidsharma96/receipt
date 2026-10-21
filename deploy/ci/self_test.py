@@ -68,7 +68,7 @@ def main():
     # The current sole dependency is prepared and explicitly fingerprinted.
     # Fail visibly if go.mod grows rather than silently omitting new dependencies.
     modules = subprocess.check_output(['go', 'list', '-m', 'all'], cwd=ROOT, env=env, text=True).splitlines()
-    if modules != ['receipt', 'github.com/lib/pq v1.10.9']:
+    if modules != ['github.com/sidsharma96/receipt', 'github.com/lib/pq v1.10.9']:
         raise RuntimeError('update declared CI module inputs for changed dependencies')
     config = ROOT / '.receipt.json'
     if config.exists():

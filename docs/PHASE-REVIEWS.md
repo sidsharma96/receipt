@@ -5509,3 +5509,9 @@ and five expected archive members were verified. The extracted macOS arm64
 executable ran `help` and two local generic workload invocations successfully.
 Native execution on the other three targets was not performed locally. Release
 CI adds a Linux amd64 execution check; its outcome is recorded after publication.
+
+The first main-branch CI run passed independent PostgreSQL/race tests but failed
+its cached job because `deploy/ci/self_test.py` still expected the old main-module
+name. Its exact dependency allowlist was updated to the GitHub module path;
+the dependency count and pinned driver remain unchanged. This was a release
+integration correction, not an application behavior or cache-contract change.
