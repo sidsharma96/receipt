@@ -40,4 +40,6 @@ Read the chapters in order to understand the program. Each ends with a few quest
 
 22. [Explain the slow network hits](guide/22-explain-network-latency.md): trace DNS answers, TCP packets, TLS trust setup, matched server work and acknowledgment-dependent response delivery.
 
+23. [Check whether we can control runner placement](guide/23-check-runner-placement.md): distinguish chosen locations from observed network paths, preserve failed attempts and compare identical fetches.
+
 To inspect setup commands, use the [README](https://github.com/sidsharma96/receipt/blob/main/README.md). To examine the full nine-question phase reviews, test records, and dated decisions, use the [review reference](PHASE-REVIEWS.md). The reference preserves earlier claims and their amendments. This guide describes current behaviour directly so you do not have to reconstruct it from history. Dated changes to the guide itself are in [Updates and documentation records](guide/updates.md).

@@ -5301,3 +5301,109 @@ and retain their levels and links. Revisit any explanation a new reader cannot
 trace, and update current-status notes when an investigation becomes an
 implemented change. The original nine-question implementation reviews remain
 the source of detailed evidence; this amendment does not claim a new phase.
+
+## Runner placement feasibility, 20 October 2026
+
+One new runner fetched the existing result in a median 56.12 ms; another needed
+129.35 ms. TCP setup changed from 2.04 to 16.53 ms, while process CPU stayed near
+23 ms. The server stayed in place. [Chapter 23](guide/23-check-runner-placement.md)
+walks through why this is evidence about observed paths, not an experiment that
+chose regions. The [measurement record](MEASUREMENTS.md#runner-placement-feasibility-20-october-2026)
+contains exact jobs, counts, hashes, reproduction and the failed first attempt.
+
+### Placement feasibility — 1. Data structures and why
+
+The comparison helper reads completed metadata and request lists from ignored
+artifacts. Sets compare source/build/result identities and detect duplicate IDs;
+separate lists retain twelve primary fresh-process observations and nineteen
+warmed reuse observations. Per-stage summaries keep sample counts, medians,
+means and ranges. They do not pool distinct connection lifetimes into one number.
+The existing probe records bounded events rather than response bodies or tokens.
+
+### Placement feasibility — 2. Architecture, flow and extension boundaries
+
+The existing workflow builds the diagnostic on disposable Ubuntu runners, uses
+its existing secret to fetch a known result, and uploads numeric artifacts with
+seven-day retention. The operator downloads them and exports fixed-field server
+logs for bounded time windows. `compare_network_runs.py` validates compatible
+runs before calculating summaries through the existing `stages` helper. A real
+regional trial needs deliberate client placement, comparable machines and a new
+protocol; an observed short TCP time is not a geographic identity. No new runner
+or server was provisioned.
+
+### Placement feasibility — 3. Concurrency, networking and primitives
+
+The workflow concurrency group serialized the jobs. Each probe uses the actual
+`cache.Remote` HTTP path with normal certificate verification and authorization.
+Fresh processes pay setup; a separately labeled control reuses a connection in
+one process. Existing trace callbacks use a mutex and bounded event records.
+The new Python comparison is sequential and introduces no application locks,
+workers or daemon. Packet/DNS observers belong to the established diagnostic;
+this phase did not install capture tools on the server.
+
+### Placement feasibility — 4. Pitfalls and debugging
+
+The first attempt failed at status checking after three server-recorded fetches.
+The driver raised before saving child stdout, so HTTP status and failure cause
+cannot be reconstructed. A local repair, `record_probe` in
+[scripts/profile/network_deep_dive.py](https://github.com/sidsharma96/receipt/blob/main/scripts/profile/network_deep_dive.py),
+now writes numeric rows before rejecting an unsuccessful child. It never exports
+stderr. Timeouts or malformed output still may lack a current-child record.
+The failed attempt remains reported; repeating a job does not erase it.
+
+### Placement feasibility — 5. Frequent paths, occasional work and costs
+
+A fetch repeatedly opens the connection, verifies TLS, waits for the server,
+collects bytes and validates JSON. Its CPU medians were 23.084 and 23.189 ms;
+its elapsed medians were 56.120 and 129.346 ms. Those are operation scopes, not
+whole CLI or job times. Building probes, installing disposable-runner observers,
+downloading artifacts and offline analysis are occasional measurement work.
+The repair writes records between timed child operations and may affect later
+machine state; it has no measured overhead estimate and was absent from these runs.
+
+### Placement feasibility — 6. Guarantees, assumptions and non-goals
+
+Both completed jobs used an identical probe binary and identical 65,789-byte
+results; all 240 IDs matched server logs. Identity and active-process checks
+matched before/after. These observations do not prove a geographically controlled
+comparison, deterministic tests, unchanged external load or a production speedup.
+The helper rejects incomplete or incompatible comparisons; it cannot prove that
+an omitted failed job never existed. No application input or wire contract changed.
+
+### Placement feasibility — 7. Alternatives and decisions
+
+Keep the current server placement: there is no controlled regional winner.
+Standard runner labels are insufficient to request the desired location. A
+regional client fleet would permit the experiment but adds provisioning, cost,
+credential handling and machine-comparability decisions. Running a client on the
+production droplet would remove much of the public path while adding contention;
+it would answer a different question. Batching remains plausible for many
+operations per job; the current cached CI job makes one ordinary test invocation.
+JSON work is a separate CPU candidate. These are retrospective comparisons,
+not implemented optimizations or approved infrastructure purchases.
+
+### Placement feasibility — 8. Evidence, untested failures and risks
+
+Three attempts: one failed, two completed with 216 fetches and 24 status calls.
+The completed jobs and full source revision are linked in the measurement record.
+The same-body/build checks passed; server log joins and before/after identities
+were checked separately. Six new comparison tests cover scope, drift, incomplete
+runs, failures and reuse labels; a regression test verifies failed-child numeric
+retention without stderr export. `make docs`, all 23 documentation tests and all
+53 profiling tests pass. Rendered inspection covered the new chapter at desktop
+and 390-pixel phone width, including the results table and an answer control;
+the phone page had no horizontal overflow. This targeted layout check is not a
+beginner-reader study or a complete accessibility audit.
+No application code changed, so application/race suites were not rerun. No
+controlled-region, fresh-machine cost, concurrent-load or failure-recovery study
+was completed. Artifact expiry limits independent future raw-data access.
+
+### Placement feasibility — 9. Conditions for revisiting decisions
+
+Revisit placement when region-pinned comparable clients are available and a
+budget/setup is chosen. Revisit batching when real jobs perform enough operations
+to repay first-request setup and lifecycle costs. Revisit JSON work when client
+or server CPU dominates representative workloads. Revisit the harness when a
+failure still lacks useful numeric evidence, preserving failure counts rather
+than selecting only fast successful jobs. Repeat measurements across time blocks
+before presenting an observed short path as dependable behavior.

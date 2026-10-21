@@ -597,3 +597,20 @@ No. Network address translation can rewrite the port. This investigation matched
 **Learn more:** [22. Explain the slow network hits](../guide/22-explain-network-latency.md)
 
 </details>
+
+
+### What can we infer from a failed job with missing request records?
+<!-- check: guide/23-check-runner-placement.md -->
+
+**Level:** Expert
+
+A server log contains three successful fetches, then the client job fails on status checking before saving its request records. Can those successes replace the missing timing sample?
+
+<details>
+<summary>Answer</summary>
+
+No. Server entries do not recover the client intervals or the failed status outcome. Keep the failed attempt visible, reject it from comparisons requiring complete records, and repair evidence retention without claiming to reconstruct the lost data.
+
+**Learn more:** [23. Check whether we can control runner placement](../guide/23-check-runner-placement.md)
+
+</details>

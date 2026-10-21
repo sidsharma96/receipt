@@ -46,3 +46,23 @@ class Attribution(unittest.TestCase):
         self.assertEqual(result['unique_rows'],2)
         self.assertEqual(result['groups']['stub/28']['n'],1)
         self.assertAlmostEqual(result['groups']['stub/28']['median_ms'],100)
+
+
+class FailureEvidence(unittest.TestCase):
+    def test_failed_child_numeric_record_is_retained(self):
+        import json
+        from pathlib import Path
+        import subprocess
+        import tempfile
+        from unittest.mock import patch
+        from network_deep_dive import record_probe
+        row = {'endpoint': 'status', 'failed': True, 'trace': {'status': 503}}
+        child = subprocess.CompletedProcess(['probe'], 1, json.dumps(row) + '\n', 'private diagnostic')
+        with tempfile.TemporaryDirectory() as tmp, patch('network_deep_dive.subprocess.run', return_value=child):
+            path = Path(tmp) / 'requests.json'
+            with self.assertRaisesRegex(RuntimeError, 'numeric records retained'):
+                record_probe(['probe'], {}, [], path, block=0)
+            saved = path.read_text()
+            self.assertNotIn('private diagnostic', saved)
+            self.assertEqual(json.loads(saved)[0]['trace']['status'], 503)
+            self.assertTrue(json.loads(saved)[0]['failed'])

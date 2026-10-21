@@ -36,6 +36,21 @@ def run(args,**kwargs):
     return subprocess.run(args,capture_output=True,text=True,timeout=180,check=True,**kwargs)
 
 
+def record_probe(args, env, rows, destination, **labels):
+    """Retain numeric probe output before reporting an unsuccessful child."""
+    result = subprocess.run(args, capture_output=True, text=True, timeout=180, env=env)
+    batch = [json.loads(line) for line in result.stdout.splitlines()]
+    if not batch:
+        raise RuntimeError('network probe returned no numeric records')
+    for row in batch:
+        row.update(labels)
+        rows.append(row)
+    destination.write_text(json.dumps(rows, indent=2))
+    if result.returncode or any(row['failed'] or row['trace']['status'] !=
+                               (200 if row['endpoint'] == 'fetch' else 204) for row in batch):
+        raise RuntimeError('network probe failed; numeric records retained in requests.json')
+
+
 def main():
     if platform.system()!='Linux' or os.environ.get('GITHUB_REF')!='refs/heads/main':
         raise RuntimeError('trusted Linux main workflow required')
@@ -97,15 +112,11 @@ def main():
                 for mode,endpoint,h1 in cases:
                     args=[str(clients['network']),'-mode',mode,'-endpoint',endpoint,'-key',fixture]
                     if h1:args+=['-h1']
-                    row=json.loads(run(args,env=clean).stdout);row.update(block=block,http1_control=h1)
-                    if row['failed'] or row['trace']['status']!=(200 if endpoint=='fetch' else 204):raise RuntimeError('expected read-only hit')
-                    rows.append(row)
+                    record_probe(args, clean, rows, out/'requests.json', block=block, http1_control=h1)
             for mode in ('fresh','resume','reuse'):
-                values=run([str(clients['network']),'-mode',mode,'-count','20','-key',fixture],env=clean)
-                for line in values.stdout.splitlines():
-                    row=json.loads(line);row.update(block=12,http1_control=False,persistent_control=True)
-                    if row['failed']:raise RuntimeError('persistent control failed')
-                    rows.append(row)
+                record_probe([str(clients['network']),'-mode',mode,'-count','20','-key',fixture],
+                             clean, rows, out/'requests.json', block=12,
+                             http1_control=False, persistent_control=True)
         finally:
             if tcpdump.poll() is None:
                 subprocess.run(['sudo','-n','kill','-INT','--','-'+str(tcpdump.pid)],capture_output=True,timeout=10)

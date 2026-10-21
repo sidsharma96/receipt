@@ -532,3 +532,15 @@ keeps the earlier edits and links the completed network follow-up. The
 [review amendment](../PHASE-REVIEWS.md#chapters-1017-readability-amendment-20-october-2026)
 records chapter scope, checks and remaining teaching-verification gaps. No runtime
 optimization, deployment or new benchmark was performed.
+
+## 20 October 2026: check runner placement before proposing a move
+
+New [Chapter 23](23-check-runner-placement.md) follows three existing-workflow
+attempts at one revision. One failed before its client records were saved; two
+completed with identical binaries and results, but different observed TCP paths
+and fresh-fetch medians of 56.12 and 129.35 ms. The current standard runner setup
+cannot select a region, so this is a feasibility check, not a controlled regional
+comparison or a reason to migrate. Added a comparison helper and a locally tested
+repair that retains numeric child records before reporting probe failure. The
+[full nine-question review](../PHASE-REVIEWS.md#runner-placement-feasibility-20-october-2026)
+records evidence, missing failure data, verification and revisit conditions.

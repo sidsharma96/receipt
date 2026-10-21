@@ -223,6 +223,11 @@ request/first-response travel and about two more during body delivery. The local
 TLS and validation work then adds to that cost. This accounts for the reproduced
 300–383 ms request class without inventing a long application sleep.
 
+Follow-up: [Chapter 23](23-check-runner-placement.md) checked the current runner
+controls and ran three job attempts. Two completed on different observed paths;
+one failed. There is no controlled regional comparison or migration decision.
+The original proposal follows as context.
+
 **Recommendation, 20 October 2026: compare client/server placement first.**
 Take the same saved result and client build, and compare repeated fresh fetches
 from controlled runner locations to the same endpoint. Record connection time,

@@ -2457,3 +2457,87 @@ selected socket state, not every raw packet record. No server heap, concurrent
 load/capacity, exact one-way latency, comprehensive loss-recovery or cold-disk
 performance experiment was performed. The local report templates/fixtures and
 source-version reviews are separate from these completed Linux runs.
+
+## Runner placement feasibility, 20 October 2026
+
+Three sequentially dispatched attempts used existing `profile-network.yml` at
+`50f7b90ffd49bc06dc12e9b998622ba9ddc4f20e`. Run
+[39533940975](https://github.com/sidsharma96/receipt/actions/runs/39533940975)
+failed at the first shared-status probe after three successful fetches visible
+in the server log. The old driver discarded the child stdout when raising; no
+client request/packet file survived. Its failure status and cause are unknown.
+Runs [39534150601](https://github.com/sidsharma96/receipt/actions/runs/39534150601)
+and [39534228155](https://github.com/sidsharma96/receipt/actions/runs/39534228155)
+completed. Do not interpret their successful-request statistics as a failure-free
+three-job experiment.
+
+The repository is user-owned and private; its runner inventory returned zero
+self-hosted runners. Its standard `ubuntu-24.04` label selects an image, without
+a regional control. No runner location was independently established. These are
+observational assignments, not randomized region treatments. The two completed
+jobs used image 20261012.334.1, Go 1.22.12 linux/amd64, CGO disabled, the same
+fixture key and identical network probe SHA-256:
+
+```text
+902c9261f1178cc090b6e6162eb0284b63a06e3221bcb2a77a989405ceacf717
+```
+
+All 216 fetches in the completed jobs returned 65,789 bytes. Raw-body and
+re-encoded validated-result SHA-256 were identical:
+
+```text
+78a832337e0642b2d54ce5e5189e059877a13b140d0f37a13dd50763221b992a
+```
+
+Each completed job has 120 requests: 108 fetches and 12 status requests. The
+primary comparison uses 12 fresh-process HTTP/2 fetches per job. Other cases
+(preloaded roots, pinned address, HTTP/1.1 and persistent-process controls) remain
+separate. Reuse summaries exclude index zero only, leaving 19 warmed requests
+per job. All 240 IDs joined exactly to fixed-field Receipt handler logs.
+
+| Median metric | 39534150601 | 39534228155 |
+| --- | ---: | ---: |
+| Fresh operation | 56.120 ms | 129.346 ms |
+| DNS | 3.363 ms | 2.442 ms |
+| TCP | 2.044 ms | 16.529 ms |
+| TLS | 14.023 ms | 28.450 ms |
+| First response byte | 24.813 ms | 41.872 ms |
+| Body collection | 3.550 ms | 32.618 ms |
+| Decode interval | 6.876 ms | 6.929 ms |
+| Fresh process CPU during operation | 23.084 ms | 23.189 ms |
+| Matching fresh server handler | 22.836 ms | 25.394 ms |
+| Warm reused operation | 32.322 ms | 43.711 ms |
+| Warm reused operation CPU | 8.609 ms | 8.708 ms |
+
+Server PID/start identities stayed unchanged (Receipt 26016, Caddy 23679), as did
+both executable hashes and the Caddyfile hash. Receipt's hash remained
+`f5e022b2b8ad1f499883aebd054a60ff7c0505fc74e5314f387fa7ba671005d5`.
+This checks the observed before/after identity, not every possible transient
+external action. No deployment, restart, configuration edit, credential creation,
+cache seeding or test-result publication was performed.
+
+Downloads, fixed-field server exports, before/after identity records and generated
+comparison JSON are local under ignored `.tools/placement-2026-10-20/`. Workflow
+artifacts have seven-day retention; these new records are not in the historical
+archive revision. To reproduce the completed-run arithmetic after downloading:
+
+```sh
+python3 scripts/profile/compare_network_runs.py \
+  .tools/placement-2026-10-20/run-2 \
+  .tools/placement-2026-10-20/run-3 \
+  > .tools/placement-2026-10-20/comparison.json
+```
+
+`compare_network_runs.py` checks completeness, distinct jobs, source/toolchain/image,
+probe binary identity, body/result identity and connection reuse labels. It does
+not certify region, server identity or handler joins; those were checked separately
+above. Failed attempts must be reported alongside its successful-run comparison.
+The local `record_probe` repair saves numeric request rows before raising on a
+nonzero child exit; it was not used in these jobs. A timeout or malformed/no stdout
+can still leave the current child without a saved row; earlier saved rows remain.
+
+The existing observer adds callbacks, hashing and packet observation. No observer
+calibration, concurrent load, controlled geographic effect, hardware-cycle count,
+whole-job startup/queue cost, new RAM profile, outage recovery, or production
+speedup was measured. Similar CPU with different waiting supports a path-related
+lead but cannot isolate geography from routing, hardware, load or time.

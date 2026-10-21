@@ -562,3 +562,20 @@ No. Loading moved outside the timer. Include its CPU, memory and elapsed time be
 **Learn more:** [22. Explain the slow network hits](../guide/22-explain-network-latency.md)
 
 </details>
+
+
+### Can the faster job prove a placement improvement?
+<!-- check: guide/23-check-runner-placement.md -->
+
+**Level:** Practitioner
+
+Two jobs use the same client binary and result bytes. Their fresh fetch medians are 56 and 129 ms. Did moving the server improve performance?
+
+<details>
+<summary>Answer</summary>
+
+No server move occurred. Different runner assignments and times can expose different paths. Matching binaries and results removes two confounders, but does not control geography, hardware or routing.
+
+**Learn more:** [23. Check whether we can control runner placement](../guide/23-check-runner-placement.md)
+
+</details>

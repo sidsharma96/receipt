@@ -32,6 +32,7 @@
 - [20. Test gzip on the actual Caddy deployment](guide/20-test-gzip-on-caddy.md)
 - [21. Find the application work inside a cache hit](guide/21-profile-application-cpu.md)
 - [22. Explain the slow network hits](guide/22-explain-network-latency.md)
+- [23. Check whether we can control runner placement](guide/23-check-runner-placement.md)
 
 # Defending the design
 

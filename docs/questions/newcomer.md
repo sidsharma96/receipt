@@ -696,3 +696,20 @@ Yes. The reviewed lookup collects both A and AAAA completions. The AAAA reply ma
 **Learn more:** [22. Explain the slow network hits](../guide/22-explain-network-latency.md)
 
 </details>
+
+
+### Does choosing Ubuntu choose a nearby runner?
+<!-- check: guide/23-check-runner-placement.md -->
+
+**Level:** Newcomer
+
+A workflow uses `runs-on: ubuntu-24.04`. Does that select a runner beside the cache server?
+
+<details>
+<summary>Answer</summary>
+
+No. It selects a runner image. The current standard hosted setup has no region selection in that label. A short observed TCP interval describes one path, not a location we can request next time.
+
+**Learn more:** [23. Check whether we can control runner placement](../guide/23-check-runner-placement.md)
+
+</details>
