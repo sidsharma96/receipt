@@ -33,7 +33,9 @@ go install github.com/sidsharma96/receipt/cmd/receipt@v0.1.0
 Use `@latest` for the newest release. Go installs `receipt` into `GOBIN`, or
 `$(go env GOPATH)/bin` when `GOBIN` is unset. Put that directory on your `PATH`,
 then run `receipt help`. No manual clone is required. The source requires Go
-1.22 or later; use a current Go version on recent macOS versions.
+1.22 or later. On recent macOS, use Go 1.27.3 or newer: the public install
+was verified with 1.27.3, while 1.27.2 produced a loader error on the
+maintainer's machine. The downloadable binaries do not require a Go installation.
 
 Without Go, download an archive and `SHA256SUMS` from
 [GitHub Releases](https://github.com/sidsharma96/receipt/releases/latest).

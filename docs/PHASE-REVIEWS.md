@@ -5515,3 +5515,23 @@ its cached job because `deploy/ci/self_test.py` still expected the old main-modu
 name. Its exact dependency allowlist was updated to the GitHub module path;
 the dependency count and pinned driver remain unchanged. This was a release
 integration correction, not an application behavior or cache-contract change.
+
+Publication completed: the repository is public under Apache 2.0, and
+[v0.1.0](https://github.com/sidsharma96/receipt/releases/tag/v0.1.0) points to
+`3c939e60dd378e050cd0c2a821b9f6038264b6ae`. Both jobs in
+[main CI](https://github.com/sidsharma96/receipt/actions/runs/39538583961)
+passed, including independent PostgreSQL/race testing. The
+[release workflow](https://github.com/sidsharma96/receipt/actions/runs/39538750713)
+passed its Go 1.27.3 race suite, four builds, Linux amd64 execution and publication.
+All four archives were downloaded without authentication and matched SHA256SUMS;
+archive membership and dependency notices were checked. The published macOS
+arm64 executable ran `help`. Linux arm64 and Intel macOS remain cross-built
+without native execution evidence in this release.
+
+A source installation outside the checkout, with a fresh module cache and only
+`https://proxy.golang.org` configured, fetched v0.1.0 and its dependency. The first
+attempt built with local Go 1.27.2 but failed to launch on this Mac with a missing
+LC_UUID loader error. Repeating with Go 1.27.3 passed installation and `help`;
+`go version -m` identified v0.1.0. The README records that platform/toolchain
+constraint. The tag and its archives were not replaced. Public proxy availability
+was verified; package-directory indexing latency is not an installation guarantee.

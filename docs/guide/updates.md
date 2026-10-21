@@ -553,3 +553,8 @@ the GitHub path. The release workflow builds Linux/macOS amd64/arm64 archives
 with checksums, Apache 2.0 licensing and dependency notices. See the
 [full review](../PHASE-REVIEWS.md#public-distribution-20-october-2026)
 for verification and publication limits. No performance optimization is included.
+
+The public v0.1.0 release subsequently passed CI and anonymous archive checks.
+Source installation through the public Go proxy passed with Go 1.27.3; the
+README records a macOS loader failure observed with Go 1.27.2. The tagged
+release remains unchanged; publication evidence is appended to the same review.
