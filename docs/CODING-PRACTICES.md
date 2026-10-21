@@ -1,6 +1,6 @@
 # Receipt coding practices
 
-Agreed 2026-10-08. This is an implementation reference, not a feature roadmap.
+This is an implementation reference, not a feature roadmap.
 Read it alongside AGENTS.md. The working documents record decisions and evidence;
 this file records how to apply those decisions in future code.
 
@@ -76,7 +76,7 @@ this file records how to apply those decisions in future code.
 
 - Prefer typed payloads and explicit semantic validation over arbitrary JSON maps.
   Bound bodies before decoding; verify checksums and key relationships afterward.
-- Phase 4 (2026-10-08) implements typed decoding hooks for Config, Manifest,
+- Use typed decoding hooks for Config, Manifest,
   Input, Result, ConflictReport, BlobRef, blobRecord and the result envelope.
   internal/strictjson only checks declared object shape; each type owns its
   semantic rules. Check JSON-INPUT-CONTRACT.md before changing them.
@@ -95,7 +95,7 @@ this file records how to apply those decisions in future code.
 - Retain filesystem safety checks when extracting helpers. Enumeration must
   finish validation before deletion; cooperating lifecycle locks remain required.
 
-## Service credentials and permissions (Phase 5, 2026-10-09)
+## Service credentials and permissions
 
 - internal/auth owns token generation, explicit scopes and PostgreSQL credential
   lifecycle. Use crypto/rand, not math/rand, for secrets. Store only the SHA-256
@@ -114,9 +114,8 @@ this file records how to apply those decisions in future code.
   isolation, or request identity with a durable upload audit. All are distinct.
 - Issuance and the credential-table migration take PostgreSQL advisory lock
   72656365697076 (`credentialLock` in internal/auth/postgres.go) exclusively.
-  Every advisory lock key must be distinct: until 15 October 2026 credentials
-  reused the storage lifecycle key 72656365697075, so issuing a credential paused
-  all cache traffic. `TestCredentialIssuanceDoesNotWaitForStorageLock` guards
+  Every advisory lock key must be distinct. Credential issuance must not reuse
+  the storage lifecycle key, which would make issuance pause cache traffic. `TestCredentialIssuanceDoesNotWaitForStorageLock` guards
   this. The 1024-row retained credential budget includes
   expired/revoked rows and is separate from cache quotas. Do not auto-purge
   records or add an administrative network scope without a decision.
@@ -126,7 +125,7 @@ this file records how to apply those decisions in future code.
 - API keys must travel over HTTPS outside loopback, using the existing client rule
   and an operator-managed TLS proxy. These changes do not provision TLS or DB roles.
 
-## Timing diagnostics (Phase 6, 2026-10-09)
+## Timing diagnostics
 
 - Use internal/observe's fixed stage vocabulary and per-operation context record.
   Do not introduce dynamic labels from paths, keys, callers or error strings.
@@ -143,7 +142,7 @@ this file records how to apply those decisions in future code.
 
 ## Go environment probe
 
-Go probe correction (2026-10-09): `resolved-go-environment-v2` retains all
+The Go probe: `resolved-go-environment-v2` retains all
 `go env -json` string fields and normalizes only a numeric `go-build` suffix in
 GOGCCFLAGS's generated file/debug prefix-map, under the reported GOTMPDIR (or
 the process temporary directory), targeting `/tmp/go-build`. Retain flags,
@@ -151,7 +150,7 @@ roots and destinations. Unknown forms stay unchanged; prefer a miss to erasing
 an input. Do not apply this normalization to test output or other runners.
 The manifest schema stays v1; the new probe name deliberately separates Go keys.
 
-## Cargo adapter (Phase 7, 2026-10-09)
+## Cargo adapter
 
 - Keep the command allowlist and refusal policy in `docs/CARGO.md` synchronized.
   Recognized Cargo refusals cannot fall through to generic reuse.
@@ -194,13 +193,13 @@ to game. Revisit them with concrete false positives and readable alternatives.
 ## Verification and documentation
 
 - Read and follow [the prose style guide](PROSE-STYLE-GUIDE.md) when writing
-  explanations or phase reviews. Use its rejection checklist before claiming
+  explanations. Use its review checklist before claiming
   that a draft is beginner-friendly; automated checks cannot certify readability.
-- Write phase explanations for a beginner computer science student. Define new
+- Write explanations for a beginner computer science student. Define new
   terms, show concrete execution examples and attribute actual code excerpts.
   Explain which alternative structures could work, what they cost, and when to
   revisit the choice. Avoid vague architectural slogans or unexplained jargon.
-- Preserve dated decisions and evidence when rewriting the guide. Use Git history
+- Preserve relevant evidence when rewriting the guide. Use Git history
   for earlier committed versions rather than duplicate full-file snapshots unless
   requested. Clearly separate historical implementation evidence from checks
   performed for the rewrite.
@@ -212,15 +211,15 @@ to game. Revisit them with concrete false positives and readable alternatives.
 - Record skipped integration tests, measurement scope and remaining limits.
   Lint/race success does not establish crash safety, deterministic outputs,
   system-wide lock freedom, or unrestricted future reuse.
-- Preserve user changes and historical phase reviews. Append amendments rather
-  than replacing history. A quality refactor is not a new product phase.
+- Preserve user changes. Update documentation to describe current behavior;
+  Git history preserves earlier versions.
 - Do not commit, push, deploy or publish without the user's authorization.
 
 References: [Errors are values](https://go.dev/blog/errors-are-values),
 [errors.Join](https://pkg.go.dev/errors#Join),
 [golangci-lint settings](https://golangci-lint.run/docs/linters/configuration/).
 
-## Streaming file inputs (18 October 2026)
+## Streaming file inputs
 
 - Preserve SHA-256 over the exact octal permission prefix, NUL separator and file
   bytes. Chunking must not change the input hash, manifest format or key version.
@@ -232,7 +231,7 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
 - Test against the old concatenation, including chunk boundaries and permissions.
   Distinguish allocation bytes, peak process RSS and end-to-end latency.
 
-## Executable identity and probe timing (18 October 2026)
+## Executable identity and probe timing
 
 - Executables retain SHA-256 over raw bytes, without the working-tree permission
   prefix. Keep the absolute lookup path, including executable symlink spelling.
@@ -245,7 +244,7 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
 - The four new fixed timing labels nest inside fingerprint and complete on error.
   They do not contain dynamic payloads and are never part of manifest identity.
 
-## Invocation-local Git root reuse (18 October 2026)
+## Invocation-local Git root reuse
 
 - The initial CLI fingerprint may reuse only the root just resolved for settings
   in the same invocation, through `BuildAtRoot`. This is a caller lifetime
@@ -258,7 +257,7 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
 - Initial CLI discovery timing now has one call; standalone/post-run Build has
   two. Settings' root lookup remains outside fingerprint/discovery spans.
 
-## Go probe normalization fast path (18 October 2026)
+## Go probe normalization fast path
 
 - Preserve the existing scratch-flag policy: exact cleaned root and flag kind,
   ASCII digits, exact destination, and existing ASCII delimiters. Do not turn
@@ -272,7 +271,7 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
   normalization optimization does not authorize caching probe results.
 
 
-## Invocation-local Git executable selection (18 October 2026)
+## Invocation-local Git executable selection
 
 - `WithGit` attaches an immutable path/error selection to one run/explain context;
   start each invocation from a fresh context. No global or persistent cache.

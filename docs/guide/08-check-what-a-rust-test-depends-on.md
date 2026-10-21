@@ -5,10 +5,10 @@ She has not changed her test file. But the test calls a helper library, and that
 library has changed. Replaying the old success would hide the change. Recording
 only the test command or compiler version is not enough.
 
-Receipt now asks Cargo which packages the selected test needs. This relationship
+Receipt asks Cargo which packages the selected test needs. This relationship
 is called a [dependency graph](../GLOSSARY.md#dependency-graph): an arrow from A to B means A needs B. A helper may
 itself need another helper. Receipt follows these arrows before looking for a
-saved result. The [dependency illustration](../PHASE-REVIEWS.md#figure-7-cargo-graph)
+saved result. The [dependency illustration](../FIGURES.md#figure-7-cargo-graph)
 shows why the same helper can be reached more than once.
 
 From [`cargoClosure` in cargo_graph.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_graph.go#L78-L126):
@@ -20,10 +20,19 @@ if seen[id] {
 seen[id] = true
 ```
 
-`id` identifies the package being visited. `seen` remembers packages already
-checked. When two arrows lead to the same helper, Receipt checks it once rather
+`id` identifies the package being visited. `seen[id]` looks up whether it was visited before. `continue` skips to the next pass through the loop; assigning `true` marks a newly visited package. When two arrows lead to the same helper, Receipt checks it once rather
 than repeating its work. Other maps let Receipt find a package's description
 and outgoing arrows from its ID.
+
+Cargo describes packages in a manifest file and pins selected dependency versions
+in `Cargo.lock`. The supported `--frozen` command must use the existing resolution
+without updating the lockfile or accessing the network. Receipt reads Cargo’s
+metadata, its description of the selected packages and their relationships.
+
+The walk follows libraries needed by the selected package and by its helpers.
+A development dependency is needed only for a package’s own tests or examples.
+Receipt includes the selected package’s development dependencies, but not a helper’s
+private test dependencies: testing Alice’s package does not run the helper’s tests.
 
 **Before Receipt reuses a Cargo result**
 
@@ -38,7 +47,7 @@ Some packages contain a [build script](../GLOSSARY.md#build-script): a program C
 That program could read an undeclared file or invoke another tool. Receipt does
 not yet track those actions. It therefore runs such a command normally without
 using its cache. Procedural macros, which also execute during compilation, get
-the same treatment. The [refusal illustration](../PHASE-REVIEWS.md#figure-7-cargo-refusal)
+the same treatment. The [refusal illustration](../FIGURES.md#figure-7-cargo-refusal)
 shows that this decision happens before reading a saved result.
 
 In the real regex repository, the `regex-syntax` library's 147 tests can be saved
@@ -50,7 +59,7 @@ The checks also cost time. In a follow-up with five direct runs and five hits,
 the middle (median) regex-syntax run took 139 milliseconds directly and 434
 milliseconds through a Receipt hit. But unicode-width's longer-running suite
 took about 3.05 seconds directly and 0.39 seconds on a hit. The
-[side-by-side measurements](../PHASE-REVIEWS.md#figure-7-cargo-hardening-cost)
+[side-by-side measurements](../FIGURES.md#figure-7-cargo-hardening-cost)
 show why a hit is not automatically a speedup: the checks must cost less than
 the execution they avoid. These were local, warm-build observations, not a
 remote-cache benchmark.
@@ -61,7 +70,7 @@ Cargo.lock records which dependency versions were selected. It does not change
 just because someone edits a downloaded source file. Receipt therefore also
 reads the selected dependency files. Our isolated test edits a copied library
 to introduce a compiler error: the old saved success must not hide that error.
-The [three-state illustration](../PHASE-REVIEWS.md#figure-7-cargo-mutation)
+The [three-state illustration](../FIGURES.md#figure-7-cargo-mutation)
 shows the edit and restoration.
 
 There are two caches in this example. Receipt remembers test results; Cargo
@@ -72,7 +81,7 @@ cache is edited or cleared by this test.
 
 ## Read further
 
-See the [command contract](../CARGO.md) and the [full Phase 7 review](../PHASE-REVIEWS.md#phase-7-review-bounded-cargo-support).
+See the [command contract](../CARGO.md) and the [Design reference](../DESIGN-DEFENSE.md).
 
 ## Check your understanding
 
@@ -123,7 +132,7 @@ No. Receipt walks the resolved graph from the root with a depth-first search. It
 
 **Common wrong answer.** "Any build script anywhere in `cargo metadata` output forces uncached execution." Only the packages reachable through the edges Cargo would compile for this test are checked.
 
-**Learn more:** [D20. How does the Cargo adapter decide what it can trust?](../DESIGN-DEFENSE.md#d20-how-does-the-cargo-adapter-decide-what-it-can-trust) · [Refusals before cache lookup](../CARGO.md#refusals-before-cache-lookup) · [`cargoDependencies`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_graph.go#L128-L150)
+**Learn more:** [Cargo](../CARGO.md) · [Refusals before cache lookup](../CARGO.md#refusals-before-cache-lookup) · [`cargoDependencies`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_graph.go#L128-L150)
 
 </details>
 

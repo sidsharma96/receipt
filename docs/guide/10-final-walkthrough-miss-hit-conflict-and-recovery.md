@@ -178,31 +178,16 @@ upload. Download the R2 object and decrypt it on the Mac with the private recove
 key. Verify checksums, restore a separate database and files, then fetch results
 from a test server. The live data is never replaced during this drill.
 
-Actual Python restart cleanup from
-[`finally` block in backup-r2-drill.py](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/backup-r2-drill.py#L36-L39):
+Pausing the service keeps database records and output files from changing during
+the copy. Restarting before encryption and upload keeps network transfer out of
+that pause. Fetching results from the restored copy checks that its records and
+files work together; a successful download alone would not establish that.
 
-```text
-finally:
-    run('systemctl', 'start', 'receipt')
-    run('systemctl', 'is-active', '--quiet', 'receipt')
-    print(f'stop/start interval: {time.monotonic() - start:.3f} seconds', flush=True)
-```
-
-The `finally` block attempts restart even if copying raises an error. It cannot
-run after power loss or a forced kill. Restart happened before encryption and
-upload, so the pause did not include waiting for R2.
-
-In the completed drill, the downloaded encrypted bytes matched the uploaded
-bytes. All four restored database tables matched the live contents checked at
-the time, and all ten saved results were readable. A previously checked result
-also matched its expected checksum. Temporary restored data was removed after
-the test; the encrypted backup remains in R2 and on the Mac.
-
-This proves that particular backup worked on the existing machine. It does not
-prove new-host recovery or recovery without the private key. Changes after the
-backup are absent: a credential revoked later could appear unrevoked after
-restoring the old state. The [recovery record](../DIGITALOCEAN-SETUP.md#13-october-one-off-r2-backup-and-restore)
-preserves exact evidence and limitations. No nightly schedule is enabled.
+This drill used the existing machine. It did not establish recovery onto a new
+host or without the private recovery key. Changes after the backup are absent:
+a credential revoked later could appear unrevoked after restoring the old state.
+The [operator guide](../DIGITALOCEAN-SETUP.md#backup-and-recovery) links the procedure
+and recorded evidence. No nightly backup schedule is enabled.
 
 ## Check your understanding
 
@@ -219,7 +204,7 @@ The original test run wrote a coverage report and printed warnings mixed in with
 
 A replay gives back only the captured output and the exit code. It does not recreate files the tests wrote, such as a coverage report or a JUnit XML file, and it does not repeat network requests. The mixing of standard output and standard error is lost too: Receipt writes all of the saved standard output first, then all of the saved standard error. Timings printed in the output are the original run's timings. If you need a test's side effects, run it with `--bypass`.
 
-**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [D6. Why cache only successes, replay exact bytes and never normalise output?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output)
+**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [Execution and replay](../DESIGN-DEFENSE.md#execution-and-replay)
 
 </details>
 
@@ -236,26 +221,22 @@ Only successful runs are stored. `Validate` rejects any result whose exit code i
 
 A stored result holds the manifest, stdout bytes, stderr bytes, the exit code, the run's duration and its creation time. On a hit, `runSession.replay` prints a `receipt: hit` line with the saved duration to stderr, writes the saved stdout in full, then the saved stderr in full, touches the entry's modification time, and returns the saved exit code, which is 0. The tests do not run, so any files they would have written, network requests they would have made, and the original interleaving of stdout and stderr are not reproduced.
 
-**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [D6. Why cache only successes?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)
+**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [Execution and replay](../DESIGN-DEFENSE.md#execution-and-replay) · [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)
 
 </details>
 
-### Exact semantics of verify and refresh
+### A conflict report never reaches the server
 
 **Level:** Expert
 
-What are the exit codes of `--verify` on a hit for a match, a mismatch and changed inputs? When, exactly, does `--refresh` quarantine a key?
+Verification writes the local quarantine marker and removes the saved entry, but its network report fails. Predict what this client and another client can reuse.
 
 <details>
 <summary>Answer</summary>
 
-On a hit, `--verify` runs the tests again and scans the inputs again. If the key changed between the two scans, it prints "verification inconclusive", quarantines nothing and exits 1. If the exit code, stdout or stderr differ byte for byte, or the output exceeded the capture limit, it writes a local quarantine marker, removes the local entry, reports the conflict's hashes to the server and exits with the new run's exit code, or 1 if the new run exited 0. If everything matches it exits 0. On a miss, `--verify` behaves like a normal run.
+This client keeps its quarantine marker and executes instead of replaying that key. The shared server may still hold the earlier result without knowing about the conflict, so another client can still reuse it. A successful local write does not establish agreement between machines, and an ordinary rerun does not promise to repair the failed report.
 
-`--refresh` skips reuse but reads the local entry for the key. It quarantines in one case only: the fresh run fails, a cached success for the same key existed locally, and the inputs did not change during the run. A successful refresh removes the old local entry and stores the new one, even if the output differs. The upload that follows can still meet a different stored result on a PostgreSQL server, which answers 409 and makes the client quarantine locally. At most one of `--bypass`, `--refresh` and `--verify` may be given.
-
-**Common wrong answer.** "A successful refresh whose output differs from the cached result is a conflict and quarantines locally." Locally it simply replaces the entry; only a failure after a recorded success quarantines.
-
-**Learn more:** [D6b. What do `--verify`, `--refresh` and `--bypass` do?](../DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do) · [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L164-L192) · [`failed`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L194-L215)
+**Learn more:** [Chapter 10](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md)
 
 </details>
 

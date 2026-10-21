@@ -4,7 +4,7 @@ Alice uploads a small test result. It takes longer than she expects. Reading a
 small file should be quick, but perhaps the request has not reached the file yet:
 another writer or cleanup may hold the lock it needs.
 
-Run the server with --request-log to give each request a server-generated ID and
+Run the server with `--request-log` to give each request a server-generated ID and
 one timing summary. The ID appears in its response header too, so Alice can find
 the matching summary without printing her token or test output into the log.
 
@@ -19,11 +19,11 @@ the matching summary without printing her token or test output into the log.
 
 ## Read one measurement carefully
 
-In our local experiment, four clients repeatedly uploaded already-stored results
+In an experiment with the earlier upload-accounting algorithm, four clients repeatedly uploaded already-stored results
 into a store with 128 descriptions. The mean database-lock call took about
 55 milliseconds. That call includes a database round trip and time waiting for
 other work to release the lock. It is inside the full request duration, not extra
-time to add on top. [The measured bars](../PHASE-REVIEWS.md#figure-6-measured-wait)
+time to add on top. [The measured bars](../FIGURES.md#figure-6-measured-wait)
 show both on the same scale.
 
 Some timers contain others: counting storage includes file enumeration, for
@@ -32,14 +32,14 @@ clues about where to investigate, not a complete accounting of every instruction
 
 ## Does Receipt help the real test command?
 
-We ran a CodeCraft selection with 15 passing tests. Five direct runs had a median
+We ran a Python test selection with 15 passing tests. Five direct runs had a median
 of 253 milliseconds. The first Receipt run took 592 milliseconds; it ran the
 tests and scanned inputs before and afterward. Five saved-result hits had a
 median of 127 milliseconds. They skipped pytest but still inspected inputs.
 
 The [median](../GLOSSARY.md#median) is the middle duration after sorting the samples. These few ordered
 samples, on one machine with warm filesystem caches, are not a promise for every
-project. [The comparison](../PHASE-REVIEWS.md#figure-6-local-measurements) and
+project. [The comparison](../FIGURES.md#figure-6-local-measurements) and
 [repeatable commands](../MEASUREMENTS.md) let you inspect what was measured.
 
 ## What do diagnostics cost?
@@ -49,7 +49,7 @@ one summary after the request handler releases its storage locks. We deliberatel
 did not add a background queue: a slow destination can therefore delay handler
 completion. The measured handler duration excludes the final log write.
 
-These new summaries omit secrets and captured output. That does not make all
+These summaries omit secrets and captured output. That does not make all
 stderr safe to publish: the test process can still print whatever it normally
 prints. Diagnostics are also not a durable history of who submitted each result.
 
@@ -81,11 +81,15 @@ Four simultaneous uploads spend much of their time waiting for a lock. Why would
 <details>
 <summary>Answer</summary>
 
-Every upload takes the same exclusive lifecycle lock, so only one can do its work at a time. More goroutines only add more waiters. With `--request-log`, each request's summary separates time spent getting a database connection, waiting for the database lock and the file lock, running SQL, and reading or writing files. Measure what happens while the lock is held first. Inside it, an upload inventories every blob and sums the metadata tables, so its cost grows with the store.
+Uploads take turns under one exclusive storage lock. Adding goroutines creates
+more waiters unless the work done while holding that lock becomes shorter.
+Inspect lock waiting separately from output reads, writes and database work.
+Uploads check running totals; they do not inventory the whole store each time.
 
-A faster design would still need to keep cleanup from deleting files an upload is about to reference and keep two uploads from overspending the shared storage budget. Removing the lock without replacing those guarantees would trade waiting for wrong answers.
+Any replacement must still prevent cleanup from deleting a file an upload is
+about to reference and prevent two writers from both claiming the last free space.
 
-**Learn more:** [Read one measurement carefully](../guide/07-find-where-the-time-went.md#read-one-measurement-carefully) · [D15. What does one upload cost?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [Read the timings](../MEASUREMENTS.md#read-the-timings) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120)
+**Learn more:** [Read one measurement carefully](../guide/07-find-where-the-time-went.md#read-one-measurement-carefully) · [Locks limits and cleanup](../DESIGN-DEFENSE.md#locks-limits-and-cleanup) · [Read the timings](../MEASUREMENTS.md#read-the-timings) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120)
 
 </details>
 
@@ -98,16 +102,18 @@ What does one shared upload cost as the store grows, what serialises, and what t
 <details>
 <summary>Answer</summary>
 
-Each `Postgres.Put` holds the global exclusive lifecycle lock for its whole duration. Under it, Receipt reads the policy row and the `.store-id` marker, reads one row of running totals, checks with at most two `lstat` calls whether the output files already exist, inserts the record and evidence and updates the totals in `publishTx`, writes and syncs the two output files, adds their bytes to the totals and commits. None of that depends on the store's size. Reads take the shared lock, so they wait behind any upload.
+An upload holds the exclusive storage lock while it checks limits, prepares
+metadata, writes or verifies output files and commits. It reads running totals
+rather than scanning all stored entries. Its own output size and storage latency
+still affect the cost.
 
-Before 15 October 2026 each upload instead walked every output file and ran `metadataUsage`, which scans every result and evidence row, three times: O(B + M + E) time. On one laptop the median upload grew from 33.4 ms on an empty store to 131.8 ms at about 4,045 results. With running totals, the same test gave 19 to 24 ms at every size. Because uploads run one at a time, throughput is still at most one divided by that latency, about 50 uploads per second on that laptop. The code says so directly: it deliberately serialises writers for a small deployment. The totals cost a recount at every server start and CLI command, and a crash after file writes can leave orphan files uncounted until that recount or the next `shared gc --apply`.
+Uploads are serialized, so increasing writer count does not create parallel
+publication. Startup and collection recount usage. A failed commit can leave
+unreferenced files that are charged at the next recount. See the selected
+measurements for a scoped comparison with the earlier recount-per-upload design.
 
-**Learn more:** [D15. What does one upload cost, and how does that grow?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L209-L216) · [`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L227-L238)
+**Learn more:** [Locks limits and cleanup](../DESIGN-DEFENSE.md#locks-limits-and-cleanup) · [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L209-L216) · [`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L227-L238)
 
 </details>
 
 <!-- questions:end -->
-
-## Continue with CPU, memory and SQL plans
-
-[Chapter 12](12-profile-before-optimizing.md) follows a measured local hit, inspects Go profiles, and compares PostgreSQL plans with and without a candidate retention index. It separates current behavior from proposed optimizations.

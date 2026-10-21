@@ -1,189 +1,69 @@
-# Receipt tests Receipt
+# Receipt's CI
 
-Added 12 October 2026. This extends the [synthetic experiment](CI-EXPERIMENT.md)
-to Receipt's actual Go suite. CodeCraft is a possible next repository, not yet
-configured.
-
-Suppose you push a change. Two jobs start. One asks Receipt whether this exact
-ordinary test run has succeeded before. The other runs tests directly, including
-PostgreSQL checks and race detection. A cached success cannot replace that
-independent check.
+A push to `main` starts two application jobs. One runs ordinary tests through
+Receipt. The other always runs tests directly, including PostgreSQL checks and
+race detection. A saved result must not be the only evidence that the caching
+program itself works.
 
 ```text
-Trusted push
-    ├─ Cached job ── HTTPS ──▶ Caddy ──▶ Receipt on the same droplet
-    │      ├─ saved result found → replay it
-    │      └─ no result or no connection → run Go tests locally
-    │
-    └─ Uncached job ──▶ Go tests + race detector
-                           ↕
-                     disposable PostgreSQL
+push to main
+  +-> cached job -> HTTPS cache available? -> reuse or execute ordinary tests
+  |                                     no -> execute locally
+  +-> independent job -> Go tests + race detector + disposable PostgreSQL
 
-Pull request ──▶ uncached job only; no private-cache secrets
+pull request -> independent job only
 ```
 
-The database belongs to that GitHub job, not the Droplet. The uncached job does
-not connect to production data. It always uses `-count=1`, which disables Go's
-own test-result cache. Race detection looks for conflicting concurrent memory
-access during this execution; passing it is not proof that all possible races
-are absent.
+The independent database belongs to the job, not the deployed server. The cached
+job excludes tests that need an external database or prepared Rust environment.
+This arrangement retains duplicate work intentionally; it is not a claim that
+Receipt reduces total CI compute.
 
-## What is actually cached?
+## Inputs and environment
 
-In [self_test.py](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py), the test command is:
+The helper gives the checkout and home directory consistent paths. It records
+the runner image version and explicitly declares the PostgreSQL driver source,
+Git, shell and Receipt binary as inputs. Its exact module allowlist fails visibly
+when dependencies change so the declarations can be reviewed.
 
-```python
-COMMAND = ['go', 'test', '-count=1', './...']
-```
-
-The helper constructs a small environment without `RECEIPT_TEST_DATABASE_URL`,
-`RECEIPT_TEST_CARGO` or measurement settings. Existing tests use these variables
-to opt into external dependencies, so those tests skip in the cached job.
-Rust integration remains excluded from both jobs until we add the required
-toolchain and prepared registry explicitly.
-
-The checkout, Go version and home directory have consistent paths on fresh
-runners. The runner image version is an input, so an image update changes the
-key. The helper additionally declares the current PostgreSQL driver source,
-Git and shell binaries, and Receipt client binary as inputs. Adding another Go
-module intentionally stops the helper until its declarations are reviewed.
-This is a narrow setup for this repository, not a general CI SDK.
-
-## Why keep the uncached job?
-
-Receipt is the program under test as well as the program deciding whether to
-skip tests. A bug in that decision must not be able to produce the only green
-check. The independent job runs the tests anyway. For now this measures useful
-reuse and checks behavior; it does not aim to reduce total CI compute because
-we deliberately retain duplicate work.
-
-The PostgreSQL suite also depends on a running database, not just files. It stays
-outside Receipt's cached run. Both jobs must be reviewed; no branch-protection
-rule has been changed to make either job a required merge check.
+The selected environment excludes unrelated runner variables and opt-in test
+settings. These rules are specific to this repository, not a reusable CI SDK.
+See the [workflow](https://github.com/sidsharma96/receipt/blob/main/.github/workflows/receipt-ci.yml)
+and [helper](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py).
 
 ## Secrets and renewal
 
-Only pushes to `main` receive the `RECEIPT_SELF_CI_TOKEN` repository secret.
-Until 15 October 2026 the finished rollout branch `codex/receipt-https-ci` did
-too; `deploy/ci/test_workflow.py` now checks that `main` is the only one. Pull-request jobs do not receive
-them. Repository writers who can change workflows remain trusted; a condition
-inside a workflow is not protection against a malicious repository writer.
+Only trusted pushes to `main` receive `RECEIPT_SELF_CI_TOKEN`. Pull requests do not
+receive private-cache credentials. Repository writers who can change workflows
+remain trusted; a workflow condition cannot protect against such a writer.
 
-CI connects directly to `https://receipt.sidsharma.dev`. Caddy provides the
-encrypted public connection and forwards requests to Receipt's loopback listener.
-CI needs no SSH key or server shell. Receipt's token allows read, publish and report
-against the shared cache; it is not restricted to one project's entries.
-Trusted child tests can read the token from their environment.
+The helper checks the HTTPS identity endpoint before enabling remote use. It
+verifies certificates and refuses redirects. A missing token, failed connection
+or rejected identity selects local execution. Expiry does not turn a failed test
+into a success.
 
-The existing token expires on **11 November 2026 at about
-7:28 p.m. Pacific** (12 November 03:28 UTC). There is no automatic renewal.
-After expiry, the cached job reports that the cache is unavailable and runs
-tests locally. It does not silently extend credentials or turn test failures
-into successes.
+Inspect the actual credential with `receipt auth list` before scheduling renewal;
+do not rely on a date copied into documentation. The token is not renewed
+automatically. Issue a replacement, update the GitHub secret, verify access and
+revoke the old credential. Normal clients need `read,publish,report` permissions.
+Their token is excluded from Receipt's recorded inputs.
 
-Operator enrollment is [enroll_self_ci.py](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/enroll_self_ci.py).
-It refuses existing keys/secrets instead of overwriting them. Before renewing,
-finish active jobs, revoke credential `a985da859dd9a7440452f1a0cc4cfc47`,
-and remove only `RECEIPT_SELF_CI_TOKEN`. Then enroll again. Partial enrollment failures
-need operator inspection; the script is not a transactional deployment system.
-Do not run the old synthetic experiment's cleanup script on these credentials.
+The existing [enrollment helper](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/enroll_self_ci.py)
+refuses to overwrite existing enrollment state. Review its prerequisites before
+using it for a renewal. Partial failures require inspection. Authentication
+commands also initialize storage and may wait for the storage lock, so perform
+administrative changes when no long maintenance operation is active.
 
-Two side effects of renewal, added 15 October 2026:
+Tests run with trusted credentials. Removing Receipt's token from the child
+environment is not a security sandbox against hostile same-user processes.
 
-- Clients built before 15 October 2026 hash `RECEIPT_TOKEN` into every key, so
-  with such a client the first run after renewal is a miss and every result
-  stored under the old token becomes unreachable until `shared prune` removes
-  it. Later clients leave the token out of keys, and renewal keeps them.
-- Enrollment runs `receipt auth issue` on the droplet. That command takes the
-  storage lifecycle lock exclusively once while it opens the store, so it waits
-  for in-flight reads and uploads. Builds before 15 October 2026 also issued
-  under the storage lock's key, which paused cache traffic until the new row
-  committed; later builds use a separate key. Renew when no CI job is running.
+## Review a failed run
 
-The [design defense](DESIGN-DEFENSE.md#d13-which-advisory-lock-keys-exist-and-what-does-each-guard)
-explains both effects. There is no automatic reminder. Put the expiry,
-12 November 2026 at 03:28 UTC, in a calendar, and renew a few days early.
+Read both jobs. If the independent job fails, investigate the test failure rather
+than treating a cached success as authoritative. If the cached helper rejects
+changed dependencies, update its explicit input declarations; do not disable the
+guard. A red historical run remains visible after a later commit fixes it.
 
-## 13 October: moving the connection to HTTPS
-
-The original 12 October rollout used a restricted SSH tunnel. The updated helper
-contacts the HTTPS identity endpoint first. A valid response for `receipt-self-ci`
-enables remote caching; a missing token, failed connection, rejected credential or
-invalid response selects local execution. Certificate verification stays enabled,
-and redirects are rejected so a server cannot redirect the token elsewhere.
-Failure after that initial check still uses Receipt's existing execution fallback.
-
-Before changing CI, a fresh Go fixture on the Mac uploaded through HTTPS.
-A second invocation used an empty local cache and replayed the saved result;
-an independent marker confirmed the test had executed only once. Changing the
-source made it execute again and fail. The temporary credential was revoked.
-This establishes one controlled upload/replay sequence, not a throughput claim.
-
-The application token is unchanged: changing transport neither broadens its
-permissions nor renews its expiry. Seven local helper-policy tests pass. Live
-GitHub verification and removal of the retired SSH credentials are recorded
-below; the older evidence remains historical.
-
-[HTTPS run 38429263439](https://github.com/sidsharma96/receipt/actions/runs/38429263439)
-tested commit `e95dcc0` twice on fresh runners. Attempt 1 missed and ran the
-ordinary suite (22.30 seconds for the Receipt invocation). Attempt 2 reported a
-remote hit for the same key `ff32a661f97a` (0.51 seconds). The independent
-PostgreSQL/race job passed both times. These are individual observations, not
-an estimate of typical latency; real-suite non-execution is identified by
-Receipt's diagnostic, while the separate local fixture supplied marker evidence.
-
-PR #2 was merged as `3f21e77`. [Main run 38429805089](https://github.com/sidsharma96/receipt/actions/runs/38429805089)
-passed both jobs, first with a miss (20.81 seconds). The CI-only SSH authorization
-was then moved to `/home/receipt-ci/.ssh/authorized_keys.retired-20261013`, which
-sshd does not use as an authorized-key file. The public key remains recoverable;
-the GitHub secrets `RECEIPT_SELF_CI_SSH_KEY` and `RECEIPT_SELF_CI_KNOWN_HOSTS`
-were deleted. Their former values cannot be retrieved from GitHub. Only
-`RECEIPT_SELF_CI_TOKEN` remains; administrator SSH access was not changed.
-
-After that cleanup, attempt 2 of the main run passed both jobs again and reported
-a remote hit for `3fc8bbae451b` (0.49 seconds). This verifies the current workflow
-without the retired secrets. The old manually dispatched synthetic tunnel
-workflow remains a historical experiment, not an active credentialed workflow.
-
-## Limits and reasons to revisit
-
-Source files, declared dependencies and selected environment inputs do not
-describe every property of a machine. These tests use temporary files, local
-sockets and timing; a cached success does not prove they will always pass.
-The independent job remains essential while we learn how useful this is.
-
-No speedup claim follows from one hit. Timing printed by the helper covers one
-Receipt invocation, not checkout, dependency downloads or total job time. Runner
-hardware and load vary. We should measure several real pushes before changing
-the uncached policy or claiming a cost saving.
-
-Consider CodeCraft after this workflow is demonstrated. First inspect its test
-configuration, dependencies and external-service use. Do not copy the Go-specific
-input declarations into a Python project and assume they are sufficient.
-
-## Verification record
-
-Four local helper-policy tests and Python syntax checks pass, including a guard
-that prevents the older experiment cleanup from disabling the new CI key.
-The 11 existing documentation/template tests pass, and generated working HTML
-matches its Markdown source. No production Go behavior was changed.
-
-[Run 38341912711](https://github.com/sidsharma96/receipt/actions/runs/38341912711)
-tested commit `f7a168f` twice on fresh GitHub-hosted runners:
-
-| Attempt | Cached job | Receipt invocation | Independent job |
-| --- | --- | ---: | --- |
-| 1 | Miss; ordinary tests ran and published | 17.58 seconds | PostgreSQL/race suite passed |
-| 2 | Remote hit for the same key `d4984cb5d7e9` | 0.51 seconds | PostgreSQL/race suite passed again |
-
-These are two individual observations, not a benchmark or total-job speedup.
-Both jobs started with new local Receipt directories. The hit was identified
-by Receipt's diagnostic; unlike the synthetic fixture, this run did not add
-execution-marker instrumentation to the real tests. The copied PASS output
-alone is not independent evidence of execution or non-execution.
-
-The live suite ran three helper-policy tests at that commit. The fourth
-cleanup-ownership guard was added and verified locally afterwards. The ordinary
-cached suite deliberately excludes opt-in PostgreSQL/Cargo/measurement tests.
-The independent run supplies PostgreSQL but still does not enable Cargo or
-measurement tests. No new renderer layout was introduced or visually audited.
+The documentation and release workflows have separate jobs. The release workflow
+builds archives from a tag and publishes them only after its tests and smoke check
+pass. It does not deploy the cache server.

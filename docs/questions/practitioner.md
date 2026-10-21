@@ -1,6 +1,7 @@
 # Practitioner questions
 
-These questions ask how Receipt works in this code and why it makes each choice instead of the obvious alternative. Answer them after reading the guide chapters; each answer links to the section that teaches it and to the code that implements it. Questions about failure modes, traps and the threat model are in the [expert questions](expert.md).
+Choose a question, predict the result, then open the answer. Links lead to the
+relevant explanation and implementation.
 
 ### Why sort the inputs before hashing
 <!-- check: guide/01-remember-a-successful-run.md -->
@@ -16,7 +17,7 @@ The manifest records a format version, the absolute Git root, the absolute worki
 
 The key is the SHA-256 of the manifest encoded as JSON. Inputs are discovered by walking a Go map, whose iteration order is random, so `Manifest.Key` sorts a copy of the inputs by kind and then by name before encoding. Go's JSON encoder writes struct fields in declaration order, so the rest of the encoding is fixed. The command keeps its original order because reordering arguments can change what the command does. The copy matters: sorting the caller's slice in place would rearrange inputs the caller still holds.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77)
+**Learn more:** [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77)
 
 </details>
 
@@ -35,7 +36,7 @@ For each file, `fileInput` hashes the octal permission bits, a zero byte, and th
 
 There is no modification-time cache. Every run reads and hashes every byte of every discovered file and the command binary, so the work grows with total repository size. A miss does this twice: once before execution and once after, to check that the inputs did not change during the run.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L156-L202) · [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L204-L226)
+**Learn more:** [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L156-L202) · [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L204-L226)
 
 </details>
 
@@ -52,7 +53,7 @@ A cached result is only safe to reuse when Receipt can name the inputs that deci
 
 Any other command makes `toolchainProbe` return an error. `run` reports "inputs unavailable; running uncached" and executes the command without lookup or storage, so an unsupported command is never silently cached. `--allow-generic` is an explicit opt-in: the key then covers only files, environment and the executable's bytes, and the user accepts responsibility for any input outside those.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L280-L304) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L289-L297)
+**Learn more:** [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L280-L304) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L289-L297)
 
 </details>
 
@@ -69,7 +70,7 @@ The Python probe prints JSON containing `sys.version`, `sys.executable` and a so
 
 `go env -json` includes `GOGCCFLAGS`, which contains `-ffile-prefix-map=<GOTMPDIR>/go-buildNNNN=/tmp/go-build`. Go chooses a new random `NNNN` scratch directory on every invocation, so without a rewrite every Go run would miss. `stableGoEnvironment` replaces only the digits after the exact `<GOTMPDIR>/go-build` prefix in `-ffile-prefix-map` and `-fdebug-prefix-map` flags with `<scratch>`. Everything else stays, and a format it does not recognise is left unchanged. That choice fails toward extra misses rather than toward hiding a real compiler setting. The input is named `resolved-go-environment-v2`. Go module dependencies are covered by `go.mod` and `go.sum` as repository files, not by the probe.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L13-L36)
+**Learn more:** [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`stableGoEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/go_environment.go#L13-L36)
 
 </details>
 
@@ -87,7 +88,7 @@ Only successful runs are stored. `Validate` rejects any result whose exit code i
 
 A stored result holds the manifest, stdout bytes, stderr bytes, the exit code, the run's duration and its creation time. On a hit, `runSession.replay` prints a `receipt: hit` line with the saved duration to stderr, writes the saved stdout in full, then the saved stderr in full, touches the entry's modification time, and returns the saved exit code, which is 0. The tests do not run, so any files they would have written, network requests they would have made, and the original interleaving of stdout and stderr are not reproduced.
 
-**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [D6. Why cache only successes?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)
+**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [Execution and replay](../DESIGN-DEFENSE.md#execution-and-replay) · [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)
 
 </details>
 
@@ -105,7 +106,7 @@ Walk through `receipt run -- uv run pytest` on a miss that succeeds, with a remo
 
 On a miss, Receipt runs the command, streaming output while capturing a bounded copy. It builds the manifest again and calls the run stable only if that succeeds with the same key. It records the history file used by `receipt explain`. A successful, stable run goes to `runSession.publish`, which stores the result locally, uploads it to the server, and only then prunes the local cache. A failed upload is reported on stderr but does not change the exit code.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
 
 </details>
 
@@ -122,7 +123,7 @@ The cache defaults to `<git root>/.receipt`. A cache inside the repository must 
 
 `Disk.Put` writes the envelope to a `.pending-` temporary file in the same directory, calls `fsync` on it, then calls `os.Link` to create the final name, and finally `fsync`s the directory. A hard link either creates the name or fails because it already exists, and a reader can only ever see a complete file. If the link fails with "already exists", the first writer has won: `Put` reads the existing entry and succeeds only if it decodes and validates. It never overwrites, so a corrupt existing entry makes `Put` return an error rather than report success. A rename would have replaced the existing entry, which is the behaviour this design avoids.
 
-**Learn more:** [D7. How is a local result published?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [F3. Files, inodes, directory entries and hard links](../DESIGN-DEFENSE.md#f3-files-inodes-directory-entries-and-hard-links) · [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L150-L194) · [`cacheDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L170-L188)
+**Learn more:** [Local storage](../DESIGN-DEFENSE.md#local-storage) · [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L150-L194) · [`cacheDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L170-L188)
 
 </details>
 
@@ -139,7 +140,7 @@ How does local pruning choose which entries to delete, when does it run, and wha
 
 Only `entries/` is counted. Files in `history/` and `quarantine/` are never counted or removed, so they grow without a bound. Keeping quarantine markers is deliberate: deleting one would let a key with contradictory evidence be replayed again.
 
-**Learn more:** [D8. How does the local cache stay bounded?](../DESIGN-DEFENSE.md#d8-how-does-the-local-cache-stay-bounded-and-why-do-quarantine-markers-win) · [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L369-L420)
+**Learn more:** [Local storage](../DESIGN-DEFENSE.md#local-storage) · [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L369-L420)
 
 </details>
 
@@ -156,7 +157,7 @@ PostgreSQL holds what must change together under a transaction: which keys are v
 
 Output can be up to 8 MiB per stream. Keeping it out of database rows keeps the metadata small and lets the metadata quota count only JSON records. Content addressing stores identical output once, and the quota check counts only bytes whose hash is not already present. Every read verifies a blob's length and hash. Files alone would lose the transactional decisions about conflicts and visibility. Object storage is not supported: maintenance needs a `ManagedBlobs` store that can be locked with `flock`, inventoried and safely deleted from, and the deployment is one small server.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L338-L381)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L338-L381)
 
 </details>
 
@@ -172,16 +173,15 @@ In what order does a shared upload write output files and the database record, a
 
 `Postgres.Put` validates the result, takes the exclusive lifecycle lock, checks the blob quota and refuses a key that is already quarantined. `publishTx` then inserts the record that points at the blobs, inside the still-open transaction, and checks the metadata quotas. Next `Put` writes the stdout blob and the stderr blob, each with a temporary file, `fsync`, a hard link that refuses to overwrite and a directory `fsync`. Last, it commits.
 
-The blobs are durable before the commit, and the record becomes visible only at the commit, so committed metadata never points at missing bytes. Committing the record before writing the blobs would let another client find a record whose output does not exist yet. Inserting the record before the blob writes, but committing after them, means a quota refusal writes no files. The cost is that a crash or a failed commit can still leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
+The blobs are durable before the commit, and the record becomes visible only at the commit, so readers do not see the new record before its output is written. Later damage or file loss can still break a read. Committing the record before writing the blobs would let another client find a record whose output does not exist yet. Inserting the record before the blob writes, but committing after them, means a quota refusal writes no files. The cost is that a crash or a failed commit can still leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
 
 `Postgres.Get` takes the shared lock, reads the record, digest and quarantine flag, and returns a conflict if the key is quarantined. It checks the record's version and key, fetches each blob while verifying its length and hash, and recomputes the output digest. A digest mismatch is reported as corruption; a missing blob is treated as a miss.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L147-L190)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L147-L190)
 
 </details>
 
 ### Two locks for one storage protocol
-<!-- check: guide/03-delete-old-data-without-breaking-a-reader.md -->
 
 **Level:** Practitioner
 
@@ -194,7 +194,7 @@ Every shared storage operation enters through `Postgres.lifecycle`. Which locks 
 
 The advisory lock coordinates every process that shares the database: server processes and maintenance commands. The file lock protects the files themselves. If the database connection dies, PostgreSQL releases the advisory lock, but the file lock stays held until the Go code closes it, so `shared gc` cannot delete files that an interrupted upload is still writing. The transaction also begins with `context.WithoutCancel`, so a cancelled request does not make `database/sql` roll back and release the lock while file work is still running.
 
-**Learn more:** [Why does the filesystem need a lock?](../guide/03-delete-old-data-without-breaking-a-reader.md#why-does-the-filesystem-need-a-lock) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [F5. File locks: flock versus fcntl](../DESIGN-DEFENSE.md#f5-file-locks-flock-versus-fcntl) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120)
+**Learn more:** [Why does the filesystem need a lock?](../guide/03-delete-old-data-without-breaking-a-reader.md#why-does-the-filesystem-need-a-lock) · [Locks limits and cleanup](../DESIGN-DEFENSE.md#locks-limits-and-cleanup) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120)
 
 </details>
 
@@ -211,7 +211,7 @@ The server compares a digest: the SHA-256 of a JSON object holding the stdout ha
 
 `publishTx` checks the entry and metadata quotas only when the key is new, then runs `INSERT ... ON CONFLICT(key) DO NOTHING` and reads the stored digest and quarantine flag with `SELECT ... FOR UPDATE`. It records an evidence row for this (key, digest) pair unless the evidence quota is full. A conflict means the key was already quarantined, the call is a conflict report, or the stored digest differs from the new one. On a conflict it sets `quarantined = TRUE`, marks `evidence_capped` if evidence was dropped, commits, and returns a conflict, which HTTP turns into status 409. The first record stays in place but can no longer be read. A full evidence quota never prevents quarantine.
 
-**Learn more:** [What if the clients disagree?](../guide/02-let-another-client-reuse-the-result.md#what-if-the-clients-disagree) · [D11. What happens when two clients publish the same key?](../DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key) · [`ConflictReport.digest`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L52-L59) · [`Postgres.publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L268-L352)
+**Learn more:** [What if the clients disagree?](../guide/02-let-another-client-reuse-the-result.md#what-if-the-clients-disagree) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`ConflictReport.digest`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L52-L59) · [`Postgres.publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L268-L352)
 
 </details>
 
@@ -230,7 +230,7 @@ On the server, the `quarantined` column in `receipt_entries_v2` is set when an u
 
 A quarantined key is treated as a miss by the local lookup, is never stored again locally, and is refused by the server for reads and uploads. The reason is that two observations disagree for the same declared inputs, so either an input is undeclared or the test is nondeterministic. Nothing in Receipt removes the quarantine.
 
-**Learn more:** [A conflict: the same key, different observations](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-conflict-the-same-key-different-observations) · [D11. What happens when two clients publish the same key?](../DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
+**Learn more:** [A conflict: the same key, different observations](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-conflict-the-same-key-different-observations) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
 
 </details>
 
@@ -283,7 +283,7 @@ The legacy mode compares the whole `Authorization` header in constant time again
 
 Credential mode stores each credential as a row with its scopes, expiry and revocation time. Those rows live in PostgreSQL, so `serve` refuses `--credentials` without `--postgres`. The modes do not mix: `HandlerAuthorized` uses only the database authenticator and never falls back to the shared token, so a server in credential mode rejects the old token. A fallback would let anyone holding the old shared secret bypass scopes and revocation.
 
-**Learn more:** [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [Start and administer locally](../SERVICE-CREDENTIALS.md#start-and-administer-locally) · [`serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L475-L499) · [`HandlerAuthorized`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L14-L23)
+**Learn more:** [Requests and permissions](../DESIGN-DEFENSE.md#requests-and-permissions) · [Start and administer locally](../SERVICE-CREDENTIALS.md#start-and-administer-locally) · [`serve`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L475-L499) · [`HandlerAuthorized`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L14-L23)
 
 </details>
 
@@ -302,7 +302,7 @@ On each request the server requires exactly one `Authorization` header of the ex
 
 Slow password hashes exist to make guessing low-entropy passwords expensive. The secret here is 32 random bytes, 256 bits, so guessing is already infeasible and one SHA-256 per request is enough.
 
-**Learn more:** [Why does Receipt ask the database each time?](../guide/05-give-callers-different-permissions.md#why-does-receipt-ask-the-database-each-time) · [D18. How are credentials generated, stored and checked?](../DESIGN-DEFENSE.md#d18-how-are-credentials-generated-stored-and-checked) · [`generate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L137-L144) · [`Postgres.Authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L89-L121)
+**Learn more:** [Why does Receipt ask the database each time?](../guide/05-give-callers-different-permissions.md#why-does-receipt-ask-the-database-each-time) · [Requests and permissions](../DESIGN-DEFENSE.md#requests-and-permissions) · [`generate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L137-L144) · [`Postgres.Authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L89-L121)
 
 </details>
 
@@ -316,11 +316,15 @@ Four simultaneous uploads spend much of their time waiting for a lock. Why would
 <details>
 <summary>Answer</summary>
 
-Every upload takes the same exclusive lifecycle lock, so only one can do its work at a time. More goroutines only add more waiters. With `--request-log`, each request's summary separates time spent getting a database connection, waiting for the database lock and the file lock, running SQL, and reading or writing files. Measure what happens while the lock is held first. Inside it, an upload inventories every blob and sums the metadata tables, so its cost grows with the store.
+Uploads take turns under one exclusive storage lock. Adding goroutines creates
+more waiters unless the work done while holding that lock becomes shorter.
+Inspect lock waiting separately from output reads, writes and database work.
+Uploads check running totals; they do not inventory the whole store each time.
 
-A faster design would still need to keep cleanup from deleting files an upload is about to reference and keep two uploads from overspending the shared storage budget. Removing the lock without replacing those guarantees would trade waiting for wrong answers.
+Any replacement must still prevent cleanup from deleting a file an upload is
+about to reference and prevent two writers from both claiming the last free space.
 
-**Learn more:** [Read one measurement carefully](../guide/07-find-where-the-time-went.md#read-one-measurement-carefully) · [D15. What does one upload cost?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [Read the timings](../MEASUREMENTS.md#read-the-timings) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120)
+**Learn more:** [Read one measurement carefully](../guide/07-find-where-the-time-went.md#read-one-measurement-carefully) · [Locks limits and cleanup](../DESIGN-DEFENSE.md#locks-limits-and-cleanup) · [Read the timings](../MEASUREMENTS.md#read-the-timings) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120)
 
 </details>
 
@@ -357,7 +361,7 @@ A non-empty `RUSTC`, `RUSTDOC`, `RUSTFLAGS`, `RUSTDOCFLAGS`, `RUSTC_WRAPPER` or 
 
 Dependencies must come from a registry. Receipt hashes `Cargo.lock` and every file of each selected registry crate, within a budget of 20,000 files and 256 MiB, because `Cargo.lock` does not change when someone edits a downloaded source file. Each refusal names an input Receipt cannot record, so it runs Cargo directly instead.
 
-**Learn more:** [Accepted command grammar](../CARGO.md#accepted-command-grammar) · [D20. How does the Cargo adapter decide what it can trust?](../DESIGN-DEFENSE.md#d20-how-does-the-cargo-adapter-decide-what-it-can-trust) · [`parseCargo`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo.go#L23-L56) · [`cargoPolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_policy.go#L14-L53)
+**Learn more:** [Accepted command grammar](../CARGO.md#accepted-command-grammar) · [Cargo](../CARGO.md) · [`parseCargo`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo.go#L23-L56) · [`cargoPolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_policy.go#L14-L53)
 
 </details>
 
@@ -375,7 +379,7 @@ On the droplet, Receipt listens on `127.0.0.1:7777`. Caddy terminates HTTPS for 
 
 `Remote.requestPath` refuses any remote URL that is not `https`, except `http` to `localhost`, `127.0.0.1` or `::1`. It also refuses URLs with a user name, a query string or a fragment. Its HTTP client never follows redirects, so the bearer token is not sent on to another host, and it has a 10-second timeout. An expired or revoked token is an application refusal (HTTP 401) on a working HTTPS connection, so the fix is a new credential, not a different certificate or an open database port.
 
-**Learn more:** [Encryption is not permission](../guide/09-follow-a-request-to-the-deployed-server.md#encryption-is-not-permission) · [F9. Bearer tokens, TLS termination and reverse proxies](../DESIGN-DEFENSE.md#f9-bearer-tokens-tls-termination-and-reverse-proxies) · [`Remote.requestPath`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L38-L61)
+**Learn more:** [Encryption is not permission](../guide/09-follow-a-request-to-the-deployed-server.md#encryption-is-not-permission) · [Requests and permissions](../DESIGN-DEFENSE.md#requests-and-permissions) · [`Remote.requestPath`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L38-L61)
 
 </details>
 
@@ -389,193 +393,30 @@ A reviewer asks: "Two uploads for different keys arrive together. Why does the s
 <details>
 <summary>Answer</summary>
 
-Both uploads may add files to the one shared blob directory, and both draw on the same storage budget. Two keys can also refer to the same blob, because identical output is stored once. The quota check must see a total that no other upload is changing at the same time, and `shared gc` must not delete a blob that an upload is about to reference. A lock per key coordinates neither of those decisions, since the shared quantities span keys.
+The two uploads share a storage budget and output files even when their result
+keys differ. One exclusive lock makes their limit checks and publication take
+turns. Each upload reads running totals rather than recounting the store.
 
-Receipt meets both needs with one exclusive lifecycle lock for every upload. The cost is that uploads run one at a time. Each upload's own work no longer grows with the store, because it checks running totals instead of recounting (since 15 October 2026), but the throughput ceiling is still one upload at a time. That is a deliberate choice for a small deployment, not a high-throughput design.
+Per-key locks would allow more overlap but would not by themselves protect the
+shared budget or stop cleanup from deleting output about to receive a reference.
+Those responsibilities need a replacement protocol before relaxing the lock.
 
-**Learn more:** [11. Defending the design](../guide/11-defending-the-design.md#11-defending-the-design) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L338-L381)
+**Learn more:** [11. Understand storage tradeoffs](../guide/11-defending-the-design.md#11-understand-storage-tradeoffs) · [Locks limits and cleanup](../DESIGN-DEFENSE.md#locks-limits-and-cleanup) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L338-L381)
 
 </details>
 
-### What does a same-binary timing control tell us?
-<!-- check: guide/14-reuse-the-git-root.md -->
+### Two results share an output file
+<!-- check: guide/03-delete-old-data-without-breaking-a-reader.md -->
 
 **Level:** Practitioner
 
-The old/new Go comparison appears faster, but comparing the old binary with
-itself also produces a nonzero difference. Can we credit the whole old/new
-difference to the code change?
+Results A and B both refer to file X. Cleanup removes A but keeps B. Should it remove X? Explain the lookup it needs.
 
 <details>
 <summary>Answer</summary>
 
-No. Identical code cannot explain a control difference, so scheduling, waiting
-or other variation is affecting the measurement. Keep those observations,
-inspect the distribution and improve the comparison controls. Mirrored
-old/new/new/old groups cancel linear drift within the four positions, but not
-sudden pauses. A follow-up control interval including zero is reassuring;
-it does not prove every estimated saving is unbiased or portable.
+No. Cleanup first records files needed by surviving results. B still needs X, so X’s hash remains in that lookup table and collection keeps the file. Deleting one result is not the same as deleting everything it referred to.
 
-**Learn more:** [Repeat with controls before attributing the gain](../guide/14-reuse-the-git-root.md#repeat-with-controls-before-attributing-the-gain)
-
-</details>
-
-
-### Which Git paths may bypass the Apple launcher?
-<!-- check: guide/16-resolve-selected-git.md -->
-
-**Level:** Practitioner
-
-Your PATH selects `/custom/bin/git`, a wrapper around Apple's Git. Should Receipt
-follow that wrapper to choose a faster executable?
-
-<details>
-<summary>Answer</summary>
-
-No. The wrapper may implement user behavior. Only the exact selected path
-`/usr/bin/git` on macOS is eligible for system xcrun resolution. Other selected
-paths, including custom symlinks, keep their spelling and behavior. Resolver
-failure retains the original launcher.
-
-**Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
-
-</details>
-
-
-### Which cache rejected the compiler record?
-<!-- check: guide/16-resolve-selected-git.md -->
-
-**Level:** Practitioner
-
-The Go investigation found a filename, a stat description and an empty third
-field after splitting a record. Which cache was involved, and why did Go start
-Clang again?
-
-<details>
-<summary>Answer</summary>
-
-It was Go's compiler-identity cache, not Receipt's saved test-result cache. The
-writer's final NUL separator made strings.Split retain an empty field. The reader
-expected filename/stat pairs, rejected the odd count and queried Clang again.
-The diagnostic correction demonstrated the repeated-work cause on a stable
-fixture; it did not reproduce or explain the earlier 300 ms event.
-
-**Learn more:** [What the next Go investigation found](../guide/16-resolve-selected-git.md#what-the-next-go-investigation-found)
-
-</details>
-
-### Why can a local copy still incur HTTPS cost?
-<!-- check: guide/17-measure-linux-client-and-server.md -->
-
-**Level:** Practitioner
-
-A local result already exists, but Receipt also has a shared remote configured.
-Can it skip the network request just because those output bytes are on disk?
-
-<details>
-<summary>Answer</summary>
-
-No. It checks whether the shared key is quarantined before local replay. Without
-that check it could reuse a result other clients have reported as conflicting.
-A standalone local hit and a checked-local hit therefore have different costs.
-
-**Learn more:** [17. Measure the Linux client and cache server](../guide/17-measure-linux-client-and-server.md)
-
-</details>
-
-### Does reading a response body measure JSON validation?
-<!-- check: guide/18-trace-go-http.md -->
-
-**Level:** Practitioner
-
-The client has received the response headers. It reads the body bytes, then calls Decode. Are those one operation?
-
-<details>
-<summary>Answer</summary>
-
-No. Reading may wait for bytes to arrive. Decode then checks the saved result structure, checksums and relationships. Separate boundaries show whether the client waits for transfer or spends time validating bytes already in memory.
-
-**Learn more:** [18. Trace the actual Go HTTP client](../guide/18-trace-go-http.md)
-
-</details>
-
-### Why measure both CPU and transferred bytes?
-<!-- check: guide/19-compare-gzip-responses.md -->
-
-**Level:** Practitioner
-
-Gzip sends fewer bytes. Does that alone prove it makes every Receipt hit faster and cheaper?
-
-<details>
-<summary>Answer</summary>
-
-No. The server spends CPU compressing, the client spends CPU decompressing, and encoder buffers consume memory. A fast local link can have little transfer time to save. Measure latency and resources at both ends under the network conditions that matter.
-
-**Learn more:** [19. Compare gzip and uncompressed responses](../guide/19-compare-gzip-responses.md)
-
-</details>
-
-### Can pooled server memory belong to only one variant?
-<!-- check: guide/20-test-gzip-on-caddy.md -->
-
-**Level:** Practitioner
-
-One long-running Caddy process serves identity, then gzip, then identity again. Can the final identity memory reading be treated as a fresh process with no gzip buffers?
-
-<details>
-<summary>Answer</summary>
-
-No. The process can retain buffers and other state from earlier requests. Its sampled memory describes that running process, not an independent allocation cost for the current encoding. Fresh processes or allocation profiles answer different memory questions.
-
-**Learn more:** [20. Test gzip on the actual Caddy deployment](../guide/20-test-gzip-on-caddy.md)
-
-</details>
-
-### Does storage-method CPU mean database waiting?
-<!-- check: guide/21-profile-application-cpu.md -->
-
-**Level:** Practitioner
-
-A CPU stack contains Postgres.Get and strictjson.Object. Is that evidence that PostgreSQL query execution used that CPU?
-
-<details>
-<summary>Answer</summary>
-
-No. The storage method also decodes and validates metadata in the Receipt process. A sampled call stack includes callers and their running children. Waiting for a database response is not running user CPU; separate timing and database evidence are needed.
-
-**Learn more:** [21. Find the application work inside a cache hit](../guide/21-profile-application-cpu.md)
-
-</details>
-
-### Did preloading certificates eliminate their cost?
-<!-- check: guide/22-explain-network-latency.md -->
-
-**Level:** Practitioner
-
-A process loads the normal trust store before starting the TLS timer. TLS becomes faster. Has the process necessarily become equally faster overall?
-
-<details>
-<summary>Answer</summary>
-
-No. Loading moved outside the timer. Include its CPU, memory and elapsed time before claiming an overall improvement. A later request in a resident process can reuse initialized state, but a new process has to initialize again.
-
-**Learn more:** [22. Explain the slow network hits](../guide/22-explain-network-latency.md)
-
-</details>
-
-
-### Can the faster job prove a placement improvement?
-<!-- check: guide/23-check-runner-placement.md -->
-
-**Level:** Practitioner
-
-Two jobs use the same client binary and result bytes. Their fresh fetch medians are 56 and 129 ms. Did moving the server improve performance?
-
-<details>
-<summary>Answer</summary>
-
-No server move occurred. Different runner assignments and times can expose different paths. Matching binaries and results removes two confounders, but does not control geography, hardware or routing.
-
-**Learn more:** [23. Check whether we can control runner placement](../guide/23-check-runner-placement.md)
+**Learn more:** [Chapter 3](../guide/03-delete-old-data-without-breaking-a-reader.md)
 
 </details>

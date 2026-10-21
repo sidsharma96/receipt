@@ -2,65 +2,50 @@
 
 # Start here
 
-- [Start here](START-HERE.md)
+- [Learn how Receipt works](START-HERE.md)
+- [Chapter overview](WORKING-DOC.md)
 
 # Follow one test run
 
-- [Overview](WORKING-DOC.md)
 - [1. Remember a successful run](guide/01-remember-a-successful-run.md)
 - [2. Let another client reuse the result](guide/02-let-another-client-reuse-the-result.md)
 - [3. Delete old data without breaking a reader](guide/03-delete-old-data-without-breaking-a-reader.md)
 - [4. Check data before accepting it](guide/04-check-data-before-accepting-it.md)
 - [5. Give callers different permissions](guide/05-give-callers-different-permissions.md)
-- [6. Find the code and defend a decision](guide/06-find-the-code-and-defend-a-decision.md)
+- [6. Find the code](guide/06-find-the-code-and-defend-a-decision.md)
 - [7. Find where the time went](guide/07-find-where-the-time-went.md)
 - [8. Check what a Rust test depends on](guide/08-check-what-a-rust-test-depends-on.md)
 - [9. Follow a request to the deployed server](guide/09-follow-a-request-to-the-deployed-server.md)
 - [10. Final walkthrough: miss, hit, conflict and recovery](guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md)
-- [11. Defending the design](guide/11-defending-the-design.md)
-- [12. Make a cache hit cheaper](guide/12-profile-before-optimizing.md)
-- [13. Hash executables and measure their probes](guide/13-hash-executables-and-measure-probes.md)
+- [11. Understand storage tradeoffs](guide/11-defending-the-design.md)
+- [12. Understand cache overhead](guide/12-profile-before-optimizing.md)
 
-- [14. Reuse the Git root within one invocation](guide/14-reuse-the-git-root.md)
+# Use Receipt
 
-- [15. Measure toolchain probe overhead](guide/15-measure-toolchain-probe-overhead.md)
+- [Usage and configuration](USAGE.md)
+- [Measure a slow run](MEASUREMENTS.md)
+- [Supported Rust commands](CARGO.md)
+- [Set up a shared cache with credentials](SERVICE-CREDENTIALS.md)
 
-- [16. Resolve the selected Git once](guide/16-resolve-selected-git.md)
-- [17. Measure the Linux client and cache server](guide/17-measure-linux-client-and-server.md)
-- [18. Trace the actual Go HTTP client](guide/18-trace-go-http.md)
-- [19. Compare gzip and uncompressed responses](guide/19-compare-gzip-responses.md)
-- [20. Test gzip on the actual Caddy deployment](guide/20-test-gzip-on-caddy.md)
-- [21. Find the application work inside a cache hit](guide/21-profile-application-cpu.md)
-- [22. Explain the slow network hits](guide/22-explain-network-latency.md)
-- [23. Check whether we can control runner placement](guide/23-check-runner-placement.md)
+# Reference
 
-# Defending the design
-
-- [Defending Receipt's design](DESIGN-DEFENSE.md)
+- [Design reference](DESIGN-DEFENSE.md)
+- [Glossary](GLOSSARY.md)
+- [Receipt JSON input contract](JSON-INPUT-CONTRACT.md)
+- [Selected measurements](PERFORMANCE.md)
+- [Storage and execution illustrations](FIGURES.md)
 
 # Questions
 
 - [Question bank](questions/question-bank.md)
-  - [Newcomer](questions/newcomer.md)
-  - [Practitioner](questions/practitioner.md)
-  - [Expert](questions/expert.md)
+- [Newcomer questions](questions/newcomer.md)
+- [Practitioner questions](questions/practitioner.md)
+- [Expert questions](questions/expert.md)
 
-# Reference
+# Maintain Receipt
 
-- [Glossary](GLOSSARY.md)
-- [JSON input contract](JSON-INPUT-CONTRACT.md)
-- [Cargo command contract](CARGO.md)
-- [Service credentials](SERVICE-CREDENTIALS.md)
-- [Measurements](MEASUREMENTS.md)
-- [Coding practices](CODING-PRACTICES.md)
-- [Phase reviews and evidence](PHASE-REVIEWS.md)
-- [Updates and documentation records](guide/updates.md)
-
-# Appendices
-
-- [DigitalOcean deployment record](DIGITALOCEAN-SETUP.md)
-- [Receipt's own CI](RECEIPT-CI.md)
-- [CI cache experiment](CI-EXPERIMENT.md)
-- [Fly deployment proposal](FLY-DEPLOYMENT.md)
-- [Real repository lab](REAL-REPO-LAB.md)
-- [Prose style guide](PROSE-STYLE-GUIDE.md)
+- [Contribute to Receipt](CONTRIBUTING.md)
+- [Operate the shared server](DIGITALOCEAN-SETUP.md)
+- [Receipt's CI](RECEIPT-CI.md)
+- [Receipt coding practices](CODING-PRACTICES.md)
+- [Write documentation people can use](PROSE-STYLE-GUIDE.md)

@@ -6,7 +6,7 @@ A [credential](../GLOSSARY.md#credential) is the secret a client presents. Anyon
 
 ## Two questions before storage
 
-[Authentication](../GLOSSARY.md#authentication) asks whether the credential is valid. [Authorization](../GLOSSARY.md#authorization) asks whether it allows the requested operation. A valid credential can still lack permission to upload.
+[Authentication](../GLOSSARY.md#authentication) asks whether the credential is valid. [Authorization](../GLOSSARY.md#authorization) asks whether it allows the requested operation. A valid credential can still lack permission to upload. HTTP status 401 reports a missing or invalid credential; 403 reports a valid credential without the needed permission.
 
 **Figure 5. Alice tries to upload with a read-only credential**
 
@@ -26,13 +26,13 @@ if known && !principal.Allows(scope) {
 }
 ```
 
-`principal` holds the checked credential's public details and permissions. `scope` is the permission this operation requires. `Allows` checks for that permission. When the check fails, Receipt counts the refusal, sends an HTTP response, and returns before the storage handler runs. `known` means the operation has a permission mapping; other code rejects unmapped operations.
+`&&` means both conditions must hold, and `!` reverses a true-or-false answer. Here the request is refused when the operation is known and its permission is not allowed. `principal` holds the checked credential’s public details and permissions. `scope` is the permission this operation requires. `Allows` checks for that permission. When the check fails, Receipt counts the refusal, sends an HTTP response, and returns before the storage handler runs. `known` means the operation has a permission mapping; other code rejects unmapped operations.
 
 ## Why does Receipt ask the database each time?
 
 Suppose Alice's secret is stolen. The operator [revokes](../GLOSSARY.md#revocation) it, meaning later credential checks should refuse it. Receipt consults the current database record for each request instead of trusting a permission copy remembered earlier.
 
-The database stores a hash of the token, not the usable secret. The token is generated from randomness intended for security, not chosen as a human password. Exact byte counts and comparison mechanics are implementation details in the review reference.
+The database stores a hash of the token, not the usable secret. The token is generated from randomness intended for security, not chosen as a human password. This makes guessing a token much harder than guessing a common password; knowing its hash does not grant access.
 
 Checking each request costs a database query. A remembered copy could reduce queries, but might keep accepting a revoked credential until it refreshes. We currently favor the direct check. This is a choice about revocation behavior, not a claim about production throughput.
 
@@ -42,15 +42,20 @@ If an upload passes its credential check and then pauses, revoking the credentia
 
 When the database cannot perform a check, the server refuses access rather than substituting the old shared secret. The client may then run tests directly; server permissions do not control what the user's local programs can execute.
 
-## What this phase does not provide
+## What permissions do not provide
 
 Callers still share one store. Read permission does not mean access to only Alice's results. Browser login, private organizations, and a durable record of who uploaded each result are not implemented.
 
-Remote credentials need encrypted transport, normally [HTTPS](../GLOSSARY.md#https), so someone observing the connection cannot read the secret in transit. Receipt itself does not terminate TLS. The deployment in chapter 9 puts Caddy in front of it for that job. The secret is also currently passed to the child test process through the environment. Run trusted code, and do not automatically exclude that setting from input recording if it can affect behavior.
+Remote credentials need encrypted transport, normally [HTTPS](../GLOSSARY.md#https), so someone observing the connection cannot read the secret in transit. TLS is the protocol that protects an HTTPS connection. Receipt delegates this encrypted connection to Caddy, the web server introduced in Chapter 9.
+
+Receipt removes `RECEIPT_TOKEN` from the environment passed to the test process
+and excludes it from the input key. Rotating that credential alone therefore does
+not change the key. This removal is not a sandbox: run trusted code, since local
+programs may have other ways to access files or secrets on the machine.
 
 ## Read further
 
-Use the [credential setup guide](../SERVICE-CREDENTIALS.md) for commands. Use [Phase 5's review](../PHASE-REVIEWS.md#phase-5-review-separate-caller-credentials-and-operation-permissions) for exact lifetimes, row limits, concurrency mechanisms, and verification records.
+Use the [credential setup guide](../SERVICE-CREDENTIALS.md) for commands. Use [Design reference](../DESIGN-DEFENSE.md) for the coordination rules and their limitations.
 
 ## Check your understanding
 
@@ -88,22 +93,18 @@ The scopes are `read`, `publish`, `report` and `metrics`, and none implies anoth
 
 </details>
 
-### Is credential administration independent of storage?
+### Revocation while an upload waits
 
 **Level:** Expert
 
-An operator issues a new credential while CI is uploading results. Does issuance interact with cache traffic at the lock level?
+An upload passes its credential check, then waits for storage. The operator revokes its credential before it resumes. Must this admitted upload stop? What about the next request?
 
 <details>
 <summary>Answer</summary>
 
-Issuance itself no longer does; one step of the command still does. Since 15 October 2026, `Postgres.Issue` and the credential-table migration take advisory lock `72656365697076`, the constant `credentialLock`, which differs from the storage `lifecycleLock` (`72656365697075`). Issuance therefore neither waits for in-flight reads and uploads nor makes new ones queue. The remaining interaction is earlier in the command: every `receipt auth` command calls `openShared`, which runs the storage migration and takes the exclusive lifecycle lock and its `flock` once. So `receipt auth issue` still waits once for the slowest in-flight storage operation, and a long `shared gc --apply` can still delay it. Authentication of existing tokens takes no lock and continues.
+The admitted upload may finish. Revocation changes later checks; it does not cancel work already admitted. The next request checks the database again and is refused once it sees the committed revocation. Caching old permission decisions would risk extending access further.
 
-The credential lock exists so that two concurrent issuers cannot both count 1,023 rows and insert past the 1,024 cap. `TestCredentialIssuanceDoesNotWaitForStorageLock` holds a shared storage lock and checks that issuance still finishes.
-
-**Common wrong answer.** "Issuance and storage share one lock, so renewal pauses all cache traffic." That was true until 15 October 2026. Only the storage initialisation in `openShared` still takes the storage lock.
-
-**Learn more:** [D13. Which advisory lock keys exist, and what does each guard?](../DESIGN-DEFENSE.md#d13-which-advisory-lock-keys-exist-and-what-does-each-guard) · [G1](../DESIGN-DEFENSE.md#g1-receipt-auth-still-takes-the-storage-lock-once) · [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L74)
+**Learn more:** [Chapter 5](../guide/05-give-callers-different-permissions.md)
 
 </details>
 

@@ -6,13 +6,13 @@ This page is a reminder, not a substitute for the chapters. Each entry says what
 
 An admission slot is one place in a fixed-size buffered channel that a server request must take before it does storage work. When every slot is taken, Receipt answers HTTP 503 with `Retry-After: 1` at once instead of queueing the request; the `--max-inflight` flag sets the number of slots (default 16, range 1 to 128).
 
-Learn more: [D17. How does the server bound concurrent work?](DESIGN-DEFENSE.md#d17-how-does-the-server-bound-concurrent-work)
+Learn more: [Requests and permissions](DESIGN-DEFENSE.md#requests-and-permissions)
 
 ### Advisory lock
 
 An advisory lock is a PostgreSQL lock on a number that the application chooses, not on a table row. Receipt takes one in shared or exclusive mode at the start of each shared-storage transaction, and PostgreSQL releases it when that transaction ends.
 
-Learn more: [F6. PostgreSQL transactions, row locks and advisory locks](DESIGN-DEFENSE.md#f6-postgresql-transactions-row-locks-and-advisory-locks)
+Learn more: [Locks limits and cleanup](DESIGN-DEFENSE.md#locks-limits-and-cleanup)
 
 ### Authentication
 
@@ -30,7 +30,7 @@ Learn more: [Two questions before storage](guide/05-give-callers-different-permi
 
 A bearer token is a secret that grants access to whoever presents it, sent in the HTTP `Authorization` header. Receipt's credentials and its legacy shared token are both bearer tokens, so they need encrypted transport.
 
-Learn more: [F9. Bearer tokens, TLS termination and reverse proxies](DESIGN-DEFENSE.md#f9-bearer-tokens-tls-termination-and-reverse-proxies)
+Learn more: [Requests and permissions](DESIGN-DEFENSE.md#requests-and-permissions)
 
 ### Blob
 
@@ -48,7 +48,7 @@ Learn more: [8. Check what a Rust test depends on](guide/08-check-what-a-rust-te
 
 `receipt run --bypass` runs the command directly without building a manifest, looking up a result or saving one. It cannot be combined with `--verify` or `--refresh`.
 
-Learn more: [D6b. What do `--verify`, `--refresh` and `--bypass` do?](DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do)
+Learn more: [Execution and replay](DESIGN-DEFENSE.md#execution-and-replay)
 
 ### Cache
 
@@ -96,13 +96,13 @@ Learn more: [Watch the test, not the old PASS message](guide/09-follow-a-request
 
 CMS, Cryptographic Message Syntax, is the OpenSSL format used to encrypt the backup archive to a recovery certificate. Only the matching private key, kept on the Mac, can decrypt it.
 
-Learn more: [D21. How is the server deployed, and how would we recover it?](DESIGN-DEFENSE.md#d21-how-is-the-server-deployed-and-how-would-we-recover-it)
+Learn more: [Backup and recovery](DIGITALOCEAN-SETUP.md#backup-and-recovery)
 
 ### Cold path
 
 The cold path is occasional work, such as issuing credentials or collecting unused files. Occasional does not mean cheap: collection can scan the whole store and make other operations wait.
 
-Learn more: [Frequently performed work versus occasional work](guide/06-find-the-code-and-defend-a-decision.md#frequently-performed-work-versus-occasional-work)
+Learn more: [Frequently performed work versus occasional work](guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities)
 
 ### Conflict
 
@@ -114,7 +114,7 @@ Learn more: [A conflict: the same key, different observations](guide/10-final-wa
 
 Content addressing names stored data by a hash of its bytes. Equal content gets the same name, so Receipt stores identical output once and can check a blob by rehashing it on read.
 
-Learn more: [F1. Cryptographic hashes and content addressing](DESIGN-DEFENSE.md#f1-cryptographic-hashes-and-content-addressing)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Credential
 
@@ -132,7 +132,7 @@ Learn more: [8. Check what a Rust test depends on](guide/08-check-what-a-rust-te
 
 A digest is the hash value a hash function produces. On the shared server, a result's output digest is the SHA-256 of its stdout hash, stderr hash and exit code, and two uploads are "the same observation" when their digests match.
 
-Learn more: [D11. What happens when two clients publish the same key?](DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key)
+Learn more: [Shared storage and conflicts](DESIGN-DEFENSE.md#shared-storage-and-conflicts)
 
 ### DNS
 
@@ -150,13 +150,13 @@ Learn more: [The simple choice has a cost](guide/03-delete-old-data-without-brea
 
 An environment variable is a named text setting a process inherits, such as `PATH` or `LANG`. Receipt records every environment variable of its own process as a SHA-256 of the value, except its own `RECEIPT_TOKEN` and names listed in `ignore_environment`.
 
-Learn more: [D4. Why is `RECEIPT_TOKEN` kept out of the key?](DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Envelope
 
 The envelope is the JSON wrapper of a local cache entry: a `payload` holding the result and a `digest` holding the SHA-256 of that payload. Reading an entry checks that the two still agree.
 
-Learn more: [D7. How is a local result published so that a crash never leaves a partial entry?](DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry)
+Learn more: [Local storage](DESIGN-DEFENSE.md#local-storage)
 
 ### Exit code
 
@@ -168,31 +168,31 @@ Learn more: [A miss: run the tests](guide/10-final-walkthrough-miss-hit-conflict
 
 `extra_inputs` in `.receipt.json` lists files or directories Receipt should record in addition to the files Git reports. Directories are walked recursively.
 
-Learn more: [D1. What exactly goes into the cache key?](DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Flock
 
 `flock` is a Unix call that places a shared or exclusive lock on an open file. Receipt holds one on the blob directory's `.lifecycle.lock` file for the length of each shared-storage operation, so file exclusion survives a lost database connection.
 
-Learn more: [F5. File locks: flock versus fcntl](DESIGN-DEFENSE.md#f5-file-locks-flock-versus-fcntl)
+Learn more: [Locks limits and cleanup](DESIGN-DEFENSE.md#locks-limits-and-cleanup)
 
 ### Fsync
 
 `fsync` asks the operating system to write a file's data, or a directory's entries, from memory to the disk before returning. Receipt fsyncs temporary files and their directory when it publishes an entry or blob.
 
-Learn more: [F4. Durability: the page cache and fsync](DESIGN-DEFENSE.md#f4-durability-the-page-cache-and-fsync)
+Learn more: [Local storage](DESIGN-DEFENSE.md#local-storage)
 
 ### Garbage collection
 
 Garbage collection, `receipt shared gc`, deletes blob files that no surviving database record refers to, including leftover temporary files. It runs under the exclusive lifecycle lock and refuses to continue if any record is corrupt.
 
-Learn more: [D16. How does cleanup avoid deleting a file that is still needed?](DESIGN-DEFENSE.md#d16-how-does-cleanup-avoid-deleting-a-file-that-is-still-needed)
+Learn more: [Locks limits and cleanup](DESIGN-DEFENSE.md#locks-limits-and-cleanup)
 
 ### Generic mode
 
 `receipt run --allow-generic` lets Receipt cache a command outside its supported list. The key then covers only files, environment and the executable's bytes, so you accept responsibility for declaring every other input.
 
-Learn more: [D1. What exactly goes into the cache key?](DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Goroutine
 
@@ -204,7 +204,7 @@ Learn more: [7. Find where the time went](guide/07-find-where-the-time-went.md)
 
 A hard link is a directory entry that names an existing file. Receipt publishes an entry by linking a finished temporary file to its final name; the link fails if the name already exists, so the first writer wins and nothing is overwritten.
 
-Learn more: [F3. Files, inodes, directory entries and hard links](DESIGN-DEFENSE.md#f3-files-inodes-directory-entries-and-hard-links)
+Learn more: [Local storage](DESIGN-DEFENSE.md#local-storage)
 
 ### Hash
 
@@ -216,7 +216,7 @@ Learn more: [1. Remember a successful run](guide/01-remember-a-successful-run.md
 
 The hot path is work that happens on normal commands: scanning inputs, calculating the key and looking up a result, plus a credential check per request in credential mode. A hit avoids running the tests, not this work.
 
-Learn more: [Frequently performed work versus occasional work](guide/06-find-the-code-and-defend-a-decision.md#frequently-performed-work-versus-occasional-work)
+Learn more: [Frequently performed work versus occasional work](guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities)
 
 ### HTTP status code
 
@@ -234,7 +234,7 @@ Learn more: [Encryption is not permission](guide/09-follow-a-request-to-the-depl
 
 The input key is the SHA-256 of the manifest's JSON encoding. It is the name under which Receipt looks for a saved result; equal keys mean equal recorded inputs, not proven equal behaviour.
 
-Learn more: [D2. How does the manifest become a key every time the same way?](DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### JSON
 
@@ -246,7 +246,7 @@ Learn more: [Why use a struct and slices?](guide/01-remember-a-successful-run.md
 
 The lifecycle lock is Receipt's pair of locks around every shared-storage operation: a PostgreSQL advisory lock plus a `flock` on the blob directory. Reads take it shared; uploads, reports, limit changes and cleanup take it exclusive.
 
-Learn more: [D12. Why does one lock serialize every shared writer?](DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer)
+Learn more: [Locks limits and cleanup](DESIGN-DEFENSE.md#locks-limits-and-cleanup)
 
 ### Lock
 
@@ -276,7 +276,7 @@ Learn more: [Does Receipt help the real test command?](guide/07-find-where-the-t
 
 Metadata is data about the stored results rather than their output bytes: records, quarantine flags, conflict evidence and storage limits. The shared server keeps metadata in PostgreSQL and output in blob files.
 
-Learn more: [D10. Why PostgreSQL for metadata and files for output?](DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output)
+Learn more: [Shared storage and conflicts](DESIGN-DEFENSE.md#shared-storage-and-conflicts)
 
 ### Orphan blob
 
@@ -300,7 +300,7 @@ Learn more: [5. Give callers different permissions](guide/05-give-callers-differ
 
 A probe is a small command Receipt runs to record a supported runner's environment. The Python probe records the interpreter and installed package versions; the Go probe records a normalised `go env -json`.
 
-Learn more: [D1. What exactly goes into the cache key?](DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Process
 
@@ -312,7 +312,7 @@ Learn more: [What happens when pytest runs?](guide/01-remember-a-successful-run.
 
 A process group is a set of processes that can receive one signal together. Receipt starts the test command in its own group so that cancellation kills the command and every helper it started.
 
-Learn more: [F8. Processes, process groups, signals and standard streams](DESIGN-DEFENSE.md#f8-processes-process-groups-signals-and-standard-streams)
+Learn more: [Execution and replay](DESIGN-DEFENSE.md#execution-and-replay)
 
 ### Pytest
 
@@ -342,13 +342,13 @@ Learn more: [One server is simple, but can still fail halfway](guide/09-follow-a
 
 READ COMMITTED is PostgreSQL's default isolation level: each statement sees data committed before it began. Receipt relies on its advisory lock, not a stricter isolation level, to serialise storage changes.
 
-Learn more: [D14. Why is READ COMMITTED enough?](DESIGN-DEFENSE.md#d14-why-is-read-committed-enough)
+Learn more: [Locks limits and cleanup](DESIGN-DEFENSE.md#locks-limits-and-cleanup)
 
 ### Refresh mode
 
 `receipt run --refresh` skips reuse and runs the command. A success replaces the saved entry; a failure after a saved success with stable inputs quarantines the key.
 
-Learn more: [D6b. What do `--verify`, `--refresh` and `--bypass` do?](DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do)
+Learn more: [Execution and replay](DESIGN-DEFENSE.md#execution-and-replay)
 
 ### Replay
 
@@ -360,7 +360,7 @@ Learn more: [A hit: replay without execution](guide/10-final-walkthrough-miss-hi
 
 Retention decides how long shared records are kept. `receipt shared prune` removes non-quarantined records older than a duration (default 720 hours) by creation time, not by last use.
 
-Learn more: [G14. Retention ignores use](DESIGN-DEFENSE.md#g14-retention-ignores-use)
+Learn more: [Limits that affect users](DESIGN-DEFENSE.md#limits-that-affect-users)
 
 ### Reverse proxy
 
@@ -384,7 +384,7 @@ Learn more: [Two questions before storage](guide/05-give-callers-different-permi
 
 SHA-256 is the cryptographic hash function Receipt uses for keys, file contents, blob names, environment values and token hashes. Its output is 32 bytes, written as 64 hexadecimal characters.
 
-Learn more: [D3. Why SHA-256?](DESIGN-DEFENSE.md#d3-why-sha-256)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Slice
 
@@ -396,7 +396,7 @@ Learn more: [Why use a struct and slices?](guide/01-remember-a-successful-run.md
 
 The stability check is the second input scan after the command finishes. If the key changed during the run, Receipt does not save the result under the old key.
 
-Learn more: [D5. Why scan the inputs twice, and what can the two scans miss?](DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Stdout and stderr
 
@@ -426,19 +426,19 @@ Learn more: [Why use a struct and slices?](guide/01-remember-a-successful-run.md
 
 TLS, Transport Layer Security, encrypts a network connection and lets the client verify the server's certificate. Receipt does not speak TLS itself; Caddy terminates it on the droplet.
 
-Learn more: [F9. Bearer tokens, TLS termination and reverse proxies](DESIGN-DEFENSE.md#f9-bearer-tokens-tls-termination-and-reverse-proxies)
+Learn more: [Requests and permissions](DESIGN-DEFENSE.md#requests-and-permissions)
 
 ### Toolchain
 
 A toolchain is the set of programs that build or run the tests, such as the Python interpreter, the Go tool or rustc. Receipt records supported toolchains through probes and hashes of the tool binaries.
 
-Learn more: [D1. What exactly goes into the cache key?](DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key)
+Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Transaction
 
 A transaction is a group of database changes that commit together or not at all. A transaction cannot undo a file write, which is why Receipt writes blobs before the record that refers to them.
 
-Learn more: [F6. PostgreSQL transactions, row locks and advisory locks](DESIGN-DEFENSE.md#f6-postgresql-transactions-row-locks-and-advisory-locks)
+Learn more: [Locks limits and cleanup](DESIGN-DEFENSE.md#locks-limits-and-cleanup)
 
 ### Uv
 
@@ -450,7 +450,7 @@ Learn more: [Follow one test run](WORKING-DOC.md)
 
 `receipt run --verify` runs the command again on a hit and compares exit code, stdout and stderr byte for byte. A match exits 0, changed inputs exit 1 as inconclusive, and a mismatch quarantines the key.
 
-Learn more: [D6b. What do `--verify`, `--refresh` and `--bypass` do?](DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do)
+Learn more: [Execution and replay](DESIGN-DEFENSE.md#execution-and-replay)
 
 ### Workflow
 

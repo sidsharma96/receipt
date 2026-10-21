@@ -1,6 +1,6 @@
 [book]
 title = "Receipt: a test-result cache, explained"
-description = "How Receipt decides when a saved test result can be reused, and how to defend each design decision."
+description = "How Receipt decides when a saved test result can be reused, and how its storage and coordination work."
 authors = ["Siddharth Sharma"]
 language = "en"
 src = "."

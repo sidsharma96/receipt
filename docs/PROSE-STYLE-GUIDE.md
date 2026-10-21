@@ -1,260 +1,156 @@
-# Receipt documentation style guide
-
-Agreed 2026-10-08. Follow this guide when updating the living documents, writing phase reviews, or explaining implementation decisions in a handoff. Read it before drafting, not only before proofreading.
-
-The reader is a beginning computer science student. They can follow a short code example, but may not know what a transaction, lock, hash, subprocess or cache means. The goal is that they can explain how Receipt works and why its choices were made. Recognizing our vocabulary is not enough.
-
-This guide applies to teaching prose. It does not require deleting precise names from API references, code or agent-facing implementation rules.
-
-## Reading structure, revised 2026-10-09
-
-The working guide is an explanation for a learner, not a complete implementation
-report. Follow one test run through bounded chapters. Keep setup instructions in
-the README and task guides, exact contracts in reference documents, and dated
-nine-question reviews with their evidence in PHASE-REVIEWS.md.
-Link those records where the reader may want to inspect a claim.
-
-Do not put every available fact in the main reading path. A fact belongs there
-when the reader needs it to understand the current problem or consequence.
-Exact token byte counts, timeout settings, test function names, runtime versions,
-and fuzz execution totals usually belong in the reference. Important limitations
-still belong beside the behavior they limit. Moving evidence out of the lesson
-does not mean deleting it or strengthening a claim.
-
-Introduce unfamiliar mechanisms one at a time. Before naming a lock, show the
-reader and cleanup operation that need coordination. Before naming a transaction,
-show which changes must succeed together. A sentence with several unexplained
-mechanisms fails even if it is short and technically accurate.
-
-Use figures for sequences or relationships that readers would otherwise have
-to reconstruct. Explain what a figure represents, including whether it is a
-possible execution rather than a measurement. A diagram is not decoration.
-Keep a textual equivalent for phone reading and assistive technology.
-
-Apply this to the phase reviews as well. Place each figure beside the decision
-it explains and link the relevant implementation. Show concrete fields for a
-data structure, separate the participants in a concurrency example, and mark
-where a request stops in a failure sequence. Label hypothetical failures and
-sample hashes as illustrative. Preserve the dated review around additions.
-The review uses matching `review-figure` comment markers so each illustration
-and its text equivalent can be found together.
-
-Each phase chapter ends with prediction or explanation questions. The answer
-is collapsed until the reader opens it; the main explanation must remain visible.
-Exercises do not replace teaching or require the learner to discover missing
-background alone.
-
-Use one Markdown source for the current guide; the documentation book renders
-it. Do not maintain two independent copies of the teaching prose. Historical reviews
-remain dated records; the current guide states today's behavior directly.
-
-This structure draws on [pstack technical writing](https://github.com/cursor/plugins/blob/main/pstack/skills/technical-writing/SKILL.md)
-and [unslop](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md).
-Separate explanation, tutorial, how-to, and reference material. Use direct verbs,
-consistent names, and complete sentences. Remove filler and abstract slogans.
-Do not apply a sentence-length rule mechanically when it damages an explanation.
-
-## 1. Build an explanation, not a summary of conclusions
-
-For each substantial concept, use this order:
-
-1. Show a concrete situation or question.
-2. Walk through what the program does, in execution order.
-3. Name the concept after its purpose is clear.
-4. Show a short, attributed code excerpt and explain the important lines.
-5. Explain why this approach fits Receipt.
-6. Compare a plausible alternative against the same example.
-7. Explain the cost or limitation, then the evidence and reason to revisit it.
-
-This is a writing sequence, not seven headings to paste into every paragraph. A simple concept may need only a few sentences. A subtle race may need a longer trace. Do not introduce every exception before explaining ordinary behaviour.
-
-## 2. Use one running example
-
-Prefer an actual Receipt situation: a user running pytest, two clients uploading the same result, or cleanup deleting output file X.
-
-Keep the same names and objects through the explanation. Do not switch between abstract “resources,” “objects,” “entities” and “artifacts” when all four mean one file.
-
-Label invented counts and timings as examples, not measurements. Distinguish illustrative code from actual source excerpts. Do not fabricate an implementation or earlier decision history to make a story smoother.
-
-An analogy may help introduce a concept, but return to what the code actually does. Avoid extended metaphors that create extra vocabulary or hide differences.
-
-## 3. Make the actor, action and consequence visible
-
-Prefer “cleanup waits until the reader finishes” over “read-side lifecycle exclusion is maintained.”
-
-Each sentence should make it possible to identify:
-
-- Who is doing the work?
-- What data or resource are they using?
-- What changes, waits or fails?
-- Why does that matter to the user?
-
-Avoid noun piles: “shared storage lifecycle quota admission coordination” is not an explanation.
-
-Useful technical terms are allowed. Define them where they first matter and then use them consistently. A glossary is a reminder, not a substitute for teaching the concept in the main text.
-
-## 4. Explain code; do not use it as decoration
-
-Introduce the question the excerpt answers. Include only the relevant lines, usually one small type or one operation. Give the repository file and function when helpful.
-
-After the excerpt, explain what the variables represent and what changes when it runs. For a map, show an example key/value and a lookup. For a lock, explain which operation waits. For an error helper, explain what still runs after failure.
-
-Do not expect a beginner to infer slice aliasing, an empty struct, a SQL lock function or a bit shift just because the snippet compiles.
-
-Actual excerpts must match the source. If unrelated lines are omitted, use separate excerpts or explicitly say the excerpt is abridged. Pseudocode must be labelled illustrative.
-
-## 5. Compare alternatives as solutions to a problem
-
-Do not list six structures and say “more complex” for each.
-
-For example, to decide whether output file X is still needed:
-
-- A slice can hold referenced hashes, but finding X may scan the whole slice.
-- A map lets the collector ask about X directly, at the cost of memory for the lookup structure.
-- A stored reference count makes the query cheap, but every change must update that count correctly.
-
-Explain when the alternative would become useful. Distinguish “not suitable” from “possible, but not worth the added work yet.” Mark new comparisons as retrospective unless the original decision record documents them.
-
-## 6. Explain costs in work units before notation
-
-Start with what is read, scanned, sorted, sent or kept in memory.
-
-Prefer “a tiny upload can still inspect thousands of existing files” before “write admission is O(B + M).”
-
-If using Big O, define the letters and connect the notation to the example. Separate an algorithmic estimate from a measured duration. Do not invent a latency number or imply that a faster lookup makes a whole request constant-time.
-
-Explain waiting separately from computation. A short operation may take a long time if it waits behind cleanup.
-
-Define hot/cold paths as frequently performed work versus occasional work. “Cold” does not mean cheap or harmless.
-
-## 7. Put guarantees next to the situations they cover
-
-State normal behaviour first. Then give a concrete failure that the design prevents and another it does not prevent.
-
-Separate:
-
-- Behaviour enforced by code.
-- Assumptions about callers and the environment.
-- What tests actually exercised.
-- Proposed work and untested cases.
-
-Do not replace all explanation with defensive disclaimers. But do not strengthen a claim merely to simplify it. In particular:
-
-- The same recorded input key does not prove the same output.
-- Publishing one file safely does not make a multi-step operation indivisible.
-- A SQL rollback does not undo filesystem writes.
-- An interface does not make a new backend free to implement.
-- Passing tests does not establish correctness in every possible execution.
-
-If a condition matters, explain why it matters: “every writer must use this lock; an older writer can create a file while cleanup is deciding what to delete.”
-
-## 8. Organize for reading, not checklist completion
-
-Keep the nine phase-review questions in the linked review reference, answered
-with connected paragraphs. They are inspection questions, not chapter titles
-for the main teaching sequence. Lists suit execution steps and short checks.
-Tables suit comparisons or exact mappings. Neither should replace explanation.
-
-Use informative headings. Introduce a new topic with its question, not a promotional claim. Keep paragraphs centred on one idea, but do not chop every sentence into a separate paragraph.
-
-Avoid unexplained shorthand, vague slogans and self-congratulation. Examples to avoid in explanatory prose include “load-bearing,” “battle-tested,” “robust by design,” “free reuse,” and “hidden scaling feature.” Replace them with the specific behaviour or cost.
-
-A readable document may be longer than an engineering summary. Extra words should supply reasoning, examples or useful distinctions—not repeat the same warning.
-
-## 9. Before-and-after examples
-
-### Costs
-
-Before: “Shared writes take exclusive locks and perform storage accounting.”
-
-After: “Before saving a new result, the server checks how much space is already used. Today it does that by inspecting existing files and database records. Even a small upload therefore has more work to do as the store grows. The server makes other writers wait during this check so two uploads cannot both claim the same remaining space.”
-
-### Guarantees
-
-Before: “Readers cannot race participating cleanup in the pre-open window.”
-
-After: “A reader can find the database record before it has opened the output file. Without coordination, cleanup could delete that file in between. Receipt makes cleanup wait until the reader has finished reading the record and its files.”
-
-### Alternative designs
-
-Before: “Reference counts require crash-consistent lifecycle coordination.”
-
-After: “We could store a number beside each output file: how many results still need it? A zero would mean the file can be deleted. But if saving a result succeeds and increasing the number fails, the number is wrong. We would need rules for failed updates and a way to check the counts before trusting them for deletion.”
-
-These are examples of explanatory prose, not replacements for checking the actual implementation.
-
-## 10. A review that can reject a draft
-
-Before declaring an update beginner-friendly, pick at least one dense section from each phase and ask:
-
-1. Could the reader describe the normal sequence without looking up five terms?
-2. Are all actors and stored objects identifiable?
-3. Does each code excerpt have an explanation after it?
-4. Does the alternative solve the same problem as the chosen design?
-5. Is the cost described as actual work or waiting?
-6. Are limitations explained through situations rather than a list of labels?
-7. Can an external reviewer find the implementing code and scoped evidence?
-8. Does the chapter teach one problem without making the reader learn several unrelated mechanisms at once?
-9. Can the reader skip detailed evidence and still understand the explanation and its important limits?
-10. Does a needed sequence have a figure or an equally clear execution trace?
-
-If the answer is no, rewrite the explanation. Adding a glossary, passing a spelling check or shortening sentences is not sufficient.
-
-Automated checks should verify links, excerpt accuracy, question format and the nine-question structure. They cannot certify that a reader understands the prose. State that distinction in the handoff.
-
-## 11. Publication and history
-
-### Illustrations must do explanatory work
-
-Audit every phase, not only the paragraph the reader last complained about.
-Check guarantees, pitfalls, and alternatives as well as architecture sections.
-For each multi-step failure, name what remains in each store after the error
-and what the next attempt does. A diagram elsewhere in the phase does not
-cover a different failure sequence; place the relevant picture beside it or
-link the exact existing figure when it explains the same mechanism.
-Choose the visual form from the question: connected references for shared files,
-parallel lanes for overlapping operations, branches for decisions, and a common
-scale for quantity comparisons. A collection of prose cards is not a substitute.
-
-Introduce each figure with something to notice: “follow both arrows to X” or
-“watch which operation must wait.” Keep object names stable. Let the picture
-show the relationship instead of requiring the caption to describe an invisible
-one. Use step controls when execution order matters; keep the complete picture
-and a text equivalent available without JavaScript. Avoid automatic animation
-that makes the reader chase the explanation.
-
-Check the rendered picture, not just its markup. Check arrows, label collisions,
-reading order, contrast, keyboard controls, and narrow-screen behavior. Keep
-unmeasured time out of proportional charts. Review code behavior separately from
-presentation inspiration: another project's diagram is not evidence for ours.
-
-The LearnHub [rate-limiting](https://learnhub-three-tan.vercel.app/systems/building-blocks/rate-limiting)
-and [blob-storage](https://learnhub-three-tan.vercel.app/systems/building-blocks/blob-storage)
-pages illustrate this approach through changing quantities and visible execution
-sequences. Use these as teaching references, not content to copy.
-
-The review illustrations are drawn by `python3 scripts/docs/review_figures.py`.
-It rewrites each SVG under `assets/reviews/` and the image and step summary
-between the matching `review-figure` markers in PHASE-REVIEWS.md; it leaves the
-surrounding historical prose alone. Run it with `--check` after editing. The
-three deployment SVGs (`assets/reviews/deployment-*.svg`) and the walkthrough
-SVGs are static files shared by the review and the working chapters.
-
-The documentation is an mdBook built from `docs/` with `make docs`, which also
-runs the documentation checks. Each chapter of the working guide is a Markdown
-file under `docs/guide/`. Chapter questions are copied from the question bank
-by `python3 scripts/docs/sync_questions.py`; edit the bank, not the chapter
-copy. Code and wide tables may scroll within their own boxes; the whole page
-should not overflow on a phone.
-
-Preserve dated decisions and evidence when revising a review. Use Git history for previous committed document versions; do not create duplicate full-file snapshots unless requested. If the user asks to remove existing snapshots, remove their links too. Record documentation verification separately from historical runtime test results. Do not rerun or claim to rerun implementation tests merely because prose changed.
-
-Do not commit, push or publish unless the user authorizes it.
-
-## Examples that informed the guide
-
-Allen Downey's [dictionary chapter in Think Python](https://greenteapress.com/thinkpython2/html/thinkpython2012.html) introduces a concrete mapping, demonstrates it and then explains alternatives for a counting task.
-
-Julia Evans's [Learning DNS in 10 years](https://jvns.ca/blog/2023/05/08/new-talk-learning-dns-in-10-years/) uses an unexpected result to motivate investigation and treats confusion as a normal part of learning.
-
-These are references for teaching methods, not voices to imitate. Receipt's prose should remain direct, technically careful and specific to this code.
+# Write documentation people can use
+
+A reader arriving at Receipt should be able to try a command before learning how
+we developed it. A student reading the book should be able to follow one operation
+without reconstructing a timeline from updates and amendments.
+
+## Give each page one job
+
+- **README:** explain the purpose, show installation and a first run, name the
+  important limits, then link onward. Aim for roughly 600–900 words.
+- **Teaching chapter:** follow one concrete situation and explain the mechanism.
+- **How-to guide:** give the steps for a task, expected results and relevant failures.
+- **Reference:** define exact behavior so a reader can look up a specific rule.
+- **Operator or contributor guide:** keep maintenance and repository policy here.
+
+Before adding a section, ask whether it belongs on the page. Updating a feature
+usually means revising an existing explanation, not adding another chapter.
+Remove obsolete claims instead of attaching a correction after them.
+
+## Let the reader’s question set the structure
+
+Write for a beginning computer science student with no assumed Go knowledge.
+Organize a lesson around a question the reader can answer by its end. A source
+file, function sequence, recent change or test report must not supply its outline.
+A behavior-preserving refactor may need a corrected source link and no new lesson.
+
+Use connected prose, stable names and concrete cause and effect. Vary sentence
+length to fit the explanation. Avoid compressed notes, slogans and repeated
+chapter templates. Brevity is useful only while the explanation remains complete.
+
+## Teach the sequence
+
+Start with an example: a reader finds a database record and then opens its output
+file. Show the failure: cleanup deletes the file between those steps. Then explain
+why the lock makes cleanup wait. Name the mechanism after its purpose is clear.
+
+Use one example throughout a section. Define unfamiliar terms beside the behavior
+that needs them. A glossary is a reminder, not a prerequisite. Prefer short code
+excerpts that show the actual operation; name their source and explain the lines.
+Explain new Go syntax beside the excerpt, including operators needed to read it.
+A small illustrative example may precede production code when the latter introduces
+too many ideas at once. Label it as illustrative and describe its expected result.
+Put source links after the idea has given the reader a reason to inspect the code.
+Label illustrative values as examples rather than presenting invented measurements.
+
+Keep technical depth when it answers the reader's question. Removing jargon does
+not mean removing the mechanism. Explain alternatives against the same example,
+including their costs and the conditions that would make them useful.
+
+## Examples of the standard
+
+These are illustrative edits, not quotations from the implementation.
+
+- Instead of “`Postgres.lifecycle` acquires advisory and filesystem locks,” start
+  with “Cleanup must wait while an upload writes a file that no saved result yet
+  refers to. Otherwise it could delete that file before the upload finishes.”
+  Then explain which lock makes it wait and what happens if a connection fails.
+- Instead of “Receipt safely publishes results,” write “Receipt finishes writing
+  a temporary file before making it available under the cache key. Readers cannot
+  open the incomplete file through that key.” Explain the remaining failure case
+  beside this sequence; the word “safely” is not the explanation.
+- Instead of opening a performance lesson with a list of profiles, ask “The tests
+  did not run, so why did this command still take a second?” Separate reading
+  inputs, waiting and replay before introducing the tools that measure them.
+
+Exercises should ask readers to predict a result, explain a consequence or change
+one part of a worked example. Supply the setup and teach the required concepts
+before asking the question. Advanced reference questions may require more code
+study; do not copy them into a beginner chapter merely to fill a difficulty quota.
+
+## Cut the development diary
+
+Documentation describes current behavior. Remove dates, phase numbers, amendment
+narration, completed checklists and personal work-session details. Git history
+preserves earlier versions. A version number may be needed to explain compatibility;
+a machine, toolchain and sample count may be needed to interpret a benchmark.
+
+Do not display full commit hashes, random result keys, archive byte counts or
+machine-specific paths unless the reader needs to copy or compare them. Use a
+descriptive evidence link. Keep exact resource URLs and operational identifiers
+intact behind those links. Never rename a real resource just to remove a date.
+
+Keep useful historical experiments as selected case studies with a clear question,
+method, result and limitation. Do not create a second full copy of the old logs.
+A benchmark should say whether it measures current behavior or an earlier algorithm.
+
+## Keep limitations relevant
+
+A matching key does not prove unchanged behavior if a test depends on a website.
+That warning belongs beside reuse. A database rollback cannot undo a file write;
+that belongs beside shared publication. State the consequence in the example.
+
+Do not add a paragraph explaining what an unrelated cleanup or documentation edit
+failed to prove about performance. Do not repeat the same safety disclaimer in
+every section. Avoid phrases that defend the writing instead of explaining Receipt.
+
+Keep checks and claims separate. A passing race test covers the executions tested;
+it is not proof about every possible interleaving. Link evidence when useful,
+without making the test inventory the teaching sequence.
+
+## Make figures earn their space
+
+Use arrows for order and relationships, before/after states for changes, and
+visible waiting or failure points where they matter. Put a figure beside the
+explanation it supports. Keep an equivalent text explanation and offline reading.
+Manual step controls can help; automatic animation should not set the reading pace.
+
+Inspect rendered figures for clipping, small labels and phone-width overflow.
+Check keyboard access if controls change. Prose boxes are not an explanation just
+because they are arranged as a diagram. The LearnHub examples of
+[rate limiting](https://learnhub-three-tan.vercel.app/systems/building-blocks/rate-limiting)
+and [blob storage](https://learnhub-three-tan.vercel.app/systems/building-blocks/blob-storage)
+are visual references, not evidence about Receipt's implementation.
+
+## Review each revision before continuing
+
+After each coherent set of edits, perform these passes in order:
+
+1. **Read without source code.** Read changed chapters in learning order, including
+   the transition from the preceding chapter. Identify the reader’s starting
+   question, the new idea and one consequence they can now predict. Check unfamiliar
+   terms, syntax, diagram labels and exercise prerequisites. Repair missing steps
+   and repetition before adding more material.
+2. **Check the facts.** Compare claims and excerpts with current code and scoped
+   evidence. Separate an illustrative example from an observed result or a guarantee.
+   Compare plausible alternatives honestly; do not invent a history of deliberation.
+3. **Check the delivered page.** Synchronize question-bank edits, run `make docs`
+   and inspect changed figures or layouts at desktop and phone widths. If a repair
+   changes the explanation, repeat the reading pass for the affected section.
+
+These passes are required for prose changes, including edits to existing chapters,
+diagrams, exercises and explanatory comments. For a small comment, review its
+surrounding explanation; do not manufacture a chapter-sized report. Keep comments
+brief: explain the reason, assumption or consequence and put longer lessons here.
+
+Summarize meaningful editorial findings separately from automated check results in
+the handoff. Do not append a review log to the book. A missing explanation is a
+reason to revise, even if every automated check passes. Word counts and readability
+scores are signals, not acceptance criteria.
+
+## Review before calling a page finished
+
+1. Can the reader tell what the page helps them do or understand immediately?
+2. Does it begin with the task or example rather than our project history?
+3. Can a beginner follow the normal sequence with terms explained in place?
+4. Is each section necessary here, or does another page already explain it?
+5. Do examples and code excerpts agree with current behavior?
+6. Are important failure cases beside the mechanism they limit?
+7. Are benchmarks scoped without drowning the result in identifiers and logs?
+8. Are dates, phase narration, personal paths and unused full hashes absent?
+9. Do links and figures help the reader continue, including on a phone?
+10. Can we delete another paragraph without losing something the reader needs?
+
+Use this checklist as an editorial judgment, not a requirement to paste ten answers
+into the page. `make docs` checks links, excerpts, figures and questions. It cannot
+certify that someone understands the explanation.

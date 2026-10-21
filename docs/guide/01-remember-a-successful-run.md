@@ -16,7 +16,7 @@ Receipt calls the whole description a [manifest](../GLOSSARY.md#manifest). It ca
 | Calculate the key | Receipt gives this description a content-derived name. |
 | Look for a saved result | If a usable result exists, Receipt prints it and does not start pytest. |
 | Run pytest on a miss | If no usable result exists, Receipt starts the test command and shows its output. |
-| Check the inputs again | Receipt saves a successful run only if its other storage conditions also hold. |
+| Check the inputs again | If the description changed while tests ran, Receipt does not save that run. |
 
 Finding a usable saved result is a [cache hit](../GLOSSARY.md#cache-hit). Having to run the command is a [cache miss](../GLOSSARY.md#cache-miss). A cache is storage for work you hope to reuse.
 
@@ -36,6 +36,11 @@ type Manifest struct {
 ```
 
 In Go, [`struct`](../GLOSSARY.md#struct) groups named fields. `string` holds text and `int` holds a whole number. `[]string` means a [slice](../GLOSSARY.md#slice) of strings, a sequence whose length can vary. `Command` needs a sequence because arguments have an order. `Inputs` needs one because projects contain different numbers of files and settings.
+
+Each `Input` describes one recorded item, such as a file and its content hash.
+Before hashing the manifest, Receipt sorts input records by kind and name. Finding
+the same files in another order should not change the key. Command arguments keep
+their order because swapping them can change the command.
 
 The text in backticks tells Go which field names to write in JSON. JSON is a text format that can represent objects, lists, strings, and numbers. `Version` lets Receipt distinguish this format from a later one.
 
@@ -57,13 +62,13 @@ The same issue applies to time, randomness, and some files outside the discovere
 
 With `--verify`, Receipt runs a saved command again and compares the exit code and both output streams byte for byte. A difference makes it stop trusting that key. Even timing text can cause a difference; a mismatch is not automatically a failed test.
 
-Since 18 October 2026, file inputs are hashed through a bounded buffer rather
-than two whole-file byte slices. The permissions prefix and file bytes stay in
-the same order, so existing keys remain compatible. [Chapter 12](12-profile-before-optimizing.md#streaming-file-hashing-implemented-18-october) walks through the bytes, compatibility evidence and memory measurements.
+File inputs are read in chunks to keep temporary memory bounded. The
+[performance chapter](12-profile-before-optimizing.md#read-large-files-in-chunks)
+explains how that preserves the hash calculation.
 
 ## Read further
 
-For the exact local storage rules and alternatives, see [Phase 1's review](../PHASE-REVIEWS.md#phase-1-review-remembering-a-local-run).
+For the exact local storage rules and alternatives, see [Design reference](../DESIGN-DEFENSE.md).
 
 ## Check your understanding
 
@@ -97,26 +102,22 @@ The manifest records a format version, the absolute Git root, the absolute worki
 
 The key is the SHA-256 of the manifest encoded as JSON. Inputs are discovered by walking a Go map, whose iteration order is random, so `Manifest.Key` sorts a copy of the inputs by kind and then by name before encoding. Go's JSON encoder writes struct fields in declaration order, so the rest of the encoding is fixed. The command keeps its original order because reordering arguments can change what the command does. The copy matters: sorting the caller's slice in place would rearrange inputs the caller still holds.
 
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77)
+**Learn more:** [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77)
 
 </details>
 
-### Two machines, one commit
+### The same files in another directory
 
 **Level:** Expert
 
-Alice and a CI runner check out the same commit and run `receipt run -- go test ./...`. Will they compute the same key? What decides it?
+Alice copies unchanged source files to a different working directory and runs the same command. Must Receipt reuse the original result?
 
 <details>
 <summary>Answer</summary>
 
-Usually not. The manifest records the absolute Git root and the absolute working directory, and each file input is named by its absolute path. The executable input records the absolute path of the resolved `go` binary and the SHA-256 of its bytes. Every environment variable is hashed by value, including `HOME`, `PATH`, `USER` and shell session variables such as `SHLVL`. The `go env -json` probe adds the Go version and settings. The keys match only if the checkout path, tool paths and bytes, environment values and platform are all identical.
+No. The manifest records the working directory as well as files and command arguments. Changing that description changes the key, even when file contents match. Matching source files alone is not enough to establish a reusable result.
 
-Receipt's own CI gets cross-runner hits by building that sameness on purpose: a fixed checkout path, a fixed `HOME`, a small explicit environment that includes the runner image version, and declared extra inputs for its one Go module, `git`, `dash` and the client binary.
-
-**Common wrong answer.** "Yes, because the key is derived from the repository's file contents." The file contents are only part of the manifest. Paths and the environment are in it too, so even two terminals on one laptop can disagree.
-
-**Learn more:** [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [What is actually cached?](../RECEIPT-CI.md#what-is-actually-cached) · [`test_environment`](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py#L18-L28)
+**Learn more:** [Chapter 1](../guide/01-remember-a-successful-run.md)
 
 </details>
 

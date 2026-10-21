@@ -1,7 +1,8 @@
 # Receipt JSON input contract
 
-Implemented 2026-10-08, Phase 4. This records the current acceptance rules, not a
-general guarantee that stored observations are true or commands deterministic.
+Use this reference when writing a client or changing stored formats. It lists
+which fields and values Receipt accepts. Validation does not establish that a
+reported test actually ran.
 
 ## Rules shared by the typed boundaries
 
@@ -76,6 +77,5 @@ not establish interoperability with every client ever written.
 Adding a field to a strict existing version breaks older readers. Plan a versioned
 format/API or explicit migration/negotiation rather than silently loosening this
 contract. A new input kind also needs a version/compatibility decision because
-existing readers reject unknown kinds. Authentication and permission rules are
-separate future work: validation checks shape and relationships, not who is
-allowed to upload or whether their reported run really happened.
+existing readers reject unknown kinds. [Authentication and permission checks](SERVICE-CREDENTIALS.md) run separately
+from validation. Valid data alone does not grant upload permission.

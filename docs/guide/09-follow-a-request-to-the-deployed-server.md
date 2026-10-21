@@ -1,14 +1,13 @@
 # 9. Follow a request to the deployed server
 
 Suppose GitHub starts a fresh computer to run Receipt's tests. That computer has
-no local saved result. Instead of asking you to open an SSH tunnel, it can now
-contact `https://receipt.sidsharma.dev` directly. Follow the arrows: finding
+no local saved result. It can contact `https://receipt.sidsharma.dev` directly. Follow the arrows: finding
 the address and fetching the result are different conversations.
 
 ![DNS finds the droplet; HTTPS carries the request to Caddy.](../assets/reviews/deployment-request.svg)
 
 The worker first asks DNS for the address of `receipt.sidsharma.dev`. [DNS](../GLOSSARY.md#dns) maps
-names to addresses. Cloudflare answers with our droplet's IP. In our DNS-only
+names to addresses. Cloudflare answers with our server’s IP address. DigitalOcean calls this rented server a droplet. In our DNS-only
 setup, Cloudflare does not carry the subsequent cache request.
 
 Next the worker opens an HTTPS connection to Caddy on the droplet. HTTPS encrypts
@@ -27,7 +26,7 @@ receipt.sidsharma.dev {
 
 The hostname identifies the public site. `127.0.0.1:7777` identifies Receipt
 on this same machine; `7777` is its port, the number used to select the service.
-Only Caddy's web ports are public alongside SSH. Receipt's own port and
+In this deployment, only Caddy’s web ports and SSH, the administrator’s remote-login service, are public. Receipt's own port and
 PostgreSQL stay private. Local HTTP avoids another certificate between processes
 on the same host; it also means Caddy and the administrator can see requests.
 
@@ -39,8 +38,7 @@ a secret the client presents, not something supplied by DNS or by the site's
 certificate. A rejected token means the connection may be working but access
 was refused. We must not disable HTTPS checks to fix that kind of error.
 
-We chose HTTPS after proving the earlier private tunnel. CI now needs only the
-Receipt token, not an additional SSH key. That simplifies each job, but exposes
+CI needs the Receipt token to access the cache. That simplifies each job, but exposes
 the API to internet traffic. It does not make the server resistant to every
 kind of overload. Monitoring is still a next step.
 
@@ -54,8 +52,9 @@ output. Both display PASS. To tell whether the test actually ran, our small
 fixture appended to a separate execution marker. The marker stayed at one after
 replay. Changing the source made the test execute again and fail.
 
-Receipt's own CI also keeps a separate job that always executes its tests with
-a disposable PostgreSQL database and race detection. A cached answer from the
+Receipt’s own CI also keeps a separate job that always executes its tests with
+a disposable PostgreSQL database. It enables Go’s race detector, which reports
+unsynchronized access to shared memory in the executions it observes. A cached answer from the
 program under test must not be the only evidence that the program works.
 If the HTTPS readiness check fails, the cached job chooses local execution;
 it does not declare the tests passed just because the cache is unavailable.
@@ -92,19 +91,19 @@ Live Receipt:   original database + original files stay in place
 ```
 
 The pause kept the database and files from changing while we copied them.
-The measured stop/start interval was 1.306 seconds, not a promise about future
-backups. Uploading happened after restart. All ten saved results could be read
-from the restored server. We then removed the temporary restored data.
+The service resumes before encryption and transfer. The restored server was
+checked by fetching its saved results. We then removed the temporary restored data.
 
 This exercise reused the existing machine and its PostgreSQL setup. It did not
 test rebuilding a new machine. For this small learning deployment, we chose one
 recovery exercise rather than a nightly schedule. Monitoring is also deferred.
-See the [recovery record](../DIGITALOCEAN-SETUP.md#13-october-one-off-r2-backup-and-restore)
+See the [recovery record](../DIGITALOCEAN-SETUP.md#backup-and-recovery)
 for the archive location, recovery steps and remaining limits.
 
 ## Read further
 
-The current CI token expires on 12 November 2026 at 03:28 UTC (11 November, 7:28 p.m. Pacific), and renewal is not automated. The [renewal steps](../RECEIPT-CI.md#secrets-and-renewal) also explain why renewing briefly pauses cache reads and writes. The [full deployment review](../PHASE-REVIEWS.md#deployment-review-one-server-over-https--13-october-2026) answers all nine questions, including alternatives, evidence and revisit conditions.
+Credential renewal is manual. See the [CI guide](../RECEIPT-CI.md#secrets-and-renewal)
+for the procedure and the [operator guide](../DIGITALOCEAN-SETUP.md) for recovery.
 
 ## Check your understanding
 
@@ -121,7 +120,7 @@ A CI job contacts `https://receipt.sidsharma.dev`. Which part finds the server, 
 
 DNS turns the name `receipt.sidsharma.dev` into the droplet's IP address; Cloudflare answers that lookup but does not carry the cache request. HTTPS encrypts the connection and lets the client check the certificate for that hostname. Caddy, a web server on the droplet, ends the HTTPS connection and forwards the request to Receipt at `127.0.0.1:7777` on the same machine; this forwarding role is called a reverse proxy. Receipt itself checks the token and its permissions. A rejected token means the connection worked and access was refused, so the fix is a valid credential, not a new certificate.
 
-**Learn more:** [9. Follow a request to the deployed server](../guide/09-follow-a-request-to-the-deployed-server.md) · [Encryption is not permission](../guide/09-follow-a-request-to-the-deployed-server.md#encryption-is-not-permission) · [F9. Bearer tokens, TLS termination and reverse proxies](../DESIGN-DEFENSE.md#f9-bearer-tokens-tls-termination-and-reverse-proxies)
+**Learn more:** [9. Follow a request to the deployed server](../guide/09-follow-a-request-to-the-deployed-server.md) · [Encryption is not permission](../guide/09-follow-a-request-to-the-deployed-server.md#encryption-is-not-permission) · [Requests and permissions](../DESIGN-DEFENSE.md#requests-and-permissions)
 
 </details>
 
@@ -138,24 +137,22 @@ On the droplet, Receipt listens on `127.0.0.1:7777`. Caddy terminates HTTPS for 
 
 `Remote.requestPath` refuses any remote URL that is not `https`, except `http` to `localhost`, `127.0.0.1` or `::1`. It also refuses URLs with a user name, a query string or a fragment. Its HTTP client never follows redirects, so the bearer token is not sent on to another host, and it has a 10-second timeout. An expired or revoked token is an application refusal (HTTP 401) on a working HTTPS connection, so the fix is a new credential, not a different certificate or an open database port.
 
-**Learn more:** [Encryption is not permission](../guide/09-follow-a-request-to-the-deployed-server.md#encryption-is-not-permission) · [F9. Bearer tokens, TLS termination and reverse proxies](../DESIGN-DEFENSE.md#f9-bearer-tokens-tls-termination-and-reverse-proxies) · [`Remote.requestPath`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L38-L61)
+**Learn more:** [Encryption is not permission](../guide/09-follow-a-request-to-the-deployed-server.md#encryption-is-not-permission) · [Requests and permissions](../DESIGN-DEFENSE.md#requests-and-permissions) · [`Remote.requestPath`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L38-L61)
 
 </details>
 
-### Why the restore drill bind-mounts
+### A backup beside the live data
 
 **Level:** Expert
 
-The restore drill bind-mounts the extracted backup over `/var/lib/receipt` inside a private mount namespace, instead of starting a test server against the extracted copy where it sits. What would fail otherwise, and why does that check exist?
+The server stores a backup on its own disk, then the entire server is lost. What does an external encrypted copy change, and what must the operator still have?
 
 <details>
 <summary>Answer</summary>
 
-The storage policy row in the restored database records the absolute blob directory, `/var/lib/receipt/cache/blobs`, and a random store identity. Every storage operation compares the server's blob directory with that path and the `.store-id` file with that identity. A server started against `/var/backups/.../extracted/var/lib/receipt/cache` would refuse every request with "blob directory does not match database storage policy". The binding exists so that one database's `shared gc` can never treat another store's files as unreferenced and delete them.
+The external copy can survive losing the server. The operator still needs the private recovery key to decrypt it, and must restore both database records and output files. Having the archive does not by itself establish that a fresh machine can run the restored service.
 
-So the drill makes the restored files appear at the original path without changing what the live server sees. It runs under `unshare --mount --propagation private`, refuses to continue unless its mount namespace differs from PID 1's, and bind-mounts the restored directory there. It also uses a separate restored database and another loopback port, so production rows and the production port are never touched. The cost is that recovery onto a new machine must restore the files to the same absolute path, or the policy row must be edited by hand.
-
-**Learn more:** [D21. How is the server deployed, and how would we recover it?](../DESIGN-DEFENSE.md#d21-how-is-the-server-deployed-and-how-would-we-recover-it) · [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L172-L194) · [`mount --bind`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-check-20261012.sh#L7-L8)
+**Learn more:** [Chapter 9](../guide/09-follow-a-request-to-the-deployed-server.md)
 
 </details>
 

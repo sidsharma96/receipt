@@ -1,6 +1,6 @@
 # 2. Let another client reuse the result
 
-Alice has saved a successful run. Now CI wants the same result. A file on Alice's laptop is not enough: the two clients need somewhere they can both ask.
+Alice has saved a successful run. Now CI, the automated service that runs tests after code changes, wants the same result. A file on Alice's laptop is not enough: the two clients need somewhere they can both ask.
 
 Receipt can run a server. A client sends an HTTP request to it, a message that names an operation and may carry data. A lookup asks for a result; an upload supplies one. The server does not run pytest on the client's behalf. It stores and returns reported results.
 
@@ -45,7 +45,7 @@ Sharing also has a practical limit today. Absolute checkout paths and environmen
 
 ## Read further
 
-For publication, conflict handling, and networking details, see [Phase 2's review](../PHASE-REVIEWS.md#phase-2-review-sharing-results-between-clients).
+For publication, conflict handling, and networking details, see [Design reference](../DESIGN-DEFENSE.md).
 
 ## Check your understanding
 
@@ -60,9 +60,9 @@ The shared server uses PostgreSQL and a directory of blob files. What goes where
 <details>
 <summary>Answer</summary>
 
-PostgreSQL, a database, holds the small records: each key's result description, references to its output, whether the key is quarantined, conflict evidence and storage limits. The output bytes themselves go into files called blobs, named by the SHA-256 hash of their content and stored as `blobs/<first two hex characters>/<hash>`. Because the name comes from the content, two results with identical output share one file. The server writes the blob files first and the database record second, so a committed record never points at a file that does not exist yet.
+PostgreSQL, a database, holds the small records: each key's result description, references to its output, whether the key is quarantined, conflict evidence and storage limits. The output bytes themselves go into files called blobs, named by the SHA-256 hash of their content and stored as `blobs/<first two hex characters>/<hash>`. Because the name comes from the content, two results with identical output share one file. The server writes the blob files first and the database record second, so another client does not see the new record before its output is written. Later file damage or loss can still prevent reading it.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`FileBlobs.path`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L34-L39)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`FileBlobs.path`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L34-L39)
 
 </details>
 
@@ -77,11 +77,11 @@ In what order does a shared upload write output files and the database record, a
 
 `Postgres.Put` validates the result, takes the exclusive lifecycle lock, checks the blob quota and refuses a key that is already quarantined. `publishTx` then inserts the record that points at the blobs, inside the still-open transaction, and checks the metadata quotas. Next `Put` writes the stdout blob and the stderr blob, each with a temporary file, `fsync`, a hard link that refuses to overwrite and a directory `fsync`. Last, it commits.
 
-The blobs are durable before the commit, and the record becomes visible only at the commit, so committed metadata never points at missing bytes. Committing the record before writing the blobs would let another client find a record whose output does not exist yet. Inserting the record before the blob writes, but committing after them, means a quota refusal writes no files. The cost is that a crash or a failed commit can still leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
+The blobs are durable before the commit, and the record becomes visible only at the commit, so readers do not see the new record before its output is written. Later damage or file loss can still break a read. Committing the record before writing the blobs would let another client find a record whose output does not exist yet. Inserting the record before the blob writes, but committing after them, means a quota refusal writes no files. The cost is that a crash or a failed commit can still leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
 
 `Postgres.Get` takes the shared lock, reads the record, digest and quarantine flag, and returns a conflict if the key is quarantined. It checks the record's version and key, fetches each blob while verifying its length and hash, and recomputes the output digest. A digest mismatch is reported as corruption; a missing blob is treated as a miss.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L147-L190)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L147-L190)
 
 </details>
 
@@ -98,7 +98,7 @@ No. With a remote configured, a local hit is replayed only after `GET /v1/status
 
 **Common wrong answer.** "Yes, the local cache is the fast path and the server is only a fallback." Local reuse is subordinate to the shared quarantine state whenever sharing is configured.
 
-**Learn more:** [D9. Why does a local hit still ask the server?](../DESIGN-DEFENSE.md#d9-why-does-a-local-hit-still-ask-the-server) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
+**Learn more:** [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
 
 </details>
 

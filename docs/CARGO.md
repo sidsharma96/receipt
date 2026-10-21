@@ -1,6 +1,6 @@
-# Cargo support: deliberately bounded
+# Supported Rust commands
 
-Phase 7, 9 October 2026. The adapter recognizes one selected package's
+Receipt recognizes one selected package's
 `cargo test --frozen` command. Unsupported cases still run normally, **without
 looking up or saving a Receipt result**. This is not a sandbox or support for
 every Rust project.
@@ -51,7 +51,6 @@ manifest/feature options and a host-platform filter. The selected root package
 must belong to the current Git repository. Normal and build dependency edges
 are followed from every package. Dev-dependency edges are followed only from the
 selected root package; dependencies' own dev dependencies are not needed.
-(Corrected 15 October 2026: build dependencies were previously omitted here.)
 Shared dependencies are visited once. Missing graph nodes or unknown
 dependency/target kinds cause refusal. Metadata may over-approximate feature use across a workspace, so some
 otherwise simple commands may be refused conservatively.
@@ -124,8 +123,7 @@ it. A miss normally calls each twice; a hit once. Git scanning and other work
 remain in the enclosing fingerprint time. Failed stages are measured too.
 
 Every hit still performs these checks and reads. For a tiny already-built Rust
-suite, this can cost more than rerunning tests. See the Phase 7 review's scoped
-measurements; no speedup or general performance guarantee is claimed.
+suite, this can cost more than rerunning tests. See the [selected measurements](PERFORMANCE.md#direct-execution-and-reuse); no speedup or general performance guarantee is claimed.
 
 To run the opt-in real Cargo fixture without network dependencies:
 

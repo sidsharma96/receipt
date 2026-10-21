@@ -1,45 +1,21 @@
-# Follow one test run
+# Chapter overview
 
-Updated 18 October 2026. This guide explains Phases 1–7 and the single-server HTTPS deployment. Git history records committed revisions. Chapter 9 follows the deployed connection and a one-off R2 recovery exercise. Chapter 11 introduces the [design defense](DESIGN-DEFENSE.md), which answers the questions an expert reviewer would ask. Monitoring remains deferred; no backup schedule is enabled.
+The book follows what Receipt does, rather than the order in which it was built.
+Read the first five chapters together; choose the later topics as you need them.
 
-You have a Python project and run its tests with `uv run pytest`. [Pytest](GLOSSARY.md#pytest) checks your code. [Uv](GLOSSARY.md#uv) starts it in the project's Python environment. Receipt sits around that command: it can remember a successful run and show its saved output when the recorded inputs match next time.
+1. [Remember a successful run](guide/01-remember-a-successful-run.md): what must match before output can be reused.
+2. [Share a result](guide/02-let-another-client-reuse-the-result.md): files, database records and conflicting results.
+3. [Delete old data safely](guide/03-delete-old-data-without-breaking-a-reader.md): why cleanup waits for readers and writers.
+4. [Check incoming data](guide/04-check-data-before-accepting-it.md): reject malformed records before saving them.
+5. [Give callers different permissions](guide/05-give-callers-different-permissions.md): issue, check and revoke credentials.
+6. [Find the code](guide/06-find-the-code-and-defend-a-decision.md): follow a command through the Go packages.
+7. [Find where the time went](guide/07-find-where-the-time-went.md): separate computation from waiting.
+8. [Understand Rust inputs](guide/08-check-what-a-rust-test-depends-on.md): why some Cargo commands run uncached.
+9. [Follow a network request](guide/09-follow-a-request-to-the-deployed-server.md): HTTPS, the server and its database.
+10. [Trace success and failure](guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md): connect the mechanisms in one example.
+11. [Understand storage tradeoffs](guide/11-defending-the-design.md): compare designs against the same failure.
+12. [Understand cache overhead](guide/12-profile-before-optimizing.md): input scanning, memory and network costs.
 
-We will follow that run through seven changes to Receipt: saving it locally, sharing it, cleaning up storage, checking incoming data, limiting what callers may do, measuring where time goes, and checking a Rust project's dependencies. The examples use Alice and a continuous integration worker, called [CI](GLOSSARY.md#ci). CI is a program that runs tests automatically.
-
-You do not need to understand database locks or Go channels before starting. Each chapter introduces a problem before the code that solves it. Diagrams show sequences, not measured timings. Examples of output and filenames are illustrative.
-
-The main distinction to keep in mind is that showing a saved result does not run the tests again. Receipt cannot recreate a report file or repeat a network request just by printing old output.
-
-## The chapters
-
-Read the chapters in order to understand the program. Each ends with a few questions under "Check your understanding"; the answers stay hidden until you open them.
-
-1. [Remember a successful run](guide/01-remember-a-successful-run.md): the manifest, the input key, and what a hit replays.
-2. [Let another client reuse the result](guide/02-let-another-client-reuse-the-result.md): the shared server, blobs, and quarantine.
-3. [Delete old data without breaking a reader](guide/03-delete-old-data-without-breaking-a-reader.md): cleanup, locks, and storage limits.
-4. [Check data before accepting it](guide/04-check-data-before-accepting-it.md): strict JSON and value rules.
-5. [Give callers different permissions](guide/05-give-callers-different-permissions.md): credentials, scopes, and revocation.
-6. [Find the code and defend a decision](guide/06-find-the-code-and-defend-a-decision.md): the packages, runtime versus development dependencies, and how to explain a choice.
-7. [Find where the time went](guide/07-find-where-the-time-went.md): request timings and local measurements.
-8. [Check what a Rust test depends on](guide/08-check-what-a-rust-test-depends-on.md): the bounded Cargo adapter.
-9. [Follow a request to the deployed server](guide/09-follow-a-request-to-the-deployed-server.md): DNS, HTTPS, Caddy, and recovery.
-10. [Final walkthrough: miss, hit, conflict and recovery](guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md): one command through four situations.
-11. [Defending the design](guide/11-defending-the-design.md): how the design defense is organised.
-12. [Make a cache hit cheaper](guide/12-profile-before-optimizing.md): measured CPU, memory, waiting and query plans; streaming file-input hashing is implemented, with other candidates still deferred.
-13. [Hash executables and measure their probes](guide/13-hash-executables-and-measure-probes.md): executable streaming, fresh probes, measured substeps and compatibility with old cache entries.
-14. [Reuse the Git root within one invocation](guide/14-reuse-the-git-root.md): remove one redundant Git process while preserving fresh file discovery and post-run validation.
-15. [Measure toolchain probe overhead](guide/15-measure-toolchain-probe-overhead.md): separate process cost from local normalization, preserve keys, and distinguish local savings from whole-hit latency.
-
-16. [Resolve the selected Git once](guide/16-resolve-selected-git.md): keep custom Git choices, resolve Apple’s launcher per invocation, and measure resolution cost with compatible keys. The [local 5,000-hit follow-up](guide/16-resolve-selected-git.md#a-longer-local-run-reproduced-the-stalls) reproduces clustered Go waits and explains what machine counters can and cannot establish.
-17. [Measure the Linux client and cache server](guide/17-measure-linux-client-and-server.md): follow work across the GitHub runner and droplet, compare three hit paths, and use actual Linux measurements to choose the next investigation.
-18. [Trace the actual Go HTTP client](guide/18-trace-go-http.md): separate connection setup, response transfer and validation using actual Go traces matched to server requests.
-19. [Compare gzip and uncompressed responses](guide/19-compare-gzip-responses.md): measure transfer savings against CPU and memory costs on a controlled Linux link, preserving keys and decoded results.
-20. [Test gzip on the actual Caddy deployment](guide/20-test-gzip-on-caddy.md): compare the real Internet endpoint, match encoded byte counts to client results, and interpret shared server CPU and memory windows.
-
-21. [Find the application work inside a cache hit](guide/21-profile-application-cpu.md): sample the deployed server CPU and isolate JSON decoding, validation and temporary allocations on Linux CI.
-
-22. [Explain the slow network hits](guide/22-explain-network-latency.md): trace DNS answers, TCP packets, TLS trust setup, matched server work and acknowledgment-dependent response delivery.
-
-23. [Check whether we can control runner placement](guide/23-check-runner-placement.md): distinguish chosen locations from observed network paths, preserve failed attempts and compare identical fetches.
-
-To inspect setup commands, use the [README](https://github.com/sidsharma96/receipt/blob/main/README.md). To examine the full nine-question phase reviews, test records, and dated decisions, use the [review reference](PHASE-REVIEWS.md). The reference preserves earlier claims and their amendments. This guide describes current behaviour directly so you do not have to reconstruct it from history. Dated changes to the guide itself are in [Updates and documentation records](guide/updates.md).
+Use the [design reference](DESIGN-DEFENSE.md) for precise behavior and alternatives,
+and [selected measurements](PERFORMANCE.md) for the evidence behind performance
+examples. Neither is required reading before trying Receipt.

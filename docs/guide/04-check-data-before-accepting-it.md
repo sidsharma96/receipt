@@ -29,17 +29,17 @@ if err := Validate(Result(next)); err != nil {
 return nil
 ```
 
-Earlier lines decode into a temporary value called `next`. `Validate` checks its meaning. If validation returns an error, the method returns without replacing the destination. `*r` refers to the result the caller asked the decoder to fill. Assignment happens only after the checks succeed. `nil` means there is no error.
+In the `if` line, `:=` creates the local error variable `err`; `!= nil` asks whether it contains an error. Earlier lines decode into a temporary value called `next`. `Validate` checks its meaning. If validation returns an error, the method returns without replacing the destination. `*r` refers to the result the caller asked the decoder to fill. Assignment happens only after the checks succeed. `nil` means there is no error.
 
 Code that builds a result directly does not use JSON decoding, so storage methods also validate those values. A decoding hook is useful, but it is not permission checking and does not prove the sender ran the tests.
 
 ## What does a checksum tell us?
 
-A stored envelope includes a hash of its payload. Reading it checks whether the payload still matches that hash. This can expose damage or accidental changes. Someone able to replace both the payload and checksum can still construct a matching pair.
+A stored envelope is a wrapper containing the result data and a checksum. The result data is its payload; the checksum is a hash calculated from those bytes. Reading it checks whether the payload still matches that hash. This can expose damage or accidental changes. Someone able to replace both the payload and checksum can still construct a matching pair.
 
 ## Read further
 
-The exact fields, size limits, and compatibility rules belong in the [JSON input contract](../JSON-INPUT-CONTRACT.md). Interrupted-write evidence is in [Phase 4's review](../PHASE-REVIEWS.md#phase-4-review-checking-incoming-data-and-interrupted-writes).
+The exact fields, size limits, and compatibility rules belong in the [JSON input contract](../JSON-INPUT-CONTRACT.md). Publication and failure handling are explained in [Design reference](../DESIGN-DEFENSE.md).
 
 ## Check your understanding
 
@@ -77,20 +77,18 @@ No. A well-formed result can still claim a nonzero exit code, carry an invalid h
 
 </details>
 
-### Poisoning with a publish credential
+### A matching checksum on false data
 
 **Level:** Expert
 
-An attacker holds a `publish`-scoped credential. What can they do to other users' test results, what limits the damage, and which CI rule exists because of this?
+Someone can replace both a stored result and its checksum. They change the result and calculate a new matching checksum. Does checking the checksum prove the original tests passed?
 
 <details>
 <summary>Answer</summary>
 
-They can forge a passing result. The key is the hash of a manifest, so anyone who can reconstruct a victim's manifest can compute the key and upload a result with exit code 0 and any stdout they like. The server checks structure and consistency: strict JSON, size limits, the checksum, that the key matches the manifest and that the exit code is 0. It cannot tell whether tests ran. If nobody has stored that key yet, the forgery is accepted and every client that later misses locally fetches and replays a fake pass. The first writer wins, so a forgery placed early sticks.
+No. The checksum establishes agreement between the stored bytes and the supplied hash. Someone who controls both can create that agreement. Validation can reject inconsistent or malformed data, but it does not prove that tests ran.
 
-Detection comes only from disagreement: an honest upload with different output for the same key, or a `--verify` run, quarantines it. Scopes let most callers hold `read` only. CI never gives private-cache credentials to pull-request code: the cached job runs only on pushes to trusted branches, and an independent uncached job always runs the full suite, so CI correctness never depends on the cache.
-
-**Learn more:** [Part 3. Threat and failure model](../DESIGN-DEFENSE.md#part-3-threat-and-failure-model) · [Why keep the uncached job?](../RECEIPT-CI.md#why-keep-the-uncached-job) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)
+**Learn more:** [Chapter 4](../guide/04-check-data-before-accepting-it.md)
 
 </details>
 

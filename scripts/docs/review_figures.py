@@ -1,6 +1,6 @@
 """Draw the phase-review illustrations as SVG files and their Markdown summaries.
 
-Each figure in docs/PHASE-REVIEWS.md sits between matching review-figure
+Each figure in docs/FIGURES.md sits between matching review-figure
 comment markers. This script redraws docs/assets/reviews/<name>.svg and the
 visual-summary block (image, what to watch, numbered steps) inside each marker.
 The surrounding historical prose is not generated or rewritten.
@@ -221,7 +221,7 @@ def locks():
 
 
 def cost():
-    d = Drawing('cost', 380, 'An unchanged upload still inspects more inventory in a larger store')
+    d = Drawing('cost', 380, 'Earlier accounting: every upload inspected the existing inventory')
     d.text(30, 35, 'SAME NEW OUTPUT: 1 KiB', 15, BLUE)
     for y, label, count in [(90, 'Small store', 4), (223, 'Larger store', 20)]:
         d.text(30, y, label, 17)
@@ -235,7 +235,7 @@ def cost():
         d.line(197, below, 653, below, BLUE, arrow=True)
         d.text(421, below+22, 'inspect the existing inventory', 13, BLUE, 'middle')
     d.text(30, 367, 'Drawn file counts illustrate growth; these are not benchmark results.', 14)
-    return d.finish(), [], 'Compare the number of existing files, not the upload size. Storage accounting also examines database records and evidence. A short request can additionally wait behind an exclusive lock.'
+    return d.finish(), [], 'The earlier accounting algorithm inspected existing files and database records on each upload. Receipt now maintains running totals; maintenance still inspects the inventory. See the selected measurements for the comparison.'
 
 
 def collection():
@@ -565,7 +565,7 @@ FIGURES = {
 
 def outputs():
     """Return every file this script owns, mapped to its expected content."""
-    markdown_path = ROOT / 'PHASE-REVIEWS.md'
+    markdown_path = ROOT / 'FIGURES.md'
     markdown = markdown_path.read_text()
     files = {}
     for name, draw in FIGURES.items():

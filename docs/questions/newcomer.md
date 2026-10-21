@@ -1,6 +1,7 @@
 # Newcomer questions
 
-These questions are for readers meeting Receipt, test caching or shared storage for the first time. They check the basic ideas: what Receipt records, what a saved result can and cannot do, and which part of the system does which job. Each answer stays hidden until you open it, so try answering in your own words first.
+Choose a question, predict the result, then open the answer. Links lead to the
+relevant explanation and implementation.
 
 ### What problem does Receipt solve?
 <!-- check: guide/01-remember-a-successful-run.md -->
@@ -29,7 +30,7 @@ Receipt calls its description of a run a manifest. Which kinds of information do
 
 A manifest is a Go struct with six fields: a format version, the Git repository root, the working directory, the platform (operating system and CPU architecture, such as `darwin/arm64`), the command arguments in order, and a list of inputs. Each input has a kind, a name and a content hash. There are four kinds of input: files from the repository, environment variables, the executable that runs the command, and toolchain information such as the installed Python packages or Go's settings. Environment values are stored only as hashes, never as plain text.
 
-**Learn more:** [Why use a struct and slices?](../guide/01-remember-a-successful-run.md#why-use-a-struct-and-slices) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L54-L61)
+**Learn more:** [Why use a struct and slices?](../guide/01-remember-a-successful-run.md#why-use-a-struct-and-slices) · [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L54-L61)
 
 </details>
 
@@ -44,7 +45,7 @@ The guide says Receipt hashes the manifest to get an input key. What is a hash, 
 
 A hash is a short, fixed-length value calculated from some bytes. Receipt uses SHA-256, which always produces 32 bytes, written as 64 hexadecimal characters. The same bytes always give the same hash, and in practice different bytes give different hashes. Receipt encodes the manifest as JSON, with the inputs sorted by kind and then name, and hashes that JSON. The result is the input key: the name under which Receipt looks for a saved result. Any change to a recorded input changes the key, so an edited file leads to a lookup under a different name. A hash is not encryption: it hides nothing and cannot be reversed into a key you could decrypt.
 
-**Learn more:** [F1. Cryptographic hashes and content addressing](../DESIGN-DEFENSE.md#f1-cryptographic-hashes-and-content-addressing) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77)
+**Learn more:** [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77)
 
 </details>
 
@@ -59,7 +60,7 @@ Alice runs only one test file. She edits a README in the same repository. Why do
 
 Receipt records every file Git knows about, plus untracked files that are not ignored, not only the files one test actually reads. The edited README changes its file hash, which changes the manifest and therefore the key. The broader description causes extra misses, but it avoids replaying a result when a file the test does read has changed. Narrowing the description would need a reliable way to discover which files a test reads, which Receipt does not have.
 
-**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key)
+**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys)
 
 </details>
 
@@ -74,7 +75,7 @@ A test run fails with exit code 1. Will Receipt replay that failure next time?
 
 No. Receipt saves only runs that exit with code 0, which means the command reported success. A failed run prints "failed results are not cached", and the next run executes the tests again. Storage refuses a nonzero exit code as well: the result check rejects it with "reusable results require success". Replaying a failure would hide whether a fix worked, and a failure is the case where you most want the tests to run again.
 
-**Learn more:** [D6. Why cache only successes, replay exact bytes and never normalise output?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L53-L73)
+**Learn more:** [Execution and replay](../DESIGN-DEFENSE.md#execution-and-replay) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L53-L73)
 
 </details>
 
@@ -90,7 +91,7 @@ The original test run wrote a coverage report and printed warnings mixed in with
 
 A replay gives back only the captured output and the exit code. It does not recreate files the tests wrote, such as a coverage report or a JUnit XML file, and it does not repeat network requests. The mixing of standard output and standard error is lost too: Receipt writes all of the saved standard output first, then all of the saved standard error. Timings printed in the output are the original run's timings. If you need a test's side effects, run it with `--bypass`.
 
-**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [D6. Why cache only successes, replay exact bytes and never normalise output?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output)
+**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [Execution and replay](../DESIGN-DEFENSE.md#execution-and-replay)
 
 </details>
 
@@ -105,7 +106,7 @@ Alice has not configured anything. Where on her disk are saved results kept, and
 
 By default the cache is the `.receipt` directory at the root of the Git repository. Saved results live in `.receipt/entries/<key>.json`, quarantine markers in `.receipt/quarantine/`, and the last manifest for each working directory in `.receipt/history/`. A cache inside the repository must sit under `.receipt` because file discovery skips that directory. A cache stored anywhere else in the repository would be one of its own inputs, so saving a result would change the key of the next run.
 
-**Learn more:** [D7. How is a local result published so that a crash never leaves a partial entry?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [`cacheDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L170-L188)
+**Learn more:** [Local storage](../DESIGN-DEFENSE.md#local-storage) · [`cacheDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L170-L188)
 
 </details>
 
@@ -135,7 +136,7 @@ An ordinary hit never runs the tests. How would you find out that a saved result
 
 Run `receipt run --verify -- <command>`. On a hit, Receipt runs the command again and compares the exit code, standard output and standard error byte for byte with the saved result. If they match, it prints "verification matched byte-for-byte" and exits 0. If they differ, it quarantines the key and exits with a nonzero code, even when the fresh tests passed, because the disagreement itself is the finding. A difference can be harmless timing text such as "0.42s" versus "0.51s", so a mismatch is not automatically a failed test.
 
-**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D6b. What do `--verify`, `--refresh` and `--bypass` do?](../DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do) · [`runSession.verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L164-L192)
+**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [Execution and replay](../DESIGN-DEFENSE.md#execution-and-replay) · [`runSession.verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L164-L192)
 
 </details>
 
@@ -164,9 +165,9 @@ The shared server uses PostgreSQL and a directory of blob files. What goes where
 <details>
 <summary>Answer</summary>
 
-PostgreSQL, a database, holds the small records: each key's result description, references to its output, whether the key is quarantined, conflict evidence and storage limits. The output bytes themselves go into files called blobs, named by the SHA-256 hash of their content and stored as `blobs/<first two hex characters>/<hash>`. Because the name comes from the content, two results with identical output share one file. The server writes the blob files first and the database record second, so a committed record never points at a file that does not exist yet.
+PostgreSQL, a database, holds the small records: each key's result description, references to its output, whether the key is quarantined, conflict evidence and storage limits. The output bytes themselves go into files called blobs, named by the SHA-256 hash of their content and stored as `blobs/<first two hex characters>/<hash>`. Because the name comes from the content, two results with identical output share one file. The server writes the blob files first and the database record second, so another client does not see the new record before its output is written. Later file damage or loss can still prevent reading it.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`FileBlobs.path`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L34-L39)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`FileBlobs.path`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L34-L39)
 
 </details>
 
@@ -183,7 +184,7 @@ When a shared server is configured, a local hit is replayed only after the serve
 
 **Common wrong answer.** "The local copy is valid, so it replays and the outage does not matter." That is true only when no remote is configured.
 
-**Learn more:** [A local copy still needs a shared trust check](../guide/02-let-another-client-reuse-the-result.md#a-local-copy-still-needs-a-shared-trust-check) · [D9. Why does a local hit still ask the server?](../DESIGN-DEFENSE.md#d9-why-does-a-local-hit-still-ask-the-server) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
+**Learn more:** [A local copy still needs a shared trust check](../guide/02-let-another-client-reuse-the-result.md#a-local-copy-still-needs-a-shared-trust-check) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
 
 </details>
 
@@ -199,7 +200,7 @@ A client is reading a result while cleanup is deleting unused files. What could 
 
 The server reads a result in two steps: it finds the database record, then opens the output file. If cleanup deleted that file between the two steps, the read would fail even though the record was valid. Receipt's lock prevents this. Readers take it in shared mode, so many reads can overlap. Uploads and cleanup take it in exclusive mode, so cleanup waits until every reader has finished and no reader starts while cleanup runs. The lock has two parts, a PostgreSQL advisory lock and a file lock on the blob directory, and it protects only programs that use it.
 
-**Learn more:** [Why does the filesystem need a lock?](../guide/03-delete-old-data-without-breaking-a-reader.md#why-does-the-filesystem-need-a-lock) · [F5. File locks: flock versus fcntl](../DESIGN-DEFENSE.md#f5-file-locks-flock-versus-fcntl) · [D16. How does cleanup avoid deleting a file that is still needed?](../DESIGN-DEFENSE.md#d16-how-does-cleanup-avoid-deleting-a-file-that-is-still-needed)
+**Learn more:** [Why does the filesystem need a lock?](../guide/03-delete-old-data-without-breaking-a-reader.md#why-does-the-filesystem-need-a-lock) · [Locks limits and cleanup](../DESIGN-DEFENSE.md#locks-limits-and-cleanup)
 
 </details>
 
@@ -230,7 +231,7 @@ Each saved entry carries a SHA-256 checksum of its contents. What can that check
 
 When Receipt reads an entry, it recomputes the hash of the payload and compares it with the stored checksum. A mismatch exposes damage or an accidental change, such as a truncated file, and Receipt treats the entry as corrupt. The checksum cannot detect a deliberate change: anyone who can rewrite the payload can also rewrite the checksum to match. It also says nothing about whether the tests really ran; it proves only that the bytes are the ones that were saved.
 
-**Learn more:** [What does a checksum tell us?](../guide/04-check-data-before-accepting-it.md#what-does-a-checksum-tell-us) · [F1. Cryptographic hashes and content addressing](../DESIGN-DEFENSE.md#f1-cryptographic-hashes-and-content-addressing)
+**Learn more:** [What does a checksum tell us?](../guide/04-check-data-before-accepting-it.md#what-does-a-checksum-tell-us) · [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys)
 
 </details>
 
@@ -310,7 +311,7 @@ A CI job contacts `https://receipt.sidsharma.dev`. Which part finds the server, 
 
 DNS turns the name `receipt.sidsharma.dev` into the droplet's IP address; Cloudflare answers that lookup but does not carry the cache request. HTTPS encrypts the connection and lets the client check the certificate for that hostname. Caddy, a web server on the droplet, ends the HTTPS connection and forwards the request to Receipt at `127.0.0.1:7777` on the same machine; this forwarding role is called a reverse proxy. Receipt itself checks the token and its permissions. A rejected token means the connection worked and access was refused, so the fix is a valid credential, not a new certificate.
 
-**Learn more:** [9. Follow a request to the deployed server](../guide/09-follow-a-request-to-the-deployed-server.md) · [Encryption is not permission](../guide/09-follow-a-request-to-the-deployed-server.md#encryption-is-not-permission) · [F9. Bearer tokens, TLS termination and reverse proxies](../DESIGN-DEFENSE.md#f9-bearer-tokens-tls-termination-and-reverse-proxies)
+**Learn more:** [9. Follow a request to the deployed server](../guide/09-follow-a-request-to-the-deployed-server.md) · [Encryption is not permission](../guide/09-follow-a-request-to-the-deployed-server.md#encryption-is-not-permission) · [Requests and permissions](../DESIGN-DEFENSE.md#requests-and-permissions)
 
 </details>
 
@@ -325,12 +326,11 @@ The droplet's data is lost and you restore the encrypted R2 backup. What do you 
 
 The backup contains both stores a shared result needs: a PostgreSQL dump and an archive of Receipt's data directory with the blob files, plus the binary and selected configuration. Restoring gives back the state at the moment of the backup. Anything that changed afterwards is missing, so a credential revoked after the backup would come back unrevoked. A restore also does not settle a disagreement between two observations; it recovers earlier state, not proof that any result is correct. Without the private recovery key kept on the Mac, the encrypted backup cannot be decrypted at all.
 
-**Learn more:** [Recovery: restore stored state, not trust](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#recovery-restore-stored-state-not-trust) · [D21. How is the server deployed, and how would we recover it?](../DESIGN-DEFENSE.md#d21-how-is-the-server-deployed-and-how-would-we-recover-it)
+**Learn more:** [Recovery: restore stored state, not trust](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#recovery-restore-stored-state-not-trust) · [Backup and recovery](../DIGITALOCEAN-SETUP.md#backup-and-recovery)
 
 </details>
 
 ### Does an unchanged key prove the tests still pass?
-<!-- check: guide/11-defending-the-design.md -->
 
 **Level:** Newcomer
 
@@ -343,7 +343,7 @@ No. The key describes the inputs Receipt records, not every influence on a test.
 
 **Common wrong answer.** "Yes, the key covers all the inputs." It covers the declared inputs only.
 
-**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L53-L61)
+**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L53-L61)
 
 </details>
 
@@ -352,14 +352,17 @@ No. The key describes the inputs Receipt records, not every influence on a test.
 
 **Level:** Newcomer
 
-The tests did not execute, but Alice still waited 359 ms. Which work can remain, and which measurement should she inspect first?
+The tests did not run, but a cached invocation was still slow. What work remains, and what should you measure first?
 
 <details>
 <summary>Answer</summary>
 
-Receipt must discover and hash inputs, probe the toolchain, construct the key, read and validate the saved result, replay output and update bookkeeping. Start with wall time and the Receipt timing stages. In the recorded workload fingerprinting had a 267 ms median, so a database index would not address the main cost of this standalone local hit.
+Receipt still discovers and reads inputs, probes the toolchain, reads and checks
+the saved result, prints output and updates bookkeeping. Start with the timing
+stages. Speeding up a database cannot fix a standalone local run dominated by
+reading inputs.
 
-**Learn more:** [Make a cache hit cheaper](../guide/12-profile-before-optimizing.md)
+**Learn more:** [Understand cache overhead](../guide/12-profile-before-optimizing.md)
 
 </details>
 
@@ -375,7 +378,7 @@ A benchmark allocates about 15 MB each time it decodes a result. Does one hundre
 
 No. Allocation bytes count memory created over time; the garbage collector can reclaim earlier objects. Peak resident size measures a different quantity: memory resident in the process at its high point. Inspect both allocation profiles and process memory, and remember that separate PostgreSQL and child processes are not included in a Go heap profile.
 
-**Learn more:** [Avoid repeatedly parsing large output](../guide/12-profile-before-optimizing.md#the-second-opportunity-avoid-repeatedly-parsing-large-output)
+**Learn more:** [Memory and database work](../guide/12-profile-before-optimizing.md#account-for-memory-and-database-work-separately)
 
 </details>
 
@@ -384,14 +387,17 @@ No. Allocation bytes count memory created over time; the garbage collector can r
 
 **Level:** Newcomer
 
-A plan says sequential scan. Should we always add an index? What did the retention experiment actually establish?
+A database plan reads a table sequentially. Is an index necessarily missing?
 
 <details>
 <summary>Answer</summary>
 
-No. Reading all rows can be sensible for an exact recount, a tiny table or a broad selection. The selective retention count benefited from a partial time index: it visited three cached blocks instead of 910. That does not prove faster full deletion, which also changes evidence, reads JSON sizes and commits. Compare complete workloads and index maintenance costs before adopting it.
+No. Reading all rows can be appropriate for a recount or a small table. An
+index can help a selective lookup, but adds storage and update work. Measure the
+complete operation: locating rows faster does not eliminate deletion, evidence
+updates or commit costs.
 
-**Learn more:** [Are our indexes appropriate?](../guide/12-profile-before-optimizing.md#are-our-indexes-appropriate)
+**Learn more:** [Memory and database work](../guide/12-profile-before-optimizing.md#account-for-memory-and-database-work-separately)
 
 </details>
 
@@ -407,309 +413,22 @@ A file contains `abc`. Receipt used to hash the permission prefix and file bytes
 
 The same SHA-256 state receives the same bytes in the same order; chunk boundaries are not additional input. Computing separate chunk digests and combining them would be different. The size hint may be stale if the file grows, so it sizes the temporary buffer but does not cap the total bytes read. Receipt reads until EOF. This preserves the hash calculation for stable files without making concurrent edits an atomic snapshot.
 
-**Learn more:** [Streaming file hashing](../guide/12-profile-before-optimizing.md#streaming-file-hashing-implemented-18-october)
+**Learn more:** [Streaming file hashing](../guide/12-profile-before-optimizing.md#read-large-files-in-chunks)
 
 </details>
 
-### Why does an executable use no permissions prefix?
-<!-- check: guide/13-hash-executables-and-measure-probes.md -->
+### The file exists but the result does not
+<!-- check: guide/11-defending-the-design.md -->
 
 **Level:** Newcomer
 
-Receipt now streams executable bytes through the same helper used for project files. Why must it pass an empty prefix instead of copying the project-file permissions prefix?
+An upload writes file X, then its database commit fails. Is X alone enough for a later client to find a saved result?
 
 <details>
 <summary>Answer</summary>
 
-The previous executable identity hashed only raw executable bytes. Adding permissions would change that byte sequence and break compatibility with old keys. Reusing a helper does not make the two input formats identical; each caller must preserve its own existing format.
+No. The database record connects the input key to its output. Without a committed record, the leftover file alone is not a reusable result. If no surviving record needs X, later collection can reclaim it.
 
-**Learn more:** [Executable streaming](../guide/13-hash-executables-and-measure-probes.md#reuse-the-streaming-mechanism-with-a-different-prefix)
-
-</details>
-
-### Why not cache the slow probe by executable hash?
-<!-- check: guide/13-hash-executables-and-measure-probes.md -->
-
-**Level:** Newcomer
-
-The Python probe costs much more time than reading the interpreter executable. Why not remember its output until the executable changes?
-
-<details>
-<summary>Answer</summary>
-
-Packages can be installed or removed while the interpreter bytes stay unchanged. Go settings can change without changing its executable too. A probe cache would need a reliable invalidation contract for those inputs. This optimization retains fresh probes and measures their cost rather than silently reusing stale environment descriptions.
-
-**Learn more:** [Fresh probes](../guide/13-hash-executables-and-measure-probes.md#why-probes-still-run-on-every-scan)
-
-</details>
-
-### Why is direct pytest an exception to streaming?
-<!-- check: guide/13-hash-executables-and-measure-probes.md -->
-
-**Level:** Newcomer
-
-The command is an executable script named `pytest`. Why does Receipt still read all of it, and what would a future streaming implementation need to preserve?
-
-<details>
-<summary>Answer</summary>
-
-Receipt reads its shebang to choose the Python interpreter. Keeping the existing full read preserves hashing and parsing from the same bytes, including long first lines and missing newlines. A future single-pass collector would need to preserve that accepted input behavior; simply adding a short line cap or reading the header separately could change the contract.
-
-**Learn more:** [Direct pytest](../guide/13-hash-executables-and-measure-probes.md#preserve-the-direct-pytest-exception)
-
-</details>
-
-### Why can the first fingerprint reuse the Git root?
-<!-- check: guide/14-reuse-the-git-root.md -->
-
-**Level:** Newcomer
-
-Receipt just found `/work/project` to load configuration. Which work can its first
-fingerprint reuse, and which work must still happen?
-
-<details>
-<summary>Answer</summary>
-
-It can reuse that root string within this invocation, assuming the repository
-topology stays stable during initial collection. It must still ask Git for the
-current file list and hash the current inputs. This removes one root query, not
-the discovery of changed files. It is not a filesystem snapshot.
-
-**Learn more:** [14. Reuse the Git root](../guide/14-reuse-the-git-root.md)
-
-</details>
-
-### Why discover the root again after tests run?
-<!-- check: guide/14-reuse-the-git-root.md -->
-
-**Level:** Newcomer
-
-A command creates a new Git repository in its nested working directory. What
-should the final fingerprint do?
-
-<details>
-<summary>Answer</summary>
-
-It should ask Git for the root again. The new nested root changes the manifest,
-so the before/after keys differ and Receipt refuses to store the result. Reusing
-the initial root after execution would weaken that check.
-
-**Learn more:** [14. Reuse the Git root](../guide/14-reuse-the-git-root.md)
-
-</details>
-
-### Why did removing a process barely change peak RAM?
-<!-- check: guide/14-reuse-the-git-root.md -->
-
-**Level:** Newcomer
-
-Receipt starts one fewer Git process, and the measured hit is faster. Why might
-maximum resident memory remain almost unchanged?
-
-<details>
-<summary>Answer</summary>
-
-Peak memory measures the largest reported footprint, not the sum of memory used
-over time. The removed Git process ran sequentially; another part of the run can
-still set the same peak. Saving a process can reduce CPU and waiting without
-reducing that maximum.
-
-**Learn more:** [14. Reuse the Git root](../guide/14-reuse-the-git-root.md)
-
-</details>
-
-### Why can a faster normalizer leave cache-hit latency unchanged?
-<!-- check: guide/15-measure-toolchain-probe-overhead.md -->
-
-**Level:** Newcomer
-
-Local Go normalization falls from about 43 to 19 microseconds, but the fresh probe
-takes tens of milliseconds. Why is a large whole-hit speedup unlikely?
-
-<details>
-<summary>Answer</summary>
-
-One millisecond is one thousand microseconds. Saving about 24 microseconds removes
-only a tiny part of the total work. The subprocess still runs, and variation in
-its timing can be much larger than the saving. Local allocation evidence should
-not be presented as an end-to-end latency improvement.
-
-**Learn more:** [15. Measure toolchain probe overhead](../guide/15-measure-toolchain-probe-overhead.md)
-
-</details>
-
-### Which part of a scratch flag may change during normalization?
-<!-- check: guide/15-measure-toolchain-probe-overhead.md -->
-
-**Level:** Newcomer
-
-A recognized compiler flag names `/tmp/go-build123`. Can Receipt discard the
-whole flag to avoid temporary-path differences?
-
-<details>
-<summary>Answer</summary>
-
-No. Only the numeric suffix in the recognized form becomes `<scratch>`. The root,
-flag kind, destination and other settings remain. Removing the whole flag could
-hide a meaningful change and permit reuse under a different compiler environment.
-Unknown forms remain unchanged.
-
-**Learn more:** [15. Measure toolchain probe overhead](../guide/15-measure-toolchain-probe-overhead.md)
-
-</details>
-
-### Does the scanner threshold reject long paths?
-<!-- check: guide/15-measure-toolchain-probe-overhead.md -->
-
-**Level:** Newcomer
-
-The optimized path checks whether a prefix is at most 4096 bytes. What happens to
-a longer prefix?
-
-<details>
-<summary>Answer</summary>
-
-It uses the original regular-expression algorithm, including that algorithm's
-errors. The threshold chooses an implementation; it does not introduce a new
-path-length refusal. This keeps unusual input behavior while ordinary paths avoid
-recompiling a pattern.
-
-**Learn more:** [15. Measure toolchain probe overhead](../guide/15-measure-toolchain-probe-overhead.md)
-
-</details>
-
-
-### Does selecting Git once keep its old file list?
-<!-- check: guide/16-resolve-selected-git.md -->
-
-**Level:** Newcomer
-
-Tests create a new file. Does keeping the selected Git path let Receipt reuse
-the pre-test file list?
-
-<details>
-<summary>Answer</summary>
-
-No. The saved value identifies the program to run. After execution Receipt asks
-that program for the root and file list again, then reads and hashes the inputs.
-A new invocation chooses its program again too.
-
-**Learn more:** [16. Resolve the selected Git once](../guide/16-resolve-selected-git.md)
-
-</details>
-
-### Where does a CI cache miss execute?
-<!-- check: guide/17-measure-linux-client-and-server.md -->
-
-**Level:** Newcomer
-
-A GitHub runner launches Receipt with the droplet URL through --remote. No
-usable saved result exists. Which machine executes go test?
-
-<details>
-<summary>Answer</summary>
-
-The GitHub runner does. --remote selects the shared cache server, not a remote
-execution machine. The runner collects inputs, looks up a result and executes
-the test command there on a miss. The droplet stores and returns reported results.
-
-**Learn more:** [17. Measure the Linux client and cache server](../guide/17-measure-linux-client-and-server.md)
-
-</details>
-
-### Why does the next CLI invocation need another connection?
-<!-- check: guide/18-trace-go-http.md -->
-
-**Level:** Newcomer
-
-Receipt fetches a result, exits, then starts again. Can its old Go HTTP connection pool serve the new process?
-
-<details>
-<summary>Answer</summary>
-
-No. The pool belongs to that process. When Receipt exits, that process and its connections go away. A new invocation must establish its own connection. Keeping a process alive could allow reuse, but it would add lifecycle and security decisions.
-
-**Learn more:** [18. Trace the actual Go HTTP client](../guide/18-trace-go-http.md)
-
-</details>
-
-### Does gzip change the saved test result?
-<!-- check: guide/19-compare-gzip-responses.md -->
-
-**Level:** Newcomer
-
-Receipt sends the same result once as plain JSON and once compressed with gzip. After decompression, what should the client see?
-
-<details>
-<summary>Answer</summary>
-
-Exactly the same bytes. Compression changes how the response travels, not the saved result or the test inputs. Receipt still validates the decompressed result before replaying it.
-
-**Learn more:** [19. Compare gzip and uncompressed responses](../guide/19-compare-gzip-responses.md)
-
-</details>
-
-### Why count bytes at Caddy as well as the client?
-<!-- check: guide/20-test-gzip-on-caddy.md -->
-
-**Level:** Newcomer
-
-Go automatically decompresses a gzip response before Receipt reads its body. Does the client body length tell us how many compressed body bytes crossed the link?
-
-<details>
-<summary>Answer</summary>
-
-No. The client sees the original decoded bytes. Caddy counts the encoded body it writes; matching the response request ID joins that byte count to the client result. Neither count includes all TLS, TCP or network headers.
-
-**Learn more:** [20. Test gzip on the actual Caddy deployment](../guide/20-test-gzip-on-caddy.md)
-
-</details>
-
-### Is allocated memory the same as peak RAM?
-<!-- check: guide/21-profile-application-cpu.md -->
-
-**Level:** Newcomer
-
-A decoder receives a small response but allocates several times its size while working. Does that mean all of those bytes stay resident after the operation?
-
-<details>
-<summary>Answer</summary>
-
-No. Allocation bytes count memory requested over the operation. Some objects become unreachable and can be collected while others replace them. Peak resident RAM, retained heap and total allocation answer different questions.
-
-**Learn more:** [21. Find the application work inside a cache hit](../guide/21-profile-application-cpu.md)
-
-</details>
-
-### Can an empty IPv6 answer delay an IPv4 connection?
-<!-- check: guide/22-explain-network-latency.md -->
-
-**Level:** Newcomer
-
-Go gets an IPv4 address quickly but is still waiting for the IPv6 DNS reply. Can lookup time include that wait even when the eventual connection uses IPv4?
-
-<details>
-<summary>Answer</summary>
-
-Yes. The reviewed lookup collects both A and AAAA completions. The AAAA reply may validly contain no address. Waiting for it is different from attempting and failing an IPv6 TCP connection.
-
-**Learn more:** [22. Explain the slow network hits](../guide/22-explain-network-latency.md)
-
-</details>
-
-
-### Does choosing Ubuntu choose a nearby runner?
-<!-- check: guide/23-check-runner-placement.md -->
-
-**Level:** Newcomer
-
-A workflow uses `runs-on: ubuntu-24.04`. Does that select a runner beside the cache server?
-
-<details>
-<summary>Answer</summary>
-
-No. It selects a runner image. The current standard hosted setup has no region selection in that label. A short observed TCP interval describes one path, not a location we can request next time.
-
-**Learn more:** [23. Check whether we can control runner placement](../guide/23-check-runner-placement.md)
+**Learn more:** [Chapter 11](../guide/11-defending-the-design.md)
 
 </details>

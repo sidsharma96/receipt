@@ -1,208 +1,64 @@
-# 6. Find the code and defend a decision
+# 6. Find the code
 
-The chapters explain behavior. To follow a change in the source, start with the part responsible for it. A Go package groups related source files. These packages run in one client or server process; a package is not a separate service.
+Suppose you want to change what Receipt records before running `go test`.
+Start in `internal/fingerprint`, which discovers inputs and builds their
+description. You do not need to begin in the HTTP server or database code.
+
+A Go package groups related source files. Receipt's packages run inside the same
+client or server process; a package is not a separately deployed service.
 
 ## The main responsibilities
 
-- internal/app reads the command and combines lookup, execution, verification, and publication. Start at [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335).
-- internal/fingerprint describes inputs and calculates their key. Start at [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L111-L154) and [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77).
-- internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L50-L88).
-- internal/cache stores results. Start at the [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L41-L45) interface; its other files implement HTTP, shared storage, and maintenance.
-- internal/strictjson checks the declared JSON structure in [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61). Each decoded type owns its value rules.
-- internal/auth defines service credentials and permissions in [`Principal`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L51-L60). Its PostgreSQL implementation, starting at [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L88), manages their lifetime.
+| Package | Responsibility | Starting point |
+| --- | --- | --- |
+| `internal/app` | Interpret commands and coordinate lookup, execution and saving | [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335) |
+| `internal/fingerprint` | Discover and describe inputs | [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L111-L154) |
+| `internal/runner` | Start the command, stream output and handle cancellation | [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L50-L88) |
+| `internal/cache` | Store, retrieve and check results | [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L41-L45) |
+| `internal/strictjson` | Reject malformed JSON object shapes | [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61) |
+| `internal/auth` | Issue and check credentials | [`Principal`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L51-L60) |
 
-These boundaries keep responsibilities identifiable. They do not make future work automatic. A cloud output store must still solve publication, deletion, and failure handling. Another project may need different permissions and account rules. Receipt's current internal packages are not a ready-made shared identity platform.
+Follow a normal command through those boundaries:
+
+```text
+app reads arguments
+  -> fingerprint describes inputs
+  -> cache looks for a result
+       -> usable hit: app replays output
+       -> miss: runner starts the test
+                  -> fingerprint checks inputs again
+                  -> cache saves a stable success
+```
+
+This division lets a test substitute a storage implementation without starting a
+server. It does not make a new backend automatic: an object store would still
+need rules for failed uploads, concurrent reads and deletion.
 
 ## What needs to be installed?
 
-Suppose you copy the built Receipt executable to a Linux runner and run
-`receipt run -- go test ./...` inside a Git repository. Receipt discovers the
-repository with Git, records the selected Go toolchain and input files, looks
-for a saved result, and starts `go test` only when it needs to execute. That
-runner needs Git and the workload's Go tools. It does not need this repository's
-Python profiling scripts. A Python/pytest workload needs its own Python
-environment instead; Receipt even probes that environment on an ordinary hit.
+The built executable needs Git and the tools for the workload. A pytest command
+needs its Python environment; a Go command needs Go. Python scripts under
+`scripts/` support development and measurements, not normal Receipt execution.
 
-The executable begins in [`main`](https://github.com/sidsharma96/receipt/blob/main/cmd/receipt/main.go#L10-L12),
-which calls `os.Exit(app.Main(os.Args[1:], os.Stdout, os.Stderr))`. This passes
-command arguments and the two output streams into the Go application. It does
-not hand control to a Python application. To rebuild the executable, retain
-`cmd/`, `internal/`, `go.mod` and `go.sum`; the module downloads the pinned
-PostgreSQL driver even when you intend to use only local files.
+A shared server receives results rather than running users' tests. The
+credential-enabled server needs PostgreSQL and a writable output directory.
+A TLS proxy provides HTTPS for remote clients. It does not need pytest or a Go
+compiler to serve the compiled application.
 
-A shared server has a different job. The deployed
-[service configuration](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service)
-starts `receipt serve`, which receives and saves results. It does not execute the
-client's tests. Our deployed server needs PostgreSQL and writable output
-storage, with Caddy providing HTTPS and systemd supervising the process. It does
-not need pytest, Cargo, Go's compiler or the profiling scripts to serve requests.
-Other server modes have different storage requirements; this describes the
-current credential-enabled deployment.
+To change and rebuild Receipt, use the [contributor guide](../CONTRIBUTING.md).
+To install a release, use the [README](https://github.com/sidsharma96/receipt#install).
 
-| Repository part | Why we keep it | Needed by a built Receipt process? |
-|---|---|---|
-| `cmd/`, `internal/`, `go.mod`, `go.sum` | Build and test the Go program | Compiled into the executable; source files are not needed afterward |
-| `docs/`, `scripts/docs/` | Write, build and check the book | No; book checks need Python 3.11+ and mdBook 0.5.4 |
-| `deploy/ci/` | Run Receipt's CI cache helpers and policy tests | No; current CI uses these Python scripts |
-| `scripts/profile/`, `scripts/measure_local.py` | Repeat measurements and draw experimental figures | No; optional profiling tools |
-| `deploy/digitalocean/` | Configure deployment and perform operator checks/recovery | Selected configuration is used by deployment; Python scripts are operator tools |
+## Follow a change through its consequences
 
-To build the book, `make docs` first asks mdBook to turn Markdown and pictures
-into a static website, then runs Python checks for links, excerpts, figures and
-questions. The small exact values used by checked teaching figures live in
-`scripts/docs/figure_measurements.py`. The build does not fetch old benchmark
-records. Reading the finished site needs only a browser. Publishing through the current
-Cloudflare workflow additionally uses Node.js 22, Wrangler 4 and the Cloudflare
-account ID/API-token secrets; these tools do not run in Receipt.
+If a new input is added, ask whether it changes the saved key, whether it can be
+read reliably, and what happens when reading fails. If storage changes, trace a
+successful save and then interrupt it between the file and database steps.
 
-Raw measurements are different from these required sources. On 20 October 2026
-we removed 74 JSON evidence files from the current tree and linked readers to
-the same files in Git history. New raw output stays in ignored `.tools/` or CI
-artifacts, so it does not become part of every future source scan or book build.
-Deleting it does not erase earlier Git objects or make old clones smaller.
-[Archive instructions](../MEASUREMENTS.md#where-raw-measurements-live) explain how
-to restore evidence locally for the optional checks. The
-[cleanup review](../PHASE-REVIEWS.md#source-artifact-cleanup-20-october-2026)
-records checks and limitations. We kept Python rather than rewriting these tools
-in Go: it remains useful for docs and current CI, and replacing a script would
-require checking the replacement's behavior too. Revisit that choice if we
-retire those workflows or decide to require a Go-only development environment.
+Explain the choice through that concrete sequence. Compare an alternative that
+solves the same problem, including what it costs. The
+[design reference](../DESIGN-DEFENSE.md) develops these comparisons; it is a lookup
+resource rather than a required checklist for every small change.
 
-## Which helpers belong in Git?
-
-Imagine a new contributor running `make docs`. Python discovers the docs tests,
-and one of them opens `deploy/fly/api.toml` and `postgres.toml` to check the
-proposal's templates. Those TOML files are not used by the deployed DigitalOcean
-server, but removing them would still break that documented docs build. Likewise,
-a manually started profiling workflow needs its Python entry point and helper
-files in the runner's checkout. Optional execution does not make shared source
-safe to ignore.
-
-Keep `scripts/docs/`, CI helpers, the artifact checker, lint configuration and
-`docs/book.toml` versioned. Keep shared profiling tools and deployment templates
-while their workflows, documented experiments or recovery procedures remain.
-The earlier remote-cache experiment and Fly proposal are optional features we
-could retire; doing so requires updating their callers, checks and instructions
-together. The audit found no current automated-test references to the tiny Python example
-under `testdata/`, so it moved to ignored local storage at
-`scripts/utils/examples/python-project/test_demo.py`. The [README inventory](https://github.com/sidsharma96/receipt/blob/main/README.md)
-lists all Python groups and the YAML/TOML roles as audited on 20 October 2026.
-
-For your own throwaway probe, create `scripts/utils/` and write it there. That
-directory is ignored; the commit checker also rejects any of its staged files,
-including a Python helper added with `git add -f`. A new clone will not contain
-these utilities. If a helper becomes necessary for CI, the docs or another
-contributor, move it into an appropriate versioned directory and review it as
-shared source. Keep its generated records in `.tools/` or CI artifacts.
-
-This choice affects source maintenance and repeatability. It does not remove
-work from a running Receipt binary, which does not load these repository scripts.
-We did not move existing shared scripts into ignored storage or silently disable
-manual investigations. Retire a feature explicitly if maintaining it is no
-longer worth its cost.
-
-## Keep generated records out of commits
-
-Suppose a benchmark writes a large `run.json`. Save it under `.tools/`, then put
-the result you want readers to learn in the chapter. Git ignores that local
-output. If someone force-adds the raw file anyway, a local commit check rejects
-it. Enable that check once after cloning with `make hooks-install`.
-
-A staged file is Git's saved copy of what will go into the next commit. Editing
-the working copy afterward does not change that staged copy. Our hook runs
-`python3 scripts/check_source_artifacts.py --staged` to inspect those staged
-contents, rejecting JSON/JSONL/NDJSON and any individual source file over 1 MiB.
-It also checks staged whitespace. CI repeats the artifact rule after checkout,
-so skipping the local hook does not produce a passing CI result. Existing small
-binary profiles remain historical evidence; future captures belong in ignored
-storage or CI artifacts.
-
-Before committing, inspect `git diff --cached --stat` and `git diff --cached`,
-then run the checks relevant to the change. Docs changes require `make docs`.
-The lightweight hook does not run application tests. Each clone needs the setup
-command, and the rules do not recognize every possible generated file. If a
-legitimate teaching image grows beyond 1 MiB, first try reducing it; discuss an
-explicit policy change if that is insufficient. Do not rename a raw archive or
-force-add it as an alternative.
-
-## Frequently performed work versus occasional work
-
-People call frequently performed work the [hot path](../GLOSSARY.md#hot-path). In Receipt, input scanning and result lookup happen on normal commands. In credential mode, each server request also checks its credential. A cache hit avoids pytest, not all computation or disk access.
-
-Occasional work is called the [cold path](../GLOSSARY.md#cold-path). Issuing credentials and collecting unused files fit here. Occasional does not mean cheap: cleanup can inspect the whole store and make other operations wait.
-
-We have tested selected behaviors and failures, but have not established production latency or capacity. The [verification records](../PHASE-REVIEWS.md#verification-implementation-evidence-versus-documentation-checks) and each phase's evidence section say what actually ran. Their test names and execution counts are available for inspection rather than part of the introductory lesson.
-
-## How to explain a choice to someone else
-
-Start with the problem. Then describe the chosen behavior and one reasonable alternative. Finish with its cost, what we checked, and what would make us change our mind.
-
-For cleanup, that becomes: a reader needs its output file to remain available; locks make cleanup wait; delaying deletion alone cannot establish that a paused reader has finished; the chosen lock can make other work wait; selected concurrency tests check this sequence. If measured waiting becomes unacceptable, we need a different protocol, not just a smaller timeout.
-
-For permissions, it becomes: a stolen secret must stop working on later checks; fresh database lookups support that behavior; cached permissions can remain stale; queries cost work and depend on the database; selected tests cover denial and revocation. If queries become a measured bottleneck, any cache must state how long revoked access can remain accepted.
-
-The full [nine-question reviews](../PHASE-REVIEWS.md) cover structures, architecture, coordination, pitfalls, costs, guarantees, alternatives, evidence, and reasons to revisit choices. Read them when you want to inspect a particular decision in depth.
-
-
-## How the executable reaches a user
-
-Suppose a Python developer wants to run `receipt run -- pytest`. They can
-choose the archive for their computer, unpack `receipt`, and put it in a
-folder listed in `PATH`. The shell searches those folders when the developer
-types `receipt`. Go was used to build that file; the developer does not need
-the Go compiler to launch it. Git and pytest remain necessary for this example.
-The [README installation steps](https://github.com/sidsharma96/receipt/blob/main/README.md#install-receipt)
-show the commands and checksum comparison.
-
-A Go developer has another route:
-
-```sh
-go install github.com/sidsharma96/receipt/cmd/receipt@v0.1.0
-```
-
-Go finds the versioned source, downloads dependencies, compiles the command,
-and places the executable in its binary directory. The repository's `go.mod`
-now begins with the actual module declaration:
-
-```text
-module github.com/sidsharma96/receipt
-```
-
-That path tells Go where this group of packages belongs. The old local name
-`receipt` worked inside a clone but did not identify a repository for downloads.
-Internal imports now use the same full prefix. This naming change does not
-change Receipt's stored JSON or declared-input rules.
-
-Follow the two routes from the same version tag, a name attached to a commit:
-
-```text
-version tag v0.1.0 -> source commit
-  |                    |
-  |                    +-> user's go install -> compile -> receipt
-  +-> release job -> tests -> four builds -> archives + checksums
-                                           |
-                                  user downloads -> receipt
-```
-
-The release job builds all four archives before creating a draft release, then
-publishes it with its attachments. A failed build leaves no published release.
-If uploading fails, a draft may remain; an operator must inspect it before
-retrying. The source tag is already available, so `go install` and downloadable
-archives do not become available as one indivisible operation.
-
-The actual build invocation in `scripts/release/build.py` uses `go build
--trimpath -o ... ./cmd/receipt`; `GOOS` and `GOARCH` select the target system and
-processor. Building a binary for another computer does not run it there. Native
-execution checks are separate evidence. Checksums detect changed bytes but do
-not independently prove who built them. The initial release has no Windows
-archive, automatic updater or Apple notarization.
-
-GitHub Releases avoids asking every user to install a compiler. `go install`
-avoids maintaining an installer for Go developers, but costs a source download
-and compilation. A package-manager recipe could automate placement and updates;
-we can add one if users need it. The full
-[release review](../PHASE-REVIEWS.md#public-distribution-20-october-2026)
-records the checks and remaining limits.
 
 ## Check your understanding
 
@@ -236,28 +92,22 @@ Walk through `receipt run -- uv run pytest` on a miss that succeeds, with a remo
 
 On a miss, Receipt runs the command, streaming output while capturing a bounded copy. It builds the manifest again and calls the run stable only if that succeeds with the same key. It records the history file used by `receipt explain`. A successful, stable run goes to `runSession.publish`, which stores the result locally, uploads it to the server, and only then prunes the local cache. A failed upload is reported on stderr but does not change the exit code.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
 
 </details>
 
-### What would you change first?
+### A new store behind the same interface
 
 **Level:** Expert
 
-You may make three changes to Receipt before a second team starts using the shared cache. Which would you pick, and what does each cost?
+A new storage implementation provides the same methods as the existing store. Does this alone establish that it handles interrupted uploads and cleanup correctly?
 
 <details>
 <summary>Answer</summary>
 
-A defensible choice, ordered by how soon it hurts:
+No. Matching method signatures lets the caller invoke the implementation. It does not establish what happens if saving fails halfway, or if cleanup overlaps a read. Trace a save, a failure and a retry through the new store before assuming it can replace the old one.
 
-1. Record a last-used time and expire by it instead of by `created_at`. Today a result used every day still expires 30 days after it was first stored, so the busiest results are deleted on schedule. The cost is a write on the read path, done outside the read lock or in batches, and a new crash argument for that timestamp.
-2. Size the database pool from `--max-inflight`, or reject values above 16. Today the pool silently caps storage concurrency at 16 connections while the flag accepts 128, and authentication competes for the same connections. The cost is one more limit to configure and explain.
-3. Add a scheduled, tested backup with a second copy of the recovery key. Today the only off-machine copy is a one-off archive from 13 October, and only one private key on one Mac can decrypt it. The cost is an operating task to schedule, monitor and rehearse.
-
-(Keeping `RECEIPT_TOKEN` out of keys, giving credential issuance its own lock key and replacing per-upload scans with running totals were on this list until they were done on 15 October 2026.) Close runners-up are an administrator command to clear quarantine with a recorded reason and a purge command for expired credential rows before the 1,024 cap. Any answer that names the invariant each change must preserve, and its cost, is a good answer.
-
-**Learn more:** [Part 4. Known gaps and pitfalls](../DESIGN-DEFENSE.md#part-4-known-gaps-and-pitfalls) · [D15](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [G21. Operations](../DESIGN-DEFENSE.md#g21-operations)
+**Learn more:** [Chapter 6](../guide/06-find-the-code-and-defend-a-decision.md)
 
 </details>
 
