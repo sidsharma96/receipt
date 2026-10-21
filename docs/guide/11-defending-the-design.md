@@ -1,26 +1,67 @@
 # 11. Defending the design
 
-The chapters so far follow one test run and explain what happens. A reviewer
-asks a different kind of question: why this choice, what else could work, what
-it costs, and what breaks when it fails. Suppose someone asks why Receipt uses
-`flock` and not `fcntl` locks, or what happens if the machine loses power
-between saving output file X and saving the database record that points to it.
-The answer needs the operating-system and database rules underneath the code.
+Suppose the server has saved output file X, but loses power before saving the
+database row that points to X. On restart, the file may exist without any result
+referring to it. That is a different problem from a row referring to a missing
+file: in the first case space is wasted; in the second, a result cannot be read.
+A design explanation should tell us which state can occur and how we recover.
 
-The [design defense](../DESIGN-DEFENSE.md) is organised as those questions, in the
-order a reviewer would ask them. It starts from first principles: content
-hashing, file locks, `fsync` and hard links, PostgreSQL transactions and
-advisory locks, and bearer tokens. Then it walks each decision: the cache key,
-local publication, the shared store's locks, the cost of an upload, credentials,
-the threat model and the deployment. Each section names the alternatives, the
-cost with measured numbers where they exist, the failure behaviour and links
-to the exact lines of code.
+Start with the sequence from [Chapter 2](02-let-another-client-reuse-the-result.md):
+Receipt prepares the output files, then commits the database record. A database
+**transaction** groups database changes so they can be accepted or rolled back
+together. It cannot undo a file written outside the database. Therefore saying
+“we use a transaction” does not finish the explanation.
 
-It also lists the known gaps honestly. For example, cached results expire 30
-days after they were first stored, however often they are used, and a
-quarantined key cannot be cleared. Gaps fixed since the list was written, such
-as the CI token's hash being part of every CI cache key, are recorded with
-their dates and tests.
+```text
+Output file X saved
+  |
+  +-- database commit succeeds
+  |     result now refers to X
+  |
+  +-- database step fails
+        X may have no reference
+        later cleanup can reclaim X
+```
+
+This is an illustrative failure sequence. A retry must still check existing
+files and shared state; the leftover file alone is not a saved result. Cleanup
+must also avoid deleting X while another upload is about to reference it.
+Receipt uses a shared coordination rule—a lifecycle lock—to make those
+operations wait for each other. The cost is that shared writers take turns,
+even when they are saving different keys.
+
+A reviewer can now ask useful questions: why files and database rows instead of
+putting all output inside PostgreSQL? Why one writer at a time instead of a lock
+for each key? What evidence shows the retry and cleanup paths work? Those are
+questions about the same concrete sequence, not a vocabulary test.
+
+## Use the reference to answer one decision at a time
+
+The [design defense](../DESIGN-DEFENSE.md) develops these questions in detail.
+Its sections explain the mechanism, alternatives, costs, code and limits. Read
+the section matching the decision you are trying to explain; you do not need to
+memorize every operating-system primitive before continuing the book.
+
+For example, `flock` and `fcntl` are different operating-system interfaces for
+file locking. `fsync` requests that buffered changes reach durable storage. A
+hard link gives an existing file another name. Each mechanism solves a smaller
+part of publication or coordination; none makes the entire save operation
+indivisible across files and the database. The reference explains the relevant
+rules before comparing them.
+
+When defending a choice, trace a normal request first, then stop it at a failure
+point. Say what remains in each store, what a retry does, and which operation
+must wait. Compare an alternative against that same example. Finally, identify
+what would make us change the choice—for instance, measured writer waiting might
+justify a more complicated coordination scheme. A new scheme would still have
+to protect both storage budgets and files awaiting database references.
+
+The reference also records current limits. Cached results expire 30 days after
+they were first stored, however often they are used, and a quarantined key cannot
+be cleared. Gaps fixed since the list was written, such as the CI token's hash
+being part of every CI cache key, are recorded with their dates and tests. Treat
+those dated records as evidence of a particular change, not a guarantee that
+all possible failure cases have been tested.
 
 ## Check your understanding
 

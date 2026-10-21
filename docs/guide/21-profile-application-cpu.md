@@ -7,6 +7,12 @@ replays the output. A fast database lookup does not make those later checks free
 We sampled the **actual running server**, without replacing or restarting it.
 A CPU sample observes which function a thread is running at that instant. Its
 call stack also records the functions that called it.
+For example, if the storage method calls the JSON checker, which calls a
+string reader, one sample can include all three. Counting it under both storage
+and JSON is useful for finding callers, but it is still one observation.
+“User-space CPU” means the application is executing, rather than the operating
+system kernel or a request waiting for the network.
+
 Of 1,589 samples of user-space CPU execution, 1,095 contained
 `strictjson.Object`: about **69%**. This function checks the fields of a JSON
 object before decoding it into a Go value. Response encoding appeared in about
@@ -21,12 +27,19 @@ benchmarks let us inspect the same mechanism separately.
 
 ## Watch the same JSON pass through two readers
 
-Suppose a manifest contains one input named `example.go`. Its input object has
+Suppose a manifest—the saved description of a command's inputs—contains one
+input named `example.go`. Its input object has
 three fields: kind, name and hash. Receipt must reject a repeated name such as
 two `hash` fields, an unknown field, or a wrongly typed value. Ordinary Go JSON
 decoding does not enforce the full Receipt contract.
 
-First, `strictjson.Object` reads the field names and checks their allowed forms.
+Follow that input through the checker. First, it checks whether `kind`, `name`
+and `hash` are allowed field names and whether any name occurs twice. This is a
+**shape check**: it checks how the object is written. Then decoding fills the Go
+fields, and semantic checks ask whether their values make sense, such as whether
+`hash` has the required form.
+
+`strictjson.Object` performs the shape check.
 For every field, [`readField`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L63-L83)
 reads a temporary copy of the field's JSON. The relevant lines in
 [`readField`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L63-L83):
@@ -51,7 +64,9 @@ manifest.
 
 Text equivalent: 53.3% of live samples stopped directly in JSON functions, 15.3%
 in regular-expression functions, 4.0% in SHA-256, 3.7% in the allocator and 23.8%
-elsewhere, including missing frames. These leaf categories are disjoint. The
+elsewhere, including missing frames. A frame is one function entry in a recorded
+call stack. These categories count only the function running at the end of each
+stack (the “leaf”), so each sample appears in only one category. The
 execution sequence is shape-check and copy field JSON, decode the object into
 Go fields, then repeat shape checking when a nested type's hook runs. This is a
 mechanism illustration, not a measured number of scans for every byte.
@@ -71,7 +86,10 @@ metadata representation and decodes it. That representation uses Go JSON output,
 not the original PostgreSQL JSONB bytes, so its time is not a measurement of the
 whole deployed storage method.
 
-The final fixture contains **65,789 bytes and 396 inputs**. Across five
+The fixture, meaning the saved example used repeatedly by the experiment,
+contains **65,789 bytes and 396 inputs**. An allocation is a request for memory
+while the program runs. In the table, “op” means one complete call to the named
+operation; it does not mean a whole network request. Across five
 unprofiled benchmark repetitions on a two-vCPU Ubuntu runner:
 
 | In-memory operation | Median time | Bytes allocated/op | Allocations/op |
@@ -95,8 +113,8 @@ collector later recovers unreachable objects; the allocator and collector also
 consume CPU.
 
 Recognized garbage-collection worker, assist or start functions appeared in
-43 live sample stacks, **2.7%**. Assisting means a running goroutine helps the
-collector before it can continue allocating. This sample group is not a pause
+43 live sample stacks, **2.7%**. A goroutine is a unit of work scheduled by Go. Assisting means that unit helps
+recover unused memory before it can continue requesting more. This sample group is not a pause
 trace and does not bound all collection work, especially with incomplete stack
 unwinding. It gives no evidence that the earlier macOS startup stalls were GC
 pauses. For this Linux cache-hit workload, parsing and repeated checking are
@@ -111,8 +129,10 @@ The largest measured area is strict JSON processing. A candidate is a shape
 checker that walks the original bytes without allocating a `RawMessage` for
 every field. It would still need to handle escaped names, invalid UTF-8,
 duplicates, wrong case, null policy, number/string types and nested objects.
-Replacing this code safely requires differential tests against the existing
-checker and the JSON contract, including malformed inputs. The profile supports
+Replacing this code safely requires differential tests: give the old and new
+checkers the same inputs and compare their results. Also check both against the
+written JSON contract, including malformed inputs; agreement with old code
+alone could preserve an old bug. The profile supports
 investigating that design; it does not prove the new parser would be correct or
 how much whole-command latency it would save.
 

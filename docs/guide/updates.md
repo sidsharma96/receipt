@@ -506,3 +506,29 @@ Python files after committing the deletion. Added ignored
 enter commits. Shared scripts and config stay versioned; no workflows were
 retired. The [review](../PHASE-REVIEWS.md#local-utilities-and-config-audit-20-october-2026)
 records scope and limits.
+
+
+## 20 October 2026: clarify the latest measurement chapters
+
+Reviewed Chapters 17–22 for readers learning systems concepts. The chapters now
+explain measurement terms beside their examples; [Chapter 21](21-profile-application-cpu.md)
+walks through JSON checks and CPU samples, and [Chapter 22](22-explain-network-latency.md)
+teaches the request sequence before networking details. Chapter 22 also records
+a placement experiment as the recommended next investigation, with conditions
+that would favor batching, CPU work or DNS work instead. No optimization or
+migration was implemented. The [readability amendment](../PHASE-REVIEWS.md#latest-chapter-readability-amendment-20-october-2026)
+records the audit scope, documentation checks and rendered-review limitations;
+the original full nine-question reviews remain historical records.
+
+
+## 20 October 2026: clarify Chapters 10–17
+
+Extended the beginner-reading review through the walkthrough, design defense and
+local optimization chapters. [Chapter 11](11-defending-the-design.md) now starts
+with a failed save; Chapters 12–16 explain measurement and tool-selection concepts
+beside their examples, with optional reproduction/history details. Current-status
+notes distinguish implemented changes from diagnostic experiments. Chapter 17
+keeps the earlier edits and links the completed network follow-up. The
+[review amendment](../PHASE-REVIEWS.md#chapters-1017-readability-amendment-20-october-2026)
+records chapter scope, checks and remaining teaching-verification gaps. No runtime
+optimization, deployment or new benchmark was performed.

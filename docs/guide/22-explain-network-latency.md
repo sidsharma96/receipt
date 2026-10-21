@@ -1,25 +1,46 @@
 # 22. Explain the slow network hits
 
 A Linux CI process asks Receipt's real server for an existing result. One fresh
-fetch takes **391 ms before repository fingerprinting**. The result is only
-65,789 bytes. This time we recorded individual reads, TCP packet headers,
-server request IDs and CPU counters, then repeated controls on another runner.
-We reproduced the slow behavior rather than inferring it from older jobs.
+fetch takes **391 ms before repository fingerprinting**, even though the result
+is only 65,789 bytes. Fingerprinting means collecting and hashing the command's
+inputs; that usual CLI work is outside this experiment. Why can fetching a
+small result take this long?
 
-Follow this one request in order: DNS takes 3.4 ms, TCP 65.6 ms, TLS 81.6 ms,
-waiting for the first response byte 98.1 ms, collecting the body 131.9 ms and
-checking it 9.9 ms. Small gaps complete 391 ms. Its server handling overlaps
-waiting/receiving and must not be added again. The usual full CLI also collects
-repository inputs; that work is outside this experiment.
+Follow this measured request from the client to the server and back:
+
+1. **Find the address (DNS), 3.4 ms.** The client asks which network address
+   belongs to the server's name.
+2. **Open a connection (TCP), 65.6 ms.** The machines exchange setup messages
+   before sending the request over a reliable byte stream.
+3. **Establish encryption and check identity (TLS), 81.6 ms.** The client checks
+   the server's certificate and establishes an encrypted connection.
+4. **Send the request and wait for the first response byte, 98.1 ms.** This
+   includes network travel and the server's work finding and preparing the result.
+5. **Collect the response body, 131.9 ms.** The body is the saved result's bytes,
+   sent after the response headers. Receiving the first byte does not mean the
+   whole result has arrived.
+6. **Check the result, 9.9 ms.** Receipt validates the received bytes before reuse.
+
+Small gaps complete 391 ms. The server works while the client waits or receives
+bytes; its time is already inside this timeline and must not be added again.
+A **round trip** is a message's journey out and a reply's journey back. On this
+path it takes roughly 65 ms. Several stages require such an exchange, which is
+why even a small result can take hundreds of milliseconds.
+
+The figure separates this request from group medians (the middle measured
+durations). Its connection-reuse comparison belongs to a second run; it is not
+a before/after deployment result.
 
 ![One real request, observed server window growth and a separate reuse control](../assets/network-deep-dive.svg)
 
 Text equivalent: the first run has a roughly 65 ms network round trip. Its fresh
 fetch median is 383.4 ms. On a separate roughly 51 ms path, fresh fetches have a
 303.3 ms median; an already established connection has a 79.8 ms median. Selected
-server socket states show its send window growing from 10 to 20, 40 and 60
-segments as delivery is acknowledged. The figure labels the two runs separately.
-Reuse is a diagnostic control in a resident process, not an implemented daemon.
+server connection records show the limit on data awaiting acknowledgment
+growing from 10 to 20, 40 and 60 segments, the pieces TCP sends. The body-delivery
+section below explains why that limit creates waiting. The figure labels the two runs separately.
+Reuse was tested by keeping a diagnostic process alive for later requests.
+Receipt does not yet provide such a background helper.
 
 Five independent investigation threads reviewed the exact Go client source,
 Linux TCP behavior, Caddy and historical records. Their proposals fed two
@@ -35,8 +56,10 @@ IPv6 address, called an AAAA record. The reviewed
 collects both completions. A quick usable IPv4 answer does not finish that loop
 while the IPv6 question remains outstanding.
 
-The second runner uses the local systemd-resolved service at 127.0.0.53. After
-the initial cold lookup, IPv4 answers usually return from that local service
+A resolver answers DNS questions. It may reuse a saved answer or ask another
+resolver upstream. The second runner uses a local resolver named systemd-resolved
+at 127.0.0.53, an address on the runner itself. After
+the initial lookup before its answer was locally cached, IPv4 answers usually return from that local service
 quickly: the captured A-query median is **0.17 ms**. Every captured AAAA question
 is forwarded upstream. The slowest captured upstream AAAA response takes
 **98.57 ms** and says there is no AAAA answer. That is a valid empty result,
@@ -56,7 +79,10 @@ pinning an IP or dropping IPv6 would introduce failover and future-address costs
 
 ## TCP: the connection timer is measuring a real round trip
 
-The client sends a SYN control message, receives SYN-ACK, then continues. In the
+The client sends a connection-opening message named SYN. The server replies
+with SYN-ACK, and the client acknowledges that reply. This exchange is the TCP
+handshake. We captured packet headers—the routing and control information
+around transmitted data—to compare those messages with Go's connection timer. In the
 first run, the median packet interval is **64.88 ms** and the Go connection span
 is about **65.02 ms**. Their per-request difference has a **0.14 ms median**.
 The second run has a roughly 51 ms path. These packets strongly support actual
@@ -70,48 +96,61 @@ retransmissions or scheduling can still affect other requests.
 
 ## TLS: certificate trust has a per-process startup cost
 
-After TCP, the client establishes encryption and verifies the server's identity.
-A fresh Linux Go process loads its trusted certificate authorities from local
-files. [System roots initialization](https://github.com/golang/go/blob/go1.22.12/src/crypto/x509/root.go)
-is protected by sync.Once: once per process, not once per machine. The
+After TCP, the client establishes encryption. It needs a list of trusted certificate issuers to check the server's
+identity. A fresh Linux Go process reads that list from local certificate files. [System roots initialization](https://github.com/golang/go/blob/go1.22.12/src/crypto/x509/root.go)
+uses `sync.Once`, which makes initialization happen once within that running
+program. Starting another CLI process requires initializing its own list. The
 [Unix loader](https://github.com/golang/go/blob/go1.22.12/src/crypto/x509/root_unix.go)
 reads certificate bundles/directories and builds an in-memory trust pool.
 
 A standalone root-load control costs about **7.4–9.4 ms elapsed**, allocates
-**3.13 MB**, and creates about **31,000 allocations** on these runners. Loading
+**3.13 MB**, and makes about **31,000 memory requests (allocations)** on these runners.
+Total allocation counts temporary memory too; it is not memory retained forever. Loading
 the same normal trust store before the handshake reduces its measured TLS CPU
 and latency. It moves work outside that timer; it does not eliminate the work.
 In the 51 ms-path public control, cold TLS is about 64 ms; after preloading it is
-about 57 ms. These public 401 requests test TLS, not authenticated cache handling.
+about 57 ms. These public requests receive HTTP 401, meaning authentication is required.
+They test encrypted connection setup but never reach authenticated cache handling.
 
-Certificate cryptography also matters. Two coarse CPU profiles repeatedly locate
-P-384 arithmetic used during certificate verification. We inspected
+<details>
+<summary>Optional: what the machine-code samples tell us</summary>
+
+Certificate checking also requires computation. Two small sets of CPU samples
+repeatedly found arithmetic for P-384, an elliptic-curve cryptographic algorithm
+used to verify certificate signatures. The useful distinction here is that the
+client is doing arithmetic, rather than waiting for another network message. We inspected
 [the actual second probe's machine code](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/network-deep-dive-2026-10-20/tls-assembly.json):
 `MULQ` multiplies integer parts and carry-handling instructions combine the
 results. This is computation, not a hidden network sleep. The profiles contain
 only 20–24 CPU samples each, so they identify a function family without precise
 instruction-level costs. They do not justify replacing cryptographic code.
 
-A warm full handshake still opens TCP and verifies certificates. A resumed TLS
-session opens TCP but uses a ticket from an earlier connection. Reusing an
+</details>
+
+A warm full handshake still opens TCP and verifies certificates, but the process
+has already loaded its trust list. A resumed TLS session opens TCP but uses a
+ticket, state issued by the server on an earlier connection, to reduce setup work. Reusing an
 already established connection avoids both setup operations. Our controls verify
 actual resumption/reuse flags; they are different mechanisms. None shares state
 across independent CLI processes automatically, and verification remains enabled.
 
 ## First response: network travel plus real backend work
 
-For each request we match the server-generated request ID to its handler log.
+Receipt assigns each request an ID. Matching that ID in the client record and
+server log lets us compare the same request on both sides. The server's handler
+is the code that processes the request and prepares its response.
 In the 65 ms-path fresh fetch group, the median handler is **27.10 ms**; the
 median of each request's first-byte interval minus its own handler is **65.21 ms**.
 The much smaller status handler leaves a similar network-sized residual.
 The second run gives the same pattern around its 51 ms path.
 
-This residual is not an exact network timer: proxy buffering, scheduling and
+The remainder after that subtraction is not an exact network timer: proxy buffering, scheduling and
 handler/write boundaries remain inside it. But the matching and status control
 make network travel plus backend work a strong explanation. The backend's
 [JSON CPU profile](21-profile-application-cpu.md) explains substantial local work.
 Its query, file and lock clocks do not show comparable large waits in these
-sequential hits. Caddy can reuse its separate loopback connection to Receipt;
+sequential hits. Caddy, the proxy accepting public connections, can reuse its separate connection
+to Receipt on the same server machine (a loopback connection);
 a fresh public client does not inherently require a fresh upstream connection.
 
 Synchronous request logging can delay buffered output after the recorded handler
@@ -132,26 +171,50 @@ Receipt collects response bytes before checking them. In
 	v, e = Decode(b)
 ```
 
-ReadAll can wait for more bytes; Decode starts afterward. In the 65 ms-path
+`resp.Body` supplies incoming bytes. `LimitReader` allows at most one byte beyond
+the accepted limit so oversized responses can be detected; `ReadAll` collects
+those bytes into `b`. A read error returns before `Decode` runs. Only after
+reading finishes does `Decode` check the result. Thus waiting for bytes and
+checking bytes are separate stages. In the 65 ms-path
 fresh group, collecting bytes takes **129.97 ms**, but consumes only about
 **1.69 ms of client process CPU**. Checking the result then takes about 10 ms.
 On the 51 ms path, body collection takes **101.71 ms**, about two round trips,
 with roughly 1.14 ms CPU. JSON checking cannot explain that separate read wait.
 
-TCP limits unacknowledged data through a congestion window, then grows it as
-receipts arrive. The matched server kernel shows fresh sockets starting at ten
-segments and growing through larger windows during delivery. Packet headers
-show spaced bursts. NAT changed the client ports, so we matched the server's
-initial SYN-ACK sequence number to its kernel socket state rather than joining
-by port alone. All 101 newly established diagnostic connections matched.
+Imagine the server has sent the first pieces of our result. It cannot send an
+unlimited amount while waiting to hear whether those pieces arrived. TCP's
+**congestion window** limits how much sent data can still be awaiting a receipt,
+called an acknowledgment or ACK. As ACKs return, TCP can increase that limit.
+A fresh connection therefore can need more than one exchange to deliver a body.
+
+The server's operating system records show fresh connections starting with a
+window of ten segments, then growing during delivery. Captured headers show
+separated bursts of data. This gives us evidence for the waiting sequence:
+
+```text
+Server                         Client
+send initial pieces ---------> receive pieces
+wait for receipts <----------- acknowledge arrival
+increase send allowance
+send more pieces ------------> receive more of the result
+```
+
+This is an illustration of the mechanism, not a packet-by-packet reconstruction.
+To connect our packet evidence to the right server record, we could not rely on
+port numbers: network address translation (NAT), which rewrites addresses or
+ports between networks, changed the client ports. Instead we matched the initial
+TCP sequence number, which identifies a position in the byte stream. All 101
+new diagnostic connections matched. The exact matching procedure remains in the
+[measurement record](../MEASUREMENTS.md#network-stage-deep-dive-20-october-2026).
 
 Keeping the connection changes this behavior: warmed body-read medians are
 **1.08 ms and 0.27 ms** in the two runs, with identical bytes. A fresh HTTP/1.1
 control still waits about two round trips, weakening an HTTP/2-specific theory.
 Go 1.22's HTTP/2 receive limits also exceed this single response substantially.
-Window growth plus the controls strongly support TCP startup/ACK-dependent
-delivery. They do not prove every gap comes solely from congestion control;
-TLS record boundaries, proxy writes, pacing and delayed ACKs shape the bursts.
+The growing window and comparisons strongly support delivery waiting for
+acknowledgments during TCP startup. They do not prove every gap comes solely from congestion control;
+encryption groups bytes into records, the proxy chooses when to write, and TCP
+can space out sends or delay acknowledgments. Those also shape the bursts.
 
 ## What to focus on next
 
@@ -160,13 +223,40 @@ request/first-response travel and about two more during body delivery. The local
 TLS and validation work then adds to that cost. This accounts for the reproduced
 300–383 ms request class without inventing a long application sleep.
 
-The biggest transport opportunities are placing the cache near the actual CI
-caller and keeping connections alive across multiple operations. A resident
-helper or batching would add lifetime, memory, credential-refresh and failure
-rules; neither is implemented. Merely saving http.Client in a local variable
-inside a process that exits does not solve it. JSON allocation remains a concrete
-CPU target, and DNS's upstream/negative-answer behavior deserves a targeted
-resolver investigation. Those are different decisions with different evidence.
+**Recommendation, 20 October 2026: compare client/server placement first.**
+Take the same saved result and client build, and compare repeated fresh fetches
+from controlled runner locations to the same endpoint. Record connection time,
+whole-fetch time, errors and matching result bytes. A shorter network path could
+reduce several waits in one fetch without introducing a background process.
+Our runs motivate that experiment; they do not prove a particular region is
+faster. Geography and routing were not controlled in the earlier comparisons.
+Any eventual server move needs a separate deployment and data-migration decision.
+
+This priority assumes the target remains fresh CI jobs with few cache operations.
+Revisit it if runner placement cannot be controlled, the improvement is unstable,
+or the workload becomes many operations in one job. For that last case, a bounded
+batch mode is worth comparing: one process handles several operations, keeping
+its connection between them. The first operation still pays setup; later ones
+may benefit. On the second diagnostic run, fresh fetches had a **303.3 ms median**
+and established-connection fetches a **79.8 ms median**. That is promising evidence
+for reuse, not a prediction of whole-job savings from a feature we have built.
+
+A continuously running helper could share connections between independent CLI
+invocations, but we would need to decide who starts and stops it, how it refreshes
+credentials, and what callers do when it fails. Batching has a bounded job
+lifetime, though it still needs cancellation and per-operation failure rules.
+Go's transport already supports retaining connections within a process; merely
+saving `http.Client` in a variable cannot preserve a connection after exit.
+Neither batch mode nor a persistent helper is implemented.
+
+The other candidates solve narrower problems. [JSON checking](21-profile-application-cpu.md)
+is a measured CPU cost, but reducing its roughly 8–10 ms client decode time does
+not remove the much longer network waits. It becomes a stronger priority for a
+nearby cache or CPU-limited server. DNS work targets occasional slow replies;
+fixing those would not remove the ordinary TCP and transfer costs. Gzip reduces
+body bytes, but [Chapter 20](20-test-gzip-on-caddy.md) shows why its benefit must
+be weighed against extra server CPU on the actual path. These are current,
+retrospective comparisons, not claims that an optimization has shipped.
 
 The [measurement record](../MEASUREMENTS.md#network-stage-deep-dive-20-october-2026)
 and [nine-question review](../PHASE-REVIEWS.md#network-stage-deep-dive-20-october-2026)

@@ -21,6 +21,9 @@ commands and freshness remain unchanged; no whole-hit speedup was established.
 
 ## Follow the executable and probe separately
 
+A probe is a command Receipt runs to ask about the current tool environment.
+`PATH` is the ordered list of directories searched to find a command such as
+`go`. The manifest records both the selected executable and the probe's answer.
 For a Go invocation the sequence is:
 
 ```text
@@ -40,17 +43,19 @@ The executable hash identifies its bytes. The toolchain hash identifies the
 probe's output. These are different inputs, not substitutes for each other.
 The existing manifest names and normalization rules stay unchanged.
 
-The new `--timings` fields split the work without adding private paths, commands,
+The `--timings` fields introduced by this change split the work without adding private paths, commands,
 keys or probe output to diagnostic labels:
 
 | Stage | Boundary |
 | --- | --- |
-| `discovery` | Git root lookup inside Build plus file discovery and extra-input enumeration; normally two calls |
+| `discovery` | File discovery and extra inputs; standalone Build also finds the root. The current initial CLI scan reuses its root (Chapter 14). |
 | `input_files` | The ordinary working-tree/extra-file read/hash loop and input appends |
 | `executable` | Reading/hashing the selected command executable, including direct-pytest fallback |
 | `toolchain` | The non-Cargo probe subprocess, output capture, normalization and output hash |
 
-These fields sit inside `fingerprint`; do not add parent and children. They are
+These intervals sit inside `fingerprint`. For example, the time spent reading an
+executable is already part of the fingerprint timer; adding both would count
+that reading twice. They are
 elapsed time, including waiting, not CPU samples. Executable path lookup,
 environment hashing, sorting and other work remain outside the child spans. The
 settings loader's earlier Git-root query is outside fingerprinting. Cargo keeps
@@ -96,7 +101,9 @@ The production branch in
 	return Input{ExecutableInput, exe, digest}, nil, nil
 ```
 
-The empty string preserves the old raw-byte hash. `32<<10` supplies the 32 KiB
+`exe` is the executable's path and `digest` is the resulting hash. An error
+returns before an executable input is constructed. The empty string preserves
+the old raw-byte hash. `32<<10` supplies the 32 KiB
 buffer hint; it does not cap the number of executable bytes read. The absolute
 path is still the one found through PATH, not a newly canonicalized symlink
 target. Executable symlinks continue to be followed when reading, unlike the
@@ -189,8 +196,9 @@ executable and 100 timed hash operations per process:
 | Process CPU, user + system | 0.81 s | 0.68 s |
 
 MB is decimal; the input is 12 MiB. Timed allocations exclude fixture setup.
-Process CPU and resident memory include setup, benchmark calibration and runtime
-work. This is about **99.7% fewer allocated bytes**, with **16% lower median
+Process CPU counts work on processors, including work by the operating system.
+Resident memory is memory held in physical RAM; RSS is its reported size. These
+process totals include setup, benchmark calibration and runtime work. This is about **99.7% fewer allocated bytes**, with **16% lower median
 process CPU** and **49% lower peak RSS** in this fixture. It is not a promise of
 those percentages for every executable or filesystem.
 

@@ -1,6 +1,8 @@
 # 20. Test gzip on the actual Caddy deployment
 
-A Linux CI runner asks the real cache endpoint for a saved result. Caddy writes
+A Linux CI runner asks the real cache endpoint for a saved result. Caddy is the
+program in front of Receipt: it accepts the encrypted connection and forwards
+the request to Receipt. This role is called a reverse proxy. Caddy writes
 64,252 response-body bytes without compression. With gzip, it writes about
 20,040 bytes. Go reconstructs the original 64,252 bytes, and Receipt validates
 and replays the same result. This time the runner's connection path is short:
@@ -111,6 +113,12 @@ The gaps let us bracket separate server resource windows. They also mean this
 is a batched comparison, not randomized adjacent requests. Changing network
 conditions can differ between the batches even with their order reversed.
 
+Read “identity” as uncompressed. The median is the middle measured duration;
+the mean is the total duration divided by the number of calls, so unusually
+slow calls pull it upward. The 95th percentile describes the slow end: roughly
+95% of calls finish within that duration. Here “Decode” means converting JSON
+bytes into a checked Receipt result.
+
 | Metric | Identity | Gzip |
 | --- | ---: | ---: |
 | Median whole CLI | 120.53 ms | 118.22 ms |
@@ -164,7 +172,10 @@ the same Caddy process serves both encodings and can retain buffers and other
 state. Its sampled maximum RSS rose through 55.02, 55.74, 56.70, 57.66, 58.82 and
 59.14 MB as batches alternated. Identity batches inherit state from earlier gzip
 requests. We cannot subtract two such readings and call that gzip's allocation
-cost. RSS counts resident pages, not allocated bytes or retained heap. The
+cost. RSS (resident set size) counts memory currently in physical RAM. Allocation
+bytes count memory requested over time; retained heap is memory the program
+still keeps. A process can reuse a buffer across many requests, so these
+measurements need not rise together. The
 [reference](../MEASUREMENTS.md#actual-caddy-gzip-results-20-october-2026) keeps
 process and service-group memory scopes separate.
 

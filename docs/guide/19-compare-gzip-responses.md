@@ -5,7 +5,8 @@ the real Caddy/Receipt/PostgreSQL endpoint from Linux CI. Its short network path
 shows a large body-byte reduction but a much smaller latency difference and
 higher observed Caddy CPU. The temporary profile was restored afterward.
 
-Receipt fetches a saved result over a link with about 24 ms round-trip delay.
+Receipt fetches a saved result over a link with about 24 ms round-trip delay:
+a message and its reply need about 24 ms to travel out and back.
 Sending its plain response body took 62,728 bytes. Sending the same result with
 gzip took 19,073 bytes. The client reconstructed the same original bytes and
 validated the same saved result. Median whole-command time fell from **192 ms
@@ -110,8 +111,10 @@ not a promised production saving.
 | 24 ms | 192.34 ms | 169.24 ms | −23.08 ms |
 | 64 ms | 392.38 ms | 329.19 ms | −63.18 ms |
 
-A negative paired difference means the gzip invocation finished sooner than
-its adjacent identity invocation. The paired statistic differs from subtracting
+Read “median” as the middle value after sorting the measurements. A paired
+difference compares neighboring calls: for illustration, 170 ms gzip minus
+190 ms identity is −20 ms. The negative sign means gzip finished sooner.
+Those example numbers explain the calculation; the table contains the measurements. The paired statistic differs from subtracting
 the two independent medians; it compares each nearby pair first.
 
 The body-read measurements locate the main difference. At 24 ms added round-trip
@@ -144,7 +147,9 @@ In this job the client used about 0.14–0.59 ms more mean CPU and the server ab
 counts or a calibrated cost for every payload. Both paths also run the same
 hashing and diagnostic observers; their common overhead is not calibrated.
 
-Client mean reported peak resident RAM stayed around 16.5 MB. Server peak RAM
+Resident RAM is memory currently held in physical RAM for a process. Its peak
+is the highest reported value during the run, rather than the sum of all
+temporary memory requests. Client mean reported peak resident RAM stayed around 16.5 MB. Server peak RAM
 averaged roughly 15 MB across three fresh processes per variant/condition.
 Gzip's server readings were slightly lower, despite its encoder buffers. That
 is not evidence that compression saves memory: peak resident pages are different
@@ -210,7 +215,8 @@ the added CPU time. Gzip is therefore a promising next deployment experiment.
 On the low-delay link, identity remains faster for a typical call. A smaller or
 less compressible result could also leave little benefit.
 
-The next deployment-specific comparison should use the intended Caddy build,
+That deployment-specific comparison was subsequently completed in
+[Chapter 20](20-test-gzip-on-caddy.md). The original next-step proposal was to use the intended Caddy build,
 its gzip implementation and real authentication/storage path, with the same
 before/after checks and bounded measurements. Caddy supports negotiated gzip,
 but its implementation is not this fixture's standard-library encoder. Keep

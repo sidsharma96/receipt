@@ -5210,3 +5210,94 @@ Python/YAML/TOML paths under `scripts/utils/` are ignored. All nine CI-helper te
 and a fresh `go test -count=1 -ldflags=-linkmode=external ./...` passed locally.
 The moved example's bytes match the prior Git version exactly, and
 `git diff --check` passed. No new performance or live-service measurements ran.
+
+
+## Latest-chapter readability amendment, 20 October 2026
+
+This is a documentation review of Chapters 17–22, not an implemented optimization
+or a new runtime measurement. The original dated nine-question reviews and their
+evidence remain unchanged. For example, Chapter 22 now follows one 391 ms fetch
+through address lookup, connection setup, encryption, server waiting, body
+collection and validation before comparing possible optimizations.
+
+The review applied the prose guide's section checklist to the execution flow,
+measurement interpretation, costs, failure limits and alternatives in all six
+chapters. The main gaps were unexplained vocabulary and compressed explanations
+of statistics, CPU attribution and network waiting. The edits address these as
+follows:
+
+| Chapter | Reading obstacle | Revision |
+| --- | --- | --- |
+| 17 | Runner/server roles and statistics assumed background | Define the machines, quarantine and median; explain why independently selected middle durations cannot isolate network time. |
+| 18 | Span and paired-comparison language obscured the result | Define an interval and explain neighboring-call subtraction versus separate group medians. Preserve the actual client excerpts and overlap warning. |
+| 19 | Compression statistics and memory costs assumed vocabulary | Explain round trips, give a labeled illustrative subtraction and define resident RAM. Mark Chapter 20 as the completed follow-up to the historical proposal. |
+| 20 | Proxy and resource accounting were introduced too quickly | Explain Caddy's role, percentile/mean/median and three distinct memory quantities. Preserve restoration failures and cache fallback behavior. |
+| 21 | Profile totals and JSON shape checking were too compressed | Follow one input through shape and value checks; explain overlapping call-stack samples, leaf categories, allocations and differential testing. |
+| 22 | Several networking mechanisms appeared before their purpose | Use a numbered measured request; explain DNS resolvers, handshake messages, certificate initialization and acknowledgment waiting; add an adjacent text sequence and explain each operation in the existing Go excerpt. Keep assembly detail in an optional disclosure. |
+
+The recommendation is a controlled placement comparison for fresh CI jobs with
+few operations. This is advice, not an approved migration or a measured regional
+speedup. The chapter records the assumptions, evidence and revisit conditions:
+repeated operations favor investigating bounded batching; CPU-bound service work
+raises JSON checking's priority; DNS remains a separate occasional-delay target.
+The reuse comparison retains its diagnostic scope and first-request limitation.
+No new speedup, capacity, security or compatibility guarantee is claimed.
+
+Verification: `make docs` builds the book and all 23 documentation tests pass;
+`git diff --check` passes. These check source links, matching excerpts, generated
+questions and other book invariants, not comprehension. The existing network
+figure was inspected in the browser at desktop size, including its image zoom.
+Chapter 22's body-reading section and Chapter 21's introduction were inspected at
+390-pixel width with the contents drawer closed; neither had document-wide
+horizontal overflow. Chapter 22's first question answer expanded successfully.
+The desktop-to-phone resize retained an open contents drawer until it was closed;
+this was an existing UI state, not a new layout change.
+
+Remaining limits: this was a source review of all six chapters with targeted
+rendered checks, not a screenshot audit of every section or figure, a full
+keyboard/accessibility audit, or a study with beginning students. No application
+tests, live measurements or deployment changes were performed for the prose
+revision. Revisit the explanations when a new reader cannot trace the example or
+when an implemented optimization changes the current-status notes.
+
+
+## Chapters 10–17 readability amendment, 20 October 2026
+
+This extends the documentation review to Chapters 10–17. It preserves the earlier
+Chapters 17–22 edits and all original phase reviews. No application behavior,
+benchmark record or deployment was changed. The review considered normal flow,
+code explanations, failures, costs, alternatives and current-status language,
+not just the number of diagrams or definitions.
+
+For example, Chapter 11 now starts with output file X surviving a failed database
+step. The reader follows the remaining file, missing reference, retry and cleanup
+before encountering transaction and lock terminology. Chapter 10 separately
+shows the local marker and shared server after a failed conflict report, avoiding
+the implication that a local success automatically updates other clients.
+
+| Chapter | Reading change |
+| --- | --- |
+| 10 | Explain the command separator and quarantine at first use; show both stores after a partial reporting failure; qualify the synchronization guarantee and identify R2's role. |
+| 11 | Replace the opening list of primitives with a failed-save sequence and a method for comparing alternatives against that example. Keep the linked design defense and existing questions. |
+| 12 | Explain waiting versus CPU and temporary allocations with a labeled example; make profiling commands optional; distinguish the historical local priorities from later implemented changes and remote priorities. |
+| 13 | Define probe and PATH, explain the existing hash excerpt, and update the discovery-stage description to agree with the current initial CLI scan. Historical timings stay labeled. |
+| 14 | Explain invocation and repository boundaries; keep the first experiment in an optional disclosure with its limitation visible; teach resampling and mark the launcher investigation as preceding Chapter 16. |
+| 15 | Explain why the temporary flag spelling is normalized, distinguish that from output normalization, and clarify text handling and the scale of allocation/time savings. |
+| 16 | Separate the implemented Git change from the Go/stall investigations; explain each guard, the resolver's cost, four-call comparisons and the compiler-record failure. |
+| 17 | Preserve the preceding readability edits; explain database buffer hits, correct the direction of the illustrative subtraction, and link the completed network follow-up. |
+
+Verification: `make docs` builds the book and all 23 documentation checks pass;
+`git diff --check` passes. Existing attributed snippets and generated questions
+remain checked. Targeted browser review covered Chapter 11 at desktop and
+390-pixel width, the Chapter 12 optional profiling section and the Chapter 14
+historical-experiment disclosure. Both disclosures opened successfully. The
+phone check exposed a wide Chapter 11 text sequence; it was changed to a vertical
+sequence. These checks are documentation verification, not rerun runtime tests.
+
+Limits: all eight chapters received source review, but not every diagram or
+section received a rendered audit. No beginner-reader study or full keyboard and
+screen-reader audit was performed. Existing advanced questions remain optional
+and retain their levels and links. Revisit any explanation a new reader cannot
+trace, and update current-status notes when an investigation becomes an
+implemented change. The original nine-question implementation reviews remain
+the source of detailed evidence; this amendment does not claim a new phase.

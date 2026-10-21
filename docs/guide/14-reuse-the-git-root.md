@@ -2,7 +2,8 @@
 
 You run `receipt run --timings -- go test -count=1 ./...` from a repository's
 `nested/` directory. Before reading configuration, Receipt asks Git where the
-working tree begins. Git returns the parent directory. Until this optimization,
+working tree begins—the top directory of the checkout. Git returns the parent
+directory. One invocation means one launch of Receipt, ending when it exits. Until this optimization,
 Receipt asked the same question again before listing the files to hash.
 
 On 18 October 2026 we removed that second initial question. Receipt now passes
@@ -86,8 +87,9 @@ exercises this case. Reusing the initial root after execution would lose that
 check, so the new API explicitly forbids retaining the root across execution or
 across invocations.
 
-The contract assumes the repository topology stays stable while configuration
-and the initial fingerprint are collected. A concurrent rename or replacement
+This assumes the directories and repository boundaries stay in place while
+configuration and the initial fingerprint are collected. That arrangement is
+what “repository topology” means here. A concurrent rename or replacement
 can still race these observations, just as file edits can race hashing. This
 optimization does not make a filesystem snapshot. It removes one observation;
 it promises compatible keys for the same stable repository, not identical
@@ -118,6 +120,14 @@ cover every operation and nested stages must not be added to their parents.
 
 ## Initial ten-pair experiment (historical)
 
+The first comparison suggested a benefit, but exaggerated the Go whole-hit
+saving. The controlled rerun in the next section is the stronger evidence:
+roughly 15–17 ms saved per warm hit on this machine. Keep the first result as
+history so we can see why the conclusion changed.
+
+<details>
+<summary>Original measurements and their limits</summary>
+
 The comparison created entries with the unmodified CLI from commit `97b833e`,
 then alternated ten old/new pairs for each command form. All **60 expected hits**
 replayed without executing tests. Full keys matched for a generic command at the
@@ -142,6 +152,8 @@ records, ranges and reproduction instructions are in the
 [measurement reference](../MEASUREMENTS.md#git-root-reuse-18-october-2026).
 No cold-device, network-filesystem or power measurements were made. We removed
 one Git invocation; we did not measure exact filesystem syscall savings.
+
+</details>
 
 ## Repeat with controls before attributing the gain
 
@@ -184,7 +196,10 @@ and 60 same-binary control groups.
 
 A negative saving means the second label was slower. An interval spanning zero
 does not clearly distinguish a saving from no change in this experiment.
-The intervals come from repeatedly resampling groups of nearby observations;
+An interval is a range expressing uncertainty in the estimated average saving.
+We estimate it by repeatedly drawing groups from the observations we already
+collected and recalculating the average. This is resampling; it does not create
+new measurements. The intervals come from groups of nearby observations;
 they describe uncertainty under that method's assumptions, not guaranteed
 bounds for every machine. The first control even produced an interval excluding
 zero despite identical code. Its long pauses and the few available groups made
@@ -258,6 +273,10 @@ the collector merely because a Go program sometimes finishes slowly.
 
 ## Look inside Git before blaming its file scan
 
+This is the investigation that led to [Chapter 16](16-resolve-selected-git.md).
+The paragraphs below describe what was known before that optimization shipped;
+its measured implementation cost belongs to Chapter 16.
+
 Git has its own diagnostic clock, called Trace2. We measured elapsed time around
 the process and compared it with Git's reported duration. On this Mac, the
 usual Git entry point was a developer-tool launcher in /usr/bin. The selected
@@ -289,7 +308,7 @@ for some event. Use those OS observations from the same slow call before
 assigning a cause. The
 [research and experiment reference](../MEASUREMENTS.md#git-trace2-and-the-macos-launcher-18-october-2026)
 links the official guides, exact metrics, raw traces and reproduction commands.
-No production Git selection changed.
+At this investigation stage, no production Git selection had changed.
 
 ## Slow hits can move between stages
 
@@ -315,12 +334,13 @@ baseline. It makes three Git calls per hit, whereas current production makes
 two. The selected direct path was resolved outside the timer, so a production
 optimization must also measure that resolution cost.
 
-There are two separate next steps: reduce the measured launcher overhead while
+The investigation identified two separate next steps: reduce the measured launcher overhead while
 respecting the user's Git choice, and investigate remaining waits across Go
 startup and file operations. Bypassing the launcher did not eliminate slow hits.
 The [capture and replay reference](../MEASUREMENTS.md#correlated-startup-outliers-and-wider-variance-18-october-2026)
 keeps the full observations, failed recording attempts and limits. No production
-Git selection or probe freshness changed.
+Git selection or probe freshness changed during that diagnostic run. Chapter 16
+subsequently implemented Git selection; fresh probes remain.
 
 ## Choose the next question from evidence
 

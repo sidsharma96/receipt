@@ -1,7 +1,8 @@
 # 16. Resolve the selected Git once
 
 You run `receipt run --timings -- go test -count=1 ./...` on a Mac. Your `PATH`
-selects `/usr/bin/git`. That program is Apple's launcher: it finds the Git inside
+selects `/usr/bin/git`. `PATH` is the ordered list of directories searched for
+commands. That program is Apple's launcher: it finds the Git inside
 the active developer tools, then starts it. Receipt needs Git twice on a hit:
 once to find the root for configuration, and once to list files for hashing.
 Previously both calls went through that launcher.
@@ -10,7 +11,14 @@ On 18 October 2026 we changed `run` and `explain` to choose discovery's Git once
 per invocation. If the selected path is exactly `/usr/bin/git` on macOS, Receipt
 asks `/usr/bin/xcrun --find git` for the developer Git and calls that path directly.
 [Apple describes the launchers and developer-tool selection here](https://developer.apple.com/library/archive/technotes/tn2339/_index.html).
-A custom Git or wrapper selected through `PATH` keeps its selected path.
+A custom Git or wrapper selected through `PATH` keeps its selected path. A
+wrapper is a program that does extra work before starting the real Git, so
+bypassing it could change the user's intended behavior.
+
+There are two stories below. The first is an implemented Git optimization with
+before/after measurements. The later Go-probe and long-stall sections are
+investigations: they explain evidence and uncertainty without installing a Go
+patch or promising that all slow calls have been fixed.
 
 ## Follow one hit, then a miss
 
@@ -56,7 +64,10 @@ if err != nil {
 }
 ```
 
-`selected` is the path found by Go's ordinary `PATH` search. The exact comparison
+`darwin` is Go's name for macOS. `selected` is the path found by Go's ordinary
+`PATH` search. The first return keeps that path whenever this is another OS or
+another Git path. `find(ctx)` runs the resolver only for the eligible launcher;
+the second return preserves the original path if resolution fails. The exact comparison
 matters: `/custom/bin/git` might be a script that sets configuration or checks
 permissions before calling Git. Receipt must run that script. It also keeps a
 custom symlink's spelling rather than following it to decide whether to bypass it.
@@ -96,7 +107,8 @@ configuration and environment still apply. Selection is not serialized into the
 manifest: the root, files, environment hashes, command executable identity,
 probes and key format are unchanged.
 
-Differential tests compare the full manifests and keys with and without selection,
+Differential tests run both paths on the same inputs and compare their answers.
+Here they compare the full manifests and keys with and without selection,
 from the repository root and a nested directory. Their fixture includes deleted
 tracked files, ignored and extra inputs, spaces and a newline in filenames.
 Existing CLI tests also preserve the custom wrapper's root/list call counts and
@@ -112,6 +124,11 @@ actual old and new production binaries, including selection on every invocation.
 The new `git_selection` timing span includes `PATH` lookup and, on this machine,
 `xcrun`. It is inside total Receipt duration but outside fingerprint/discovery.
 Do not add nested timing spans together or count just the faster file-list call.
+
+For example, bypassing two launcher calls is useful only after paying for the
+new resolver once. If the saved calls cost less than the resolver, the whole hit
+would get slower despite faster file listing. The table includes that resolver
+cost. An arithmetic mean adds the durations and divides by the number of calls.
 
 | Warm hit, arithmetic means | Before | After | Saving |
 | --- | ---: | ---: | ---: |
@@ -133,14 +150,18 @@ report from `/usr/bin/time -l`, not total allocations or simultaneous memory sum
 across every process. Smaller startup work does not imply a proportional peak-RAM
 reduction.
 
-The experiment used three blocks of balanced randomized ABBA/BAAB quartets:
-old/new/new/old or its reverse. Averaging the two observations of each binary
+The experiment grouped four calls at a time: old/new/new/old, or the reverse.
+These groups are called ABBA/BAAB quartets in the measurement record; A and B
+stand for the two binaries. Three blocks used balanced, randomized group orders. Averaging the two observations of each binary
 reduces a steadily changing background load's effect. A separate old/old control
 measures noise when there is no code difference. All 600 measured calls were
 hits, and no outlier was removed. The fixture held 256 files of 4 KiB plus a tiny
 Go test; caches and binaries were outside the repository. These are warm local
 measurements on one Apple M1, not cold-disk or fleet-wide capacity results.
 
+To estimate uncertainty, the analysis repeatedly selected groups from the
+existing observations and recalculated the average saving. These are resampling
+intervals, not additional measured runs or bounds on every future call.
 The 95% resampling intervals for mean elapsed savings were 9.03–14.02 ms for Go
 and 9.76–19.09 ms for generic. We resampled groups of five neighboring quartets
 within their blocks to retain some short-term dependence. These intervals describe
@@ -180,7 +201,9 @@ flags, Go asks the C compiler about itself. On this Mac that starts
 identity after checking whether the compiler file changed.
 
 Follow this illustrative record through Go's actual format. NUL means a zero
-byte separating fields; `stat description` stands for recorded file metadata.
+byte separating fields; `stat description` stands for file information such as
+size and modification time. The reader expects pairs: a filename followed by its
+file information. An extra empty field makes that pairing fail.
 
 ```text
 Writer: filename NUL stat description NUL compiler-ID bytes
@@ -207,7 +230,8 @@ the experiment started none. All settings matched after the recognized temporary
 scratch suffix was normalized. These are rebuilt diagnostic Go binaries with
 one warm isolated build cache, not a production Receipt benchmark.
 
-We also obtained a valid **Go runtime trace**. In its 54.24 ms specimen, Go spent
+We also obtained a valid **Go runtime trace**, a record of execution and waiting
+events reported by Go while the program runs. In its 54.24 ms specimen, Go spent
 about 28.18 ms in the system call that waits for the compiler child to finish.
 That explains what Go was waiting for in that call. It does not tell us whether
 Clang was doing work or waiting on the OS. Runtime tracing begins at main and
@@ -298,7 +322,8 @@ decompressions, plus 220 swap-ins. A swap-in brings a page back from swap storag
 These are **machine-wide cumulative work counts**, not Go's allocations or the
 amount of RAM held at once. A page may be processed repeatedly.
 
-This makes shared machine contention a stronger lead: several operations slowed
+Contention means several activities competing for limited resources. This makes
+shared machine contention a stronger lead: several operations slowed
 while memory and background applications were active. It does **not** identify
 which application or resource caused the stall. The fifth block also had
 substantial compression without a ≥200 ms Go probe. Five of seven slow probes

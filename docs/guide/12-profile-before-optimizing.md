@@ -12,7 +12,9 @@ direct runs had a median elapsed time of **832 ms**. One miss took **1,716 ms**;
 five hits had a median of **359 ms**. The median fingerprint stage was **267 ms**;
 the median lookup stage was **5.94 ms**. These are separate medians, not pieces
 of one representative run. The files included uncommitted profiling fixtures.
-This is a warm local experiment, not an internet or production measurement.
+Here “median” means the middle measured duration after sorting the runs. “Warm”
+means earlier work may already have loaded files or compiled packages into
+caches. This is a local experiment, not an internet or production measurement.
 
 That makes fingerprinting the first place to investigate for this user workload.
 A faster database cannot help a standalone local hit. A faster hash alone will
@@ -22,7 +24,12 @@ claiming which change will save the 267 ms.
 
 The initial investigation added measurements without production changes. A later
 18 October change implements streaming file-input hashing, explained below; the
-other optimization candidates remain unimplemented. Cache key encoding and
+other candidates discussed below remain proposals unless a later chapter says
+otherwise. Chapters [13](13-hash-executables-and-measure-probes.md),
+[14](14-reuse-the-git-root.md), [15](15-measure-toolchain-probe-overhead.md) and
+[16](16-resolve-selected-git.md) record the subsequent executable, Git and probe
+changes. Chapter [22](22-explain-network-latency.md#what-to-focus-on-next) gives
+the later priority for remote CI hits; that is a different workload. Cache key encoding and
 database migrations are unchanged. The
 [detailed review](../PHASE-REVIEWS.md#profiling-investigation-18-october-2026)
 records the evidence and remaining gaps.
@@ -47,8 +54,18 @@ lifecycle, so the second writer can wait even when its key differs.
 
 Use `--timings` first. It tells you **elapsed time**, including waiting. Use a CPU
 profile next when you need to know which functions consumed sampled CPU time.
-Use an allocation profile to find temporary memory churn. Use the database's
+Use an allocation profile to find repeated requests for temporary memory. Use the database's
 query planner only for the SQL part. These tools answer different questions.
+
+For illustration, a call could take 20 ms while doing 2 ms of CPU work and
+waiting during the rest. Making that computation twice as fast would save only
+1 ms. Similarly, allocating ten temporary buffers one after another is different
+from keeping all ten at once. The following tools distinguish those questions;
+the numbers in this paragraph are examples, not measurements.
+
+In the table, `B/op` means bytes allocated per operation. A heap profile describes
+memory managed by Go; resident memory is memory currently held in physical RAM
+for the process. A child process is a separate program started by Receipt.
 
 | Question | Measurement | What it does not establish |
 | --- | --- | --- |
@@ -65,6 +82,10 @@ for a lock, disk, network, or subprocess. Driving CPU utilization to 100% is not
 the goal. Reduce work and waiting per correct result while keeping memory bounded.
 
 ## Run the first measurement yourself
+
+The main comparison is direct execution, one cache miss, then repeated hits on
+the same files. The commands below reproduce it; you can continue to the hashing
+example if your goal is to understand the change rather than run the experiment.
 
 Build once, then keep the workload and files unchanged throughout the experiment:
 
@@ -210,8 +231,11 @@ the 32 KiB cap if repeatable representative workloads show a better tradeoff.
 ## The second opportunity: avoid repeatedly parsing large output
 
 A saved 1 MiB stdout becomes roughly 1.33 MiB when represented as base64 in JSON.
+Base64 spells arbitrary bytes using text characters, so the representation grows.
+Here 1 MiB is 1,048,576 bytes.
 Receipt wraps that result inside another JSON object with a checksum. On decode,
-strict shape checks inspect fields, then typed decoding constructs the result.
+strict shape checks inspect allowed field names and value forms, then typed
+decoding fills the Go fields that represent the result.
 Nested objects repeat their own checks.
 
 The current [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L27-L60):
@@ -255,7 +279,10 @@ A binary or streaming wire format could avoid base64 and copies but requires
 versioning and client compatibility. Revisit it when representative output sizes
 justify that migration, rather than assuming every test prints a megabyte.
 
-To reproduce the profiles (run packages separately so each profile has one binary):
+<details>
+<summary>Optional: reproduce the CPU and memory profiles</summary>
+
+Run packages separately so each profile has one binary:
 
 ```sh
 mkdir -p .tools/profiling
@@ -294,6 +321,8 @@ work. They are not per-decode hardware counts. For attribution on macOS use
 Instruments Time Profiler/Allocations; on Linux use `perf stat`/`perf record`
 when hardware-counter permissions permit. Those tools were not run here.
 
+</details>
+
 ## The third opportunity: shorten shared writer occupancy
 
 A duplicate 1 MiB blob already exists, yet `FileBlobs.Put` creates a temporary
@@ -315,7 +344,8 @@ averaged **47.99 ms**. Four workers make 32 requests; one worker makes 8.
 The lock protects files and metadata together; removing it could let cleanup
 delete a blob before publication finishes. Reduce redundant work inside that
 protected interval first. More admission slots can increase queued work and RAM
-without improving serialized throughput.
+without completing more uploads per second: the writer lock still permits only
+one upload at a time. That completion rate is called throughput.
 
 A local hit has another candidate: `replay` always calls `recordHistory`, which
 serializes and durably replaces the manifest. Consider skipping an unchanged
@@ -428,6 +458,11 @@ would add that cost without helping current key-based lookups, which do not filt
 inside the JSON record.
 
 ## Decide what to optimize next
+
+This table preserves the priorities from the local profiling investigation.
+The current-status notes at the start link the later implemented changes and
+remote investigation. Use the row matching the work you actually need to speed
+up; the first local priority is not automatically the first network priority.
 
 | Priority | Candidate | Benefit to prove | Revisit or stop when |
 | --- | --- | --- | --- |

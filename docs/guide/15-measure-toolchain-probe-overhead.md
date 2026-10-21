@@ -9,6 +9,12 @@ Second observation: -ffile-prefix-map=/tmp/go-build456=/tmp/go-build
 Recorded form:      -ffile-prefix-map=/tmp/go-build<scratch>=/tmp/go-build
 ```
 
+A compiler flag is an option passed to the compiler. This one tells it how to
+rewrite a path in its output. The scratch directory is temporary workspace for
+the build; its generated digits can change even when the meaningful settings do
+not. **Normalization** means giving those equivalent observations one recorded
+spelling. It is applied to this input description, never to test output.
+
 Receipt already replaces this particular numeric suffix so a temporary directory
 name does not cause a cache miss. It keeps the root, flag kind, destination and
 other settings. On 18 October 2026 we measured probe overhead and made this local
@@ -68,7 +74,7 @@ could miss an adjacent flag after consuming their shared separator.
 
 For ordinary path prefixes, the new code scans for `-f`, checks the exact flag
 and path prefix, consumes ASCII digits, then checks the exact destination and
-separator. A `strings.Builder` collects unchanged text and the replacement. It
+separator. A `strings.Builder` accumulates the result as text is copied or replaced. It
 returns the original string if no recognized flag was found.
 
 The final checks in
@@ -105,7 +111,8 @@ if len(prefix) <= 4096 && utf8.ValidString(prefix) {
 ```
 
 The threshold selects an implementation; it does not reject longer paths.
-Prefixes longer than 4096 bytes or containing invalid UTF-8 use the original
+UTF-8 is the encoding used for text. Prefixes longer than 4096 bytes or
+containing invalid UTF-8 use the original
 regexp algorithm, including its error behavior. This preserves unusual-input
 handling instead of silently making a formerly refused path acceptable. Both
 branches see the same cleaned path prefix. No shared state, worker or cached
@@ -146,7 +153,9 @@ Six alternating process pairs ran 10,000 normalizations per process over real
 | Benchmark-process CPU | 0.480 s | 0.225 s |
 | Benchmark-process peak RAM | 15.97 MB | 15.97 MB |
 
-The normalizer took about 56% less time and allocated about 68% fewer bytes in
+Read µs as microseconds: 1,000 µs make 1 ms. “Allocated bytes” sums temporary
+memory requests during the operation; it does not say all those bytes remain
+in RAM together. The normalizer took about 56% less time and allocated about 68% fewer bytes in
 this fixture. Process totals include benchmark startup, fixture probe and runtime
 work; timed per-operation figures exclude that setup. Peak resident memory is a
 maximum, so fewer allocations need not lower it.

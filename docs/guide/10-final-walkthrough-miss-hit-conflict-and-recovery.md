@@ -8,7 +8,9 @@ receipt run -- uv run pytest
 
 Assume the Python environment already works and Receipt is configured to use
 your remote cache. The question is: do we have a saved successful result for
-these recorded inputs, and are we still allowed to reuse it?
+these recorded inputs, and are we still allowed to reuse it? The `--` ends
+Receipt's options; `uv run pytest` is the command Receipt may execute. The
+local cache is on your machine; the remote cache is the shared server.
 
 ## A miss: run the tests
 
@@ -51,7 +53,9 @@ than reusing K.
 
 Run the same command with unchanged recorded inputs. Receipt calculates K again
 and finds the local result. When a remote cache is configured, it also checks
-the server's quarantine status before trusting that local copy.
+the server's quarantine status before trusting that local copy. Quarantine is
+a warning attached to a key: different results have been reported, so stop
+reusing it. The conflict section below follows how that warning is created.
 
 ![A local hit checks the remote quarantine status before replaying saved output.](../assets/reviews/walkthrough-hit.svg)
 
@@ -128,8 +132,12 @@ func quarantine(dir, key string) error {
 }
 ```
 
-The marker is a file, so it remains after this command ends. `syncDir` flushes
-the `quarantine/` directory, so the marker's name also survives a power loss. A verification
+The marker is a file, so it remains after this command ends. `syncDir` asks the
+operating system to persist the directory change after the marker's bytes have
+been written and synchronized.
+That is the durability step intended to preserve the name after a crash; it
+still depends on successful synchronization and the filesystem/storage honoring
+that request. A verification
 mismatch returns a nonzero exit code even when the fresh tests passed. If
 recorded inputs change during verification, Receipt instead reports that the
 comparison is inconclusive. Exceeding the output capture limit also prevents
@@ -141,6 +149,18 @@ input or an unreliable test. Two clients publishing different observations
 under the same key are another way the shared store can detect a conflict.
 There is no automatic rule that makes a quarantined key trusted again.
 
+Consider a successful local marker write and entry removal, followed by a failed
+network report:
+
+| Location after this partial failure | What remains | What the next run can do |
+| --- | --- | --- |
+| This client | K's quarantine marker; the reusable local entry has been removed | Execute instead of replaying K. An ordinary rerun does not clear the marker. |
+| Shared server | Its earlier result, without this client's conflict report | Other clients can still reuse it unless the server learns of a conflict by another successful report or publication. |
+
+The local success does not make the two machines agree. Retrying a report, if
+performed, must still reach the server successfully; an ordinary rerun is not
+a promise that the failed report is automatically repaired.
+
 ## Recovery: restore stored state, not trust
 
 Now suppose stored server data is lost. This is not conflict resolution:
@@ -148,7 +168,8 @@ restoring a backup recovers earlier state, not proof that a result is correct.
 
 A shared result spans database records and output files. Copying only the
 database can leave records pointing at missing files. Our backup includes both,
-plus the binary and selected configuration. Follow the copy out to R2 and back:
+plus the binary and selected configuration. R2 is the external object-storage
+service used to hold the encrypted backup archive. Follow the copy out and back:
 
 ![The downloaded R2 archive is decrypted and restored separately; live data stays in place.](../assets/reviews/walkthrough-recovery.svg)
 

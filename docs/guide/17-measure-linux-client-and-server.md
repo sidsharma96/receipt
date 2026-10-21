@@ -5,11 +5,12 @@ Go HTTP client and matches 60 requests to exact server log entries. It separates
 connection setup, body transfer and validation, and identifies DNS tail delays.
 The measurements below remain the earlier baseline, not a speedup comparison.
 
-GitHub starts an Ubuntu runner for our test job. That runner builds Receipt and
+GitHub starts an Ubuntu runner—a temporary Linux machine—for our test job.
+That runner builds Receipt and
 launches `receipt run --remote https://receipt.sidsharma.dev -- go test -count=1 ./...`.
 Receipt reads the checkout, hashes its inputs and checks Go's settings **on the
-runner**. It then asks the droplet for a saved result. On a miss, the runner
-executes Go tests; on a hit, it prints saved output instead.
+runner**. It then asks the droplet, our rented cache-server machine, for a saved
+result. On a miss, the runner executes Go tests; on a hit, it prints saved output instead.
 
 The binary has the same division of work when launched from a laptop. The
 `--remote` option chooses where to ask for saved results, not where to execute
@@ -54,6 +55,11 @@ measured three paths separately on two disposable GitHub Ubuntu runners:
 | Checked local | Read local result; ask the shared server whether it is quarantined | 194 ms | 276 ms |
 | Remote fetch | Start with an empty local cache; fetch and save the shared result | 295 ms | 427 ms |
 
+A median is the middle duration after sorting the measurements. It describes a
+typical call without letting a few very slow calls dominate the number. In the
+table, “quarantined” means a key has conflicting reported results and must not
+be reused, even if this runner still has a local copy.
+
 Each runner recorded 300 local hits, 60 checked-local hits and 30 remote fetches,
 in three blocks with a rotating case order. All **780 measured calls** were
 successful hits, without an execution stage. The same existing CI helper prepared
@@ -93,7 +99,8 @@ The larger remote delays are mostly outside fingerprinting. In the second
 session, a checked-local hit spent about 220 ms in lookup and a remote fetch
 about 374 ms. Meanwhile, the droplet's median status handler took **0.98 ms**
 and a successful fetch about **20 ms**. These clocks cover different boundaries;
-subtracting their marginal medians would not yield an exact network duration.
+subtracting the middle server duration from the middle client duration would
+not isolate network time: those two measurements may describe different requests.
 The gap does make connection and transfer costs important to investigate.
 
 Twenty separate curl requests provided a narrower diagnostic. For status,
@@ -109,8 +116,11 @@ lead without assigning those exact timings to Receipt.
 An index helps PostgreSQL locate a matching row without inspecting every row.
 We ran actual read-only query plans on the droplet for result lookup, status
 lookup and authentication. All three used the existing primary-key indexes,
-returned one row and needed two shared-buffer hits with no physical block read
-in those specimens. Planner execution times were about **0.06 ms**.
+returned one row and needed two shared-buffer hits in those specimens. A buffer
+hit means PostgreSQL found a requested data block in its memory cache. These
+queries reported no physical block reads; that is a warm-query observation, not
+a promise about a first request after restart. Reported query execution times
+were about **0.06 ms**.
 
 That is not the full cost of a server request. The program must also transfer
 and decode metadata—the saved description of inputs and results—verify output
@@ -129,8 +139,10 @@ compare the intended versions explicitly.
 
 ## Choose the next work from the path users take
 
-For fresh-runner CI latency, investigate HTTPS connection setup and result
-transfer first, using tracing inside Receipt's actual HTTP client. The local
+At this baseline stage, the next step was to investigate HTTPS connection setup and result
+transfer using tracing inside Receipt's actual HTTP client. Chapters
+[18](18-trace-go-http.md) through [22](22-explain-network-latency.md) now record
+that follow-up; the current recommendation is in Chapter 22. The local
 comparison already shows why another small Go-probe optimization cannot account
 for the much larger remote cost. Persistent connections across invocations,
 server placement and compression are possible experiments, not implemented

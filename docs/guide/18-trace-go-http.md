@@ -108,7 +108,10 @@ Every remote fetch began with an empty local cache outside the checkout.
 | Full HTTP span through body close | 91.42 ms | 171.45 ms |
 | Exact matching server handler | 1.06 ms | 24.85 ms |
 
-These are medians of individual spans; they are not additive. A phase includes
+A span is the interval between two recorded events. Each row takes the middle
+duration for that interval across requests. Those middle values can come from
+different requests, so adding the rows does not reconstruct one real request.
+The opening timeline, in contrast, follows a single request. A phase includes
 whatever CPU work and waiting happens inside its boundaries. TLS, for example,
 includes cryptographic/certificate work as well as network exchange. First-byte
 waiting includes server work, proxies and network travel. Body reading includes
@@ -163,8 +166,10 @@ and Receipt's stage timer, so their shared observer cost is not calibrated here.
 For each adjacent pair, subtracting stock from traced gave median latency
 differences of +0.96 ms checked-local and +1.18 ms fetch. Mean CPU differences
 were +0.61 and +0.98 ms, and mean peak-RAM differences were +0.069 and +0.063 MB.
-The fetch's slightly lower traced marginal median is not evidence of negative
-overhead: paired differences and independent medians describe different things.
+The fetch's slightly lower overall median with tracing does not show that tracing
+saves work. For the paired comparison, we subtract the ordinary call's time
+from its neighboring traced call first, then find the middle difference. That
+answers a different question from finding each group's middle time separately.
 Pairwise latency differences ranged from −72 to +83 ms for status and −62 to
 +43 ms for fetch. Network variation prevents treating those deltas as a precise
 instrumentation tax. Linux reported zero input blocks for every measured call,
