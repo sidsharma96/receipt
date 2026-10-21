@@ -544,3 +544,12 @@ comparison or a reason to migrate. Added a comparison helper and a locally teste
 repair that retains numeric child records before reporting probe failure. The
 [full nine-question review](../PHASE-REVIEWS.md#runner-placement-feasibility-20-october-2026)
 records evidence, missing failure data, verification and revisit conditions.
+
+## 20 October 2026: prepare public distribution
+
+Chapter 6 now follows a release tag through archive downloads and `go install`.
+The repository module path, internal imports and diagnostic build templates use
+the GitHub path. The release workflow builds Linux/macOS amd64/arm64 archives
+with checksums, Apache 2.0 licensing and dependency notices. See the
+[full review](../PHASE-REVIEWS.md#public-distribution-20-october-2026)
+for verification and publication limits. No performance optimization is included.

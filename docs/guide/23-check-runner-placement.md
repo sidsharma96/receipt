@@ -55,7 +55,7 @@ not isolate location.
 
 Each job used the same committed source, pinned Go version and existing fixture.
 The diagnostic invokes the real cache client. In
-[`Remote.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L62-L82):
+[`Remote.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L63-L83):
 
 ```go
 	b, e := io.ReadAll(io.LimitReader(resp.Body, MaxEntryBytes+1))

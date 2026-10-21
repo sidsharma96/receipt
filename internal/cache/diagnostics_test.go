@@ -8,12 +8,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"receipt/internal/auth"
-	"receipt/internal/observe"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 func TestRequestDiagnosticsRedactionAndConcurrentIDs(t *testing.T) {

@@ -20,3 +20,9 @@ class Samples(unittest.TestCase):
         for value in ('','receipt 1/2 1.0: cycles:\n  123 anything'):
             with self.assertRaises(ValueError):
                 summarize(value)
+
+    def test_public_module_symbols_keep_historical_groups(self):
+        for prefix in ('receipt', 'github.com/sidsharma96/receipt'):
+            report = summarize(f'receipt 1/2 1.0: cpu-clock:u: \n  123 {prefix}/internal/strictjson.Object\n  456 {prefix}/internal/cache.Encode\n  789 {prefix}/internal/cache.Postgres.Get\n')
+            for group in ('strict_object', 'encode', 'postgres_get'):
+                self.assertEqual(report['inclusive_groups'][group], 1)

@@ -6,8 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"receipt/internal/observe"
 	"strings"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 func cargoPolicy(dir string) (string, error) {

@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"receipt/internal/observe"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 // RequestEvent deliberately excludes paths, keys, headers, actors and error text.

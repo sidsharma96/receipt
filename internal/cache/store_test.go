@@ -7,9 +7,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"receipt/internal/fingerprint"
 	"sync"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/fingerprint"
 )
 
 func example() Result {

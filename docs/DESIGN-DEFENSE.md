@@ -247,8 +247,8 @@ The decisions are ordered so that each one depends only on earlier ones.
 
 **Decision.** The key is the SHA-256 of a manifest: a JSON record of everything
 Receipt knows to record about one test invocation. The
-[`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
-type has these fields, and [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L107-L153)
+[`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L53-L61)
+type has these fields, and [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L108-L154)
 fills them.
 
 | Field or input kind | Contents |
@@ -262,16 +262,16 @@ fills them.
 | `executable` input | The absolute path of the resolved command and the SHA-256 of its bytes. |
 | `toolchain` inputs | A runtime probe: Python version and installed distributions, `go env -json`, or the Cargo tool, metadata and source hashes. |
 
-[`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L155-L201)
-collects the paths. [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L203-L225)
+[`discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L156-L202)
+collects the paths. [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L204-L226)
 hashes each one as `SHA-256(octal permission bits + NUL byte + file bytes)`, so
 `chmod +x` changes the key. A tracked file that was deleted hashes as
 `SHA-256("deleted")`. That marker cannot equal a real file's hash except by a
 SHA-256 collision, because every real preimage contains a NUL byte after the
 permission digits and the string `deleted` contains none. Symlinks, submodules
 and other non-regular files make `Build` fail, and Receipt then runs the command
-uncached. [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L227-L240)
-hashes the environment, and [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L279-L302)
+uncached. [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L228-L241)
+hashes the environment, and [`toolchainProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L280-L303)
 selects the runtime probe.
 
 **Alternatives.**
@@ -326,7 +326,7 @@ call of its helper, for this reason.
 
 ### D2. How does the manifest become a key every time the same way?
 
-**Decision.** [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76)
+**Decision.** [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77)
 copies the inputs, sorts them by kind and then by name, encodes the manifest
 with Go's `json.Marshal`, and returns `Hash` of those bytes.
 
@@ -337,7 +337,7 @@ Four rules make the bytes deterministic:
 2. Inputs are sorted by (kind, name) using byte-wise string comparison.
 3. No two inputs share a (kind, name) pair. `sort.Slice` is not stable, so equal
    pairs could otherwise come out in either order.
-   [`Manifest.Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/json.go#L63-L88)
+   [`Manifest.Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/json.go#L64-L89)
    rejects a repeated pair, which makes the sort order total. `Build` cannot
    produce duplicates because it collects paths in a map.
 4. `json.Marshal` writes no optional whitespace, and its escaping is fixed:
@@ -345,7 +345,7 @@ Four rules make the bytes deterministic:
    bytes become the replacement character U+FFFD.
 
 The server recomputes the key when it accepts an upload, in
-[`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L51-L73),
+[`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74),
 and rejects a result whose key does not match its manifest.
 
 **Alternatives.** A published canonical form such as RFC 8785 (JSON
@@ -376,7 +376,7 @@ record it validates during garbage collection.
 ### D3. Why SHA-256?
 
 **Decision.** SHA-256 for keys, output files, envelope checksums and token
-digests, through [`Hash`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L62-L63).
+digests, through [`Hash`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L63-L64).
 
 **Alternatives.**
 
@@ -401,12 +401,12 @@ measurements show hashing, not reading, is the bottleneck.
 ### D4. Why is `RECEIPT_TOKEN` kept out of the key?
 
 **Decision.** Since 15 October 2026, Receipt's own bearer-token variable,
-[`TokenEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L40-L43),
+[`TokenEnvironment`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L41-L44),
 is never an environment input, and the test command does not inherit it.
-[`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L227-L240)
-always skips it, and [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
+[`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L228-L241)
+always skips it, and [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L42-L48)
 removes it from the child's environment in `Run`. The client still reads it,
-through [`os.Getenv(fingerprint.TokenEnvironment)`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L286-L288) in `run`,
+through [`os.Getenv(fingerprint.TokenEnvironment)`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L287-L289) in `run`,
 to authenticate to the server.
 
 **What happened before.** Every environment variable was hashed into the
@@ -457,7 +457,7 @@ is needed.
 
 ### D5. Why scan the inputs twice, and what can the two scans miss?
 
-**Decision.** On a miss, [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L315-L326)
+**Decision.** On a miss, [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L316-L327)
 builds the manifest again after the command finishes and publishes only if the
 key is unchanged. For example, `uv run` may install packages during the first
 run, which changes the Python probe.
@@ -477,7 +477,7 @@ writes and deletes between the scans is invisible too.
 
 ### D6. Why cache only successes, replay exact bytes and never normalise output?
 
-**Decision.** Only exit code 0 is reusable ([`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L51-L73)).
+**Decision.** Only exit code 0 is reusable ([`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)).
 A hit writes the saved stdout and then the saved stderr. `--verify` compares
 exit code and both streams byte for byte.
 
@@ -493,16 +493,16 @@ text as a conflict.
 
 **Decision.** `receipt run` has three modes besides the normal one, and a run
 may use at most one of them. Passing two prints "choose only one of --bypass,
---refresh, --verify" and runs nothing ([`modes`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L257-L265)).
+--refresh, --verify" and runs nothing ([`modes`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L258-L266)).
 
 - `--bypass` runs the command directly and returns its exit code. It computes
-  no key and reads or writes no cache ([`o.bypass`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L270-L274)).
+  no key and reads or writes no cache ([`o.bypass`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L271-L275)).
 - `--verify` changes only what happens on a hit, whether the hit came from the
   local cache or from the server. Receipt runs the tests again, scans the inputs
-  again and then decides in [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L163-L191).
+  again and then decides in [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L164-L192).
   On a miss it behaves like a normal run.
 - `--refresh` skips reuse. It still reads the local entry for this key, if one
-  exists, so that it can compare against it ([`lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L68-L76)).
+  exists, so that it can compare against it ([`lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L77)).
   It does not ask the server for one.
 
 **Exit codes of `--verify` on a hit.**
@@ -519,10 +519,10 @@ message on stderr.
 
 **When `--refresh` quarantines.** Only one case quarantines: the fresh run
 **fails**, a cached success for the same key existed locally, and the inputs
-did not change during the run ([`failed`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L193-L214)).
+did not change during the run ([`failed`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L194-L215)).
 A failure after a recorded success means the two observations disagree, so
 Receipt writes the marker, removes the entry and reports the conflict. The exit
-code is the fresh run's. If the fresh run succeeds, [`publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
+code is the fresh run's. If the fresh run succeeds, [`publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
 removes the old local entry and stores the new one, even if the output differs.
 The local cache does not compare them. The upload that follows does: a
 PostgreSQL server compares digests, and if the server already holds a different
@@ -544,7 +544,7 @@ run each time. Each quarantine they cause is permanent ([G15](#g15-quarantine-ca
 
 ### D7. How is a local result published so that a crash never leaves a partial entry?
 
-**Decision.** [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L149-L193)
+**Decision.** [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L150-L194)
 uses this exact sequence:
 
 1. [`MakeDirs`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/dirsync.go#L24-L50)
@@ -562,7 +562,7 @@ uses this exact sequence:
 9. The deferred `os.Remove(tmp)` deletes the temporary name. The inode lives on
    under the final name.
 
-[`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L71-L112)
+[`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L72-L113)
 uses the same sequence for shared output files, and
 [`FileBlobs.Bind`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_binding.go#L11-L71)
 uses it for the store identity marker.
@@ -586,7 +586,7 @@ then open a half-written file.
 A partial file can never appear under the final name, because the bytes were
 synced before the name existed. Local `.pending-*` leftovers do not count
 towards the size limit. Since 15 October 2026,
-[`removeStalePending`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L354-L366)
+[`removeStalePending`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L355-L367)
 in `prune` deletes any that are more than an hour old. A younger one may belong
 to a publication still running in another process, which removes its own file
 within seconds.
@@ -601,21 +601,21 @@ once per shard.
 
 ### D8. How does the local cache stay bounded, and why do quarantine markers win?
 
-**Decision.** After each successful publish, [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L368-L419)
+**Decision.** After each successful publish, [`prune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L369-L420)
 lists `entries/`, sorts by modification time and deletes the oldest until the
 total is at most `max_bytes` (1 GiB by default). Each hit touches the entry's
-modification time in [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L141-L161),
+modification time in [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162),
 so this is least-recently-used eviction.
 
 A quarantine marker is a file at `.receipt/quarantine/<key>`.
-[`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L221-L229)
+[`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L222-L230)
 writes it with a temporary file and `rename`, then syncs `quarantine/`, so the
-marker survives a power loss. [`Disk.Remove`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L195-L209)
+marker survives a power loss. [`Disk.Remove`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L196-L210)
 syncs `entries/` after removing the matching entry. Before 15 October 2026
 neither directory was synced, and a power loss could undo both changes.
-[`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L68-L102)
+[`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
 checks for it before it opens the entry, and
-[`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
+[`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
 checks it before saving. A marker therefore overrides an entry even if a racing
 process republishes the entry after the marker was written.
 
@@ -626,7 +626,7 @@ approximate.
 ### D9. Why does a local hit still ask the server?
 
 **Decision.** With a remote configured, a local hit calls
-[`Remote.Check`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L112-L126)
+[`Remote.Check`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L113-L127)
 (`GET /v1/status/<key>`) before replaying. HTTP 204 allows replay. HTTP 409
 writes a local quarantine marker. Any other answer, including a timeout, means
 run the tests.
@@ -640,13 +640,13 @@ hit into an execution. A legacy disk server answers 501 for status, so every
 hit against it executes.
 
 **The disk server has no conflict detection at all.** A server started without
-`--postgres` stores entries with the same [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L150-L193)
+`--postgres` stores entries with the same [`Disk.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L151-L194)
 that the client uses locally. When an entry for the key already exists, `Put`
 keeps it and returns success as long as the stored entry is valid, so
-[`putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L346-L369)
+[`putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L347-L370)
 answers 204 to an upload whose output differs. The first writer wins and the
 disagreement is never recorded. Conflict reports and status checks get 501
-from [`cacheAPI.shared`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L263-L272),
+from [`cacheAPI.shared`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L264-L273),
 so no client learns about the disagreement either.
 
 ### D10. Why PostgreSQL for metadata and files for output?
@@ -655,8 +655,8 @@ so no client learns about the disagreement either.
 `receipt_entries_v2` with the result's manifest and references to its output
 files (a `blobRecord`), and stores output bytes as content-addressed files under
 `blobs/<first two hex chars>/<hash>`. See
-[`Postgres`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L73-L79)
-and the schema in [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L81-L130).
+[`Postgres`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L74-L80)
+and the schema in [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L82-L131).
 
 **Alternatives.**
 
@@ -671,7 +671,7 @@ and the schema in [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/bl
   design such as reference counts or epoch-based collection.
 
 **Invariant.** A reader never sees a database record whose output files were
-not yet durable. [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242)
+not yet durable. [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243)
 inserts the record inside its transaction, then writes both output files with
 `fsync`, then commits. The record becomes visible only at commit, so the files
 are durable first. Since 15 October 2026 the insert comes before the file
@@ -684,10 +684,10 @@ single rollback covers both stores.
 
 ### D11. What happens when two clients publish the same key?
 
-**Decision.** [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
+**Decision.** [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L268-L352)
 runs `INSERT … ON CONFLICT (key) DO NOTHING`, reads back the stored digest and
 compares. The digest is the SHA-256 of the stdout hash, stderr hash and exit code
-([`ConflictReport.digest`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L51-L58)).
+([`ConflictReport.digest`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L52-L59)).
 Duration and creation time are excluded. Equal digests make the upload a no-op.
 Different digests set `quarantined = TRUE`, store the new observation as
 evidence, commit, and return 409. Every later read of that key returns 409.
@@ -712,7 +712,7 @@ lock is ever narrowed.
 ### D12. Why does one lock serialize every shared writer?
 
 **Decision.** Every shared storage operation enters through
-[`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L72-L119):
+[`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120):
 
 1. Pin one database connection from the pool.
 2. Begin a READ COMMITTED transaction with `context.WithoutCancel`.
@@ -726,22 +726,22 @@ lock is ever narrowed.
    15 October 2026 it checked the name with `Lstat` and then opened it, and a
    symlink swapped in between would have been followed.
 
-[`storageTx.Rollback`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L61-L70)
+[`storageTx.Rollback`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L62-L71)
 and `Commit` end the transaction, which releases the advisory lock, then return
 the connection and close the lock file, which releases the `flock`.
 
 | Operation | Mode | Code |
 | --- | --- | --- |
-| Read a result | shared | [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L146-L189) |
-| `shared stats` | shared | [`Postgres.Stats`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L273-L286) |
-| Upload a result | exclusive | [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242) |
-| Report a conflict | exclusive | [`Postgres.Report`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L244-L265) |
-| `shared gc` | exclusive | [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L382-L451) |
-| `shared prune` | exclusive | [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509) |
-| `shared limits` | exclusive | [`Postgres.SetLimits`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L288-L316) |
-| Binding check and usage recount at every startup and every CLI command | exclusive | [`initializePolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L129-L169) |
+| Read a result | shared | [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L147-L190) |
+| `shared stats` | shared | [`Postgres.Stats`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L274-L287) |
+| Upload a result | exclusive | [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243) |
+| Report a conflict | exclusive | [`Postgres.Report`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L245-L266) |
+| `shared gc` | exclusive | [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L383-L452) |
+| `shared prune` | exclusive | [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L471-L510) |
+| `shared limits` | exclusive | [`Postgres.SetLimits`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L289-L317) |
+| Binding check and usage recount at every startup and every CLI command | exclusive | [`initializePolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L130-L170) |
 
-The status check, [`Postgres.Quarantined`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L132-L144),
+The status check, [`Postgres.Quarantined`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L133-L145),
 is one single-row query and takes no lifecycle lock.
 
 **Why global and not per key.** Two keys can reference one output file, and all
@@ -822,8 +822,8 @@ hexadecimal) written as decimal digits, plus a small offset: 0, 1 or 2.
 
 | Key | Taken by | Mode | Guards |
 | --- | --- | --- | --- |
-| `72656365697074` | [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L81-L130) | exclusive | Concurrent `CREATE TABLE IF NOT EXISTS` at startup |
-| `72656365697075` | [`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L20-L22) through `Postgres.lifecycle` | shared or exclusive | Shared metadata, output files, quotas and collection (D12) |
+| `72656365697074` | [`Postgres.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L82-L131) | exclusive | Concurrent `CREATE TABLE IF NOT EXISTS` at startup |
+| `72656365697075` | [`lifecycleLock`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L21-L23) through `Postgres.lifecycle` | shared or exclusive | Shared metadata, output files, quotas and collection (D12) |
 | `72656365697076` | [`credentialLock`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L15-L18), taken by [`Postgres.Migrate` in internal/auth](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L24-L34) | exclusive | Creating the credential table |
 | `72656365697076` | [`credentialLock`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L15-L18), taken by [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L74) | exclusive | Counting rows and inserting a credential |
 
@@ -843,7 +843,7 @@ and checks that migration and issuance both finish within two seconds.
 One pause remains. Every `receipt auth` command first calls `openShared`, which
 runs the storage migration, and that migration takes the exclusive lifecycle
 lock, `flock` included, once, through
-[`openShared` and then `credentials.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/app/auth_command.go#L74-L86)
+[`openShared` and then `credentials.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/app/auth_command.go#L75-L87)
 in `authCommand`. So running `receipt auth issue` on the server still waits for
 in-flight storage work once, before issuance starts
 ([G1](#g1-receipt-auth-still-takes-the-storage-lock-once)).
@@ -888,13 +888,13 @@ evidence rows.
 
 | Step | Work | Code |
 | --- | --- | --- |
-| Read the policy row and the `.store-id` marker | constant | [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L171-L193) |
-| Check whether the key is quarantined | one index lookup | [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L337-L380) |
-| Read the running totals | one row | [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L208-L215) |
-| Check whether each output file is already stored | at most two `lstat` calls | [`FileBlobs.Contains`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_inventory.go#L146-L165) |
-| Insert the record and evidence, update the totals | policy again, a few index lookups and inserts | [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351) |
-| Write two output files | two hashes, writes, `fsync`s and directory `fsync`s | [`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L71-L112) |
-| Add the new files' bytes to the totals and commit | one update and a commit | [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L191-L242) |
+| Read the policy row and the `.store-id` marker | constant | [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L172-L194) |
+| Check whether the key is quarantined | one index lookup | [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L338-L381) |
+| Read the running totals | one row | [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L209-L216) |
+| Check whether each output file is already stored | at most two `lstat` calls | [`FileBlobs.Contains`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob_inventory.go#L147-L166) |
+| Insert the record and evidence, update the totals | policy again, a few index lookups and inserts | [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L268-L352) |
+| Write two output files | two hashes, writes, `fsync`s and directory `fsync`s | [`FileBlobs.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L72-L113) |
+| Add the new files' bytes to the totals and commit | one update and a commit | [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243) |
 
 None of these steps depends on B, M or E, apart from the logarithmic cost of
 an index lookup. Because uploads are serialized, throughput is at most one
@@ -903,10 +903,10 @@ divided by this latency.
 **Running totals.** The table `receipt_storage_usage_v6` holds one row with four
 numbers: output bytes, metadata bytes, result rows and evidence rows. Every
 change to what they count updates them in the same transaction:
-[`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
+[`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L268-L352)
 adds the record and evidence it inserted, `Put` adds the bytes of output files
-that were not stored before, [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509)
-subtracts the rows it deletes, and [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L382-L451)
+that were not stored before, [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L471-L510)
+subtracts the rows it deletes, and [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L383-L452)
 replaces the output total with the exact sum from its own walk. A rollback
 undoes the update together with the change, so the database totals stay exact.
 
@@ -920,7 +920,7 @@ visible only at commit, after the files are synced
 ([D10](#d10-why-postgresql-for-metadata-and-files-for-output)). Totals can also
 be wrong after a restore from backup, or after an older build that does not
 know about them changed the store. Two mechanisms correct them:
-[`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L226-L237)
+[`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L227-L238)
 recounts everything at every server start and every CLI command, and
 `shared gc --apply` resets the output total. Older servers must not run beside
 a newer one (the README's upgrade rule), so an older build can only be an older
@@ -961,7 +961,7 @@ These were small manifests. Real manifests are larger: this repository's is
 That estimate divides the budget by one measured manifest and ignores the
 record's other fields.
 
-A read is cheaper. [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L146-L189)
+A read is cheaper. [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L147-L190)
 does one index lookup, decodes one record and reads and hashes two output files.
 It does not scan the store. Single reads in the same run took 1 to 2 ms.
 
@@ -969,11 +969,11 @@ It does not scan the store. Single reads in the same run took 1 to 2 ms.
 
 **Decision.** Two separate commands.
 
-- [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509)
+- [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L471-L510)
   (`shared prune`) deletes non-quarantined rows older than a cutoff, 720 hours by
   default, and their evidence. It never touches files and always keeps
   quarantined keys.
-- [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L382-L451)
+- [`Postgres.Collect`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L383-L452)
   (`shared gc`) builds a map of every output hash still referenced, walks the
   output directory and deletes any file not in the map, plus leftover
   `.pending-*` files. It validates every record first. One malformed record
@@ -1007,14 +1007,14 @@ counting files it already deleted until the next run or restart.
 
 | Limit | Value | Code |
 | --- | --- | --- |
-| Storage slots | `--max-inflight`, default 16, range 1 to 128. Production uses 2. | [`cacheAPI.serveAuthenticated`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L191-L218), [`--max-inflight 2`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service#L14) |
-| Authentication slots | equal to `--max-inflight` | [`HandlerAuthorized`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L16-L22) |
-| Storage deadline | 25 s per admitted request | [`context.WithTimeout`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L216-L219) |
-| Authentication deadline | 2 s | [`context.WithTimeout`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L49-L59) |
-| Database pool | 16 open, 4 idle, 5-minute lifetime, shared by `serve` and every CLI command | [`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L26-L33) |
-| HTTP server | header 5 s, read 30 s, write 30 s, idle 60 s, headers 16 KiB | [`http.Server`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L541-L541) |
-| Request body | 32 MiB | [`cacheAPI.putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L346-L353) |
-| Client timeout | 10 s per request, redirects refused | [`http.Client`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L54-L58) |
+| Storage slots | `--max-inflight`, default 16, range 1 to 128. Production uses 2. | [`cacheAPI.serveAuthenticated`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L192-L219), [`--max-inflight 2`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service#L14) |
+| Authentication slots | equal to `--max-inflight` | [`HandlerAuthorized`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L17-L23) |
+| Storage deadline | 25 s per admitted request | [`context.WithTimeout`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L217-L220) |
+| Authentication deadline | 2 s | [`context.WithTimeout`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L50-L60) |
+| Database pool | 16 open, 4 idle, 5-minute lifetime, shared by `serve` and every CLI command | [`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L27-L34) |
+| HTTP server | header 5 s, read 30 s, write 30 s, idle 60 s, headers 16 KiB | [`http.Server`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L542-L542) |
+| Request body | 32 MiB | [`cacheAPI.putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L347-L354) |
+| Client timeout | 10 s per request, redirects refused | [`http.Client`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L55-L59) |
 | Go memory target | `GOMEMLIMIT=320MiB` in production | [`GOMEMLIMIT=320MiB`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/receipt.service#L13) |
 
 A full slot pool returns 503 at once. Nothing queues inside Receipt.
@@ -1051,7 +1051,7 @@ subject label, scopes, creation and expiry times, and an optional revocation
 time. [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L88)
 computes the expiry with the database clock.
 
-**Checking.** [`cacheAPI.authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L42-L77)
+**Checking.** [`cacheAPI.authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L43-L78)
 rejects any header that is not one `Bearer` value of the right length before
 taking an authentication slot. [`Postgres.Authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L90-L121)
 then parses the ID, fetches the row by primary key, asks the database whether
@@ -1070,7 +1070,7 @@ first difference, so its timing can reveal how many leading bytes matched. The
 row lookup by ID and the network are not constant time, but the secret part is
 only ever compared in constant time.
 
-**Scopes.** [`requiredScope`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L85-L105)
+**Scopes.** [`requiredScope`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L86-L106)
 maps each route to one scope:
 
 | Scope | Allows |
@@ -1095,13 +1095,13 @@ purge command, so about 1,000 renewals fill the table.
 
 ### D19. How is a running test stopped?
 
-**Decision.** [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L87)
+**Decision.** [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L50-L88)
 starts the command directly with no shell. [`configureProcess`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process_unix.go#L16-L46)
 puts it in a new process group. On cancellation it sends `SIGTERM` to the whole
 group, checks every 10 ms whether any member is left (signal 0 tests for
 existence without delivering anything), and after `terminationGrace`, 5
 seconds, sends `SIGKILL` to whatever remains. `WaitDelay` then gives the output
-pipes 2 seconds to close. [`Main`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L97-L107)
+pipes 2 seconds to close. [`Main`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L98-L108)
 cancels the context on `SIGINT` or `SIGTERM`. Before 15 October 2026 the group
 got `SIGKILL` at once.
 
@@ -1123,7 +1123,7 @@ signal number, as a shell does: 139 for a `SIGSEGV` crash, 137 for `SIGKILL`
 from the kernel's out-of-memory killer. If Receipt itself cancelled the command,
 after Ctrl-C or `SIGTERM`, `Run` reports 130 however the command ended, even if
 it caught `SIGTERM` and exited 0, and `run` returns 130 too
-([`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L315-L321)).
+([`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L316-L322)).
 Interrupted and failed runs are never stored. Before 15 October 2026 every
 signal death was reported as 130.
 
@@ -1135,9 +1135,9 @@ temporary files or stop servers it started.
 ### D20. How does the Cargo adapter decide what it can trust?
 
 The adapter accepts one narrow grammar of `cargo test --frozen`
-([`parseCargo`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo.go#L22-L55)),
+([`parseCargo`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo.go#L23-L56)),
 refuses Cargo configuration files and compiler-override variables
-([`cargoPolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_policy.go#L13-L52)),
+([`cargoPolicy`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_policy.go#L14-L53)),
 asks Cargo for the dependency graph, and walks it in
 [`cargoClosure`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/cargo_graph.go#L78-L126).
 The walk is a depth-first search with a stack. It marks a package as seen when
@@ -1172,7 +1172,7 @@ so Cloudflare does not see requests.
 - The firewall allows SSH, 80 and 443. Caddy's admin port 2019 is loopback only.
 
 **Why Caddy in front.** Certificate issuance and renewal stay out of Receipt.
-Receipt's client still refuses plain HTTP to any host other than loopback ([`Remote.requestPath`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L37-L47)).
+Receipt's client still refuses plain HTTP to any host other than loopback ([`Remote.requestPath`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L38-L48)).
 The cost is that Caddy and the host administrator can read every request,
 including tokens.
 
@@ -1194,7 +1194,7 @@ missing files. Details are in [DIGITALOCEAN-SETUP.md](DIGITALOCEAN-SETUP.md#13-o
 scratch directory such as `/var/backups/receipt-restore.yCuUL5/extracted/var/lib/receipt`,
 but the restored database says its blobs live at `/var/lib/receipt/cache/blobs`.
 The storage policy row records that absolute path and a random store identity,
-and every storage operation checks both: [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L171-L193)
+and every storage operation checks both: [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L172-L194)
 compares the server's blob directory with the recorded path, and `Bind` compares
 the `.store-id` file with the recorded identity. A server started against the
 scratch directory would refuse every request with "blob directory does not match
@@ -1264,7 +1264,7 @@ lists each fix with its date and test.
 
 Issuance itself has its own advisory lock key since 15 October 2026
 ([D13](#d13-which-advisory-lock-keys-exist-and-what-does-each-guard)). But
-[`openShared` and then `credentials.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/app/auth_command.go#L74-L86)
+[`openShared` and then `credentials.Migrate`](https://github.com/sidsharma96/receipt/blob/main/internal/app/auth_command.go#L75-L87)
 in `authCommand` runs the storage migration first, and that takes the exclusive
 lifecycle lock once. A `receipt auth` command therefore still waits for the
 slowest in-flight storage operation before it starts. Fix: open only the
@@ -1272,7 +1272,7 @@ database connection in `authCommand`, without initialising storage.
 
 ### G4. The connection pool silently caps storage concurrency at 16
 
-[`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L26-L33)
+[`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L27-L34)
 allows 16 connections, but `--max-inflight` accepts up to 128. Fix: size the
 pool from `--max-inflight` plus authentication, or reject larger values.
 
@@ -1285,14 +1285,14 @@ and add a per-IP rate limit in Caddy.
 
 ### G14. Retention ignores use
 
-[`created_at` in `Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509)
+[`created_at` in `Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L471-L510)
 deletes by `created_at`, which hits never refresh. Fix: record a last-used time,
 updated outside the read lock or in batches.
 
 ### G15. Quarantine cannot be undone
 
 There is no command to clear `quarantined` for a key, and
-[`quarantined=TRUE`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L346-L346) in `publishTx`
+[`quarantined=TRUE`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L347-L347) in `publishTx`
 lets a report create a quarantined row for a key that was never stored. Fix: an
 administrator command that clears quarantine with a recorded reason.
 
@@ -1312,7 +1312,7 @@ manifests compressed, or as a hash plus a separately stored body.
 
 ### G18. The client timeout is fixed at 10 seconds
 
-[`http.Client`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L54-L57) in `Remote.requestPath`
+[`http.Client`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L55-L58) in `Remote.requestPath`
 uses a 10-second total timeout. Fix: make it configurable or scale it with the
 body size.
 
@@ -1324,12 +1324,12 @@ development Mac now defaults to 1.27.2. Fix: pin one version, or add a
 
 ### G20. Small hygiene items
 
-- [`outDiscard`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L336-L347)
+- [`outDiscard`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L337-L348)
   duplicates `io.Discard`.
-- [`commandPrune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L28-L36)
+- [`commandPrune`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L29-L37)
   is an untyped constant inside the typed `commandName` block.
 - The comment above the `extra_inputs` loop in
-  [`range extra` loop in `discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L155-L173)
+  [`range extra` loop in `discoverFiles`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L156-L174)
   describes `.gitignore` and matches nothing there.
 
 ### G21. Operations

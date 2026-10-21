@@ -85,7 +85,7 @@ Every upload takes the same exclusive lifecycle lock, so only one can do its wor
 
 A faster design would still need to keep cleanup from deleting files an upload is about to reference and keep two uploads from overspending the shared storage budget. Removing the lock without replacing those guarantees would trade waiting for wrong answers.
 
-**Learn more:** [Read one measurement carefully](../guide/07-find-where-the-time-went.md#read-one-measurement-carefully) · [D15. What does one upload cost?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [Read the timings](../MEASUREMENTS.md#read-the-timings) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L72-L119)
+**Learn more:** [Read one measurement carefully](../guide/07-find-where-the-time-went.md#read-one-measurement-carefully) · [D15. What does one upload cost?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [Read the timings](../MEASUREMENTS.md#read-the-timings) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120)
 
 </details>
 
@@ -102,7 +102,7 @@ Each `Postgres.Put` holds the global exclusive lifecycle lock for its whole dura
 
 Before 15 October 2026 each upload instead walked every output file and ran `metadataUsage`, which scans every result and evidence row, three times: O(B + M + E) time. On one laptop the median upload grew from 33.4 ms on an empty store to 131.8 ms at about 4,045 results. With running totals, the same test gave 19 to 24 ms at every size. Because uploads run one at a time, throughput is still at most one divided by that latency, about 50 uploads per second on that laptop. The code says so directly: it deliberately serialises writers for a small deployment. The totals cost a recount at every server start and CLI command, and a crash after file writes can leave orphan files uncounted until that recount or the next `shared gc --apply`.
 
-**Learn more:** [D15. What does one upload cost, and how does that grow?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L208-L215) · [`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L226-L237)
+**Learn more:** [D15. What does one upload cost, and how does that grow?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L209-L216) · [`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L227-L238)
 
 </details>
 

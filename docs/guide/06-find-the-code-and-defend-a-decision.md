@@ -4,10 +4,10 @@ The chapters explain behavior. To follow a change in the source, start with the 
 
 ## The main responsibilities
 
-- internal/app reads the command and combines lookup, execution, verification, and publication. Start at [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334).
-- internal/fingerprint describes inputs and calculates their key. Start at [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L110-L153) and [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76).
-- internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L49-L87).
-- internal/cache stores results. Start at the [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L40-L44) interface; its other files implement HTTP, shared storage, and maintenance.
+- internal/app reads the command and combines lookup, execution, verification, and publication. Start at [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335).
+- internal/fingerprint describes inputs and calculates their key. Start at [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L111-L154) and [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77).
+- internal/runner starts the command and captures output. Start at [`Run`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L50-L88).
+- internal/cache stores results. Start at the [`Store`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L41-L45) interface; its other files implement HTTP, shared storage, and maintenance.
 - internal/strictjson checks the declared JSON structure in [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61). Each decoded type owns its value rules.
 - internal/auth defines service credentials and permissions in [`Principal`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L51-L60). Its PostgreSQL implementation, starting at [`Postgres.Issue`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/postgres.go#L51-L88), manages their lifetime.
 
@@ -23,7 +23,7 @@ runner needs Git and the workload's Go tools. It does not need this repository's
 Python profiling scripts. A Python/pytest workload needs its own Python
 environment instead; Receipt even probes that environment on an ordinary hit.
 
-The executable begins in [`main`](https://github.com/sidsharma96/receipt/blob/main/cmd/receipt/main.go#L9-L11),
+The executable begins in [`main`](https://github.com/sidsharma96/receipt/blob/main/cmd/receipt/main.go#L10-L12),
 which calls `os.Exit(app.Main(os.Args[1:], os.Stdout, os.Stderr))`. This passes
 command arguments and the two output streams into the Go application. It does
 not hand control to a Python application. To rebuild the executable, retain
@@ -144,6 +144,66 @@ For permissions, it becomes: a stolen secret must stop working on later checks; 
 The full [nine-question reviews](../PHASE-REVIEWS.md) cover structures, architecture, coordination, pitfalls, costs, guarantees, alternatives, evidence, and reasons to revisit choices. Read them when you want to inspect a particular decision in depth.
 
 
+## How the executable reaches a user
+
+Suppose a Python developer wants to run `receipt run -- pytest`. They can
+choose the archive for their computer, unpack `receipt`, and put it in a
+folder listed in `PATH`. The shell searches those folders when the developer
+types `receipt`. Go was used to build that file; the developer does not need
+the Go compiler to launch it. Git and pytest remain necessary for this example.
+The [README installation steps](https://github.com/sidsharma96/receipt/blob/main/README.md#install-receipt)
+show the commands and checksum comparison.
+
+A Go developer has another route:
+
+```sh
+go install github.com/sidsharma96/receipt/cmd/receipt@v0.1.0
+```
+
+Go finds the versioned source, downloads dependencies, compiles the command,
+and places the executable in its binary directory. The repository's `go.mod`
+now begins with the actual module declaration:
+
+```text
+module github.com/sidsharma96/receipt
+```
+
+That path tells Go where this group of packages belongs. The old local name
+`receipt` worked inside a clone but did not identify a repository for downloads.
+Internal imports now use the same full prefix. This naming change does not
+change Receipt's stored JSON or declared-input rules.
+
+Follow the two routes from the same version tag, a name attached to a commit:
+
+```text
+version tag v0.1.0 -> source commit
+  |                    |
+  |                    +-> user's go install -> compile -> receipt
+  +-> release job -> tests -> four builds -> archives + checksums
+                                           |
+                                  user downloads -> receipt
+```
+
+The release job builds all four archives before creating a draft release, then
+publishes it with its attachments. A failed build leaves no published release.
+If uploading fails, a draft may remain; an operator must inspect it before
+retrying. The source tag is already available, so `go install` and downloadable
+archives do not become available as one indivisible operation.
+
+The actual build invocation in `scripts/release/build.py` uses `go build
+-trimpath -o ... ./cmd/receipt`; `GOOS` and `GOARCH` select the target system and
+processor. Building a binary for another computer does not run it there. Native
+execution checks are separate evidence. Checksums detect changed bytes but do
+not independently prove who built them. The initial release has no Windows
+archive, automatic updater or Apple notarization.
+
+GitHub Releases avoids asking every user to install a compiler. `go install`
+avoids maintaining an installer for Go developers, but costs a source download
+and compilation. A package-manager recipe could automate placement and updates;
+we can add one if users need it. The full
+[release review](../PHASE-REVIEWS.md#public-distribution-20-october-2026)
+records the checks and remaining limits.
+
 ## Check your understanding
 
 <!-- questions:start -->
@@ -159,7 +219,7 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 `internal/fingerprint` describes the inputs and calculates the key, starting at `Build` and `Manifest.Key`. `internal/app` reads the command line and combines lookup, execution, verification and publication, starting at `run`. `internal/runner` starts the test command and captures its output. `internal/cache` stores results locally, over HTTP and in shared storage. `internal/strictjson` checks JSON structure, and `internal/auth` defines credentials and permissions. All of these packages run inside one client or server process; a package is not a separate service.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L110-L153)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L111-L154)
 
 </details>
 
@@ -176,7 +236,7 @@ Walk through `receipt run -- uv run pytest` on a miss that succeeds, with a remo
 
 On a miss, Receipt runs the command, streaming output while capturing a bounded copy. It builds the manifest again and calls the run stable only if that succeeds with the same key. It records the history file used by `receipt explain`. A successful, stable run goes to `runSession.publish`, which stores the result locally, uploads it to the server, and only then prunes the local cache. A failed upload is reported on stderr but does not change the exit code.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L216-L245)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [D5. Why scan the inputs twice?](../DESIGN-DEFENSE.md#d5-why-scan-the-inputs-twice-and-what-can-the-two-scans-miss) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
 
 </details>
 

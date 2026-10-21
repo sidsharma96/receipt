@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"receipt/internal/cache"
-	"receipt/internal/observe"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/cache"
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 func requestLogging(handler http.Handler, enabled bool, out io.Writer) (http.Handler, func(), error) {

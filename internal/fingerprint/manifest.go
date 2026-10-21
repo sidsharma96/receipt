@@ -10,11 +10,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"receipt/internal/observe"
 	"runtime"
 	"slices"
 	"sort"
 	"strings"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 const (

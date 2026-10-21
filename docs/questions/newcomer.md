@@ -14,7 +14,7 @@ Alice runs `uv run pytest`, the tests pass, and ten minutes later she runs the s
 
 Receipt wraps the test command. Before running it, Receipt describes the run: the command arguments, the repository files, hashes of the environment values, the working directory, the platform and runtime information such as the Python packages. If a successful run with exactly the same description was saved earlier, Receipt prints that run's saved output and exit code instead of starting pytest. Finding such a result is a cache hit; having to run the command is a cache miss. To do this safely Receipt must name every input that could change the result, which is why it records so much more than the command line.
 
-**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334)
+**Learn more:** [1. Remember a successful run](../guide/01-remember-a-successful-run.md) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335)
 
 </details>
 
@@ -29,7 +29,7 @@ Receipt calls its description of a run a manifest. Which kinds of information do
 
 A manifest is a Go struct with six fields: a format version, the Git repository root, the working directory, the platform (operating system and CPU architecture, such as `darwin/arm64`), the command arguments in order, and a list of inputs. Each input has a kind, a name and a content hash. There are four kinds of input: files from the repository, environment variables, the executable that runs the command, and toolchain information such as the installed Python packages or Go's settings. Environment values are stored only as hashes, never as plain text.
 
-**Learn more:** [Why use a struct and slices?](../guide/01-remember-a-successful-run.md#why-use-a-struct-and-slices) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L53-L60)
+**Learn more:** [Why use a struct and slices?](../guide/01-remember-a-successful-run.md#why-use-a-struct-and-slices) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L54-L61)
 
 </details>
 
@@ -44,7 +44,7 @@ The guide says Receipt hashes the manifest to get an input key. What is a hash, 
 
 A hash is a short, fixed-length value calculated from some bytes. Receipt uses SHA-256, which always produces 32 bytes, written as 64 hexadecimal characters. The same bytes always give the same hash, and in practice different bytes give different hashes. Receipt encodes the manifest as JSON, with the inputs sorted by kind and then name, and hashes that JSON. The result is the input key: the name under which Receipt looks for a saved result. Any change to a recorded input changes the key, so an edited file leads to a lookup under a different name. A hash is not encryption: it hides nothing and cannot be reversed into a key you could decrypt.
 
-**Learn more:** [F1. Cryptographic hashes and content addressing](../DESIGN-DEFENSE.md#f1-cryptographic-hashes-and-content-addressing) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L65-L76)
+**Learn more:** [F1. Cryptographic hashes and content addressing](../DESIGN-DEFENSE.md#f1-cryptographic-hashes-and-content-addressing) · [D2. How does the manifest become a key every time the same way?](../DESIGN-DEFENSE.md#d2-how-does-the-manifest-become-a-key-every-time-the-same-way) · [`Manifest.Key`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L66-L77)
 
 </details>
 
@@ -74,7 +74,7 @@ A test run fails with exit code 1. Will Receipt replay that failure next time?
 
 No. Receipt saves only runs that exit with code 0, which means the command reported success. A failed run prints "failed results are not cached", and the next run executes the tests again. Storage refuses a nonzero exit code as well: the result check rejects it with "reusable results require success". Replaying a failure would hide whether a fix worked, and a failure is the case where you most want the tests to run again.
 
-**Learn more:** [D6. Why cache only successes, replay exact bytes and never normalise output?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L72)
+**Learn more:** [D6. Why cache only successes, replay exact bytes and never normalise output?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L53-L73)
 
 </details>
 
@@ -105,7 +105,7 @@ Alice has not configured anything. Where on her disk are saved results kept, and
 
 By default the cache is the `.receipt` directory at the root of the Git repository. Saved results live in `.receipt/entries/<key>.json`, quarantine markers in `.receipt/quarantine/`, and the last manifest for each working directory in `.receipt/history/`. A cache inside the repository must sit under `.receipt` because file discovery skips that directory. A cache stored anywhere else in the repository would be one of its own inputs, so saving a result would change the key of the next run.
 
-**Learn more:** [D7. How is a local result published so that a crash never leaves a partial entry?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [`cacheDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L169-L187)
+**Learn more:** [D7. How is a local result published so that a crash never leaves a partial entry?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [`cacheDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L170-L188)
 
 </details>
 
@@ -120,7 +120,7 @@ Receipt sometimes says a key is quarantined. What does that mean for the next ru
 
 A quarantined key is one Receipt has seen produce two different observations: for example, a rerun printed different output from the saved run. Receipt then refuses to reuse that key. Locally it writes a marker file under `.receipt/quarantine/` and removes the saved entry; on the shared server it sets a flag on the key's record. Every later run with that key executes the tests. Quarantine does not decide which observation was right, and no command lifts it; a new key, produced by changing an input, is the normal way out.
 
-**Learn more:** [What if the clients disagree?](../guide/02-let-another-client-reuse-the-result.md#what-if-the-clients-disagree) · [A conflict: the same key, different observations](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-conflict-the-same-key-different-observations) · [`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L223-L229)
+**Learn more:** [What if the clients disagree?](../guide/02-let-another-client-reuse-the-result.md#what-if-the-clients-disagree) · [A conflict: the same key, different observations](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-conflict-the-same-key-different-observations) · [`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L224-L230)
 
 </details>
 
@@ -135,7 +135,7 @@ An ordinary hit never runs the tests. How would you find out that a saved result
 
 Run `receipt run --verify -- <command>`. On a hit, Receipt runs the command again and compares the exit code, standard output and standard error byte for byte with the saved result. If they match, it prints "verification matched byte-for-byte" and exits 0. If they differ, it quarantines the key and exits with a nonzero code, even when the fresh tests passed, because the disagreement itself is the finding. A difference can be harmless timing text such as "0.42s" versus "0.51s", so a mismatch is not automatically a failed test.
 
-**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D6b. What do `--verify`, `--refresh` and `--bypass` do?](../DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do) · [`runSession.verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L163-L191)
+**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D6b. What do `--verify`, `--refresh` and `--bypass` do?](../DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do) · [`runSession.verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L164-L192)
 
 </details>
 
@@ -166,7 +166,7 @@ The shared server uses PostgreSQL and a directory of blob files. What goes where
 
 PostgreSQL, a database, holds the small records: each key's result description, references to its output, whether the key is quarantined, conflict evidence and storage limits. The output bytes themselves go into files called blobs, named by the SHA-256 hash of their content and stored as `blobs/<first two hex characters>/<hash>`. Because the name comes from the content, two results with identical output share one file. The server writes the blob files first and the database record second, so a committed record never points at a file that does not exist yet.
 
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`FileBlobs.path`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L33-L38)
+**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [D10. Why PostgreSQL for metadata and files for output?](../DESIGN-DEFENSE.md#d10-why-postgresql-for-metadata-and-files-for-output) · [`FileBlobs.path`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L34-L39)
 
 </details>
 
@@ -183,7 +183,7 @@ When a shared server is configured, a local hit is replayed only after the serve
 
 **Common wrong answer.** "The local copy is valid, so it replays and the outage does not matter." That is true only when no remote is configured.
 
-**Learn more:** [A local copy still needs a shared trust check](../guide/02-let-another-client-reuse-the-result.md#a-local-copy-still-needs-a-shared-trust-check) · [D9. Why does a local hit still ask the server?](../DESIGN-DEFENSE.md#d9-why-does-a-local-hit-still-ask-the-server) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L68-L102)
+**Learn more:** [A local copy still needs a shared trust check](../guide/02-let-another-client-reuse-the-result.md#a-local-copy-still-needs-a-shared-trust-check) · [D9. Why does a local hit still ask the server?](../DESIGN-DEFENSE.md#d9-why-does-a-local-hit-still-ask-the-server) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
 
 </details>
 
@@ -215,7 +215,7 @@ A client uploads a result as JSON. Every required field is present and has the r
 
 No. Receipt checks two separate things. The structure check rejects unknown fields, repeated fields and missing required fields. The value check then applies the rules about meaning: the version must be 1, the exit code must be 0, the key must equal the hash of the included manifest, and each output stream must fit the size limit. A well-formed document can still claim a failed run or carry a key that does not match its manifest, so the shape check does not replace the value check.
 
-**Learn more:** [Why check inside the type?](../guide/04-check-data-before-accepting-it.md#why-check-inside-the-type) · [JSON input contract](../JSON-INPUT-CONTRACT.md) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L72)
+**Learn more:** [Why check inside the type?](../guide/04-check-data-before-accepting-it.md#why-check-inside-the-type) · [JSON input contract](../JSON-INPUT-CONTRACT.md) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L53-L73)
 
 </details>
 
@@ -246,7 +246,7 @@ Alice's credential lets her download results. She tries to upload one and the se
 
 No. Authentication asks whether the credential is valid: known, unexpired and not revoked. Authorization asks whether that credential allows the requested operation. Alice's credential is valid but carries only the `read` permission, and uploading needs `publish`. The server answers HTTP 403 Forbidden for a valid credential without the permission, and HTTP 401 Unauthorized for a missing, invalid, expired or revoked one. The four permissions are `read`, `publish`, `report` and `metrics`, and none of them implies another.
 
-**Learn more:** [Two questions before storage](../guide/05-give-callers-different-permissions.md#two-questions-before-storage) · [Permissions](../SERVICE-CREDENTIALS.md#permissions) · [`cacheAPI.serveScoped`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L24-L40)
+**Learn more:** [Two questions before storage](../guide/05-give-callers-different-permissions.md#two-questions-before-storage) · [Permissions](../SERVICE-CREDENTIALS.md#permissions) · [`cacheAPI.serveScoped`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L25-L41)
 
 </details>
 
@@ -262,7 +262,7 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 `internal/fingerprint` describes the inputs and calculates the key, starting at `Build` and `Manifest.Key`. `internal/app` reads the command line and combines lookup, execution, verification and publication, starting at `run`. `internal/runner` starts the test command and captures its output. `internal/cache` stores results locally, over HTTP and in shared storage. `internal/strictjson` checks JSON structure, and `internal/auth` defines credentials and permissions. All of these packages run inside one client or server process; a package is not a separate service.
 
-**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L110-L153)
+**Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [`Build`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L111-L154)
 
 </details>
 
@@ -343,7 +343,7 @@ No. The key describes the inputs Receipt records, not every influence on a test.
 
 **Common wrong answer.** "Yes, the key covers all the inputs." It covers the declared inputs only.
 
-**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
+**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L53-L61)
 
 </details>
 

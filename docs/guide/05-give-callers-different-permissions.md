@@ -16,7 +16,7 @@ A [credential](../GLOSSARY.md#credential) is the secret a client presents. Anyon
 | Check upload permission | Alice's credential allows reading, not publishing. Receipt refuses this upload here. |
 | Storage stays untouched | The denied request does not proceed to decoding and storing a result. A permitted request would continue. |
 
-The refusal happens in [`cacheAPI.serveScoped` in internal/cache/authorization.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L24-L40):
+The refusal happens in [`cacheAPI.serveScoped` in internal/cache/authorization.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L25-L41):
 
 ```go
 if known && !principal.Allows(scope) {
@@ -67,7 +67,7 @@ Alice's credential lets her download results. She tries to upload one and the se
 
 No. Authentication asks whether the credential is valid: known, unexpired and not revoked. Authorization asks whether that credential allows the requested operation. Alice's credential is valid but carries only the `read` permission, and uploading needs `publish`. The server answers HTTP 403 Forbidden for a valid credential without the permission, and HTTP 401 Unauthorized for a missing, invalid, expired or revoked one. The four permissions are `read`, `publish`, `report` and `metrics`, and none of them implies another.
 
-**Learn more:** [Two questions before storage](../guide/05-give-callers-different-permissions.md#two-questions-before-storage) · [Permissions](../SERVICE-CREDENTIALS.md#permissions) · [`cacheAPI.serveScoped`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L24-L40)
+**Learn more:** [Two questions before storage](../guide/05-give-callers-different-permissions.md#two-questions-before-storage) · [Permissions](../SERVICE-CREDENTIALS.md#permissions) · [`cacheAPI.serveScoped`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L25-L41)
 
 </details>
 
@@ -84,7 +84,7 @@ No. Her credential is valid; it does not include the `publish` scope that upload
 
 The scopes are `read`, `publish`, `report` and `metrics`, and none implies another. A credential that may publish but not read cannot download what it uploaded.
 
-**Learn more:** [Two questions before storage](../guide/05-give-callers-different-permissions.md#two-questions-before-storage) · [Permissions](../SERVICE-CREDENTIALS.md#permissions) · [`cacheAPI.serveScoped`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L24-L40)
+**Learn more:** [Two questions before storage](../guide/05-give-callers-different-permissions.md#two-questions-before-storage) · [Permissions](../SERVICE-CREDENTIALS.md#permissions) · [`cacheAPI.serveScoped`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L25-L41)
 
 </details>
 

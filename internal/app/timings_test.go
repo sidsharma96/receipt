@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"receipt/internal/observe"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 type timingBrokenWriter struct{}

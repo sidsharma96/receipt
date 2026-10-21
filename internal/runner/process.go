@@ -6,11 +6,12 @@ import (
 	"errors"
 	"io"
 	"os/exec"
-	"receipt/internal/fingerprint"
-	"receipt/internal/observe"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/fingerprint"
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 type limitedBuffer struct {

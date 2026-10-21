@@ -31,7 +31,7 @@ and uploaded. Otherwise Receipt does not save a reusable result. Storage or
 network failures can still prevent a save.
 
 Receipt [records the inputs again](../GLOSSARY.md#stability-check) after execution. Actual excerpt from
-[`fingerprint.Build` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L322-L323):
+[`fingerprint.Build` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L323-L324):
 
 ```go
 after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
@@ -64,7 +64,7 @@ and replays the output and exit code if the check allows it. Pytest does not
 start. If status is unavailable or the key is quarantined, Receipt executes
 instead. With no local copy, a remote hit can supply the saved result.
 
-Actual decision from [`s.replay` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L307-L309):
+Actual decision from [`s.replay` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L308-L310):
 
 ```go
 if hit && !o.verify {
@@ -75,7 +75,7 @@ if hit && !o.verify {
 `prior` is the saved result. Unless verification was requested, this returns
 before reaching the code that starts the tests. The replay function writes the
 saved bytes to the terminal. Actual excerpt from
-[`runSession.replay` in run_session.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L141-L161):
+[`runSession.replay` in run_session.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162):
 
 ```go
 if _, e := out.Write(prior.Stdout); e != nil {
@@ -120,7 +120,7 @@ local runs execute instead of replaying K. A failed report does not undo the
 local marker, but it can leave other clients unaware of the conflict.
 
 Quarantine means do not reuse this key. It does not mean Receipt has determined
-which run was correct. Actual marker creation from [`quarantine` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L221-L229):
+which run was correct. Actual marker creation from [`quarantine` in app.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L222-L230):
 
 ```go
 func quarantine(dir, key string) error {
@@ -236,7 +236,7 @@ Only successful runs are stored. `Validate` rejects any result whose exit code i
 
 A stored result holds the manifest, stdout bytes, stderr bytes, the exit code, the run's duration and its creation time. On a hit, `runSession.replay` prints a `receipt: hit` line with the saved duration to stderr, writes the saved stdout in full, then the saved stderr in full, touches the entry's modification time, and returns the saved exit code, which is 0. The tests do not run, so any files they would have written, network requests they would have made, and the original interleaving of stdout and stderr are not reproduced.
 
-**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [D6. Why cache only successes?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L141-L161) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L51-L73)
+**Learn more:** [A hit: replay without execution](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-hit-replay-without-execution) · [D6. Why cache only successes?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)
 
 </details>
 
@@ -255,7 +255,7 @@ On a hit, `--verify` runs the tests again and scans the inputs again. If the key
 
 **Common wrong answer.** "A successful refresh whose output differs from the cached result is a conflict and quarantines locally." Locally it simply replaces the entry; only a failure after a recorded success quarantines.
 
-**Learn more:** [D6b. What do `--verify`, `--refresh` and `--bypass` do?](../DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do) · [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L163-L191) · [`failed`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L193-L214)
+**Learn more:** [D6b. What do `--verify`, `--refresh` and `--bypass` do?](../DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do) · [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L164-L192) · [`failed`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L194-L215)
 
 </details>
 

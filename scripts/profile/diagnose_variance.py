@@ -25,7 +25,7 @@ import (
  "encoding/json"
  "fmt"
  "os"
- "receipt/internal/app"
+ "github.com/sidsharma96/receipt/internal/app"
  "runtime"
  "runtime/trace"
  "time"

@@ -7,8 +7,9 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
-	"receipt/internal/observe"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 func TestExecutableIdentityMatchesLegacy(t *testing.T) {

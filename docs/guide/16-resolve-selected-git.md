@@ -52,7 +52,7 @@ retain their existing behavior unless they explicitly attach a selection.
 ## Keep the user's choice
 
 The guard in
-[`developerGit`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/git.go#L38-L45):
+[`developerGit`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/git.go#L39-L46):
 
 ```go
 if platform != "darwin" || selected != "/usr/bin/git" {
@@ -92,7 +92,7 @@ snapshot.
 ## Call that path without changing recorded inputs
 
 The launch boundary in
-[`commandOutput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L78-L95):
+[`commandOutput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L79-L96):
 
 ```go
 c := exec.CommandContext(ctx, path, args[1:]...)

@@ -5,10 +5,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"receipt/internal/cache"
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/cache"
 )
 
 type fakeShared struct {

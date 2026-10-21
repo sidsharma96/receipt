@@ -91,7 +91,7 @@ working-tree file, the executable input never had a permission prefix. Adding on
 now would change every affected key.
 
 The production branch in
-[`executableInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L10-L26):
+[`executableInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L11-L27):
 
 ```go
 	digest, err := hashFile(exe, "", 32<<10)
@@ -122,7 +122,7 @@ which Python interpreter to probe. Other supported command forms already specify
 the interpreter or launcher in their arguments.
 
 The compatibility branch in
-[`executableInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L10-L26):
+[`executableInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L11-L27):
 
 ```go
 	if wantHeader {
@@ -161,7 +161,7 @@ changing the launcher binary. A map keyed only by executable bytes cannot safely
 cache those probe results.
 
 The extraction adds a timing boundary but preserves the subprocess invocation in
-[`runtimeProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L28-L42):
+[`runtimeProbe`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L29-L43):
 
 ```go
 	defer observe.Measure(ctx, observe.Toolchain)()

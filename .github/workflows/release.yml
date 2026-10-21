@@ -1,0 +1,43 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - run: go test -race ./...
+      - name: Build all archives
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: python3 scripts/release/build.py "$RELEASE_VERSION"
+      - name: Smoke test Linux amd64 archive
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          mkdir /tmp/receipt-release-smoke
+          tar -xzf ".tools/releases/$RELEASE_VERSION/receipt_${RELEASE_VERSION}_linux_amd64.tar.gz" -C /tmp/receipt-release-smoke
+          /tmp/receipt-release-smoke/receipt help
+      - name: Publish complete release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_VERSION" --verify-tag --draft --title "Receipt $RELEASE_VERSION" --notes-file scripts/release/NOTES.md .tools/releases/"$RELEASE_VERSION"/*
+          gh release edit "$RELEASE_VERSION" --draft=false --latest

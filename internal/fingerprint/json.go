@@ -3,8 +3,9 @@ package fingerprint
 import (
 	"errors"
 	"fmt"
-	"receipt/internal/strictjson"
 	"regexp"
+
+	"github.com/sidsharma96/receipt/internal/strictjson"
 )
 
 var digestPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)

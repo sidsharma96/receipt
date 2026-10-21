@@ -3,7 +3,8 @@ package fingerprint
 import (
 	"context"
 	"fmt"
-	"receipt/internal/observe"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 // BuildAtRoot reuses the root just returned by Root for this invocation's

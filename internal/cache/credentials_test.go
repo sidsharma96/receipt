@@ -5,11 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"receipt/internal/auth"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
 )
 
 func credentialFixture(t *testing.T) (Postgres, auth.Postgres) {

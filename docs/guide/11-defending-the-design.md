@@ -80,7 +80,7 @@ No. The key describes the inputs Receipt records, not every influence on a test.
 
 **Common wrong answer.** "Yes, the key covers all the inputs." It covers the declared inputs only.
 
-**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L52-L60)
+**Learn more:** [Matching inputs do not prove matching behavior](../guide/01-remember-a-successful-run.md#matching-inputs-do-not-prove-matching-behavior) · [D1. What exactly goes into the cache key?](../DESIGN-DEFENSE.md#d1-what-exactly-goes-into-the-cache-key) · [`Manifest`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L53-L61)
 
 </details>
 
@@ -97,7 +97,7 @@ Both uploads may add files to the one shared blob directory, and both draw on th
 
 Receipt meets both needs with one exclusive lifecycle lock for every upload. The cost is that uploads run one at a time. Each upload's own work no longer grows with the store, because it checks running totals instead of recounting (since 15 October 2026), but the throughput ceiling is still one upload at a time. That is a deliberate choice for a small deployment, not a high-throughput design.
 
-**Learn more:** [11. Defending the design](../guide/11-defending-the-design.md#11-defending-the-design) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L337-L380)
+**Learn more:** [11. Defending the design](../guide/11-defending-the-design.md#11-defending-the-design) · [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.checkBlobQuota`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L338-L381)
 
 </details>
 
@@ -114,7 +114,7 @@ Every writer and every maintenance operation holds the exclusive lifecycle lock 
 
 With per-key locks, two uploads for different keys would run together. Both could pass the budget check and overshoot it, and a collector could decide output file X was unreferenced while an upload for another key was about to reference it. SERIALIZABLE would catch the database half of that, but it cannot see the filesystem, so it does not protect output files from the collector.
 
-**Learn more:** [D14. Why is READ COMMITTED enough?](../DESIGN-DEFENSE.md#d14-why-is-read-committed-enough) · [D12](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
+**Learn more:** [D14. Why is READ COMMITTED enough?](../DESIGN-DEFENSE.md#d14-why-is-read-committed-enough) · [D12](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L268-L352)
 
 </details>
 

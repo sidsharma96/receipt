@@ -5,9 +5,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"receipt/internal/cache"
 	"strings"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/cache"
 )
 
 func TestLayeredRemoteHitAndFallback(t *testing.T) {

@@ -2,8 +2,9 @@ package app
 
 import (
 	"fmt"
-	"receipt/internal/strictjson"
 	"slices"
+
+	"github.com/sidsharma96/receipt/internal/strictjson"
 )
 
 // UnmarshalJSON preserves defaults for absent optional fields, while rejecting

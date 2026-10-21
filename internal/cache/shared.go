@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"receipt/internal/fingerprint"
-	"receipt/internal/observe"
+
+	"github.com/sidsharma96/receipt/internal/fingerprint"
+	"github.com/sidsharma96/receipt/internal/observe"
 
 	// Register the PostgreSQL driver used by the persistence boundary.
 	_ "github.com/lib/pq"

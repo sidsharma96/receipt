@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"receipt/internal/observe"
 	"strings"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 const cargoProbeLimit = 16 << 20

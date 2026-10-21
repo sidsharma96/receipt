@@ -7,10 +7,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"receipt/internal/observe"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 func TestSelectedGitCompatibility(t *testing.T) {

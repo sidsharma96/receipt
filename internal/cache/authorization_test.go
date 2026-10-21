@@ -7,12 +7,13 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"receipt/internal/auth"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
 )
 
 const scopedTestToken = "rcpt_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"

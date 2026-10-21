@@ -23,9 +23,9 @@ def summarize(text):
     for stack in stacks:
         inclusive.update(set(stack))
     groups = {
-        'strict_object': lambda s: s == 'receipt/internal/strictjson.Object',
-        'postgres_get': lambda s: s == 'receipt/internal/cache.Postgres.Get',
-        'encode': lambda s: s == 'receipt/internal/cache.Encode',
+        'strict_object': lambda s: s in ('receipt/internal/strictjson.Object', 'github.com/sidsharma96/receipt/internal/strictjson.Object'),
+        'postgres_get': lambda s: s in ('receipt/internal/cache.Postgres.Get', 'github.com/sidsharma96/receipt/internal/cache.Postgres.Get'),
+        'encode': lambda s: s in ('receipt/internal/cache.Encode', 'github.com/sidsharma96/receipt/internal/cache.Encode'),
         'regexp': lambda s: s.startswith('regexp.'),
         'gc_worker_assist_or_start': lambda s: s in ('runtime.gcBgMarkWorker','runtime.gcAssistAlloc','runtime.gcStart'),
     }

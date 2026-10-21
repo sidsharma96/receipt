@@ -17,7 +17,7 @@ Before 15 October 2026 the token was hashed like any other variable. The manifes
 
 **Common wrong answer.** "Ignoring the token in the key is enough." Then a test that reads the token could behave differently under one key, so the child must lose the variable too.
 
-**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L227-L240) · [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L41-L47)
+**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L228-L241) · [`withoutToken`](https://github.com/sidsharma96/receipt/blob/main/internal/runner/process.go#L42-L48)
 
 </details>
 
@@ -55,7 +55,7 @@ No. With a remote configured, a local hit is replayed only after `GET /v1/status
 
 **Common wrong answer.** "Yes, the local cache is the fast path and the server is only a fallback." Local reuse is subordinate to the shared quarantine state whenever sharing is configured.
 
-**Learn more:** [D9. Why does a local hit still ask the server?](../DESIGN-DEFENSE.md#d9-why-does-a-local-hit-still-ask-the-server) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L68-L102)
+**Learn more:** [D9. Why does a local hit still ask the server?](../DESIGN-DEFENSE.md#d9-why-does-a-local-hit-still-ask-the-server) · [`runSession.lookup`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L69-L103)
 
 </details>
 
@@ -72,7 +72,7 @@ Three things. First, the disk store has no shared quarantine, so `GET /v1/status
 
 **Common wrong answer.** "It behaves the same, only without scoped credentials." The legacy mode also loses the shared status check and conflict detection, which changes both hit behaviour and safety.
 
-**Learn more:** [D9. Why does a local hit still ask the server?](../DESIGN-DEFENSE.md#d9-why-does-a-local-hit-still-ask-the-server) · [`cacheAPI.shared`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L263-L272) · [`putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L346-L369)
+**Learn more:** [D9. Why does a local hit still ask the server?](../DESIGN-DEFENSE.md#d9-why-does-a-local-hit-still-ask-the-server) · [`cacheAPI.shared`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L264-L273) · [`putEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L347-L370)
 
 </details>
 
@@ -91,7 +91,7 @@ Nothing makes the key usable again. There is no command to clear quarantine, `sh
 
 **Common wrong answer.** "The second upload overwrites the first, or is ignored because both passed." Receipt compares bytes, not test verdicts, and treats any disagreement as a broken input contract.
 
-**Learn more:** [D11. What happens when two clients publish the same key?](../DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key) · [G15. Quarantine cannot be undone](../DESIGN-DEFENSE.md#g15-quarantine-cannot-be-undone) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
+**Learn more:** [D11. What happens when two clients publish the same key?](../DESIGN-DEFENSE.md#d11-what-happens-when-two-clients-publish-the-same-key) · [G15. Quarantine cannot be undone](../DESIGN-DEFENSE.md#g15-quarantine-cannot-be-undone) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L268-L352)
 
 </details>
 
@@ -109,7 +109,7 @@ Each `Postgres.Put` holds the global exclusive lifecycle lock for its whole dura
 
 Before 15 October 2026 each upload instead walked every output file and ran `metadataUsage`, which scans every result and evidence row, three times: O(B + M + E) time. On one laptop the median upload grew from 33.4 ms on an empty store to 131.8 ms at about 4,045 results. With running totals, the same test gave 19 to 24 ms at every size. Because uploads run one at a time, throughput is still at most one divided by that latency, about 50 uploads per second on that laptop. The code says so directly: it deliberately serialises writers for a small deployment. The totals cost a recount at every server start and CLI command, and a crash after file writes can leave orphan files uncounted until that recount or the next `shared gc --apply`.
 
-**Learn more:** [D15. What does one upload cost, and how does that grow?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L208-L215) · [`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L226-L237)
+**Learn more:** [D15. What does one upload cost, and how does that grow?](../DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow) · [`readUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L209-L216) · [`reconcileUsage`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L227-L238)
 
 </details>
 
@@ -127,7 +127,7 @@ Two separate mechanisms. The transaction is begun with `context.WithoutCancel`, 
 
 If the connection itself dies, PostgreSQL releases the advisory lock at once, and a collector could acquire it. But every lifecycle operation also holds a `flock` on `blobs/.lifecycle.lock`, and that lock belongs to the open file, not the database session. The uploading process holds it until it closes the file, so the collector waits for the files. The tests `TestLifecycleCancellationKeepsFilesystemExclusion` and `TestDatabaseConnectionLossKeepsFilesystemExclusion` cover both cases. The limit is that `flock` coordinates one host only.
 
-**Learn more:** [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L72-L119) · [`lockBlobDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/lifecycle_unix.go#L15-L57)
+**Learn more:** [D12. Why does one lock serialize every shared writer?](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`Postgres.lifecycle`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L73-L120) · [`lockBlobDirectory`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/lifecycle_unix.go#L15-L57)
 
 </details>
 
@@ -184,7 +184,7 @@ They can forge a passing result. The key is the hash of a manifest, so anyone wh
 
 Detection comes only from disagreement: an honest upload with different output for the same key, or a `--verify` run, quarantines it. Scopes let most callers hold `read` only. CI never gives private-cache credentials to pull-request code: the cached job runs only on pushes to trusted branches, and an independent uncached job always runs the full suite, so CI correctness never depends on the cache.
 
-**Learn more:** [Part 3. Threat and failure model](../DESIGN-DEFENSE.md#part-3-threat-and-failure-model) · [Why keep the uncached job?](../RECEIPT-CI.md#why-keep-the-uncached-job) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L51-L73)
+**Learn more:** [Part 3. Threat and failure model](../DESIGN-DEFENSE.md#part-3-threat-and-failure-model) · [Why keep the uncached job?](../RECEIPT-CI.md#why-keep-the-uncached-job) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)
 
 </details>
 
@@ -201,7 +201,7 @@ Each fetched result carries the full manifest: the absolute repository and worki
 
 So "never plaintext" means "not stored verbatim". It is not confidentiality for low-entropy values. The mitigations are `ignore_environment` and running tests in a small, explicit environment. There is no listing endpoint, so a reader must already know a key.
 
-**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L227-L240) · [`digest`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L158-L161)
+**Learn more:** [D4. Why is `RECEIPT_TOKEN` kept out of the key?](../DESIGN-DEFENSE.md#d4-why-is-receipt_token-kept-out-of-the-key) · [`environmentInputs`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L228-L241) · [`digest`](https://github.com/sidsharma96/receipt/blob/main/internal/auth/auth.go#L158-L161)
 
 </details>
 
@@ -218,7 +218,7 @@ Storage slots are a buffered channel sized by `--max-inflight`, default 16, rang
 
 The hidden limit is the database pool: 16 open connections, shared by the server and every CLI command. Each storage operation pins one connection for its whole duration, so at most 16 run at once whatever `--max-inflight` says, and authentication can time out waiting for a connection. Receipt rejects rather than queues so clients fall back to running their tests within milliseconds; overload costs speed, not correctness.
 
-**Learn more:** [D17. How does the server bound concurrent work?](../DESIGN-DEFENSE.md#d17-how-does-the-server-bound-concurrent-work) · [G4](../DESIGN-DEFENSE.md#g4-the-connection-pool-silently-caps-storage-concurrency-at-16) · [`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L26-L33)
+**Learn more:** [D17. How does the server bound concurrent work?](../DESIGN-DEFENSE.md#d17-how-does-the-server-bound-concurrent-work) · [G4](../DESIGN-DEFENSE.md#g4-the-connection-pool-silently-caps-storage-concurrency-at-16) · [`SetMaxOpenConns`](https://github.com/sidsharma96/receipt/blob/main/internal/app/shared_command.go#L27-L34)
 
 </details>
 
@@ -237,7 +237,7 @@ Both commands are dry runs unless given `--apply`, and both take the exclusive l
 
 **Common wrong answer.** "Retention is least recently used." That is true of the local cache only.
 
-**Learn more:** [D16. How does cleanup avoid deleting a file that is still needed?](../DESIGN-DEFENSE.md#d16-how-does-cleanup-avoid-deleting-a-file-that-is-still-needed) · [G14. Retention ignores use](../DESIGN-DEFENSE.md#g14-retention-ignores-use) · [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L470-L509)
+**Learn more:** [D16. How does cleanup avoid deleting a file that is still needed?](../DESIGN-DEFENSE.md#d16-how-does-cleanup-avoid-deleting-a-file-that-is-still-needed) · [G14. Retention ignores use](../DESIGN-DEFENSE.md#g14-retention-ignores-use) · [`Postgres.Expire`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L471-L510)
 
 </details>
 
@@ -272,7 +272,7 @@ The storage policy row in the restored database records the absolute blob direct
 
 So the drill makes the restored files appear at the original path without changing what the live server sees. It runs under `unshare --mount --propagation private`, refuses to continue unless its mount namespace differs from PID 1's, and bind-mounts the restored directory there. It also uses a separate restored database and another loopback port, so production rows and the production port are never touched. The cost is that recovery onto a new machine must restore the files to the same absolute path, or the policy row must be edited by hand.
 
-**Learn more:** [D21. How is the server deployed, and how would we recover it?](../DESIGN-DEFENSE.md#d21-how-is-the-server-deployed-and-how-would-we-recover-it) · [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L171-L193) · [`mount --bind`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-check-20261012.sh#L7-L8)
+**Learn more:** [D21. How is the server deployed, and how would we recover it?](../DESIGN-DEFENSE.md#d21-how-is-the-server-deployed-and-how-would-we-recover-it) · [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L172-L194) · [`mount --bind`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-check-20261012.sh#L7-L8)
 
 </details>
 
@@ -291,7 +291,7 @@ Each Fly machine gets its own volume. The second machine mounts an empty volume 
 
 **Common wrong answer.** "The `.store-id` binding would detect the second volume and refuse to start." Both machines see the same path and get the same identity, so the binding passes.
 
-**Learn more:** [What two Receipt Machines would actually do](../FLY-DEPLOYMENT.md#what-two-receipt-machines-would-actually-do) · [`getEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L319-L325) · [`release_command`](https://github.com/sidsharma96/receipt/blob/main/deploy/fly/api.toml#L12)
+**Learn more:** [What two Receipt Machines would actually do](../FLY-DEPLOYMENT.md#what-two-receipt-machines-would-actually-do) · [`getEntry`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L320-L326) · [`release_command`](https://github.com/sidsharma96/receipt/blob/main/deploy/fly/api.toml#L12)
 
 </details>
 
@@ -311,7 +311,7 @@ On a hit, `--verify` runs the tests again and scans the inputs again. If the key
 
 **Common wrong answer.** "A successful refresh whose output differs from the cached result is a conflict and quarantines locally." Locally it simply replaces the entry; only a failure after a recorded success quarantines.
 
-**Learn more:** [D6b. What do `--verify`, `--refresh` and `--bypass` do?](../DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do) · [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L163-L191) · [`failed`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L193-L214)
+**Learn more:** [D6b. What do `--verify`, `--refresh` and `--bypass` do?](../DESIGN-DEFENSE.md#d6b-what-do---verify---refresh-and---bypass-do) · [`verify`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L164-L192) · [`failed`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L194-L215)
 
 </details>
 
@@ -326,7 +326,7 @@ From the user's point of view, in what ways is a replayed result different from 
 
 The replay writes all of the saved stdout and then all of the saved stderr, so the original interleaving of the two streams is lost. The child ran with pipes, not a terminal, so there were no colours or terminal-dependent formatting to save. Its standard input was `/dev/null`. Durations and timestamps in the output are the original run's. Side effects do not happen: files the tests wrote, coverage reports, JUnit XML and network calls are absent. Receipt adds a "hit" line on stderr. Output over 8 MiB per stream was never stored, so such a run never replays. The exit code is always 0, because only successes are stored.
 
-**Learn more:** [D6. Why cache only successes, replay exact bytes and never normalise output?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L141-L161)
+**Learn more:** [D6. Why cache only successes, replay exact bytes and never normalise output?](../DESIGN-DEFENSE.md#d6-why-cache-only-successes-replay-exact-bytes-and-never-normalise-output) · [`runSession.replay`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162)
 
 </details>
 
@@ -379,7 +379,7 @@ Every writer and every maintenance operation holds the exclusive lifecycle lock 
 
 With per-key locks, two uploads for different keys would run together. Both could pass the budget check and overshoot it, and a collector could decide output file X was unreferenced while an upload for another key was about to reference it. SERIALIZABLE would catch the database half of that, but it cannot see the filesystem, so it does not protect output files from the collector.
 
-**Learn more:** [D14. Why is READ COMMITTED enough?](../DESIGN-DEFENSE.md#d14-why-is-read-committed-enough) · [D12](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L267-L351)
+**Learn more:** [D14. Why is READ COMMITTED enough?](../DESIGN-DEFENSE.md#d14-why-is-read-committed-enough) · [D12](../DESIGN-DEFENSE.md#d12-why-does-one-lock-serialize-every-shared-writer) · [`publishTx`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L268-L352)
 
 </details>
 
@@ -396,7 +396,7 @@ On the server, output files are synced before they are linked into place and bef
 
 On the laptop, `quarantine` writes the marker with a rename and then syncs `quarantine/`, and `Disk.Remove` syncs `entries/` after removing the entry, so neither change can be undone by a power loss after it returns. Before 15 October 2026 none of these directories were synced: a new shard directory could vanish while its record survived (a 404 and a re-upload), and the marker and the removal could both be undone, letting the conflicting result be replayed locally unless a remote's status check blocked it.
 
-**Learn more:** [D7. How is a local result published so that a crash never leaves a partial entry?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [`MakeDirs`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/dirsync.go#L24-L50) · [`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L221-L229)
+**Learn more:** [D7. How is a local result published so that a crash never leaves a partial entry?](../DESIGN-DEFENSE.md#d7-how-is-a-local-result-published-so-that-a-crash-never-leaves-a-partial-entry) · [`MakeDirs`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/dirsync.go#L24-L50) · [`quarantine`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L222-L230)
 
 </details>
 
@@ -428,7 +428,7 @@ Production runs with `--max-inflight 2`. What can an unauthenticated internet cl
 
 Authentication slots equal `--max-inflight`, so production has two. A header of the wrong length is refused before taking a slot, but a stream of well-formed fake tokens of the right length takes both authentication slots while their database lookups run, and real callers get 503. No per-IP or Caddy rate limit exists. The damage is to speed, not correctness: CI treats 503 like any server failure and runs its tests locally, and the independent uncached job runs regardless. The fix is a separate authentication slot count and a per-IP rate limit in Caddy.
 
-**Learn more:** [G5. Production admission is two requests](../DESIGN-DEFENSE.md#g5-production-admission-is-two-requests) · [Part 3. Threat and failure model](../DESIGN-DEFENSE.md#part-3-threat-and-failure-model) · [`cacheAPI.authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L42-L77)
+**Learn more:** [G5. Production admission is two requests](../DESIGN-DEFENSE.md#g5-production-admission-is-two-requests) · [Part 3. Threat and failure model](../DESIGN-DEFENSE.md#part-3-threat-and-failure-model) · [`cacheAPI.authenticate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L43-L78)
 
 </details>
 

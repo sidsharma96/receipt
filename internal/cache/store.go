@@ -8,10 +8,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"receipt/internal/fingerprint"
 	"regexp"
 	"sort"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/fingerprint"
 )
 
 // MaxEntryBytes bounds a serialized local entry or HTTP payload.

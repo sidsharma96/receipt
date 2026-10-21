@@ -8,10 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"receipt/internal/fingerprint"
-	"receipt/internal/observe"
 	"sync"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/fingerprint"
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 // ErrQuota indicates that a shared storage budget would be exceeded.

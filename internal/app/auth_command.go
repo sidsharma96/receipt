@@ -7,8 +7,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"receipt/internal/auth"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
 )
 
 type authMode string

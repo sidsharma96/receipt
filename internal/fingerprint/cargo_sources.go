@@ -10,7 +10,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"receipt/internal/observe"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 // Bound extra Cargo reads independently of the ordinary Git input scan.

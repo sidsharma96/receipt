@@ -11,11 +11,12 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"receipt/internal/cache"
-	"receipt/internal/fingerprint"
 	"runtime"
 	"syscall"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/cache"
+	"github.com/sidsharma96/receipt/internal/fingerprint"
 )
 
 type config struct {

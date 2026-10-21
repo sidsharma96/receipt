@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"receipt/internal/auth"
-	"receipt/internal/observe"
 	"strings"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 // HandlerAuthorized uses only the supplied authenticator; it never falls back

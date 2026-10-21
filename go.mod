@@ -1,4 +1,4 @@
-module receipt
+module github.com/sidsharma96/receipt
 
 go 1.22
 

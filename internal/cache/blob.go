@@ -7,8 +7,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"receipt/internal/fingerprint"
-	"receipt/internal/observe"
+
+	"github.com/sidsharma96/receipt/internal/fingerprint"
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 // BlobStore stores immutable bytes by SHA-256. Put must not acknowledge an

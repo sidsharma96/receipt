@@ -60,7 +60,7 @@ does not alter how that map is filled or sorted into the manifest.
 ## Pass an observation to the code that needs it
 
 The initial fingerprint call in
-[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334):
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335):
 
 ```go
 m, e := fingerprint.BuildAtRoot(ctx, root, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
@@ -73,7 +73,7 @@ file enumeration, file hashing, environment collection and executable/probe code
 No manifest field or encoding changes.
 
 When tests have executed, the call remains
-[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334):
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335):
 
 ```go
 after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)

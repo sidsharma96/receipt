@@ -10,10 +10,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"receipt/internal/auth"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
 )
 
 const (

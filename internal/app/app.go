@@ -13,14 +13,15 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"receipt/internal/auth"
-	"receipt/internal/cache"
-	"receipt/internal/fingerprint"
-	"receipt/internal/runner"
 	"sort"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
+	"github.com/sidsharma96/receipt/internal/cache"
+	"github.com/sidsharma96/receipt/internal/fingerprint"
+	"github.com/sidsharma96/receipt/internal/runner"
 )
 
 type commandName string

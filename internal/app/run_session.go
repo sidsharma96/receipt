@@ -8,11 +8,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"receipt/internal/cache"
-	"receipt/internal/fingerprint"
-	"receipt/internal/observe"
-	"receipt/internal/runner"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/cache"
+	"github.com/sidsharma96/receipt/internal/fingerprint"
+	"github.com/sidsharma96/receipt/internal/observe"
+	"github.com/sidsharma96/receipt/internal/runner"
 )
 
 // runSession groups the immutable inputs and dependencies of one invocation.

@@ -4,10 +4,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"receipt/internal/cache"
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/cache"
 )
 
 func TestQuarantineMarkerIsSynced(t *testing.T) {

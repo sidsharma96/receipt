@@ -10,8 +10,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"receipt/internal/cache"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/cache"
 )
 
 func openShared(ctx context.Context, dir string) (cache.Postgres, error) {

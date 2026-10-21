@@ -138,7 +138,7 @@ prefix-plus-file slice. The new path writes the prefix to the hash, repeatedly
 reads and hashes through one buffer, then returns the digest. A read error stops
 the operation without returning a digest. All declared file bytes still get read.
 
-The call in [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L200-L224):
+The call in [`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L201-L225):
 
 ```go
 	digest, e := hashFile(path, fmt.Sprintf("%o\x00", info.Mode().Perm()), info.Size())

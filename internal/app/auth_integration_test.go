@@ -10,10 +10,11 @@ import (
 	"io"
 	"net/url"
 	"os"
-	"receipt/internal/auth"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
 )
 
 func authCommandFixture(t *testing.T) (auth.Postgres, string) {

@@ -2437,7 +2437,7 @@ A local hit rebuilds a manifest of named input hashes and decodes a checksummed
 JSON result. `fileInput` reads a byte slice, copies it behind a permission prefix,
 and hashes the combination. An 8 MiB fixture allocated about 16 MiB per call.
 The actual excerpt and explanation are in the chapter, attributed to
-[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L200-L224).
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L201-L225).
 A streaming hasher is a candidate for bounded temporary memory, not a way to avoid
 reading declared bytes. Primary-key B-trees map result keys, credential IDs and
 (key,digest) evidence pairs to rows. No JSON-path index is needed by current queries.
@@ -2568,7 +2568,7 @@ For a file containing `abc` with mode `0600`, the old implementation made bytes
 into one SHA-256 state through a reusable byte slice capped at 32 KiB. Small
 files use a smaller buffer. No chunk digests are combined, so the algorithm is
 unchanged. The actual code excerpts in Chapter 12 are attributed to
-[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L200-L224)
+[`fileInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L201-L225)
 and [`hashFile`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/file_hash.go#L12-L28).
 The manifest's fields, sorting and JSON encoding are unchanged.
 
@@ -2693,7 +2693,7 @@ The existing Input still records kind, absolute executable path and raw-byte
 SHA-256. A per-call 32 KiB buffer and hash state replace the full executable slice
 when no shebang inspection is needed. Unlike ordinary file inputs, the executable
 has no permission prefix. The actual production branch in
-[`executableInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L10-L26)
+[`executableInput`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/executable.go#L11-L27)
 is quoted and explained in Chapter 13. Direct pytest retains its existing byte
 slice because its original shebang parser consumes that content. Trace retains
 fixed-size per-stage counters; four labels are appended without renumbering the
@@ -2827,7 +2827,7 @@ Settings resolves the root and reads configuration; the initial CLI fingerprint
 uses `BuildAtRoot`; both that entry point and `Build` share `buildAtRoot` for
 listing, hashing, environment collection and probes. The post-run caller retains
 `Build`, which resolves Git root anew. The actual initial call in
-[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334)
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335)
 is `fingerprint.BuildAtRoot(ctx, root, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)`.
 The root must come from this invocation's settings discovery. The API comment
 forbids retaining it across execution or invocations; it is a caller contract,
@@ -3072,7 +3072,7 @@ before computing the difference. Both labels occupy average position 2.5,
 cancelling a linear change across the four positions. Future fixtures can use
 the same harness, but different systems need different resource collection.
 The existing production call remains unchanged in
-[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L231-L334):
+[`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335):
 
 ```go
 m, e := fingerprint.BuildAtRoot(ctx, root, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvironment, o.generic)
@@ -3413,7 +3413,7 @@ attach `WithGit` retain the prior boundary. This is an explicit opt-in API, not
 an automatic persistent tool manager.
 
 The attachment in
-[`WithGit`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/git.go#L22-L34):
+[`WithGit`](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/git.go#L23-L35):
 
 ```go
 return context.WithValue(ctx, gitKey{}, gitSelection{path: path, err: err})
@@ -4822,7 +4822,7 @@ DNS completes, TCP connects, TLS verifies, the request travels to Caddy/Receipt,
 the backend reads/validates its result, and the client collects then checks the
 body. Current Remote.Get calls `io.ReadAll(io.LimitReader(resp.Body, MaxEntryBytes+1))`
 then `Decode`; the chapter includes the attributed actual excerpt from
-[`Remote.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L62-L86).
+[`Remote.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L63-L87).
 A read wrapper measures collection; Close begins after Decode, so the gap from
 last read to Close is separately labeled rather than charged to network reading.
 Diagnostic source fragments compile under ignored .tools/ and add no product
@@ -4978,7 +4978,7 @@ calculation order; it is not a copy of the full raw archive.
 ### Source cleanup · 2. Architecture, flow and extension boundaries
 
 The application still builds from `cmd/`, `internal/`, `go.mod` and `go.sum`.
-The unchanged [`main`](https://github.com/sidsharma96/receipt/blob/main/cmd/receipt/main.go#L9-L11)
+The unchanged [`main`](https://github.com/sidsharma96/receipt/blob/main/cmd/receipt/main.go#L10-L12)
 passes control through `os.Exit(app.Main(os.Args[1:], os.Stdout, os.Stderr))`.
 The built process uses neither repository Python scripts nor historical JSON.
 The docs build uses Python and mdBook; current CI also uses Python helpers.
@@ -5407,3 +5407,105 @@ or server CPU dominates representative workloads. Revisit the harness when a
 failure still lacks useful numeric evidence, preserving failure counts rather
 than selecting only fast successful jobs. Repeat measurements across time blocks
 before presenting an observed short path as dependable behavior.
+
+## Public distribution, 20 October 2026
+
+A Python developer can download Receipt for their computer and run it without
+installing Go. A Go developer can ask `go install` to build the same tagged source.
+[Chapter 6](guide/06-find-the-code-and-defend-a-decision.md#how-the-executable-reaches-a-user)
+follows both routes; the README contains installation commands.
+
+### Distribution — 1. Data structures and why
+
+The release builder keeps a fixed list of four OS/processor pairs and a short
+list of archive digests. An archive groups the executable, README and license
+notices; SHA256SUMS maps each archive name to its byte digest. The list is small
+and ordered, so a registry or database would add no useful lookup capability.
+
+### Distribution — 2. Architecture, flow and extension boundaries
+
+A version tag selects source. The release workflow runs tests, builds all four
+archives, executes the Linux amd64 help command, creates a draft with attachments,
+then publishes it. `go install` independently resolves the GitHub module path and
+builds `cmd/receipt`. `go.mod` now declares
+`module github.com/sidsharma96/receipt`; imports and diagnostic build templates
+use the same prefix. New platforms need build and execution evidence, not merely
+another target label. The user explicitly authorized public repository visibility
+and selected Apache 2.0 licensing.
+
+### Distribution — 3. Concurrency, networking and primitives
+
+Release builds run sequentially. The workflow serializes runs for each tag and
+uses GitHub's scoped token to publish assets. Go downloads module source and
+checks dependencies through its normal mechanisms. No runtime locks, workers,
+cache networking or server deployment changed. Public downloads grant no shared
+cache credential or server administration access.
+
+### Distribution — 4. Pitfalls and debugging challenges
+
+A wrong architecture cannot execute on the user's machine. A missing PATH entry
+can hide an installed binary. Module/import mismatches prevent source installation.
+Import formatting shifts source anchors, so book links were remapped and excerpts
+checked. Existing profile summaries accept both historical and new symbol prefixes.
+A failed build leaves no release; an interrupted upload may leave a draft requiring
+operator inspection. The builder refuses an existing output directory to avoid
+mixing old and new assets. Published tags must not be moved to repair a release.
+
+### Distribution — 5. Frequent and occasional costs
+
+Installation pays either an archive download/extraction or source download and
+compilation. Each new release builds four binaries and hashes four archives.
+Ordinary Receipt invocations pay no update check or release-service request.
+No installation latency or binary-size improvement is claimed.
+
+### Distribution — 6. Guarantees, assumptions and non-goals
+
+The workflow publishes only after its build and smoke steps succeed. Source tags
+become visible separately, so source and binary publication are not atomic.
+Checksums detect changed bytes, not an independent publisher identity. macOS
+artifacts are not Apple-notarized. Windows, automatic updates, Homebrew packaging
+and a hosted-cache enrollment flow are outside this release. Source visibility
+does not make the separately hosted private book public. Matching source is not
+a claim of reproducible archive bytes or deterministic workload output.
+
+### Distribution — 7. Alternatives and decisions
+
+Chosen now: GitHub archives plus Go installation. Requiring every user to clone
+would impose a compiler on Python users. A package-manager recipe could handle
+placement and updates, but adds another publication surface. A dedicated release
+tool could replace the small standard-library builder when signing or more
+platforms justify it. These comparisons describe this release decision; they
+are not historical optimization decisions.
+
+### Distribution — 8. Evidence, untested failures and risks
+
+Verification and publication outcomes are appended below before handoff. Local
+unit and race suites omit PostgreSQL integration unless a disposable database
+is configured. Cross-compiling a target does not establish native execution on
+that target. Secret-pattern scanning is a bounded check, not proof that all
+historical content is suitable for every audience.
+
+### Distribution — 9. Conditions for revisiting decisions
+
+Add native platform CI when usage warrants broader runtime support. Add signed
+or notarized artifacts when download policies require them. Consider a package
+manager when users need managed upgrades. Publish a new version for corrections;
+do not replace the contents of a module version already fetched by Go users.
+Performance optimization remains deferred unless a concrete user problem appears.
+
+Pre-publication verification: `make check` (including lint), `make race` and
+`make build` passed on macOS arm64 with Go 1.27.2. `make docs` passed all 23
+checks after source anchors were adjusted. All 54 profiling-helper tests and
+9 CI-helper tests passed, including old/new symbol-name compatibility. No local
+PostgreSQL integration database was configured. Gitleaks 8.30.1 examined Git
+history; all 20 findings were cache-key SHA-256 values in fixtures, tests or
+measurement records rather than authentication credentials. No history rewrite
+was performed. This scan does not prove the absence of every possible secret.
+The added teaching section uses a text execution trace; no new rendered picture
+or interactive control was introduced, and no reader study was performed.
+
+The local Go 1.27.3 packaging run built all four target archives; their checksums
+and five expected archive members were verified. The extracted macOS arm64
+executable ran `help` and two local generic workload invocations successfully.
+Native execution on the other three targets was not performed locally. Release
+CI adds a Linux amd64 execution check; its outcome is recorded after publication.

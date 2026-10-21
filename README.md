@@ -22,6 +22,57 @@ and heading anchors resolve, and chapter questions match the bank. CI builds the
 same book on every push to `main` that touches the docs and deploys it to
 Cloudflare Pages.
 
+## Install Receipt
+
+With a current Go toolchain installed, run:
+
+```sh
+go install github.com/sidsharma96/receipt/cmd/receipt@v0.1.0
+```
+
+Use `@latest` for the newest release. Go installs `receipt` into `GOBIN`, or
+`$(go env GOPATH)/bin` when `GOBIN` is unset. Put that directory on your `PATH`,
+then run `receipt help`. No manual clone is required. The source requires Go
+1.22 or later; use a current Go version on recent macOS versions.
+
+Without Go, download an archive and `SHA256SUMS` from
+[GitHub Releases](https://github.com/sidsharma96/receipt/releases/latest).
+Choose `darwin` for macOS or `linux` for Linux, then `arm64` for Apple Silicon
+or ARM64 Linux, or `amd64` for Intel/AMD 64-bit. For example, on Apple Silicon:
+
+```sh
+shasum -a 256 receipt_v0.1.0_darwin_arm64.tar.gz
+# Compare the printed digest with that archive's line in SHA256SUMS.
+tar -xzf receipt_v0.1.0_darwin_arm64.tar.gz
+mkdir -p "$HOME/.local/bin"
+install -m 755 receipt "$HOME/.local/bin/receipt"
+export PATH="$HOME/.local/bin:$PATH"
+receipt help
+```
+
+Add the PATH line to your shell startup file to keep it for future terminals.
+On Linux, `sha256sum` can calculate the digest. A checksum detects changed
+bytes; it is not an independent publisher signature. These macOS downloads
+are not Apple-notarized. Windows downloads are not provided in this release.
+
+Receipt still needs Git and the command/toolchain for your workload. It does
+not require Python, Go or PostgreSQL merely to run the downloaded local client.
+For example, Python/pytest users need their Python environment; Go users need Go.
+The shared server is optional and needs its own configuration and credentials.
+Installing Receipt does not grant access to the maintainer's shared cache.
+
+To build from source instead:
+
+```sh
+git clone https://github.com/sidsharma96/receipt.git
+cd receipt
+make build
+./receipt help
+```
+
+Receipt is licensed under [Apache 2.0](LICENSE). Dependency terms are included
+in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).
+
 ## What is required to run Receipt?
 
 For example, `receipt run -- go test ./...` starts the Receipt binary, asks Git

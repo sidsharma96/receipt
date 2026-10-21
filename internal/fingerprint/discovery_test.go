@@ -5,8 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"receipt/internal/observe"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 func discoveryFixture(t *testing.T) string {

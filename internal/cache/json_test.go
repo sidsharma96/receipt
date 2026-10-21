@@ -7,10 +7,11 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"receipt/internal/fingerprint"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/fingerprint"
 )
 
 func jsonBytesForTest(t *testing.T, value any) []byte {

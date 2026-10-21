@@ -7,10 +7,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"receipt/internal/cache"
-	"receipt/internal/fingerprint"
 	"strings"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/cache"
+	"github.com/sidsharma96/receipt/internal/fingerprint"
 )
 
 func TestCompressionPreservesRealRemoteResult(t *testing.T) {

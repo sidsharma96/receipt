@@ -43,16 +43,16 @@ linters:
           list-mode: strict
           allow:
             - $gostd
-            - receipt/
+            - github.com/sidsharma96/receipt/
             - github.com/lib/pq$
         domain:
           files:
             - "**/internal/fingerprint/*.go"
             - "**/internal/runner/*.go"
           deny:
-            - pkg: receipt/internal/app
+            - pkg: github.com/sidsharma96/receipt/internal/app
               desc: Domain/process packages must not depend on CLI orchestration.
-            - pkg: receipt/internal/cache
+            - pkg: github.com/sidsharma96/receipt/internal/cache
               desc: Domain/process packages must not depend on storage/HTTP.
             - pkg: github.com/lib/pq
               desc: The SQL driver belongs at the persistence boundary.

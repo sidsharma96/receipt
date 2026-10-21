@@ -35,7 +35,7 @@ explains where the runner and server execute and preserves the earlier baseline.
 ## Trace the client we actually use
 
 Receipt already uses Go's HTTP client. In
-[`Remote.requestPath`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L33-L59):
+[`Remote.requestPath`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L34-L60):
 
 ```go
 	c := r.Client
@@ -71,7 +71,7 @@ and [overlay builder](https://github.com/sidsharma96/receipt/blob/main/scripts/p
 are outside production packages.
 
 Receiving headers does not mean receiving the complete result. The ordinary
-[`Remote.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L62-L86):
+[`Remote.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/http.go#L63-L87):
 
 ```go
 	b, e := io.ReadAll(io.LimitReader(resp.Body, MaxEntryBytes+1))

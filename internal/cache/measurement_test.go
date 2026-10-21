@@ -10,12 +10,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"receipt/internal/auth"
 	"runtime"
 	"sort"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/sidsharma96/receipt/internal/auth"
 )
 
 // TestMeasurementWorkloads is an opt-in experiment, not a performance assertion.

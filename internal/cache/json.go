@@ -2,7 +2,8 @@ package cache
 
 import (
 	"fmt"
-	"receipt/internal/strictjson"
+
+	"github.com/sidsharma96/receipt/internal/strictjson"
 )
 
 // UnmarshalJSON checks the result schema before assigning the receiver. Only

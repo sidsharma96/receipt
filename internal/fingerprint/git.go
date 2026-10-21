@@ -4,9 +4,10 @@ import (
 	"context"
 	"os/exec"
 	"path/filepath"
-	"receipt/internal/observe"
 	"runtime"
 	"strings"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 type gitKey struct{}

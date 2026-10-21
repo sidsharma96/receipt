@@ -6,9 +6,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"receipt/internal/observe"
 	"regexp"
 	"strings"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 // BlobObject describes an inventory item relative to the managed store root.

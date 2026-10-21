@@ -3,7 +3,8 @@ package main
 
 import (
 	"os"
-	"receipt/internal/app"
+
+	"github.com/sidsharma96/receipt/internal/app"
 )
 
 func main() {

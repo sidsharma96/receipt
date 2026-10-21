@@ -4,10 +4,11 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"receipt/internal/observe"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 func TestCargoPrivateDiagnosticAndFailedTiming(t *testing.T) {

@@ -15,7 +15,7 @@ import (
  "net/http"
  "net/http/httptrace"
  "os"
- "receipt/internal/cache"
+ "github.com/sidsharma96/receipt/internal/cache"
  "regexp"
  "sync"
  "syscall"

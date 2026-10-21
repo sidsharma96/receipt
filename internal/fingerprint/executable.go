@@ -4,7 +4,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"receipt/internal/observe"
+
+	"github.com/sidsharma96/receipt/internal/observe"
 )
 
 func executableInput(ctx context.Context, exe string, wantHeader bool) (Input, []byte, error) {

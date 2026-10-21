@@ -19,7 +19,7 @@ For example, a result must name its key. That is a structural requirement. The k
 
 The same result type is read from HTTP requests and local files. Putting its decoding checks in `UnmarshalJSON` makes them run when Go's JSON decoder fills that type, rather than relying on each caller to remember them.
 
-This is the last part of that method, [`Result.UnmarshalJSON` in internal/cache/json.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/json.go#L10-L25):
+This is the last part of that method, [`Result.UnmarshalJSON` in internal/cache/json.go](https://github.com/sidsharma96/receipt/blob/main/internal/cache/json.go#L11-L26):
 
 ```go
 if err := Validate(Result(next)); err != nil {
@@ -56,7 +56,7 @@ A client uploads a result as JSON. Every required field is present and has the r
 
 No. Receipt checks two separate things. The structure check rejects unknown fields, repeated fields and missing required fields. The value check then applies the rules about meaning: the version must be 1, the exit code must be 0, the key must equal the hash of the included manifest, and each output stream must fit the size limit. A well-formed document can still claim a failed run or carry a key that does not match its manifest, so the shape check does not replace the value check.
 
-**Learn more:** [Why check inside the type?](../guide/04-check-data-before-accepting-it.md#why-check-inside-the-type) · [JSON input contract](../JSON-INPUT-CONTRACT.md) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L72)
+**Learn more:** [Why check inside the type?](../guide/04-check-data-before-accepting-it.md#why-check-inside-the-type) · [JSON input contract](../JSON-INPUT-CONTRACT.md) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L53-L73)
 
 </details>
 
@@ -73,7 +73,7 @@ No. A well-formed result can still claim a nonzero exit code, carry an invalid h
 
 `Result.UnmarshalJSON` first calls `strictjson.Object`, which rejects invalid UTF-8, duplicate fields, unknown fields, missing required fields, wrongly cased names, disallowed nulls and trailing data, decoding into a temporary value. It then calls `Validate`, which requires version 1, a valid manifest, a key equal to the manifest's hash, exit code 0, a nonnegative duration and streams within 8 MiB. Only after both pass does it assign the caller's value. Putting this in the decoding hook means every path that decodes a result, from HTTP or from a local file, gets the checks without each caller remembering them. Storage methods call `Validate` again for results built in code.
 
-**Learn more:** [Why check inside the type?](../guide/04-check-data-before-accepting-it.md#why-check-inside-the-type) · [JSON input contract](../JSON-INPUT-CONTRACT.md#rules-shared-by-the-typed-boundaries) · [`Result.UnmarshalJSON`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/json.go#L8-L25) · [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61)
+**Learn more:** [Why check inside the type?](../guide/04-check-data-before-accepting-it.md#why-check-inside-the-type) · [JSON input contract](../JSON-INPUT-CONTRACT.md#rules-shared-by-the-typed-boundaries) · [`Result.UnmarshalJSON`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/json.go#L9-L26) · [`Object`](https://github.com/sidsharma96/receipt/blob/main/internal/strictjson/object.go#L24-L61)
 
 </details>
 
@@ -90,7 +90,7 @@ They can forge a passing result. The key is the hash of a manifest, so anyone wh
 
 Detection comes only from disagreement: an honest upload with different output for the same key, or a `--verify` run, quarantines it. Scopes let most callers hold `read` only. CI never gives private-cache credentials to pull-request code: the cached job runs only on pushes to trusted branches, and an independent uncached job always runs the full suite, so CI correctness never depends on the cache.
 
-**Learn more:** [Part 3. Threat and failure model](../DESIGN-DEFENSE.md#part-3-threat-and-failure-model) · [Why keep the uncached job?](../RECEIPT-CI.md#why-keep-the-uncached-job) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L51-L73)
+**Learn more:** [Part 3. Threat and failure model](../DESIGN-DEFENSE.md#part-3-threat-and-failure-model) · [Why keep the uncached job?](../RECEIPT-CI.md#why-keep-the-uncached-job) · [`Validate`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/store.go#L52-L74)
 
 </details>
 
