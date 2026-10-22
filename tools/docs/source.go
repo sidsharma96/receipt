@@ -267,7 +267,9 @@ func (b book) assets() error {
 			continue
 		}
 		ext := filepath.Ext(path)
-		allowed := ext == markdownExtension || ext == svgExtension || (ext == ".png" && within(filepath.Join(b.docs, "assets"), path)) || (ext == ".pprof" && within(filepath.Join(b.docs, "measurements"), path))
+		// The book's stylesheet and script live in docs/theme because mdBook
+		// loads additional-css and additional-js from the book source.
+		allowed := ext == markdownExtension || ext == svgExtension || (ext == ".png" && within(filepath.Join(b.docs, "assets"), path)) || (ext == ".pprof" && within(filepath.Join(b.docs, "measurements"), path)) || ((ext == ".css" || ext == ".js") && within(filepath.Join(b.docs, "theme"), path))
 		if !allowed || strings.HasPrefix(filepath.Base(path), ".") {
 			return fmt.Errorf("non-document source asset: %s", path)
 		}
