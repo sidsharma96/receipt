@@ -4,6 +4,8 @@ Suppose you want to change what Receipt records before running `go test`.
 Start in `internal/fingerprint`, which discovers inputs and builds their
 description. You do not need to begin in the HTTP server or database code.
 
+A path such as `internal/fingerprint` is relative to the Receipt source checkout,
+not your test project's directory. It names a directory containing Go source.
 A Go package groups related source files. Receipt's packages run inside the same
 client or server process; a package is not a separately deployed service.
 
@@ -24,11 +26,29 @@ Follow a normal command through those boundaries:
 app reads arguments
   -> fingerprint describes inputs
   -> cache looks for a result
-       -> usable hit: app replays output
-       -> miss: runner starts the test
-                  -> fingerprint checks inputs again
-                  -> cache saves a stable success
+
+Hit: app replays output
+Miss:
+  runner starts the test
+  -> fingerprint checks inputs again
+  -> attempt local save
+  -> attempt shared upload
+  -> prune local cache
 ```
+
+For the miss above, assume a successful test, unchanged recorded inputs, output
+within the capture limit and no quarantine. Receipt first attempts to save the
+result locally, then uploads it if a remote is configured, then prunes the local
+cache. Pruning removes older entries to stay near the configured size limit.
+An ordinary upload failure is reported, but a successful local save remains and
+the tests keep their successful exit code. A reported conflict instead triggers
+quarantine, which Chapter 10 follows in detail.
+
+The order matters: an upload failure need not lose the local result, and pruning
+may remove that result later even if the upload succeeded. These are separate
+operations, not one change that either happens everywhere or nowhere. Follow
+[`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
+to see their coordination in `internal/app/run_session.go`.
 
 This division lets a test substitute a storage implementation without starting a
 server. It does not make a new backend automatic: an object store would still
@@ -37,8 +57,9 @@ need rules for failed uploads, concurrent reads and deletion.
 ## What needs to be installed?
 
 The built executable needs Git and the tools for the workload. A pytest command
-needs its Python environment; a Go command needs Go. Python scripts under
-`scripts/` support development and measurements, not normal Receipt execution.
+needs its Python environment; a Go command needs Go. Go commands under
+`tools/` check documentation, build releases and support measurements. They are
+development tools; a downloaded Receipt executable does not invoke them.
 
 A shared server receives results rather than running users' tests. The
 credential-enabled server needs PostgreSQL and a writable output directory.
@@ -90,7 +111,13 @@ Walk through `receipt run -- uv run pytest` on a miss that succeeds, with a remo
 
 `run` parses flags and refuses more than one of `--bypass`, `--refresh` and `--verify`. It loads `.receipt.json`, resolves the cache directory and builds the manifest; if that fails, it runs the command uncached. `runSession.lookup` treats a locally quarantined key as a miss, then reads the local entry. With no local entry it asks the server with a GET, and a remote hit is stored locally and replayed.
 
-On a miss, Receipt runs the command, streaming output while capturing a bounded copy. It builds the manifest again and calls the run stable only if that succeeds with the same key. It records the history file used by `receipt explain`. A successful, stable run goes to `runSession.publish`, which stores the result locally, uploads it to the server, and only then prunes the local cache. A failed upload is reported on stderr but does not change the exit code.
+On a miss, Receipt runs the command, streaming output while capturing a bounded
+copy. It checks the inputs again and calls the run stable only if that succeeds
+with the same key. For a stable success within the capture limit and without
+quarantine, `runSession.publish` attempts local storage, then shared upload, then
+local pruning. An ordinary network failure during upload is reported on stderr
+without changing the tests' successful exit code. A conflict is different: it
+triggers quarantine, as the walkthrough explains.
 
 **Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
 

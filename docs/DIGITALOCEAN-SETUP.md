@@ -74,7 +74,7 @@ key copy still need operator attention.
 The [retained recovery inventory](https://github.com/sidsharma96/receipt/blob/66899768d6c0f21b869fdf8f23c3a3c3232cc51a/docs/DIGITALOCEAN-SETUP.md#13-october-one-off-r2-backup-and-restore)
 identifies the existing encrypted object and private-key location. Those are
 specific recovery materials, not sample paths to copy into a new deployment.
-The [restore helper](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-r2-drill.py)
+The [historical restore helper](https://github.com/sidsharma96/receipt/blob/88b6edf3c78c1f681735cb893c355b2ab45ae562/deploy/digitalocean/restore-r2-drill.py)
 also contains drill-specific paths; inspect it rather than running it blindly.
 
 To decrypt a downloaded copy, use OpenSSL CMS with `-decrypt -binary -inform DER`,

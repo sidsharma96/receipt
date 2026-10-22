@@ -170,6 +170,16 @@ Learn more: [A miss: run the tests](guide/10-final-walkthrough-miss-hit-conflict
 
 Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
+### Fingerprinting
+
+Fingerprinting collects and describes the inputs Receipt knows about: files,
+arguments, environment settings and supported toolchain information. Hashes
+summarize input bytes; the manifest groups the records; hashing the manifest
+produces the lookup key. An input omitted from this process cannot invalidate
+a saved result when it changes.
+
+Learn more: [Remember a successful run](guide/01-remember-a-successful-run.md)
+
 ### Flock
 
 `flock` is a Unix call that places a shared or exclusive lock on an open file. Receipt holds one on the blob directory's `.lifecycle.lock` file for the length of each shared-storage operation, so file exclusion survives a lost database connection.
@@ -436,7 +446,10 @@ Learn more: [Inputs and keys](DESIGN-DEFENSE.md#inputs-and-keys)
 
 ### Transaction
 
-A transaction is a group of database changes that commit together or not at all. A transaction cannot undo a file write, which is why Receipt writes blobs before the record that refers to them.
+A transaction is a group of database changes that commit together or not at all.
+Receipt prepares a result record inside the transaction, then writes its blobs,
+then commits. Other readers see the new record only after that commit. Rolling
+back the transaction cannot undo files already written.
 
 Learn more: [Locks limits and cleanup](DESIGN-DEFENSE.md#locks-limits-and-cleanup)
 

@@ -1,5 +1,5 @@
 #!/bin/sh
 set -eu
 cd "$(git rev-parse --show-toplevel)"
-python3 scripts/check_source_artifacts.py --staged
+go run ./tools/artifacts --staged
 git diff --cached --check

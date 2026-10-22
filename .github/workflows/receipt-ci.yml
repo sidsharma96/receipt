@@ -33,11 +33,7 @@ jobs:
         env:
           RECEIPT_TEST_DATABASE_URL: postgres://receipt_test:disposable-ci-only@127.0.0.1:5432/receipt_test?sslmode=disable
       - name: Check source artifact policy
-        run: |
-          python3 scripts/check_source_artifacts.py --staged
-          python3 -m unittest discover -s scripts/docs -p 'test_artifact_policy.py'
-      - name: Check CI helper policy
-        run: python3 -m unittest discover -s deploy/ci -p 'test_*.py'
+        run: go run ./tools/artifacts --staged
   cached:
     # Never provide private-cache credentials to pull-request code.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -53,6 +49,6 @@ jobs:
           cache: false
       - run: go build -trimpath -buildvcs=false -o /tmp/receipt-self-client ./cmd/receipt
       - name: Run ordinary tests through Receipt
-        run: python3 deploy/ci/self_test.py
+        run: go run ./tools/selfci
         env:
           RECEIPT_SELF_CI_TOKEN: ${{ secrets.RECEIPT_SELF_CI_TOKEN }}

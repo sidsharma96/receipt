@@ -34,6 +34,29 @@ A manifest is a Go struct with six fields: a format version, the Git repository 
 
 </details>
 
+### An input Receipt never recorded
+<!-- check: guide/01-remember-a-successful-run.md -->
+
+**Level:** Newcomer
+
+Alice's tests read an ignored data file that she has not declared as an extra
+input. Only that file changes. Does fingerprinting necessarily produce a new key?
+How does this differ from editing a tracked README?
+
+<details>
+<summary>Answer</summary>
+
+The omitted file's change does not affect the recorded description, so the key
+can stay the same and an old success can be reused. Alice should declare the
+file as an extra input or bypass caching for that command. A tracked README is
+included even if the tests never read it, so its edit changes the key and may
+cause an unnecessary miss. Fingerprinting compares recorded inputs; it does not
+discover every dependency automatically.
+
+**Learn more:** [Which files count, and why?](../guide/01-remember-a-successful-run.md#which-files-count-and-why)
+
+</details>
+
 ### What is a hash, and what is the input key?
 
 **Level:** Newcomer
@@ -165,7 +188,7 @@ The shared server uses PostgreSQL and a directory of blob files. What goes where
 <details>
 <summary>Answer</summary>
 
-PostgreSQL, a database, holds the small records: each key's result description, references to its output, whether the key is quarantined, conflict evidence and storage limits. The output bytes themselves go into files called blobs, named by the SHA-256 hash of their content and stored as `blobs/<first two hex characters>/<hash>`. Because the name comes from the content, two results with identical output share one file. The server writes the blob files first and the database record second, so another client does not see the new record before its output is written. Later file damage or loss can still prevent reading it.
+PostgreSQL holds each result's description, references to its output and quarantine state. The output bytes go into files called blobs, named by hashes of their contents. Two results with identical output can share one file. The server prepares the record inside a database transaction, writes the files, then commits the record. Another client cannot see the new record before commit. Later file damage or loss can still prevent reading it.
 
 **Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`FileBlobs.path`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L34-L39)
 
@@ -272,12 +295,18 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 **Level:** Newcomer
 
-Alice's small upload took much longer than she expected. How can the server operator find the timing for exactly her request?
+Alice's diagnostic client captured the response headers from a slow upload. How
+can the server operator find the timing for exactly that request? Would a later
+health request's ID work instead?
 
 <details>
 <summary>Answer</summary>
 
-Start the server with `--request-log`. Each request then gets a server-generated ID, which the server returns in the `X-Receipt-Request-ID` response header, and the server writes one redacted timing summary per request to standard error. Alice reports the ID, and the operator finds the matching summary without anyone printing her token or test output. The summary splits the request into stages, such as the credential check and waiting for locks, so a long wait for the lock shows up separately from reading files.
+The server must have `--request-log` enabled. Alice supplies the upload response's
+`X-Receipt-Request-ID`, and the operator finds that ID in the server's standard-error
+log. The stages separate credential checks, lock waiting and storage work.
+The ordinary Receipt CLI does not expose the header; an HTTP diagnostic must
+capture it. A health request gets its own ID, which cannot identify the upload.
 
 **Learn more:** [7. Find where the time went](../guide/07-find-where-the-time-went.md) · [Read one measurement carefully](../guide/07-find-where-the-time-went.md#read-one-measurement-carefully)
 
@@ -383,7 +412,6 @@ No. Allocation bytes count memory created over time; the garbage collector can r
 </details>
 
 ### Does a sequential scan prove that an index is missing?
-<!-- check: guide/12-profile-before-optimizing.md -->
 
 **Level:** Newcomer
 

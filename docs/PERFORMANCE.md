@@ -28,17 +28,56 @@ change the comparison substantially.
 
 ## File hashing
 
-Reading a whole file and copying it beside a permissions prefix used temporary
-memory proportional to the file size. Streaming the same ordered bytes into one
-hash calculation reduces that buffer to at most 32 KiB. The compatibility tests
-compare against the earlier calculation, including permission bits and chunk
-boundaries.
+The investigation began with `go test -count=1 ./internal/strictjson` in Receipt's
+working checkout: five direct runs, one miss and five hits, with no failures.
+The hits skipped test execution. Their median duration was 358.91 ms; fingerprint
+and lookup medians were 267.13 ms and 5.94 ms respectively. These are separate
+group medians, not an additive breakdown of a single run. The checkout included
+investigation fixtures, and its exact input manifest was not retained. These
+[initial command samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/local.json)
+pointed toward input checking, without isolating which part to change.
 
-This change is implemented. It reduces temporary allocation; it does not avoid
-reading every byte or make a concurrently edited file stable. Related changes
-stream executable hashing and reuse initial Git discovery within a command while
-keeping file observations and toolchain probes fresh. See the
-[performance chapter](guide/12-profile-before-optimizing.md).
+An [allocation profile](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/profiling-2026-10-18/tool-output.json)
+then showed two file-sized allocations: reading the contents and copying them
+beside a permissions prefix. The profile's roughly 17 GB total accumulated across
+repeated benchmark operations; it was not peak memory. Some investigation jobs
+overlapped, so their timings are exploratory. The matched comparison below was
+a separate experiment.
+
+Streaming sends the same ordered bytes into one hash calculation through a
+buffer of at most 32 KiB. These measurements compare the earlier whole-file
+algorithm with that implemented change:
+
+| Operation and metric | Whole-file algorithm | Streaming algorithm |
+| --- | ---: | ---: |
+| 4 KiB file: allocated bytes per operation | 10,616 | 4,956 |
+| 4 KiB file: elapsed time per operation | 24.04 µs | 20.92 µs |
+| 8 MiB file: allocated bytes per operation | 16,795,789.5 | 33,632 |
+| 8 MiB file: elapsed time per operation | 13.24 ms | 9.20 ms |
+
+Each cell is the median of six process reports, using six alternating pairs per
+file size. Each process performed 2,000 timed operations for the small file or
+200 for the large one. Runs were sequential, without profiling enabled, on an
+Apple M1 with macOS ARM64 and Go 1.27.2. OS file caches were warm. Fixture creation
+was outside the benchmark timer and allocation count; background machine activity
+was uncontrolled. Large-file timings overlapped: 11.55–15.29 ms before and
+5.51–16.87 ms after. The allocation reduction is clearer than a general speedup.
+
+A separate whole-command fixture contained 256 small files and one 8 MiB file,
+plus a Go test and module file. The old binary populated a temporary cache; eight
+alternating hits per version reused it. Median Receipt duration was 240.50 ms
+before and 235.75 ms after, with ranges of 181–283 ms and 183–493 ms. This does
+**not** establish a reliable complete-hit latency improvement. All commands
+succeeded, expected hits skipped execution, and both versions calculated the
+same full key. Tests also compared old and new hashes across sizes and permissions.
+
+The [matched observations](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/streaming-2026-10-18/comparison.json)
+and [comparison helper](https://github.com/sidsharma96/receipt/blob/88b6edf3c78c1f681735cb893c355b2ab45ae562/scripts/profile/compare_hashing.py)
+retain the method. The change bounds the read buffer; it still reads every byte
+and cannot make a concurrently edited file stable. See
+[Chapter 12](guide/12-profile-before-optimizing.md) for the reasoning from profile
+to implementation. These are measurements of that change, not a fresh benchmark
+of all subsequent Receipt changes.
 
 ## Shared upload accounting
 
@@ -47,8 +86,11 @@ In a local experiment, upload medians grew from about 33 ms on an empty store
 to about 132 ms at roughly 4,045 results. Running totals reduced those medians
 to roughly 19–24 ms across the measured sizes.
 
-The running-total design is implemented. The test used a local database and warm
-storage; it does not establish public-service throughput. Uploads still take
+The running-total design is implemented. The comparison used 15 sequential uploads
+per store size in one run per version, with a local database and warm storage.
+An earlier baseline differed materially; the result supports removing growth
+from repeated recounts, not a universal percentage speedup. It does not establish
+public-service throughput. Uploads still take
 turns, process their output bytes and commit database changes. Startup and
 collection still recount storage. Their cost has not disappeared.
 
@@ -86,7 +128,8 @@ The records below contain commands, observations and environment details.
 
 - [Python and shared-request samples](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/phase-6-2026-10-09.json)
 - [Sequential Rust comparisons](https://github.com/sidsharma96/receipt/blob/f87c9b5eb6ee5ba74ac1837181189732ceaebf7b/docs/measurements/cargo-hardening-2026-10-09.json)
-- [Earlier measurement reference](https://github.com/sidsharma96/receipt/blob/66899768d6c0f21b869fdf8f23c3a3c3232cc51a/docs/MEASUREMENTS.md): file hashing, upload accounting, gzip and request traces
+- [Earlier measurement reference](https://github.com/sidsharma96/receipt/blob/66899768d6c0f21b869fdf8f23c3a3c3232cc51a/docs/MEASUREMENTS.md): file hashing, gzip and request traces
+- [Upload-accounting comparison and method](https://github.com/sidsharma96/receipt/blob/66899768d6c0f21b869fdf8f23c3a3c3232cc51a/docs/DESIGN-DEFENSE.md#d15-what-does-one-upload-cost-and-how-does-that-grow)
 - [First complete runner job](https://github.com/sidsharma96/receipt/actions/runs/39534150601)
 - [Second complete runner job](https://github.com/sidsharma96/receipt/actions/runs/39534228155)
 - [Failed runner attempt](https://github.com/sidsharma96/receipt/actions/runs/39533940975)
@@ -94,4 +137,4 @@ The records below contain commands, observations and environment details.
 Job artifacts have limited retention and may no longer be downloadable. The
 committed reports preserve reported scope and outcomes, not every raw observation.
 Optional archive restoration is described in the
-[contributor guide](CONTRIBUTING.md#optional-investigation-tools).
+[contributor guide](CONTRIBUTING.md#measurements-and-operations).

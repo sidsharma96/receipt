@@ -5,8 +5,12 @@ small file should be quick, but perhaps the request has not reached the file yet
 another writer or cleanup may hold the lock it needs.
 
 Run the server with `--request-log` to give each request a server-generated ID and
-one timing summary. The ID appears in its response header too, so Alice can find
-the matching summary without printing her token or test output into the log.
+one timing summary. The ID appears in its response header too. The ordinary
+Receipt CLI does not show that header, so Alice needs a diagnostic client that
+records the slow request's response headers. Its ID lets the operator find the
+matching summary without logging her token or test output. The
+[measurement guide](../MEASUREMENTS.md#find-one-server-request) demonstrates
+capturing a response ID; a later health request cannot identify an earlier upload.
 
 **Figure 6. Reading the request in parts, not guessing from its payload**
 
@@ -14,7 +18,7 @@ the matching summary without printing her token or test output into the log.
 |---|---|
 | Credential check | Receipt checks whether this request may proceed. |
 | Connection and locks | The request can wait here before opening any output file. |
-| Metadata and files | Receipt reads and checks the stored result. |
+| Metadata and files | Receipt validates the record and reads or writes its output files. |
 | Response, then summary | The response reports its request ID; the handler's summary records measured stages. |
 
 ## Read one measurement carefully
@@ -29,6 +33,11 @@ show both on the same scale.
 Some timers contain others: counting storage includes file enumeration, for
 example. Adding every number would count some work twice. These summaries are
 clues about where to investigate, not a complete accounting of every instruction.
+
+Current uploads check running usage totals instead of recounting all stored
+files. They still take turns under the exclusive storage lock while processing
+their own output and committing database changes. Larger output can cost more,
+and adding writers creates more waiters rather than parallel publication.
 
 ## Does Receipt help the real test command?
 
@@ -61,12 +70,18 @@ prints. Diagnostics are also not a durable history of who submitted each result.
 
 **Level:** Newcomer
 
-Alice's small upload took much longer than she expected. How can the server operator find the timing for exactly her request?
+Alice's diagnostic client captured the response headers from a slow upload. How
+can the server operator find the timing for exactly that request? Would a later
+health request's ID work instead?
 
 <details>
 <summary>Answer</summary>
 
-Start the server with `--request-log`. Each request then gets a server-generated ID, which the server returns in the `X-Receipt-Request-ID` response header, and the server writes one redacted timing summary per request to standard error. Alice reports the ID, and the operator finds the matching summary without anyone printing her token or test output. The summary splits the request into stages, such as the credential check and waiting for locks, so a long wait for the lock shows up separately from reading files.
+The server must have `--request-log` enabled. Alice supplies the upload response's
+`X-Receipt-Request-ID`, and the operator finds that ID in the server's standard-error
+log. The stages separate credential checks, lock waiting and storage work.
+The ordinary Receipt CLI does not expose the header; an HTTP diagnostic must
+capture it. A health request gets its own ID, which cannot identify the upload.
 
 **Learn more:** [7. Find where the time went](../guide/07-find-where-the-time-went.md) · [Read one measurement carefully](../guide/07-find-where-the-time-went.md#read-one-measurement-carefully)
 
@@ -97,7 +112,8 @@ about to reference and prevent two writers from both claiming the last free spac
 
 **Level:** Expert
 
-What does one shared upload cost as the store grows, what serialises, and what throughput ceiling follows? Was this deliberate?
+Uploads now check running totals instead of recounting all stored files. Does
+this make the whole upload constant-cost, or let several writers publish at once?
 
 <details>
 <summary>Answer</summary>

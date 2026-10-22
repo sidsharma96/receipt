@@ -33,6 +33,8 @@ Windows binaries and Apple notarization are not provided.
 
 You need Git and the tools for your test command. The downloaded executable
 needs no Go compiler, Python installation or PostgreSQL database of its own.
+Repository maintenance tools use Go; a Python workload still needs its own Python
+environment.
 
 ## Try it
 
@@ -53,13 +55,16 @@ and saves only successful results whose recorded inputs stayed the same.
 
 ```sh
 receipt explain -- go test -count=1 ./...  # inspect input changes
-receipt run --bypass -- go test ./...     # run without the cache
-receipt run --verify -- go test ./...     # rerun and compare saved output
+receipt run --bypass -- go test -count=1 ./...  # run without the cache
+receipt run --verify -- go test -count=1 ./...  # rerun and compare saved output
 receipt cache list
 receipt cache prune --max-bytes 104857600
 ```
 
-Receipt flags go before `--`; test-command flags go after it. The default cache
+Receipt flags go before `--`; test-command flags go after it. Keep the test
+arguments identical when verifying: changing them selects a different key. On a
+miss, `--verify` runs the tests and may save a result; there is no saved output
+to compare yet. The default cache
 is `.receipt/` in the workload repository. See [usage and configuration](docs/USAGE.md)
 for extra input files, run modes and cache settings.
 

@@ -25,7 +25,7 @@ jobs:
       - name: Build all archives
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
-        run: python3 scripts/release/build.py "$RELEASE_VERSION"
+        run: go run ./tools/release "$RELEASE_VERSION"
       - name: Smoke test Linux amd64 archive
         env:
           RELEASE_VERSION: ${{ github.ref_name }}

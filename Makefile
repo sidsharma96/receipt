@@ -54,7 +54,8 @@ integration:
 docs:
 	mdbook build docs
 	rm -f docs/book/book.toml
-	python3 -m unittest discover -s scripts/docs -p 'test_*.py'
+	go test $(LINKFLAGS) ./tools/docs ./tools/templates
+	go run $(LINKFLAGS) ./tools/docs check
 
 # Per-clone setup; Git does not enable versioned hooks automatically.
 hooks-install:

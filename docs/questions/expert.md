@@ -36,7 +36,7 @@ Receipt's own CI gets cross-runner hits by building that sameness on purpose: a 
 
 **Common wrong answer.** "Yes, because the key is derived from the repository's file contents." The file contents are only part of the manifest. Paths and the environment are in it too, so even two terminals on one laptop can disagree.
 
-**Learn more:** [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [What is actually cached?](../RECEIPT-CI.md#inputs-and-environment) · [`test_environment`](https://github.com/sidsharma96/receipt/blob/main/deploy/ci/self_test.py#L18-L28)
+**Learn more:** [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [What is actually cached?](../RECEIPT-CI.md#inputs-and-environment) · [CI environment helper](https://github.com/sidsharma96/receipt/blob/main/tools/selfci/main.go)
 
 </details>
 
@@ -99,7 +99,8 @@ Nothing makes the key usable again. There is no command to clear quarantine, `sh
 **Level:** Expert
 <!-- check: guide/07-find-where-the-time-went.md -->
 
-What does one shared upload cost as the store grows, what serialises, and what throughput ceiling follows? Was this deliberate?
+Uploads now check running totals instead of recounting all stored files. Does
+this make the whole upload constant-cost, or let several writers publish at once?
 
 <details>
 <summary>Answer</summary>
@@ -263,7 +264,7 @@ Because a result spans two stores. `pg_dump` is consistent only inside PostgreSQ
 
 **Common wrong answer.** "Stopping is unnecessary because `pg_dump` is transactionally consistent." The files are outside that transaction.
 
-**Learn more:** [Backup and recovery](../DIGITALOCEAN-SETUP.md#backup-and-recovery) · [`pgrep`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/backup-r2-drill.py#L24-L28)
+**Learn more:** [Backup and recovery](../DIGITALOCEAN-SETUP.md#backup-and-recovery) · [`pgrep`](https://github.com/sidsharma96/receipt/blob/88b6edf3c78c1f681735cb893c355b2ab45ae562/deploy/digitalocean/backup-r2-drill.py#L24-L28)
 
 </details>
 
@@ -280,7 +281,7 @@ The storage policy row in the restored database records the absolute blob direct
 
 So the drill makes the restored files appear at the original path without changing what the live server sees. It runs under `unshare --mount --propagation private`, refuses to continue unless its mount namespace differs from PID 1's, and bind-mounts the restored directory there. It also uses a separate restored database and another loopback port, so production rows and the production port are never touched. The cost is that recovery onto a new machine must restore the files to the same absolute path, or the policy row must be edited by hand.
 
-**Learn more:** [Backup and recovery](../DIGITALOCEAN-SETUP.md#backup-and-recovery) · [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L172-L194) · [`mount --bind`](https://github.com/sidsharma96/receipt/blob/main/deploy/digitalocean/restore-check-20261012.sh#L7-L8)
+**Learn more:** [Backup and recovery](../DIGITALOCEAN-SETUP.md#backup-and-recovery) · [`Postgres.policy`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/maintenance.go#L172-L194) · [`mount --bind`](https://github.com/sidsharma96/receipt/blob/88b6edf3c78c1f681735cb893c355b2ab45ae562/deploy/digitalocean/restore-check-20261012.sh#L7-L8)
 
 </details>
 
@@ -468,7 +469,10 @@ Alice copies unchanged source files to a different working directory and runs th
 <details>
 <summary>Answer</summary>
 
-No. The manifest records the working directory as well as files and command arguments. Changing that description changes the key, even when file contents match. Matching source files alone is not enough to establish a reusable result.
+No. The manifest records the working directory as well as files and command
+arguments. Changing that description changes the key, even when file contents
+match. A test can print its directory or read a file from its parent. Omitting
+paths would allow more sharing but could reuse output from a different context.
 
 **Learn more:** [Chapter 1](../guide/01-remember-a-successful-run.md)
 
@@ -583,5 +587,29 @@ Two uploads for different keys each need 8 MiB, while 10 MiB remains. Each holds
 Yes. Each sees enough room for itself, but together they need 16 MiB. A lock for each key does not protect their shared budget. Receipt’s exclusive storage lock makes the second upload check after the first commits. Any design allowing overlap needs another way to reserve the shared space and protect files from cleanup.
 
 **Learn more:** [Chapter 11](../guide/11-defending-the-design.md)
+
+</details>
+
+### A faster operation inside a noisy command
+<!-- check: guide/12-profile-before-optimizing.md -->
+
+**Level:** Expert
+
+The 8 MiB file operation's median fell from 13.24 ms to 9.20 ms, while complete-hit
+medians changed from 240.50 ms to 235.75 ms with overlapping ranges. Can we promise
+users the same percentage speedup as the isolated operation? What did the
+experiment establish more clearly?
+
+<details>
+<summary>Answer</summary>
+
+No. File hashing is only part of the command, and the whole-hit samples do not
+establish a reliable latency improvement. The clearer result is less temporary
+allocation: about 16.8 MB to 33.6 KB per large-file operation. Compatibility checks
+also supported preserving the hash calculation and reusing old entries. A user
+latency claim needs repeated whole-command measurements of a representative
+workload, including failures and timing variation.
+
+**Learn more:** [Read large files in chunks](../guide/12-profile-before-optimizing.md#read-large-files-in-chunks)
 
 </details>

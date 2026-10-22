@@ -1,6 +1,6 @@
 # 11. Understand storage tradeoffs
 
-Suppose the server has saved output file X, but loses power before saving the
+Suppose the server has saved output file X, but loses power before committing the
 database row that points to X. On restart, the file may exist without any result
 referring to it. That is a different problem from a row referring to a missing
 file: in the first case space is wasted; in the second, a result cannot be read.

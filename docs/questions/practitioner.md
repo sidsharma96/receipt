@@ -13,7 +13,7 @@ Receipt builds a manifest and hashes it into the input key. What does the manife
 <details>
 <summary>Answer</summary>
 
-The manifest records a format version, the absolute Git root, the absolute working directory, the platform as `GOOS/GOARCH`, the command arguments in order, and a list of inputs. Each input has a kind, a name and a SHA-256 hash. There are four kinds: `file` for discovered repository files and declared extra inputs, `environment` for each environment variable except Receipt's own `RECEIPT_TOKEN`, `executable` for the bytes of the resolved command binary, and `toolchain` for a runner probe such as the Python package list or `go env -json`.
+The manifest records a format version, the absolute Git root, the absolute working directory, the platform as `GOOS/GOARCH`, the command arguments in order, and a list of inputs. Each input has a kind, a name and a SHA-256 hash. There are four kinds: `file` for discovered repository files and declared extra inputs, `environment` for environment values except Receipt's own `RECEIPT_TOKEN` and names explicitly excluded by `ignore_environment`, `executable` for the bytes of the resolved command binary, and `toolchain` for a runner probe such as the Python package list or `go env -json`. Other environment values are included by default.
 
 The key is the SHA-256 of the manifest encoded as JSON. Inputs are discovered by walking a Go map, whose iteration order is random, so `Manifest.Key` sorts a copy of the inputs by kind and then by name before encoding. Go's JSON encoder writes struct fields in declaration order, so the rest of the encoding is fixed. The command keeps its original order because reordering arguments can change what the command does. The copy matters: sorting the caller's slice in place would rearrange inputs the caller still holds.
 
@@ -104,7 +104,13 @@ Walk through `receipt run -- uv run pytest` on a miss that succeeds, with a remo
 
 `run` parses flags and refuses more than one of `--bypass`, `--refresh` and `--verify`. It loads `.receipt.json`, resolves the cache directory and builds the manifest; if that fails, it runs the command uncached. `runSession.lookup` treats a locally quarantined key as a miss, then reads the local entry. With no local entry it asks the server with a GET, and a remote hit is stored locally and replayed.
 
-On a miss, Receipt runs the command, streaming output while capturing a bounded copy. It builds the manifest again and calls the run stable only if that succeeds with the same key. It records the history file used by `receipt explain`. A successful, stable run goes to `runSession.publish`, which stores the result locally, uploads it to the server, and only then prunes the local cache. A failed upload is reported on stderr but does not change the exit code.
+On a miss, Receipt runs the command, streaming output while capturing a bounded
+copy. It checks the inputs again and calls the run stable only if that succeeds
+with the same key. For a stable success within the capture limit and without
+quarantine, `runSession.publish` attempts local storage, then shared upload, then
+local pruning. An ordinary network failure during upload is reported on stderr
+without changing the tests' successful exit code. A conflict is different: it
+triggers quarantine, as the walkthrough explains.
 
 **Learn more:** [The main responsibilities](../guide/06-find-the-code-and-defend-a-decision.md#the-main-responsibilities) · [Inputs and keys](../DESIGN-DEFENSE.md#inputs-and-keys) · [`run`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L335) · [`runSession.publish`](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L217-L246)
 
@@ -162,7 +168,6 @@ Output can be up to 8 MiB per stream. Keeping it out of database rows keeps the 
 </details>
 
 ### Blobs before the commit
-<!-- check: guide/02-let-another-client-reuse-the-result.md -->
 
 **Level:** Practitioner
 
@@ -178,6 +183,28 @@ The blobs are durable before the commit, and the record becomes visible only at 
 `Postgres.Get` takes the shared lock, reads the record, digest and quarantine flag, and returns a conflict if the key is quarantined. It checks the record's version and key, fetches each blob while verifying its length and hash, and recomputes the output digest. A digest mismatch is reported as corruption; a missing blob is treated as a miss.
 
 **Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L147-L190)
+
+</details>
+
+### A transaction stops before commit
+<!-- check: guide/02-let-another-client-reuse-the-result.md -->
+
+**Level:** Practitioner
+
+The shared server prepares a new result record, writes both output files, then
+rolls back the database transaction without committing. Can another client see
+that result? What remains, and what can a retry do?
+
+<details>
+<summary>Answer</summary>
+
+The new record was never committed, so another client cannot see it. The complete
+files remain because rolling back database changes does not undo file writes.
+A retry can reuse those files and try to commit a new record. If they remain
+unreferenced, cleanup can remove them. Preparing a record is different from
+publishing it: commit is the point at which readers can see it.
+
+**Learn more:** [Where a shared result goes](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately)
 
 </details>
 
@@ -418,5 +445,51 @@ Results A and B both refer to file X. Cleanup removes A but keeps B. Should it r
 No. Cleanup first records files needed by surviving results. B still needs X, so X’s hash remains in that lookup table and collection keeps the file. Deleting one result is not the same as deleting everything it referred to.
 
 **Learn more:** [Chapter 3](../guide/03-delete-old-data-without-breaking-a-reader.md)
+
+</details>
+
+### Choosing a profiler
+<!-- check: guide/12-profile-before-optimizing.md -->
+
+**Level:** Practitioner
+
+An operation takes 20 ms elapsed but only 2 ms of CPU work. Would halving its CPU
+work halve the elapsed time? Which kind of profile would instead help investigate
+temporary file-sized copies in memory?
+
+<details>
+<summary>Answer</summary>
+
+In that simplified example, halving CPU work saves at most 1 ms; waiting still
+needs explanation. Timings or traces help locate waiting. An allocation profile
+shows where memory is requested and can reveal large copies. A CPU profile
+answers where processor work occurs. Neither includes work in separate Git or
+database processes.
+
+**Learn more:** [Choose a measurement](../guide/12-profile-before-optimizing.md#choose-a-measurement-that-answers-the-question)
+
+</details>
+
+### Reading an allocation profile
+<!-- check: guide/12-profile-before-optimizing.md -->
+
+**Level:** Practitioner
+
+In the earlier profile, `fileInput` had about 49.9% flat allocation and 99.8%
+cumulative allocation. Its file-reading callee had about 49.9% flat allocation.
+Why does adding the cumulative values mislead? What change did source inspection
+suggest, and what behavior had to stay the same?
+
+<details>
+<summary>Answer</summary>
+
+Cumulative allocation already includes called functions, so adding those rows
+counts some allocations twice. Reading the whole file allocated one large slice;
+joining it to the permissions prefix allocated another. Feeding the prefix and
+successive file chunks into one hash state removed the need for those copies.
+The hash still had to receive exactly the same bytes in the same order, so keys
+and existing saved results remained compatible.
+
+**Learn more:** [Follow the allocation evidence](../guide/12-profile-before-optimizing.md#follow-the-allocation-evidence-to-the-code)
 
 </details>

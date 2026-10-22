@@ -15,11 +15,22 @@ Those output files are named by hashes of their content. Receipt calls them [blo
 | Step | What happens |
 |---|---|
 | Client | The client sends a successful result to the Receipt server. |
+| Pending database record | The server prepares a record in a transaction; other clients cannot see it yet. |
 | Output files | The server writes complete output files, named by their content hashes. |
 | Database record | The server commits the result description and references to those files. |
 | Another client | The server loads the record, checks the output files, and returns the result. |
 
-The files are saved before the database record is committed. Otherwise another client could find a record whose output has not been written yet. But the file write can succeed and the database commit can fail. That leaves an unreferenced file, which later cleanup can remove. There is no single undo operation covering both storage systems.
+The database groups its changes in a transaction. Committing makes those changes
+visible together; until then, the new record is pending. Preparing the record
+first lets the server reject it for exceeding a storage limit before writing
+output files. It saves those files before committing, so another client cannot
+see the new record before its output is ready.
+
+Suppose the server writes both output files, then the transaction rolls back
+without committing. The result is absent from the database, but the files remain.
+They are unreferenced files that later cleanup can remove. A retry can reuse the
+complete files and try to publish the record again. There is no single undo
+operation covering both storage systems.
 
 ## A local copy still needs a shared trust check
 
@@ -34,6 +45,9 @@ if s.remote.URL == "" {
 ```
 
 `s` contains the settings and resources for this invocation. `prior` is the saved local result. The empty URL means no shared server is configured, so the local result can be used. The three returned values are the result, whether it is a hit, and an error. Below these lines, the shared-server case checks the key's status before allowing replay.
+
+`==` compares the URL with the empty string `""`. `return` ends this function;
+`true` says a hit was found, and `nil` in the error position means no error.
 
 ## What if the clients disagree?
 
@@ -60,28 +74,30 @@ The shared server uses PostgreSQL and a directory of blob files. What goes where
 <details>
 <summary>Answer</summary>
 
-PostgreSQL, a database, holds the small records: each key's result description, references to its output, whether the key is quarantined, conflict evidence and storage limits. The output bytes themselves go into files called blobs, named by the SHA-256 hash of their content and stored as `blobs/<first two hex characters>/<hash>`. Because the name comes from the content, two results with identical output share one file. The server writes the blob files first and the database record second, so another client does not see the new record before its output is written. Later file damage or loss can still prevent reading it.
+PostgreSQL holds each result's description, references to its output and quarantine state. The output bytes go into files called blobs, named by hashes of their contents. Two results with identical output can share one file. The server prepares the record inside a database transaction, writes the files, then commits the record. Another client cannot see the new record before commit. Later file damage or loss can still prevent reading it.
 
 **Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`FileBlobs.path`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/blob.go#L34-L39)
 
 </details>
 
-### Blobs before the commit
+### A transaction stops before commit
 
 **Level:** Practitioner
 
-In what order does a shared upload write output files and the database record, and why that order? What does a shared read check before it returns a result?
+The shared server prepares a new result record, writes both output files, then
+rolls back the database transaction without committing. Can another client see
+that result? What remains, and what can a retry do?
 
 <details>
 <summary>Answer</summary>
 
-`Postgres.Put` validates the result, takes the exclusive lifecycle lock, checks the blob quota and refuses a key that is already quarantined. `publishTx` then inserts the record that points at the blobs, inside the still-open transaction, and checks the metadata quotas. Next `Put` writes the stdout blob and the stderr blob, each with a temporary file, `fsync`, a hard link that refuses to overwrite and a directory `fsync`. Last, it commits.
+The new record was never committed, so another client cannot see it. The complete
+files remain because rolling back database changes does not undo file writes.
+A retry can reuse those files and try to commit a new record. If they remain
+unreferenced, cleanup can remove them. Preparing a record is different from
+publishing it: commit is the point at which readers can see it.
 
-The blobs are durable before the commit, and the record becomes visible only at the commit, so readers do not see the new record before its output is written. Later damage or file loss can still break a read. Committing the record before writing the blobs would let another client find a record whose output does not exist yet. Inserting the record before the blob writes, but committing after them, means a quota refusal writes no files. The cost is that a crash or a failed commit can still leave orphan blobs, which `shared gc` later removes. No single operation undoes both a file write and a database transaction.
-
-`Postgres.Get` takes the shared lock, reads the record, digest and quarantine flag, and returns a conflict if the key is quarantined. It checks the record's version and key, fetches each blob while verifying its length and hash, and recomputes the output digest. A digest mismatch is reported as corruption; a missing blob is treated as a miss.
-
-**Learn more:** [Why keep descriptions and output separately?](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately) · [Shared storage and conflicts](../DESIGN-DEFENSE.md#shared-storage-and-conflicts) · [`Postgres.Put`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L192-L243) · [`Postgres.Get`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/shared.go#L147-L190)
+**Learn more:** [Where a shared result goes](../guide/02-let-another-client-reuse-the-result.md#why-keep-descriptions-and-output-separately)
 
 </details>
 

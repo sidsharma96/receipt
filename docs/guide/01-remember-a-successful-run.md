@@ -4,9 +4,36 @@ Alice runs her tests. They pass. Ten minutes later she runs the same command wit
 
 It first needs a description of the run. The command alone is not enough: `pytest` can behave differently after a source file, environment setting, or Python package changes.
 
-Receipt records the command arguments, discovered files, environment-value hashes, and supported runtime information. It also records the working directory and platform. A [hash](../GLOSSARY.md#hash) is a short, fixed-length value calculated from some bytes. It helps compare content without keeping another full copy in the description. Hashing is not encryption.
+Receipt calls the process of collecting and describing these inputs
+[fingerprinting](../GLOSSARY.md#fingerprinting). It records command arguments,
+files, environment settings and supported runtime information, such as installed
+Python package versions. It also records the working directory and platform.
+A [hash](../GLOSSARY.md#hash) is a fixed-length value calculated from some bytes.
+Receipt uses hashes to summarize file contents and environment values without
+copying them into the description. Hashing is not encryption.
 
 Receipt calls the whole description a [manifest](../GLOSSARY.md#manifest). It calculates another hash from that manifest and uses it as the [input key](../GLOSSARY.md#input-key), the name under which it looks for a saved run.
+
+Suppose Alice runs `pytest` on a price calculation. Receipt records the bytes of
+`prices.py`, a currency setting and the Python package versions, along with the
+other inputs. Call the resulting key `K`. The letters here are illustrative names,
+not actual hash values:
+
+```text
+prices.py + currency setting
+  + package versions + other inputs
+  -> manifest -> hash -> K
+  -> look up saved successful output
+
+edit prices.py
+  -> different file hash
+  -> different manifest -> new key
+```
+
+Without that input description, a cache indexed only by `pytest` could return
+the old success after Alice breaks the calculation. Fingerprinting lets Receipt
+distinguish those runs. It does not prove that it found every input: if the test
+also reads a changing website that the description omits, the key can stay `K`.
 
 **Figure 1. A local run, in order**
 
@@ -20,9 +47,32 @@ Receipt calls the whole description a [manifest](../GLOSSARY.md#manifest). It ca
 
 Finding a usable saved result is a [cache hit](../GLOSSARY.md#cache-hit). Having to run the command is a [cache miss](../GLOSSARY.md#cache-miss). A cache is storage for work you hope to reuse.
 
+## Which files count, and why?
+
+Receipt asks Git for tracked files and untracked files that are not ignored. It
+reads their contents and permissions; a deleted tracked file is recorded as
+deleted. Ignored data files need an explicit [extra input](../USAGE.md#configuration).
+Receipt's own cache is excluded, so saving a result does not invalidate itself.
+
+This broad selection can cause an unnecessary miss: editing a README changes the
+key even if the tests do not read it. Recording only files a test actually uses
+could avoid that work, but would require reliable discovery of those dependencies.
+A test may open a data file dynamically, so source imports alone are not enough.
+Receipt accepts extra misses to reduce the risk of silently omitting an input.
+
+A Git commit alone would miss Alice's uncommitted edit. File modification times
+are also insufficient: copying different bytes while preserving the old timestamp
+can hide a change. Reading and hashing content costs more, but detects that case.
+Absolute directory paths count too. A test can print its current directory or
+read a file from its parent, so moving unchanged source files can change behavior.
+That protection also limits sharing between checkouts at different paths.
+
 ## Why use a struct and slices?
 
-The manifest groups different pieces of information in named fields. This is the actual type, [`Manifest` in internal/fingerprint/manifest.go](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L54-L61):
+The manifest groups different pieces of information in named fields. Source paths
+in this book start at the Receipt source checkout's root. For example,
+`internal/fingerprint/manifest.go` names a Go file inside two directories.
+This is its actual [`Manifest` type](https://github.com/sidsharma96/receipt/blob/main/internal/fingerprint/manifest.go#L54-L61):
 
 ```go
 type Manifest struct {
@@ -89,6 +139,28 @@ Receipt wraps the test command. Before running it, Receipt describes the run: th
 
 </details>
 
+### An input Receipt never recorded
+
+**Level:** Newcomer
+
+Alice's tests read an ignored data file that she has not declared as an extra
+input. Only that file changes. Does fingerprinting necessarily produce a new key?
+How does this differ from editing a tracked README?
+
+<details>
+<summary>Answer</summary>
+
+The omitted file's change does not affect the recorded description, so the key
+can stay the same and an old success can be reused. Alice should declare the
+file as an extra input or bypass caching for that command. A tracked README is
+included even if the tests never read it, so its edit changes the key and may
+cause an unnecessary miss. Fingerprinting compares recorded inputs; it does not
+discover every dependency automatically.
+
+**Learn more:** [Which files count, and why?](../guide/01-remember-a-successful-run.md#which-files-count-and-why)
+
+</details>
+
 ### Why sort the inputs before hashing
 
 **Level:** Practitioner
@@ -98,7 +170,7 @@ Receipt builds a manifest and hashes it into the input key. What does the manife
 <details>
 <summary>Answer</summary>
 
-The manifest records a format version, the absolute Git root, the absolute working directory, the platform as `GOOS/GOARCH`, the command arguments in order, and a list of inputs. Each input has a kind, a name and a SHA-256 hash. There are four kinds: `file` for discovered repository files and declared extra inputs, `environment` for each environment variable except Receipt's own `RECEIPT_TOKEN`, `executable` for the bytes of the resolved command binary, and `toolchain` for a runner probe such as the Python package list or `go env -json`.
+The manifest records a format version, the absolute Git root, the absolute working directory, the platform as `GOOS/GOARCH`, the command arguments in order, and a list of inputs. Each input has a kind, a name and a SHA-256 hash. There are four kinds: `file` for discovered repository files and declared extra inputs, `environment` for environment values except Receipt's own `RECEIPT_TOKEN` and names explicitly excluded by `ignore_environment`, `executable` for the bytes of the resolved command binary, and `toolchain` for a runner probe such as the Python package list or `go env -json`. Other environment values are included by default.
 
 The key is the SHA-256 of the manifest encoded as JSON. Inputs are discovered by walking a Go map, whose iteration order is random, so `Manifest.Key` sorts a copy of the inputs by kind and then by name before encoding. Go's JSON encoder writes struct fields in declaration order, so the rest of the encoding is fixed. The command keeps its original order because reordering arguments can change what the command does. The copy matters: sorting the caller's slice in place would rearrange inputs the caller still holds.
 
@@ -115,7 +187,10 @@ Alice copies unchanged source files to a different working directory and runs th
 <details>
 <summary>Answer</summary>
 
-No. The manifest records the working directory as well as files and command arguments. Changing that description changes the key, even when file contents match. Matching source files alone is not enough to establish a reusable result.
+No. The manifest records the working directory as well as files and command
+arguments. Changing that description changes the key, even when file contents
+match. A test can print its directory or read a file from its parent. Omitting
+paths would allow more sharing but could reuse output from a different context.
 
 **Learn more:** [Chapter 1](../guide/01-remember-a-successful-run.md)
 

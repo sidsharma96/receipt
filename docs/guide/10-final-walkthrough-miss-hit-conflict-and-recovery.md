@@ -38,8 +38,17 @@ after, e := fingerprint.Build(ctx, dir, command, cfg.ExtraInputs, cfg.IgnoreEnvi
 stable := e == nil && after.Key() == key
 ```
 
-`key` describes the inputs before execution; `after.Key()` describes them
-afterwards. If you edit a source file while tests run, Receipt should not save
+`Build` returns two values: the new description in `after` and an error in `e`.
+`:=` declares variables and assigns their values. `ctx` carries cancellation,
+`dir` is the workload directory and `command` is the argument list. The remaining
+arguments supply extra files, ignored environment names and whether generic
+commands are allowed.
+
+`nil` means no error. `&&` requires both conditions to hold and checks the second
+only if the first holds. So a failed scan makes `stable` false without asking
+the incomplete description for a key. `==` compares values: `key` describes the
+inputs before execution and `after.Key()` describes them afterwards.
+If you edit a source file while tests run, Receipt should not save
 the result under the old description. Two matching scans cannot detect a file
 changed and changed back between scans, or discover every external dependency.
 
@@ -72,8 +81,9 @@ if hit && !o.verify {
 }
 ```
 
-`prior` is the saved result. Unless verification was requested, this returns
-before reaching the code that starts the tests. The replay function writes the
+`hit` says a usable result was found; `!o.verify` means verification was not
+requested. With both true, `prior`, the saved result, is passed to `replay`.
+This returns before reaching the code that starts the tests. The replay function writes the
 saved bytes to the terminal. Actual excerpt from
 [`runSession.replay` in run_session.go](https://github.com/sidsharma96/receipt/blob/main/internal/app/run_session.go#L142-L162):
 
@@ -85,6 +95,13 @@ if _, e := errOut.Write(prior.Stderr); e != nil {
     return 0, e
 }
 ```
+
+`Write` returns a byte count and an error. `_` discards the count; `e` keeps the
+error. The semicolon separates that assignment from the condition `e != nil`,
+meaning an error occurred. The function returns two values: an exit code and an
+error. `return 0, e` passes the error to its caller; the zero does **not** make a
+failed write a successful command. If stdout cannot be written, replay stops
+before writing stderr. Some output may already have reached the terminal.
 
 Why contact the server for a local hit? Another client may have discovered a
 conflict. An old local copy should not bypass that warning. This adds a network
@@ -132,7 +149,16 @@ func quarantine(dir, key string) error {
 }
 ```
 
-The marker is a file, so it remains after this command ends. `syncDir` asks the
+`func` declares a function. Here `dir` and `key` are strings, and the return value
+is an `error`. This function's `dir` is the **cache directory**, not the workload
+directory passed to `Build`. With the default cache and our symbolic key `K`,
+`filepath.Join` builds `.receipt/quarantine/K`. `[]byte(...)` converts the message
+to bytes for writing; `\n` ends it with a newline. If `atomically` fails, the
+function returns that error immediately.
+
+The marker is a file, so it remains after this command ends.
+`filepath.Dir(path)` selects its containing directory, `.receipt/quarantine` in
+this example. `syncDir` asks the
 operating system to persist the directory change after the marker's bytes have
 been written and synchronized.
 That is the durability step intended to preserve the name after a crash; it

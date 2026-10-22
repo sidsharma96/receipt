@@ -24,9 +24,15 @@ The format depends on Go's JSON encoding. Changing that encoding needs a
 compatibility plan, not just a new hash function.
 
 A Git commit alone would omit uncommitted changes and environment differences.
-Modification times are cheaper to inspect than file bytes but can miss changes.
+Modification times are cheaper to inspect than file bytes, but restoring a file
+with its old timestamp can hide changed contents. Even pairing time with size
+misses a same-length replacement whose timestamp was preserved.
 Receipt therefore reads content, at the cost of work on every ordinary invocation.
-Absolute paths deliberately prevent reuse between different checkout locations.
+Absolute paths prevent reuse between different checkout locations. A test that
+prints its working directory or reads a parent directory can behave differently
+after a move. Portable keys would enable more sharing, but need a rule for those
+path-dependent tests, such as controlling their filesystem view. Receipt does
+not provide that control.
 
 `RECEIPT_TOKEN` is excluded from inputs and removed from the child command's
 environment. Rotating a cache credential should not invalidate a test result.

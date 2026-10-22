@@ -197,7 +197,7 @@ Follow the blue route for a valid upload. Each red exit shows a different invali
 <!-- visual-summary:start -->
 ![Figure 4.2 · What remains after a failed save?](assets/reviews/figure-4-failed-save-states.svg)
 
-Compare what remains, not just the error returned. Assume these are new outputs with no other references. In the first example, stderr fails before publishing its file; in the second, both files exist before the database insert fails. Temporary files are omitted.
+Assume these are new outputs with no other references. The database record is prepared before the files, but remains invisible until commit. Here the transaction rolls back: either stderr fails before its file is published, or both files have been saved but the transaction does not commit. A retry can reuse complete files; cleanup can remove files still unreferenced. Temporary files are omitted. A lost reply during commit is a different case: the caller may not know whether it committed.
 <!-- visual-summary:end -->
 
 

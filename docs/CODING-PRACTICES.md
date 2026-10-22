@@ -285,3 +285,16 @@ References: [Errors are values](https://go.dev/blog/errors-are-values),
   invocation, without claiming executable-byte pinning or filesystem snapshots.
 - Include `git_selection` in whole-invocation cost. It is outside fingerprint and
   discovery; comparisons must include this resolver cost, not just list timings.
+
+## Repository maintenance tools
+
+Shared maintenance commands live under `tools/` and use Go's standard library.
+They follow the same error-handling and lint rules as application code, but are
+not part of the installed Receipt executable. Keep process arguments, credential
+transport and output-redaction behavior explicit. Tests for operator tools use
+local fixtures and substitute commands; never issue live credentials or deploy.
+
+Use ignored `scripts/utils/` for disposable personal helpers. Do not commit
+Python files, embed shared Python in another extension, or make a workflow depend
+on an ignored helper. Keep Python workload probes in Receipt: the source policy
+does not change supported commands or their runtime requirements.

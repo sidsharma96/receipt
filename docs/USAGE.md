@@ -13,7 +13,9 @@ receipt cache list
 receipt cache prune --max-bytes 104857600
 ```
 
-`--verify` compares stdout, stderr and exit code byte for byte. Timing text,
+On a hit, `--verify` compares stdout, stderr and exit code byte for byte. Keep
+the command and its arguments identical to the saved run. On a miss, it executes
+normally and may save a result; no comparison is possible yet. Timing text,
 randomized test ordering and output paths can cause mismatches without a test
 failure. A mismatch exits nonzero and quarantines that key **on this client**.
 Quarantined keys are neither replayed nor republished locally. Quarantine is
@@ -56,7 +58,9 @@ editable packages, and changes to installed package bytes without version
 changes are not discovered automatically. Add files to `extra_inputs`, keep the
 environment immutable, or bypass the cache for those tests.
 
-Absolute paths deliberately prevent reuse between different checkout locations.
+Absolute paths prevent reuse between different checkout locations: a test can
+print its working directory or read a file relative to its parent. Identical
+source files in two directories need not behave identically.
 Portable keys and sandboxed execution are not implemented. All environment
 values are hashed by default, which favors extra misses over unsafe hits. Hashes
 are not encryption; low-entropy values can be guessed. Only share manifests with
@@ -92,6 +96,8 @@ The local cache has a 1 GiB default entry limit. Hits touch entry modification
 times; pruning evicts least recently touched entries. This disk LRU is an
 approximation across processes, with a soft size bound during concurrent runs.
 Each entry is written to a temporary file, synced to disk, then published with a
-hard link, which creates the entry only if none exists. The first complete entry
-for a key wins and is never overwritten, so a crash never leaves a partial entry.
+hard link, which creates the entry only if none exists. On an ordinary save, the
+first complete entry for a key wins. A successful `--refresh` removes the local
+entry before publishing its replacement; a failure between those steps can leave
+the key absent. Neither path publishes a partially written entry under the key.
 History and quarantine metadata are outside that entry-byte budget.

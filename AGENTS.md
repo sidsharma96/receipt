@@ -61,16 +61,17 @@ with system-wide lock freedom, or an interface with free future reuse.
 ## Book tooling
 
 The mdBook source is `docs/`; `docs/SUMMARY.md` lists every book page. Its overview
-is `docs/WORKING-DOC.md`. Keep scripts and configuration in `scripts/docs/`, since
+is `docs/WORKING-DOC.md`. Keep book tooling in `tools/docs/` and configuration outside `docs/`, since
 mdBook copies non-Markdown source assets into the generated site.
 
 Questions live in `docs/questions/{newcomer,practitioner,expert}.md`. A
 `<!-- check: guide/NN-....md -->` marker selects a chapter. Edit the bank and run
-`python3 scripts/docs/sync_questions.py`. Illustration generation uses
-`python3 scripts/docs/review_figures.py` and `docs/FIGURES.md`.
+`go run ./tools/docs sync`. Edit SVG illustrations in `docs/assets/` directly
+and keep their explanations in `docs/FIGURES.md` consistent. Preserve measured
+values and evidence links; no generator now recalculates chart values.
 
 Run `make docs` before committing documentation. It checks source and built links,
-code anchors, attributed excerpts, question synchronization and generated figures.
+code anchors, attributed excerpts, question synchronization and SVG syntax.
 Keep those checks meaningful when pages are merged; do not require historical
 page, question or excerpt counts as a substitute for checking existing content.
 CI builds the book and deploys it when its publication secrets are configured.
@@ -79,24 +80,23 @@ CI builds the book and deploys it when its publication secrets are configured.
 
 Do not add JSON, JSONL or NDJSON files to source control, including raw benchmark
 records. Keep generated data under ignored `.tools/` locally or upload it as a
-CI artifact with an explicit retention period. `scripts/check_source_artifacts.py`
+CI artifact with an explicit retention period. `tools/artifacts/`
 enforces this rule in ordinary CI, including files added with `git add -f`.
 JSON remains Receipt's configuration, cache and wire format; do not remove or
 change JSON serialization to satisfy a source-artifact policy.
 
-Historical raw evidence is linked to immutable Git revision
-`f87c9b5eb6ee5ba74ac1837181189732ceaebf7b`. Optional evidence checks and profiling
-figure regeneration use `.tools/measurements/`; restore the old records with
-`python3 scripts/profile/restore_measurements.py` when that Git revision is
-available locally. Normal builds and docs checks must not require this archive
-or network access to historical measurements. Keep only the small exact numeric
-inputs needed for checked teaching figures in `scripts/docs/figure_measurements.py`.
-Do not move entire raw archives into another extension to bypass the policy.
+Historical raw evidence remains linked from docs/PERFORMANCE.md. Completed
+investigation and recovery-drill scripts are retired; Git history preserves their
+source. Normal builds and docs checks must not require those tools, archived data
+or network access to old measurements. Do not rename raw archives to bypass policy.
 
-Receipt's application is Go. Keep Python docs checks and CI helpers while those
-workflows use them. Profiling and operator scripts are optional tools, not
-application runtime dependencies. Explain this distinction in the README and
-Chapter 6 when changing dependencies.
+Receipt and maintained repository tools use Go. Do not commit Python source or
+bytecode (.py, .pyw, .pyc, .pyo), embed shared Python in another file type, or hide
+a workflow dependency in an ignored directory. Disposable personal Python may
+live in ignored scripts/utils/. This policy does not remove Python workload
+support or change Receipt's interpreter probes. Keep shell entrypoints and
+YAML/TOML configuration when needed. Explain application versus development
+dependencies in the README and Chapter 6 when changing them.
 
 ## Commit hygiene
 
@@ -104,7 +104,7 @@ Before committing, inspect the staged diff and run checks appropriate to the
 change (`make docs` for documentation). Enable the versioned local hook once per
 clone with `make hooks-install`; do not silently replace an existing custom hook
 configuration. The hook checks the actual index using
-`python3 scripts/check_source_artifacts.py --staged`, then checks staged whitespace.
+`go run ./tools/artifacts --staged`, then checks staged whitespace.
 CI repeats the index artifact check. Source files must be at most 1 MiB each,
 regardless of extension; discuss intentional larger assets before changing this
 rule. No forced additions, renamed archives or bypass flags as a workaround.
@@ -124,8 +124,6 @@ checker rejects staged paths inside it, including forced additions. A fresh
 clone does not contain these local utilities; create the directory when needed.
 Do not make application, docs, CI or deployment steps depend on its contents.
 Promote a helper into a versioned, purpose-specific directory before making it a
-shared dependency. Keep shared Python source and YAML/TOML configuration versioned
-while their workflows, tests or documented investigations/operations use them.
-Optional execution alone is not evidence that source should be ignored. Retire
-obsolete features with their callers, tests and current instructions together;
-do not blanket-ignore script languages or configuration extensions.
+shared dependency, using Go for maintained helpers. Keep required configuration
+versioned. Optional execution alone is not evidence that source should be ignored.
+Retire obsolete tools with their callers, tests and current instructions together.

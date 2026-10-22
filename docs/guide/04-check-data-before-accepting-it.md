@@ -29,7 +29,7 @@ if err := Validate(Result(next)); err != nil {
 return nil
 ```
 
-In the `if` line, `:=` creates the local error variable `err`; `!= nil` asks whether it contains an error. Earlier lines decode into a temporary value called `next`. `Validate` checks its meaning. If validation returns an error, the method returns without replacing the destination. `*r` refers to the result the caller asked the decoder to fill. Assignment happens only after the checks succeed. `nil` means there is no error.
+In the `if` line, `:=` creates the local error variable `err`; `!= nil` asks whether it contains an error. Earlier lines decode into a temporary value called `next`. `Result(next)` converts that temporary value to the `Result` type; it does not validate it by itself. `Validate` checks its meaning. If validation returns an error, the method returns without replacing the destination. `*r` refers to the result the caller asked the decoder to fill. Assignment happens only after the checks succeed. `nil` means there is no error.
 
 Code that builds a result directly does not use JSON decoding, so storage methods also validate those values. A decoding hook is useful, but it is not permission checking and does not prove the sender ran the tests.
 
