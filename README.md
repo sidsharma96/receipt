@@ -65,13 +65,13 @@ Receipt flags go before `--`; test-command flags go after it. Keep the test
 arguments identical when verifying: changing them selects a different key. On a
 miss, `--verify` runs the tests and may save a result; there is no saved output
 to compare yet. The default cache
-is `.receipt/` in the workload repository. See [usage and configuration](docs/USAGE.md)
+is `.receipt/` in the workload repository. See [usage and configuration](https://receipt-docs.sidsharma.dev/USAGE.html)
 for extra input files, run modes and cache settings.
 
 ## When to use it
 
 Receipt recognizes Go tests, several pytest invocation forms, and a restricted
-set of `cargo test --frozen` commands. See the [Rust command reference](docs/CARGO.md)
+set of `cargo test --frozen` commands. See the [Rust command reference](https://receipt-docs.sidsharma.dev/CARGO.html)
 for restrictions. Other commands require the explicit `--allow-generic` option.
 
 A saved success is useful only when Receipt has recorded the inputs that matter.
@@ -88,10 +88,10 @@ more than simply running them.
 
 ## Learn more
 
-- [Read the book](docs/START-HERE.md): follow a run and learn how the cache works.
-- [Measure a slow run](docs/MEASUREMENTS.md): compare direct execution with reuse.
-- [Set up a shared cache](docs/SERVICE-CREDENTIALS.md): server requirements and access.
-- [Contribute](docs/CONTRIBUTING.md): build, test and documentation checks.
+- [Read the book](https://receipt-docs.sidsharma.dev/START-HERE.html): follow a run and learn how the cache works.
+- [Measure a slow run](https://receipt-docs.sidsharma.dev/MEASUREMENTS.html): compare direct execution with reuse.
+- [Set up a shared cache](https://receipt-docs.sidsharma.dev/SERVICE-CREDENTIALS.html): server requirements and access.
+- [Contribute](https://receipt-docs.sidsharma.dev/CONTRIBUTING.html): build, test and documentation checks.
 
 Receipt is written in Go and licensed under [Apache 2.0](LICENSE).
 Dependency licenses are in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).

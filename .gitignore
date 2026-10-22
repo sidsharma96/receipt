@@ -23,3 +23,6 @@ __pycache__/
 
 # Disposable personal helpers; shared Go tooling stays versioned in tools/.
 /scripts/utils/
+
+# Learning docs are not published here; they are mirrored to a private repo.
+/docs/
