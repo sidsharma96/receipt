@@ -70,11 +70,11 @@ Questions live in `docs/questions/{newcomer,practitioner,expert}.md`. A
 and keep their explanations in `docs/FIGURES.md` consistent. Preserve measured
 values and evidence links; no generator now recalculates chart values.
 
-Run `make docs` before committing documentation. It checks source and built links,
+Run `make docs` before deploying documentation. It checks source and built links,
 code anchors, attributed excerpts, question synchronization and SVG syntax.
 Keep those checks meaningful when pages are merged; do not require historical
 page, question or excerpt counts as a substitute for checking existing content.
-CI builds the book and deploys it when its publication secrets are configured.
+The book is not built or deployed by CI; see "Documentation is private" below.
 
 ## Measurement artifacts and dependencies
 
@@ -127,3 +127,9 @@ Promote a helper into a versioned, purpose-specific directory before making it a
 shared dependency, using Go for maintained helpers. Keep required configuration
 versioned. Optional execution alone is not evidence that source should be ignored.
 Retire obsolete tools with their callers, tests and current instructions together.
+
+## Documentation is private
+
+`docs/` is ignored by Git in this repository and must never be committed or pushed: no `git add -f`, no docs workflow under `.github/`, and no code, test or CI step that reads `docs/`. The sources are backed up to the private `sidsharma96/learning-docs` repository, checked out beside this one at `../learning-docs`. Edit the docs here in `docs/`, never in `../learning-docs`, because the next deploy overwrites that copy.
+
+To publish, run `../learning-docs/deploy.sh receipt`. It copies `docs/` into the backup repository and pushes it, runs this book's checks, builds the book and deploys it to the Cloudflare Pages project `receipt-docs`, served privately behind Cloudflare Access at `https://receipt-docs.sidsharma.dev`. Add `--no-deploy` to back up and check without publishing. `deploy.sh` runs `make docs` first. Links to the book from tracked files, such as the README, use the site address rather than a `docs/` path.
