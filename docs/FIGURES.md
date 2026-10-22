@@ -229,7 +229,7 @@ Read downward. The crossed-out X never returns. The retry makes a fresh decision
 <!-- visual-summary:start -->
 ![Figure 5.1 · A valid credential can still be refused an upload](assets/reviews/figure-5-permissions.svg)
 
-Compare Alice and CI: both tokens are valid, but only CI has publish permission. An authentication-backend failure is different again: the server returns 503, not a verdict that the token is invalid. These labels are not verified human identities.
+Compare the read-only and publishing credentials: both tokens are valid, but only the publishing credential permits this upload. A valid token without that permission receives 403. An authentication-backend failure is different again: the server returns 503, not a verdict that the token is invalid.
 <!-- visual-summary:end -->
 
 

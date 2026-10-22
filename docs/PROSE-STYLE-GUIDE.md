@@ -34,6 +34,13 @@ Start with an example: a reader finds a database record and then opens its outpu
 file. Show the failure: cleanup deletes the file between those steps. Then explain
 why the lock makes cleanup wait. Name the mechanism after its purpose is clear.
 
+Use “you” for actions the reader can perform. When several participants matter,
+name their roles: the laptop, CI job, Receipt server or cleanup process. Use labels
+such as “read-only credential” when the permission is the distinction being taught.
+Avoid recurring fictional people and personal-name credential examples; they can
+suggest human accounts or ownership rules that Receipt does not provide. Keep
+concrete situations, and choose each participant's name for what it explains.
+
 Use one example throughout a section. Define unfamiliar terms beside the behavior
 that needs them. A glossary is a reminder, not a prerequisite. Prefer short code
 excerpts that show the actual operation; name their source and explain the lines.

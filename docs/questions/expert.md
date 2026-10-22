@@ -25,7 +25,7 @@ a sandbox against hostile same-user processes.
 
 **Level:** Expert
 
-Alice and a CI runner check out the same commit and run `receipt run -- go test ./...`. Will they compute the same key? What decides it?
+Your laptop and a CI machine check out the same commit and run `receipt run -- go test ./...`. Must they compute the same key? What decides it?
 
 <details>
 <summary>Answer</summary>
@@ -464,7 +464,7 @@ administrative history. There is no required optimization sequence.
 
 **Level:** Expert
 
-Alice copies unchanged source files to a different working directory and runs the same command. Must Receipt reuse the original result?
+You copy unchanged source files to a different working directory and run the same command. Must Receipt reuse the original result?
 
 <details>
 <summary>Answer</summary>

@@ -8,7 +8,7 @@ relevant explanation and implementation.
 
 **Level:** Newcomer
 
-Alice runs `uv run pytest`, the tests pass, and ten minutes later she runs the same command without changing anything. What does Receipt do the second time, and what does it need to know to do it safely?
+You run `receipt run -- uv run pytest` and the tests pass. You repeat the command without changing its inputs. What can Receipt reuse, and what must it check first?
 
 <details>
 <summary>Answer</summary>
@@ -39,7 +39,7 @@ A manifest is a Go struct with six fields: a format version, the Git repository 
 
 **Level:** Newcomer
 
-Alice's tests read an ignored data file that she has not declared as an extra
+Your tests read an ignored data file that you have not declared as an extra
 input. Only that file changes. Does fingerprinting necessarily produce a new key?
 How does this differ from editing a tracked README?
 
@@ -47,7 +47,7 @@ How does this differ from editing a tracked README?
 <summary>Answer</summary>
 
 The omitted file's change does not affect the recorded description, so the key
-can stay the same and an old success can be reused. Alice should declare the
+can stay the same and an old success can be reused. Declare the
 file as an extra input or bypass caching for that command. A tracked README is
 included even if the tests never read it, so its edit changes the key and may
 cause an unnecessary miss. Fingerprinting compares recorded inputs; it does not
@@ -76,7 +76,7 @@ A hash is a short, fixed-length value calculated from some bytes. Receipt uses S
 
 **Level:** Newcomer
 
-Alice runs only one test file. She edits a README in the same repository. Why does her next run miss?
+You run one test file through Receipt, then edit a README in the same repository. Why does repeating the test command miss the cache?
 
 <details>
 <summary>Answer</summary>
@@ -122,7 +122,7 @@ A replay gives back only the captured output and the exit code. It does not recr
 
 **Level:** Newcomer
 
-Alice has not configured anything. Where on her disk are saved results kept, and why must that place be inside a particular folder?
+You run Receipt with its default settings. Where are results saved, and why does an in-repository cache need to stay under `.receipt`?
 
 <details>
 <summary>Answer</summary>
@@ -167,12 +167,13 @@ Run `receipt run --verify -- <command>`. On a hit, Receipt runs the command agai
 
 **Level:** Newcomer
 
-Alice and CI share results through a Receipt server. Which machine runs pytest?
+Your laptop and a CI job share results through a Receipt server. On a cache miss, which machine runs pytest?
 
 <details>
 <summary>Answer</summary>
 
-The client runs pytest, always on the machine where `receipt run` was typed. The server never runs tests. It stores results that clients upload over HTTP and returns them to clients that ask for a key. On a miss, the client executes the tests and, if the run is eligible, saves the result locally and uploads it. Another client with the same key can then fetch that result and replay it without executing anything.
+The client runs pytest on the machine that started `receipt run`: your laptop
+for a local run, or the CI machine for a job. The server never runs tests. It stores results that clients upload over HTTP and returns them to clients that ask for a key. On a miss, the client executes the tests and, if the run is eligible, saves the result locally and uploads it. Another client with the same key can then fetch that result and replay it without executing anything.
 
 **Learn more:** [2. Let another client reuse the result](../guide/02-let-another-client-reuse-the-result.md) · [A miss: run the tests](../guide/10-final-walkthrough-miss-hit-conflict-and-recovery.md#a-miss-run-the-tests)
 
@@ -263,12 +264,12 @@ When Receipt reads an entry, it recomputes the hash of the payload and compares 
 
 **Level:** Newcomer
 
-Alice's credential lets her download results. She tries to upload one and the server refuses. Did authentication fail?
+A client presents a valid read-only credential when uploading a result. Which check refuses the request, and what HTTP status should it receive?
 
 <details>
 <summary>Answer</summary>
 
-No. Authentication asks whether the credential is valid: known, unexpired and not revoked. Authorization asks whether that credential allows the requested operation. Alice's credential is valid but carries only the `read` permission, and uploading needs `publish`. The server answers HTTP 403 Forbidden for a valid credential without the permission, and HTTP 401 Unauthorized for a missing, invalid, expired or revoked one. The four permissions are `read`, `publish`, `report` and `metrics`, and none of them implies another.
+The permission check refuses it. Authentication asks whether the credential is valid: known, unexpired and not revoked. Authorization asks whether that credential allows the requested operation. This credential is valid but carries only the `read` permission, and uploading needs `publish`. The server answers HTTP 403 Forbidden for a valid credential without the permission, and HTTP 401 Unauthorized for a missing, invalid, expired or revoked one. The four permissions are `read`, `publish`, `report` and `metrics`, and none of them implies another.
 
 **Learn more:** [Two questions before storage](../guide/05-give-callers-different-permissions.md#two-questions-before-storage) · [Permissions](../SERVICE-CREDENTIALS.md#permissions) · [`cacheAPI.serveScoped`](https://github.com/sidsharma96/receipt/blob/main/internal/cache/authorization.go#L25-L41)
 
@@ -295,16 +296,16 @@ You want to change how Receipt describes inputs. Which Go package do you open, a
 
 **Level:** Newcomer
 
-Alice's diagnostic client captured the response headers from a slow upload. How
+Your diagnostic client captured the response headers from a slow upload. How
 can the server operator find the timing for exactly that request? Would a later
 health request's ID work instead?
 
 <details>
 <summary>Answer</summary>
 
-The server must have `--request-log` enabled. Alice supplies the upload response's
-`X-Receipt-Request-ID`, and the operator finds that ID in the server's standard-error
-log. The stages separate credential checks, lock waiting and storage work.
+The server must have `--request-log` enabled. Give the operator the upload response's
+`X-Receipt-Request-ID`. The operator uses it to find the matching entry in the
+server's standard-error log. The stages separate credential checks, lock waiting and storage work.
 The ordinary Receipt CLI does not expose the header; an HTTP diagnostic must
 capture it. A health request gets its own ID, which cannot identify the upload.
 
@@ -317,7 +318,7 @@ capture it. A health request gets its own ID, which cannot identify the upload.
 
 **Level:** Newcomer
 
-Alice's own crate has no build script, but a helper library it depends on has one. Will Receipt replay a previous success for `cargo test --frozen`?
+Your Rust package has no build script, but a helper library it depends on has one. Will Receipt replay a previous success for `cargo test --frozen`?
 
 <details>
 <summary>Answer</summary>

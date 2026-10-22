@@ -1,7 +1,7 @@
 # Set up a shared cache with credentials
 
-Suppose Alice should read and publish test results, while a dashboard should only
-read metrics. Give them separate credentials so one can be revoked without
+A CI job needs to download and publish test results; a dashboard needs only
+aggregate metrics. Give them separate credentials so one can be revoked without
 replacing the other. Each credential has an operator-chosen label and permissions.
 Possession of its token grants access; the label does not prove a human identity.
 
@@ -12,7 +12,7 @@ Supply `RECEIPT_DATABASE_URL` securely. The administration commands use direct
 database access and can initialize schema and storage bindings:
 
 ```sh
-receipt auth issue --cache-dir /path/to/private/server-cache --subject alice --scopes read,publish,report --expires-in 24h
+receipt auth issue --cache-dir /path/to/private/server-cache --subject ci-tests --scopes read,publish,report --expires-in 24h
 receipt auth list --cache-dir /path/to/private/server-cache
 receipt auth revoke --cache-dir /path/to/private/server-cache --id CREDENTIAL_ID
 receipt serve --postgres --credentials --cache-dir /path/to/private/server-cache --listen 127.0.0.1:7777

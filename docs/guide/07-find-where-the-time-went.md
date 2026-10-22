@@ -1,14 +1,14 @@
 # 7. Find where the time went
 
-Alice uploads a small test result. It takes longer than she expects. Reading a
+You upload a small test result, but the request takes longer than expected. Reading a
 small file should be quick, but perhaps the request has not reached the file yet:
 another writer or cleanup may hold the lock it needs.
 
 Run the server with `--request-log` to give each request a server-generated ID and
 one timing summary. The ID appears in its response header too. The ordinary
-Receipt CLI does not show that header, so Alice needs a diagnostic client that
+Receipt CLI does not show that header, so you need a diagnostic client that
 records the slow request's response headers. Its ID lets the operator find the
-matching summary without logging her token or test output. The
+matching summary without logging your token or test output. The
 [measurement guide](../MEASUREMENTS.md#find-one-server-request) demonstrates
 capturing a response ID; a later health request cannot identify an earlier upload.
 
@@ -70,16 +70,16 @@ prints. Diagnostics are also not a durable history of who submitted each result.
 
 **Level:** Newcomer
 
-Alice's diagnostic client captured the response headers from a slow upload. How
+Your diagnostic client captured the response headers from a slow upload. How
 can the server operator find the timing for exactly that request? Would a later
 health request's ID work instead?
 
 <details>
 <summary>Answer</summary>
 
-The server must have `--request-log` enabled. Alice supplies the upload response's
-`X-Receipt-Request-ID`, and the operator finds that ID in the server's standard-error
-log. The stages separate credential checks, lock waiting and storage work.
+The server must have `--request-log` enabled. Give the operator the upload response's
+`X-Receipt-Request-ID`. The operator uses it to find the matching entry in the
+server's standard-error log. The stages separate credential checks, lock waiting and storage work.
 The ordinary Receipt CLI does not expose the header; an HTTP diagnostic must
 capture it. A health request gets its own ID, which cannot identify the upload.
 

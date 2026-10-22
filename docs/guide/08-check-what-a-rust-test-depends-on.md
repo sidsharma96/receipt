@@ -1,9 +1,9 @@
 # 8. Check what a Rust test depends on
 
-Alice runs a Rust library's tests with [Cargo](../GLOSSARY.md#cargo), Rust's build and package tool.
-She has not changed her test file. But the test calls a helper library, and that
-library has changed. Replaying the old success would hide the change. Recording
-only the test command or compiler version is not enough.
+You run a Rust library's tests with [Cargo](../GLOSSARY.md#cargo), Rust's build and package tool.
+The test file is unchanged, but a helper library it calls has changed. Replaying
+the old success would hide the change. Recording only the test command or compiler
+version is not enough.
 
 Receipt asks Cargo which packages the selected test needs. This relationship
 is called a [dependency graph](../GLOSSARY.md#dependency-graph): an arrow from A to B means A needs B. A helper may
@@ -32,7 +32,7 @@ metadata, its description of the selected packages and their relationships.
 The walk follows libraries needed by the selected package and by its helpers.
 A development dependency is needed only for a package’s own tests or examples.
 Receipt includes the selected package’s development dependencies, but not a helper’s
-private test dependencies: testing Alice’s package does not run the helper’s tests.
+private test dependencies: testing your package does not run the helper’s tests.
 
 **Before Receipt reuses a Cargo result**
 
@@ -91,7 +91,7 @@ See the [command contract](../CARGO.md) and the [Design reference](../DESIGN-DEF
 
 **Level:** Newcomer
 
-Alice's own crate has no build script, but a helper library it depends on has one. Will Receipt replay a previous success for `cargo test --frozen`?
+Your Rust package has no build script, but a helper library it depends on has one. Will Receipt replay a previous success for `cargo test --frozen`?
 
 <details>
 <summary>Answer</summary>
@@ -106,7 +106,7 @@ No. Receipt follows the whole selected dependency graph before looking up a resu
 
 **Level:** Practitioner
 
-Alice's crate has no build script, but a helper library it depends on does. Should Receipt replay a previous success? Which dependencies does the Cargo adapter walk?
+Your Rust package has no build script, but a helper library it depends on does. Should Receipt replay a previous success? Which dependencies does the Cargo adapter walk?
 
 <details>
 <summary>Answer</summary>

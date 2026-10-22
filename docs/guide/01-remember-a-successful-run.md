@@ -1,6 +1,6 @@
 # 1. Remember a successful run
 
-Alice runs her tests. They pass. Ten minutes later she runs the same command without changing her code. Could Receipt avoid doing the same work twice?
+Your tests pass. You run the same command again without changing the code. What work can Receipt skip, and what must it check first?
 
 It first needs a description of the run. The command alone is not enough: `pytest` can behave differently after a source file, environment setting, or Python package changes.
 
@@ -14,7 +14,7 @@ copying them into the description. Hashing is not encryption.
 
 Receipt calls the whole description a [manifest](../GLOSSARY.md#manifest). It calculates another hash from that manifest and uses it as the [input key](../GLOSSARY.md#input-key), the name under which it looks for a saved run.
 
-Suppose Alice runs `pytest` on a price calculation. Receipt records the bytes of
+Suppose you run `pytest` on a price calculation. Receipt records the bytes of
 `prices.py`, a currency setting and the Python package versions, along with the
 other inputs. Call the resulting key `K`. The letters here are illustrative names,
 not actual hash values:
@@ -31,7 +31,7 @@ edit prices.py
 ```
 
 Without that input description, a cache indexed only by `pytest` could return
-the old success after Alice breaks the calculation. Fingerprinting lets Receipt
+the old success after an edit breaks the calculation. Fingerprinting lets Receipt
 distinguish those runs. It does not prove that it found every input: if the test
 also reads a changing website that the description omits, the key can stay `K`.
 
@@ -60,7 +60,7 @@ could avoid that work, but would require reliable discovery of those dependencie
 A test may open a data file dynamically, so source imports alone are not enough.
 Receipt accepts extra misses to reduce the risk of silently omitting an input.
 
-A Git commit alone would miss Alice's uncommitted edit. File modification times
+A Git commit alone would miss an edit you have not committed. File modification times
 are also insufficient: copying different bytes while preserving the old timestamp
 can hide a change. Reading and hashing content costs more, but detects that case.
 Absolute directory paths count too. A test can print its current directory or
@@ -128,7 +128,7 @@ For the exact local storage rules and alternatives, see [Design reference](../DE
 
 **Level:** Newcomer
 
-Alice runs `uv run pytest`, the tests pass, and ten minutes later she runs the same command without changing anything. What does Receipt do the second time, and what does it need to know to do it safely?
+You run `receipt run -- uv run pytest` and the tests pass. You repeat the command without changing its inputs. What can Receipt reuse, and what must it check first?
 
 <details>
 <summary>Answer</summary>
@@ -143,7 +143,7 @@ Receipt wraps the test command. Before running it, Receipt describes the run: th
 
 **Level:** Newcomer
 
-Alice's tests read an ignored data file that she has not declared as an extra
+Your tests read an ignored data file that you have not declared as an extra
 input. Only that file changes. Does fingerprinting necessarily produce a new key?
 How does this differ from editing a tracked README?
 
@@ -151,7 +151,7 @@ How does this differ from editing a tracked README?
 <summary>Answer</summary>
 
 The omitted file's change does not affect the recorded description, so the key
-can stay the same and an old success can be reused. Alice should declare the
+can stay the same and an old success can be reused. Declare the
 file as an extra input or bypass caching for that command. A tracked README is
 included even if the tests never read it, so its edit changes the key and may
 cause an unnecessary miss. Fingerprinting compares recorded inputs; it does not
@@ -182,7 +182,7 @@ The key is the SHA-256 of the manifest encoded as JSON. Inputs are discovered by
 
 **Level:** Expert
 
-Alice copies unchanged source files to a different working directory and runs the same command. Must Receipt reuse the original result?
+You copy unchanged source files to a different working directory and run the same command. Must Receipt reuse the original result?
 
 <details>
 <summary>Answer</summary>

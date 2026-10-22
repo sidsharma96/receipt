@@ -284,12 +284,12 @@ No. A well-formed result can still claim a nonzero exit code, carry an invalid h
 
 **Level:** Practitioner
 
-Alice can download results but her upload is refused. Did authentication fail? How would the HTTP status tell you?
+A credential permits downloads. An upload using that credential receives HTTP 403. What does this tell you, and what would HTTP 401 mean instead?
 
 <details>
 <summary>Answer</summary>
 
-No. Her credential is valid; it does not include the `publish` scope that uploads need. `cacheAPI.serveScoped` first authenticates the credential. A missing, malformed, unknown, expired or revoked credential gets HTTP 401 with a `WWW-Authenticate: Bearer` header. Only then does it look up the scope the route requires and check it with `Principal.Allows`. A valid credential without that scope gets HTTP 403, and the request never reaches decoding or storage.
+HTTP 403 means the credential is valid but does not include the `publish` scope that uploads need. `cacheAPI.serveScoped` first authenticates the credential. A missing, malformed, unknown, expired or revoked credential gets HTTP 401 with a `WWW-Authenticate: Bearer` header. Only then does it look up the scope the route requires and check it with `Principal.Allows`. A valid credential without that scope gets HTTP 403, and the request never reaches decoding or storage.
 
 The scopes are `read`, `publish`, `report` and `metrics`, and none implies another. A credential that may publish but not read cannot download what it uploaded.
 
@@ -360,7 +360,7 @@ about to reference and prevent two writers from both claiming the last free spac
 
 **Level:** Practitioner
 
-Alice's crate has no build script, but a helper library it depends on does. Should Receipt replay a previous success? Which dependencies does the Cargo adapter walk?
+Your Rust package has no build script, but a helper library it depends on does. Should Receipt replay a previous success? Which dependencies does the Cargo adapter walk?
 
 <details>
 <summary>Answer</summary>

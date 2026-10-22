@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 370" role="img" aria-labelledby="permissions-title permissions-desc">
 <title id="permissions-title">Authentication and permission checks are separate decisions</title>
-<desc id="permissions-desc">Illustrative records and execution order, not measured timings. Read the text explanation below for details.</desc>
+<desc id="permissions-desc">An unknown token receives 401. A valid read-only token passes authentication but receives 403 when uploading. A valid token with publish permission passes both checks and proceeds to storage.</desc>
 <rect width="720" height="100%" rx="12" fill="#fcfbf7"/>
 <text x="30" y="35" font-family="system-ui, sans-serif" font-size="19" fill="#24394b" text-anchor="start">REQUEST: save a shared result</text>
 <text x="25" y="111" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Unknown token</text>
@@ -9,7 +9,7 @@
 <text x="290" y="111" font-family="system-ui, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle">no</text>
 <rect x="569" y="82" width="115" height="46" rx="6" fill="#ffffff" stroke="#ac3c43"/>
 <text x="626" y="111" font-family="system-ui, sans-serif" font-size="18" fill="#ac3c43" text-anchor="middle">401</text>
-<text x="25" y="201" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Alice: read only</text>
+<text x="25" y="201" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Read-only token</text>
 <path d="M190 195 L671 195" fill="none" stroke="#c8d1d4" stroke-width="2"/>
 <circle cx="290" cy="195" r="20" fill="#167767"/>
 <text x="290" y="201" font-family="system-ui, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle">yes</text>
@@ -19,7 +19,7 @@
 <text x="465" y="201" font-family="system-ui, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle">no</text>
 <rect x="569" y="172" width="115" height="46" rx="6" fill="#ffffff" stroke="#97650d"/>
 <text x="626" y="201" font-family="system-ui, sans-serif" font-size="18" fill="#97650d" text-anchor="middle">403</text>
-<text x="25" y="291" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">CI: publish</text>
+<text x="25" y="291" font-family="system-ui, sans-serif" font-size="16" fill="#24394b" text-anchor="start">Publishing token</text>
 <path d="M190 285 L671 285" fill="none" stroke="#c8d1d4" stroke-width="2"/>
 <circle cx="290" cy="285" r="20" fill="#167767"/>
 <text x="290" y="291" font-family="system-ui, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle">yes</text>

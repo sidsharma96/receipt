@@ -1,6 +1,6 @@
 # 2. Let another client reuse the result
 
-Alice has saved a successful run. Now CI, the automated service that runs tests after code changes, wants the same result. A file on Alice's laptop is not enough: the two clients need somewhere they can both ask.
+A successful result is saved on your laptop. Can a CI job reuse it? CI is the automated service that runs tests after code changes. Its test job runs on another machine, which cannot read your laptop's local cache. Both machines need access to a shared store; reuse also requires matching input keys.
 
 Receipt can run a server. A client sends an HTTP request to it, a message that names an operation and may carry data. A lookup asks for a result; an upload supplies one. The server does not run pytest on the client's behalf. It stores and returns reported results.
 
@@ -51,11 +51,11 @@ if s.remote.URL == "" {
 
 ## What if the clients disagree?
 
-Imagine Alice and CI report different output for the same key. Receipt must not quietly choose whichever answer arrived last. It marks that key as [quarantined](../GLOSSARY.md#quarantine), meaning it must not be reused, and can retain information about the conflicting observations.
+Suppose your laptop and the CI job report different output for the same key. Receipt must not quietly choose whichever answer arrived last. It marks that key as [quarantined](../GLOSSARY.md#quarantine), meaning it must not be reused, and can retain information about the conflicting observations.
 
 This is not proof that either caller is honest. A permitted caller can report false results. Nor does a hash prove the tests ran: it checks content identity, not execution history.
 
-Sharing also has a practical limit today. Absolute checkout paths and environment settings are part of the key. Alice and CI do not automatically get matching keys merely because they checked out the same commit. Portable keys need further design.
+Sharing also has a practical limit today. Absolute checkout paths and environment settings are part of the key. Your laptop and the CI machine do not automatically get matching keys merely because they checked out the same commit. Portable keys need further design.
 
 ## Read further
 
