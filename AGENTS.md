@@ -58,6 +58,37 @@ Repair gaps before continuing. Then verify claims against implementation and run
 `make docs`. Report editorial findings separately from check results; neither a
 passing build nor a shorter page establishes teaching quality.
 
+## Review decisions at coherent checkpoints
+
+Use the independent architecture reviewer before adopting a substantial algorithm,
+input assumption or cache boundary, and after an experiment before relying on its
+conclusion. Review the implemented change separately with the required code and
+architecture roles. A checkpoint is a decision or a completed experiment, not each
+edit or command. Reopen review when new evidence changes an earlier assumption.
+
+Supply the concrete workload, proposed behavior, simplest credible alternative,
+required guarantees, evidence and unresolved questions. Ask the reviewer to challenge
+the proposal itself: why this structure or algorithm, what work repeats, which path
+actually dominates, what state must survive, and which failure could invalidate the
+result? Include cold-start, miss and recovery costs, existing tool caches, input
+scope and command semantics when relevant. Distinguish measured costs from suspected
+hot paths. An optimization must improve the complete relevant workflow without
+silently weakening its contract.
+
+Keep a concise working decision note with the review evidence under `.tools/reviews/`:
+the question, alternatives, evidence, counterexample, chosen trade-off, unresolved
+limits and condition for reconsideration. Update the note rather than accumulating
+a development diary. A reviewer verdict is criticism, not experimental proof.
+Resolve material findings or record an evidence-backed rebuttal before depending on
+the decision; missing evidence means an experiment or a narrower claim is needed.
+
+For the book, teach the useful reasoning in the existing relevant lesson: one
+concrete example, the mechanism, a credible alternative, evidence and its limit.
+Review that explanation separately in the private documentation context. A code
+review cannot establish that a newcomer can explain or challenge the design; do not
+copy review transcripts, private book prose or a mandatory decision template into
+public review evidence or teaching chapters.
+
 ## Documentation structure
 
 The README serves someone deciding whether to install Receipt. Keep it focused on

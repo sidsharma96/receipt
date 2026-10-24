@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/sidsharma96/receipt/internal/fingerprint"
 )
 
 // BenchmarkProfileCodec isolates wire encoding/decoding from network and storage.
@@ -35,6 +37,36 @@ func BenchmarkProfileCodec(b *testing.B) {
 					}
 				}
 			})
+		})
+	}
+}
+
+// BenchmarkManifestDecode varies input count while keeping captured output small.
+// It measures validation and decoding of resident bytes, excluding disk and scans.
+func BenchmarkManifestDecode(b *testing.B) {
+	for _, count := range []int{1, 1024, 12886} {
+		b.Run(fmt.Sprint(count), func(b *testing.B) {
+			r := example()
+			for i := 0; i < count; i++ {
+				r.Manifest.Inputs = append(r.Manifest.Inputs, fingerprint.Input{
+					Kind: fingerprint.FileInput,
+					Name: fmt.Sprintf("/fixture/source/package-%05d/input.go", i),
+					Hash: fingerprint.Hash([]byte("fixture")),
+				})
+			}
+			r.Key = r.Manifest.Key()
+			encoded, err := Encode(r)
+			if err != nil {
+				b.Fatal(err)
+			}
+			b.ReportAllocs()
+			b.SetBytes(int64(len(encoded)))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				if _, err := Decode(encoded); err != nil {
+					b.Fatal(err)
+				}
+			}
 		})
 	}
 }
