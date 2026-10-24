@@ -3,6 +3,53 @@
 Preserve existing user changes. Keep implemented behavior distinct from proposed work.
 Do not commit, push, deploy or publish without user authorization.
 
+## Independent code review
+
+Use the local Claude Code `code-reviewer` for completed code changes. Also use
+`architecture-reviewer` for changes to package responsibilities, storage or wire
+contracts, concurrency, dependencies, or performance strategy. Review a substantial
+design before implementation, then review the resulting code separately. Both roles
+use `claude-opus-5-5` with low effort; do not silently substitute another model.
+
+The roles live in `.claude/agents/`; their selected Go project references live in
+`review/upstream.json`. These are private local configuration, excluded through
+`.git/info/exclude`. Never stage or publish `.claude/` or `review/upstream.json`.
+Do not change or stage `.gitignore` as part of this setup. A fresh clone needs these
+local files provisioned separately; ordinary builds and tests do not require them.
+
+Before review, stage only the intended source changes and set aside other nonignored
+edits. Write a concise evidence file under `.tools/reviews/` describing the problem,
+checks actually run, results, skipped checks and unresolved questions. Do not copy
+private book sources or secrets into it. Run each required role with a new report
+path for every round, for example:
+
+```sh
+go run ./tools/review run --reviewer code --base origin/main \
+  --evidence .tools/reviews/evidence.txt --report .tools/reviews/code-1.json
+go run ./tools/review run --reviewer architecture --base origin/main \
+  --evidence .tools/reviews/evidence.txt --report .tools/reviews/architecture-1.json
+```
+
+The runner gives Claude a copy of the staged source, the diff and supplied evidence.
+It excludes ignored files and private documentation, disables Claude customizations
+and inherited MCP servers, restricts file access to that snapshot, and permits only
+Read, Grep and Glob. Reviewers inspect code but cannot run checks themselves. The
+upstream catalog supplies specific examples, not a mandate to copy large systems.
+
+Resolve supported material findings or provide a concrete rebuttal, then obtain
+APPROVE for the final code from each required role. After two unresolved substantive
+exchanges, discuss the disagreement with the user; do not rerun merely to get a
+favorable verdict. INSUFFICIENT_EVIDENCE needs the missing check or clarification.
+Use `--purpose design` or `--purpose baseline` for those reviews; neither approves
+a subsequent code change.
+
+Immediately before an authorized commit or push, replace `run` with `verify` in
+each command, using the same evidence and final report. The tree, comparison base,
+evidence, role and catalog must still match. Refresh the target branch before a
+merge and repeat review if the comparison changes. Local reports are workflow
+checks, not tamper-proof attestations or GitHub branch protection. A review does
+not grant permission to commit or publish, and book review remains separate.
+
 Before changing Go code, read `docs/CODING-PRACTICES.md`. Before changing prose,
 read `docs/PROSE-STYLE-GUIDE.md` and apply its required review passes. After each
 coherent revision, read changed pages in learning order without source code beside
