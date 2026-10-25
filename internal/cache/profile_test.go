@@ -73,18 +73,22 @@ func BenchmarkManifestDecode(b *testing.B) {
 
 // BenchmarkProfileDuplicateBlob includes filesystem sync calls but no SQL/HTTP.
 func BenchmarkProfileDuplicateBlob(b *testing.B) {
-	s := FileBlobs{Dir: b.TempDir()}
-	data := bytes.Repeat([]byte("x"), 1<<20)
-	ctx := context.Background()
-	if _, err := s.Put(ctx, data); err != nil {
-		b.Fatal(err)
-	}
-	b.ReportAllocs()
-	b.SetBytes(int64(len(data)))
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		if _, err := s.Put(ctx, data); err != nil {
-			b.Fatal(err)
-		}
+	for _, size := range []int{1 << 20, MaxBlobBytes} {
+		b.Run(fmt.Sprint(size), func(b *testing.B) {
+			s := FileBlobs{Dir: b.TempDir()}
+			data := bytes.Repeat([]byte("x"), size)
+			ctx := context.Background()
+			if _, err := s.Put(ctx, data); err != nil {
+				b.Fatal(err)
+			}
+			b.ReportAllocs()
+			b.SetBytes(int64(len(data)))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				if _, err := s.Put(ctx, data); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
 	}
 }

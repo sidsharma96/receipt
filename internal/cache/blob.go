@@ -3,6 +3,8 @@ package cache
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -104,10 +106,40 @@ func (s FileBlobs) Put(ctx context.Context, b []byte) (BlobRef, error) {
 	}
 	if err = os.Link(f.Name(), p); os.IsExist(err) {
 		// Corrupt immutable objects are not silently repaired or overwritten.
-		_, err = s.Get(ctx, ref)
+		err = s.verifyExisting(ctx, ref)
 	}
 	if err != nil {
 		return ref, err
 	}
 	return ref, syncDirectory(filepath.Dir(p))
+}
+
+// verifyExisting checks a duplicate without retaining bytes that Put discards.
+// Publication and directory synchronization still belong to Put.
+func (s FileBlobs) verifyExisting(ctx context.Context, ref BlobRef) error {
+	defer observe.Measure(ctx, observe.Files)()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	p, err := s.path(ref.Hash)
+	if err != nil {
+		return err
+	}
+	f, err := os.Open(p)
+	if os.IsNotExist(err) {
+		return ErrMiss
+	}
+	if err != nil {
+		return err
+	}
+	defer f.Close() //nolint:errcheck // Read-only verification; preserve the read or corruption error.
+	hash := sha256.New()
+	n, err := io.Copy(hash, io.LimitReader(f, MaxBlobBytes+1))
+	if err != nil {
+		return err
+	}
+	if n != int64(ref.Size) || hex.EncodeToString(hash.Sum(nil)) != ref.Hash {
+		return ErrCorrupt
+	}
+	return nil
 }

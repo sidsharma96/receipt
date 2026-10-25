@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,6 +10,77 @@ import (
 	"sync"
 	"testing"
 )
+
+func TestDuplicateBlobRejectsChangedBytes(t *testing.T) {
+	want := bytes.Repeat([]byte("original"), 8192)
+	for _, test := range []struct {
+		name string
+		data []byte
+	}{
+		{"same-length", bytes.Repeat([]byte("modified"), 8192)},
+		{"truncated", want[:len(want)-1]},
+		{"trailing-byte", append(append([]byte(nil), want...), 'x')},
+		{"over-limit", bytes.Repeat([]byte("x"), MaxBlobBytes+1)},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			s := FileBlobs{Dir: t.TempDir()}
+			ref, err := s.Put(context.Background(), want)
+			if err != nil {
+				t.Fatal(err)
+			}
+			path, err := s.path(ref.Hash)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = os.WriteFile(path, test.data, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err = s.Put(context.Background(), want); !errors.Is(err, ErrCorrupt) {
+				t.Fatalf("damaged duplicate acknowledged: %v", err)
+			}
+			got, err := os.ReadFile(path)
+			if err != nil || !bytes.Equal(got, test.data) {
+				t.Fatal("duplicate publication changed the stored object", err)
+			}
+		})
+	}
+}
+
+func TestDuplicateBlobVerification(t *testing.T) {
+	s := FileBlobs{Dir: t.TempDir()}
+	ctx := context.Background()
+	for _, size := range []int{0, 32767, 32768, 32769, MaxBlobBytes} {
+		data := bytes.Repeat([]byte("x"), size)
+		ref, err := s.Put(ctx, data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = s.Put(ctx, data); err != nil {
+			t.Fatalf("valid duplicate of %d bytes: %v", size, err)
+		}
+		path, err := s.path(ref.Hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = os.Remove(path); err != nil {
+			t.Fatal(err)
+		}
+		if err = s.verifyExisting(ctx, ref); !errors.Is(err, ErrMiss) {
+			t.Fatalf("missing duplicate: %v", err)
+		}
+		if err = os.Mkdir(path, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err = s.verifyExisting(ctx, ref); err == nil {
+			t.Fatal("directory read error suppressed")
+		}
+		canceled, cancel := context.WithCancel(ctx)
+		cancel()
+		if err = s.verifyExisting(canceled, ref); !errors.Is(err, context.Canceled) {
+			t.Fatalf("canceled verification: %v", err)
+		}
+	}
+}
 
 func TestBlobProcessHelper(t *testing.T) {
 	dir := os.Getenv("RECEIPT_BLOB_WORKER_DIR")
