@@ -51,7 +51,8 @@ checks, not tamper-proof attestations or GitHub branch protection. A review does
 not grant permission to commit or publish, and book review remains separate.
 
 Before changing Go code, read `docs/CODING-PRACTICES.md`. Before changing prose,
-read `docs/PROSE-STYLE-GUIDE.md` and apply its required review passes. After each
+read `docs/PROSE-STYLE-GUIDE.md` and `docs/BOOK-RULES.md` (the rules every
+learning book shares; they win for teaching chapters) and apply the required review passes. After each
 coherent revision, read changed pages in learning order without source code beside
 them: can a newcomer explain the problem, follow the example and predict a result?
 Repair gaps before continuing. Then verify claims against implementation and run
@@ -103,7 +104,8 @@ obsolete sections. Git history preserves earlier versions; do not copy whole
 historical logs into an archive merely to keep them in the book.
 
 Remove date-based narration, implementation phases, diary entries and dated headings
-from documentation. Keep version numbers and experimental conditions that affect
+from documentation. A mistake that git or a log records is not diary: tell it in the
+chapter that teaches its mechanism (rule 3 of `docs/BOOK-RULES.md`). Keep version numbers and experimental conditions that affect
 interpretation. Put identifiers inside descriptive evidence links rather than
 printing full hashes. Exact identifiers belong in actionable commands or contracts
 only when a reader must copy or compare them. Do not alter real resource paths or
