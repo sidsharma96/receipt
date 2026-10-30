@@ -156,6 +156,33 @@ Keep those checks meaningful when pages are merged; do not require historical
 page, question or excerpt counts as a substitute for checking existing content.
 The book is not built or deployed by CI; see "Documentation is private" below.
 
+## Code excerpts in the book
+
+Every guide chapter follows Rule 7 of `docs/BOOK-RULES.md`: show the real code the
+chapter is about, give one concrete input before it, walk the lines that matter
+after it, show what they produce, and go one level down or up. A reader with only
+the book should understand 95% of that code. A link adds to code on the page; it
+never replaces it.
+
+- Receipt uses its own excerpt format, not the Rule 7 marker: a link line ending
+  in a colon, a blank line, then the block.
+
+      [`symbol`](https://github.com/sidsharma96/receipt/blob/main/internal/app/app.go#L232-L260):
+
+      ```go
+      …exact lines…
+      ```
+
+- `make docs` requires this attribution on every ```` ```go ```` block in
+  `docs/guide` and checks the block against that range of the current source,
+  ignoring whitespace. It accepts no cut comments: the block must be one unbroken
+  run of the range. To leave lines out, split the code into several excerpts.
+- Show a walk-through once. When another chapter already walks the code in full,
+  give one sentence and a link to its section.
+- Quote recorded measurements only, never timings rerun on a busy machine.
+- `make docs` is the excerpt check here. `../learning-docs/check-excerpts.py`
+  finds no markers in this book, so it passes without checking anything.
+
 ## Measurement artifacts and dependencies
 
 Do not add JSON, JSONL or NDJSON files to source control, including raw benchmark
