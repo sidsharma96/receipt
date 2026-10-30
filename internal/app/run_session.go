@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -140,20 +141,16 @@ func (s runSession) quarantineLocal() error {
 }
 
 func (s runSession) replay(prior cache.Result) (int, error) {
-	cacheDir := s.cacheDir
-	key := s.key
-	out := s.out
-	errOut := s.errOut
-
-	diagnostic(errOut, fmt.Sprintf("receipt: hit %s (saved test duration %s)", key[:12], time.Duration(prior.DurationNS)))
-	if _, e := out.Write(prior.Stdout); e != nil {
+	diagnostic(s.errOut, fmt.Sprintf("receipt: hit %s (saved test duration %s)", s.key[:12], time.Duration(prior.DurationNS)))
+	if _, e := s.out.Write(prior.Stdout); e != nil {
 		return 0, e
 	}
-	if _, e := errOut.Write(prior.Stderr); e != nil {
+	if _, e := s.errOut.Write(prior.Stderr); e != nil {
 		return 0, e
 	}
-	if bookkeepingErr := os.Chtimes(filepath.Join(cacheDir, "entries", key+".json"), time.Now(), time.Now()); bookkeepingErr != nil {
-		diagnostic(errOut, "receipt: optional local cache bookkeeping failed:", bookkeepingErr)
+	entryPath := filepath.Join(s.cacheDir, "entries", s.key+".json")
+	if bookkeepingErr := os.Chtimes(entryPath, time.Now(), time.Now()); bookkeepingErr != nil {
+		diagnostic(s.errOut, "receipt: optional local cache bookkeeping failed:", bookkeepingErr)
 	}
 	if err := s.recordHistory(); err != nil {
 		return 0, err
@@ -162,85 +159,84 @@ func (s runSession) replay(prior cache.Result) (int, error) {
 }
 
 func (s runSession) verify(ctx context.Context, prior cache.Result, r runner.Output, stable bool) (int, error) {
-	cacheDir := s.cacheDir
-	key := s.key
-	disk := s.disk
-	remote := s.remote
-	m := s.manifest
-	errOut := s.errOut
-
 	if !stable {
-		diagnostic(errOut, "receipt: verification inconclusive: inputs changed during execution")
+		diagnostic(s.errOut, "receipt: verification inconclusive: inputs changed during execution")
 		return 1, nil
 	}
-	if r.TooLarge || r.ExitCode != prior.ExitCode || string(r.Stdout) != string(prior.Stdout) || string(r.Stderr) != string(prior.Stderr) {
-		if e := quarantine(cacheDir, key); e != nil {
+	matched := !r.TooLarge && r.ExitCode == prior.ExitCode &&
+		bytes.Equal(r.Stdout, prior.Stdout) && bytes.Equal(r.Stderr, prior.Stderr)
+	if !matched {
+		if e := s.quarantineLocal(); e != nil {
 			return 0, e
 		}
-		if bookkeepingErr := disk.Remove(key); bookkeepingErr != nil {
-			diagnostic(errOut, "receipt: optional local cache bookkeeping failed:", bookkeepingErr)
+		observation := cache.Result{
+			Version:  1,
+			Key:      s.key,
+			Manifest: s.manifest,
+			Stdout:   r.Stdout,
+			Stderr:   r.Stderr,
+			ExitCode: r.ExitCode,
 		}
-		reportConflict(ctx, remote, cache.Result{Version: 1, Key: key, Manifest: m, Stdout: r.Stdout, Stderr: r.Stderr, ExitCode: r.ExitCode}, errOut)
-		diagnostic(errOut, "receipt: verification mismatch; key quarantined locally (output differences may be timing text)")
+		reportConflict(ctx, s.remote, observation, s.errOut)
+		diagnostic(s.errOut, "receipt: verification mismatch; key quarantined locally (output differences may be timing text)")
 		if r.ExitCode != 0 {
 			return r.ExitCode, nil
 		}
 		return 1, nil
 	}
-	diagnostic(errOut, "receipt: verification matched byte-for-byte")
+	diagnostic(s.errOut, "receipt: verification matched byte-for-byte")
 	return 0, nil
 }
 
 func (s runSession) failed(ctx context.Context, prior cache.Result, r runner.Output, stable bool) (int, error) {
-	o := s.options
-	cacheDir := s.cacheDir
-	key := s.key
-	disk := s.disk
-	remote := s.remote
-	m := s.manifest
-	errOut := s.errOut
-
-	if o.refresh && prior.Key == key && stable {
-		if e := quarantine(cacheDir, key); e != nil {
+	if s.options.refresh && prior.Key == s.key && stable {
+		if e := s.quarantineLocal(); e != nil {
 			return 0, e
 		}
-		if bookkeepingErr := disk.Remove(key); bookkeepingErr != nil {
-			diagnostic(errOut, "receipt: optional local cache bookkeeping failed:", bookkeepingErr)
+		observation := cache.Result{
+			Version:  1,
+			Key:      s.key,
+			Manifest: s.manifest,
+			Stdout:   r.Stdout,
+			Stderr:   r.Stderr,
+			ExitCode: r.ExitCode,
 		}
-		diagnostic(errOut, "receipt: refresh contradicted cached success; key quarantined locally")
-		reportConflict(ctx, remote, cache.Result{Version: 1, Key: key, Manifest: m, Stdout: r.Stdout, Stderr: r.Stderr, ExitCode: r.ExitCode}, errOut)
+		diagnostic(s.errOut, "receipt: refresh contradicted cached success; key quarantined locally")
+		reportConflict(ctx, s.remote, observation, s.errOut)
 	}
-	diagnostic(errOut, "receipt: failed results are not cached")
+	diagnostic(s.errOut, "receipt: failed results are not cached")
 	return r.ExitCode, nil
 }
 
 func (s runSession) publish(ctx context.Context, r runner.Output, stable bool) (int, error) {
-	o := s.options
-	cfg := s.config
-	cacheDir := s.cacheDir
-	key := s.key
-	disk := s.disk
-	m := s.manifest
-	errOut := s.errOut
-	if !stable || r.TooLarge || quarantined(cacheDir, key) {
-		diagnostic(errOut, "receipt: result not stored (inputs changed, output exceeded limit, or key quarantined)")
+	if !stable || r.TooLarge || quarantined(s.cacheDir, s.key) {
+		diagnostic(s.errOut, "receipt: result not stored (inputs changed, output exceeded limit, or key quarantined)")
 		return 0, nil
 	}
-	result := cache.Result{Version: 1, Key: key, Manifest: m, Stdout: r.Stdout, Stderr: r.Stderr, ExitCode: r.ExitCode, DurationNS: int64(r.Duration), CreatedAt: time.Now().UTC()}
-	if o.refresh {
-		if e := disk.Remove(key); e != nil {
-			diagnostic(errOut, "receipt: cache refresh failed:", e)
+	result := cache.Result{
+		Version:    1,
+		Key:        s.key,
+		Manifest:   s.manifest,
+		Stdout:     r.Stdout,
+		Stderr:     r.Stderr,
+		ExitCode:   r.ExitCode,
+		DurationNS: int64(r.Duration),
+		CreatedAt:  time.Now().UTC(),
+	}
+	if s.options.refresh {
+		if e := s.disk.Remove(s.key); e != nil {
+			diagnostic(s.errOut, "receipt: cache refresh failed:", e)
 			return 0, nil
 		}
 	}
-	if e := disk.Put(ctx, result); e != nil {
-		diagnostic(errOut, "receipt: could not store result:", e)
+	if e := s.disk.Put(ctx, result); e != nil {
+		diagnostic(s.errOut, "receipt: could not store result:", e)
 	}
 	if e := s.upload(ctx, result); e != nil {
 		return 0, e
 	}
-	if e := prune(disk, cfg.MaxBytes, outDiscard{}); e != nil {
-		diagnostic(errOut, "receipt: pruning failed:", e)
+	if e := prune(s.disk, s.config.MaxBytes, outDiscard{}); e != nil {
+		diagnostic(s.errOut, "receipt: pruning failed:", e)
 	}
 	return 0, nil
 }

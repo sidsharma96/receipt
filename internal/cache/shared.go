@@ -76,7 +76,7 @@ type blobRecord struct {
 // metadata commits can leave orphan blobs.
 type Postgres struct {
 	DB    *sql.DB
-	Blobs BlobStore
+	Blobs ManagedBlobs
 }
 
 // Migrate creates missing tables and initializes the filesystem/store binding.
@@ -171,7 +171,13 @@ func (s Postgres) Get(ctx context.Context, key string) (Result, error) {
 		return empty, ErrConflict
 	}
 	var record blobRecord
-	if json.Unmarshal(raw, &record) != nil || record.Version != 2 || record.Head.Key != key || len(record.Head.Stdout) != 0 || len(record.Head.Stderr) != 0 || Validate(record.Head) != nil {
+	if json.Unmarshal(raw, &record) != nil {
+		return empty, ErrCorrupt
+	}
+	validHead := record.Version == 2 && record.Head.Key == key &&
+		len(record.Head.Stdout) == 0 && len(record.Head.Stderr) == 0 &&
+		Validate(record.Head) == nil
+	if !validHead {
 		return empty, ErrCorrupt
 	}
 	r := record.Head
@@ -191,33 +197,34 @@ func (s Postgres) Get(ctx context.Context, key string) (Result, error) {
 
 // Put publishes a success or quarantines contradictory observations under exclusive locks.
 func (s Postgres) Put(ctx context.Context, r Result) error {
-	if err := Validate(r); err != nil {
-		return err
-	}
-	// Retain the v1 wire size contract; storage representation alone changes.
+	// Encode validates direct callers and retains the v1 wire size contract.
 	if _, err := Encode(r); err != nil {
 		return err
+	}
+	report := ReportFor(r)
+	refs := [2]BlobRef{
+		{Hash: report.StdoutHash, Size: len(r.Stdout)},
+		{Hash: report.StderrHash, Size: len(r.Stderr)},
 	}
 	tx, err := s.lifecycle(ctx, true)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback() //nolint:errcheck // Preserve the primary error; rollback also releases lifecycle resources.
-	additional, err := s.checkBlobQuota(ctx, tx, r)
+	additional, err := s.checkBlobQuota(ctx, tx, r.Key, refs)
 	if err != nil {
 		return err
 	}
 	head := r
 	head.Stdout = nil
 	head.Stderr = nil
-	refs := [2]BlobRef{{fingerprint.Hash(r.Stdout), len(r.Stdout)}, {fingerprint.Hash(r.Stderr), len(r.Stderr)}}
-	raw, err := json.Marshal(blobRecord{2, head, refs[0], refs[1]})
+	raw, err := json.Marshal(blobRecord{Version: 2, Head: head, Stdout: refs[0], Stderr: refs[1]})
 	if err != nil {
 		return err
 	}
 	// Admit the metadata first, so a quota refusal writes no files. Nothing is
 	// visible to readers until Commit, and the files are written before it.
-	conflict, err := s.publishTx(ctx, tx, ReportFor(r), raw, false)
+	conflict, err := s.publishTx(ctx, tx, report, raw, false)
 	if err != nil {
 		return err
 	}

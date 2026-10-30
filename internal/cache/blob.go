@@ -27,7 +27,8 @@ type BlobRef struct {
 	Size int    `json:"size"`
 }
 
-// MaxBlobBytes bounds a single captured output stream.
+// MaxBlobBytes is the existing 8 MiB per-stream capture limit. Both local and
+// shared result validation enforce it, independently of the encoded-entry cap.
 const MaxBlobBytes = 8 << 20
 
 // FileBlobs stores content-addressed objects in a local directory.

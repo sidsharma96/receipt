@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -19,6 +20,34 @@ func namedResult(name, output string) Result {
 	v.Key = v.Manifest.Key()
 	v.Stdout = []byte(output)
 	return v
+}
+
+func TestSharedQuotaCountsIdenticalStreamsOnce(t *testing.T) {
+	for _, output := range []string{"12345", ""} {
+		t.Run(fmt.Sprintf("bytes-%d", len(output)), func(t *testing.T) {
+			s := postgresFixture(t)
+			ctx := context.Background()
+			limits := DefaultLimits
+			limits.MaxBlobBytes = int64(len(output))
+			if err := s.SetLimits(ctx, limits, true); err != nil {
+				t.Fatal(err)
+			}
+			v := namedResult("identical-streams", output)
+			v.Stderr = bytes.Clone(v.Stdout)
+			if err := s.Put(ctx, v); err != nil {
+				t.Fatal("identical stdout and stderr must fit one copy's byte budget", err)
+			}
+			got, err := s.Get(ctx, v.Key)
+			if err != nil || !bytes.Equal(got.Stdout, v.Stdout) || !bytes.Equal(got.Stderr, v.Stderr) {
+				t.Fatal("shared streams did not round-trip", err)
+			}
+			_, usage, err := s.Stats(ctx)
+			if err != nil || usage.BlobBytes != int64(len(output)) || usage.BlobFiles != 1 {
+				t.Fatalf("identical streams counted more than once: %+v, %v", usage, err)
+			}
+			assertCountersMatch(t, s, "identical stdout and stderr")
+		})
+	}
 }
 
 func TestSharedQuotaAndDedup(t *testing.T) {

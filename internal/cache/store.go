@@ -15,7 +15,9 @@ import (
 	"github.com/sidsharma96/receipt/internal/fingerprint"
 )
 
-// MaxEntryBytes bounds a serialized local entry or HTTP payload.
+// MaxEntryBytes is the existing v1 cap for a serialized local entry or HTTP
+// payload, including the manifest and base64-encoded output. Larger entries
+// cannot be exchanged with clients enforcing this 32 MiB limit.
 const MaxEntryBytes = 32 << 20
 
 var (

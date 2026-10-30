@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sidsharma96/receipt/internal/fingerprint"
 	"github.com/sidsharma96/receipt/internal/observe"
 )
 
@@ -30,8 +29,14 @@ type Limits struct {
 	MaxEvidence      int64 `json:"max_evidence"`
 }
 
-// DefaultLimits supplies the initial budgets for a newly initialized shared store.
-var DefaultLimits = Limits{1 << 30, 64 << 20, 10000, 100000}
+// DefaultLimits supplies chosen operational budgets for a new shared store,
+// not measured capacity. Operators can change them with shared limits.
+var DefaultLimits = Limits{
+	MaxBlobBytes:     1 << 30,
+	MaxMetadataBytes: 64 << 20,
+	MaxEntries:       10000,
+	MaxEvidence:      100000,
+}
 
 // Usage reports logical metadata size and inventoried filesystem usage, not database disk size.
 type Usage struct {
@@ -71,6 +76,9 @@ func (tx *storageTx) Rollback() error { err := tx.Tx.Rollback(); tx.close(); ret
 func (tx *storageTx) Commit() error   { err := tx.Tx.Commit(); tx.close(); return err }
 
 func (s Postgres) lifecycle(ctx context.Context, exclusive bool) (*storageTx, error) {
+	if s.Blobs == nil {
+		return nil, fmt.Errorf("blob backend does not support safe maintenance")
+	}
 	// Do not let database/sql release the lock automatically on cancellation
 	// while a filesystem operation is still in progress. Release on return.
 	poolDone := observe.Measure(ctx, observe.Pool)
@@ -99,12 +107,7 @@ func (s Postgres) lifecycle(ctx context.Context, exclusive bool) (*storageTx, er
 		}
 		return nil, err
 	}
-	blobs, err := s.managed()
-	if err != nil {
-		tx.Rollback() //nolint:errcheck // Preserve the primary error; rollback also releases lifecycle resources.
-		return nil, err
-	}
-	root, err := blobs.Location()
+	root, err := s.Blobs.Location()
 	if err != nil {
 		tx.Rollback() //nolint:errcheck // Preserve the primary error; rollback also releases lifecycle resources.
 		return nil, err
@@ -119,20 +122,11 @@ func (s Postgres) lifecycle(ctx context.Context, exclusive bool) (*storageTx, er
 	return tx, nil
 }
 
-func (s Postgres) managed() (ManagedBlobs, error) {
-	blobs, ok := s.Blobs.(ManagedBlobs)
-	if !ok {
-		return nil, fmt.Errorf("blob backend does not support safe maintenance")
-	}
-	return blobs, nil
-}
-
 func (s Postgres) initializePolicy(ctx context.Context) error {
-	blobs, err := s.managed()
-	if err != nil {
-		return err
+	if s.Blobs == nil {
+		return fmt.Errorf("blob backend does not support safe maintenance")
 	}
-	root, err := blobs.Location()
+	root, err := s.Blobs.Location()
 	if err != nil {
 		return err
 	}
@@ -157,7 +151,7 @@ func (s Postgres) initializePolicy(ctx context.Context) error {
 	if boundRoot != root {
 		return fmt.Errorf("blob directory does not match database storage policy")
 	}
-	if err = blobs.Bind(ctx, id, true); err != nil {
+	if err = s.Blobs.Bind(ctx, id, true); err != nil {
 		return err
 	}
 	if _, err = s.policy(ctx, tx); err != nil {
@@ -176,18 +170,14 @@ func (s Postgres) policy(ctx context.Context, tx *storageTx) (Limits, error) {
 	if err != nil {
 		return l, err
 	}
-	blobs, err := s.managed()
-	if err != nil {
-		return l, err
-	}
-	location, err := blobs.Location()
+	location, err := s.Blobs.Location()
 	if err != nil {
 		return l, err
 	}
 	if location != root {
 		return l, fmt.Errorf("blob directory does not match database storage policy")
 	}
-	if err = blobs.Bind(ctx, id, false); err != nil {
+	if err = s.Blobs.Bind(ctx, id, false); err != nil {
 		return l, err
 	}
 	return l, nil
@@ -252,11 +242,7 @@ func (s Postgres) inventory(ctx context.Context, tx *storageTx) (Usage, []BlobOb
 	if err != nil {
 		return u, nil, err
 	}
-	blobs, err := s.managed()
-	if err != nil {
-		return u, nil, err
-	}
-	objects, err := blobs.Inventory(ctx)
+	objects, err := s.Blobs.Inventory(ctx)
 	if err != nil {
 		return u, nil, err
 	}
@@ -337,13 +323,13 @@ func (l Limits) validate() error {
 
 // checkBlobQuota returns the bytes this upload adds to the output directory.
 // It checks only this result's two files, not the whole store.
-func (s Postgres) checkBlobQuota(ctx context.Context, tx *storageTx, r Result) (int64, error) {
+func (s Postgres) checkBlobQuota(ctx context.Context, tx *storageTx, key string, refs [2]BlobRef) (int64, error) {
 	l, err := s.policy(ctx, tx)
 	if err != nil {
 		return 0, err
 	}
 	var q bool
-	err = tx.QueryRowContext(ctx, "SELECT quarantined FROM receipt_entries_v2 WHERE key=$1", r.Key).Scan(&q)
+	err = tx.QueryRowContext(ctx, "SELECT quarantined FROM receipt_entries_v2 WHERE key=$1", key).Scan(&q)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return 0, err
 	}
@@ -354,24 +340,19 @@ func (s Postgres) checkBlobQuota(ctx context.Context, tx *storageTx, r Result) (
 	if err != nil {
 		return 0, err
 	}
-	blobs, err := s.managed()
-	if err != nil {
-		return 0, err
-	}
 	present := map[string]bool{}
 	additional := int64(0)
-	for _, b := range [][]byte{r.Stdout, r.Stderr} {
-		ref := fingerprint.Hash(b)
-		if present[ref] {
+	for _, ref := range refs {
+		if present[ref.Hash] {
 			continue
 		}
-		present[ref] = true
-		stored, err := blobs.Contains(ctx, ref)
+		present[ref.Hash] = true
+		stored, err := s.Blobs.Contains(ctx, ref.Hash)
 		if err != nil {
 			return 0, err
 		}
 		if !stored {
-			additional += int64(len(b))
+			additional += int64(ref.Size)
 		}
 	}
 	if additional > l.MaxBlobBytes-u.BlobBytes {
@@ -404,16 +385,12 @@ func (s Postgres) Collect(ctx context.Context, apply bool) (MaintenanceResult, e
 			rows.Close() //nolint:errcheck // Preserve the scan/validation error; successful iteration checks rows.Err.
 			return result, err
 		}
-		var rec blobRecord
-		if json.Unmarshal(raw, &rec) != nil || rec.Version != 2 || Validate(rec.Head) != nil || rec.Head.Key != key || len(rec.Head.Stdout) != 0 || len(rec.Head.Stderr) != 0 || (ConflictReport{Key: key, Manifest: rec.Head.Manifest, StdoutHash: rec.Stdout.Hash, StderrHash: rec.Stderr.Hash, ExitCode: rec.Head.ExitCode}).digest() != digest {
+		refs, err := collectionReferences(raw, key, digest)
+		if err != nil {
 			rows.Close() //nolint:errcheck // Preserve the scan/validation error; successful iteration checks rows.Err.
-			return result, ErrCorrupt
+			return result, err
 		}
-		for _, ref := range []BlobRef{rec.Stdout, rec.Stderr} {
-			if !validKey.MatchString(ref.Hash) || ref.Size < 0 || ref.Size > MaxBlobBytes {
-				rows.Close() //nolint:errcheck // Preserve the scan/validation error; successful iteration checks rows.Err.
-				return result, ErrCorrupt
-			}
+		for _, ref := range refs {
 			live[ref.Hash] = true
 		}
 	}
@@ -425,11 +402,7 @@ func (s Postgres) Collect(ctx context.Context, apply bool) (MaintenanceResult, e
 	if closeErr != nil {
 		return result, closeErr
 	}
-	blobs, err := s.managed()
-	if err != nil {
-		return result, err
-	}
-	objects, err := blobs.Inventory(ctx)
+	objects, err := s.Blobs.Inventory(ctx)
 	if err != nil {
 		return result, err
 	}
@@ -441,7 +414,7 @@ func (s Postgres) Collect(ctx context.Context, apply bool) (MaintenanceResult, e
 			return result, err
 		}
 		if apply {
-			if err = blobs.Remove(ctx, o); err != nil {
+			if err = s.Blobs.Remove(ctx, o); err != nil {
 				return result, err
 			}
 		}
@@ -449,6 +422,34 @@ func (s Postgres) Collect(ctx context.Context, apply bool) (MaintenanceResult, e
 		result.Bytes += o.Size
 	}
 	return result, resetBlobUsage(ctx, tx, apply, objects, result.Bytes)
+}
+
+// collectionReferences validates a stored row before its files count as live.
+// The caller must finish checking all rows before deleting any output files.
+func collectionReferences(raw []byte, key, digest string) ([2]BlobRef, error) {
+	var rec blobRecord
+	if json.Unmarshal(raw, &rec) != nil {
+		return [2]BlobRef{}, ErrCorrupt
+	}
+	validHead := rec.Version == 2 && Validate(rec.Head) == nil && rec.Head.Key == key &&
+		len(rec.Head.Stdout) == 0 && len(rec.Head.Stderr) == 0
+	observation := ConflictReport{
+		Key:        key,
+		Manifest:   rec.Head.Manifest,
+		StdoutHash: rec.Stdout.Hash,
+		StderrHash: rec.Stderr.Hash,
+		ExitCode:   rec.Head.ExitCode,
+	}
+	if !validHead || observation.digest() != digest {
+		return [2]BlobRef{}, ErrCorrupt
+	}
+	refs := [2]BlobRef{rec.Stdout, rec.Stderr}
+	for _, ref := range refs {
+		if !validKey.MatchString(ref.Hash) || ref.Size < 0 || ref.Size > MaxBlobBytes {
+			return [2]BlobRef{}, ErrCorrupt
+		}
+	}
+	return refs, nil
 }
 
 // resetBlobUsage sets the output total to what a completed collection left and

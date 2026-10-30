@@ -136,7 +136,7 @@ func TestPostgresMetadataFailureLeavesCollectableBlobs(t *testing.T) {
 		t.Fatal("metadata failure acknowledged")
 	}
 	assertNoPublishedRows(t, s, v.Key)
-	objects, err := s.Blobs.(ManagedBlobs).Inventory(ctx)
+	objects, err := s.Blobs.Inventory(ctx)
 	if err != nil || len(objects) != 2 {
 		t.Fatal("SQL failure unexpectedly removed files", objects, err)
 	}
@@ -193,14 +193,14 @@ func TestPostgresMalformedMetadataStopsCollectionBeforeDeletion(t *testing.T) {
 	if _, err := s.DB.Exec(`UPDATE receipt_entries_v2 SET record=record || '{"unexpected":true}'::jsonb WHERE key=$1`, v.Key); err != nil {
 		t.Fatal(err)
 	}
-	before, _ := s.Blobs.(ManagedBlobs).Inventory(ctx)
+	before, _ := s.Blobs.Inventory(ctx)
 	if _, err := s.Get(ctx, v.Key); !errors.Is(err, ErrCorrupt) {
 		t.Fatal("malformed metadata was read", err)
 	}
 	if result, err := s.Collect(ctx, true); !errors.Is(err, ErrCorrupt) || result.Files != 0 {
 		t.Fatal("collector deleted before validating metadata", result, err)
 	}
-	after, err := s.Blobs.(ManagedBlobs).Inventory(ctx)
+	after, err := s.Blobs.Inventory(ctx)
 	if err != nil || len(after) != len(before) {
 		t.Fatal("collection changed files despite invalid metadata", after, err)
 	}
@@ -219,7 +219,7 @@ func TestPostgresInvalidDirectInputDoesNotTouchStorage(t *testing.T) {
 		t.Fatal("invalid direct report accepted")
 	}
 	assertNoPublishedRows(t, s, v.Key)
-	objects, err := s.Blobs.(ManagedBlobs).Inventory(context.Background())
+	objects, err := s.Blobs.Inventory(context.Background())
 	if err != nil || len(objects) != 0 {
 		t.Fatal("invalid input created blobs", objects, err)
 	}
