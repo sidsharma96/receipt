@@ -164,6 +164,11 @@ after it, show what they produce, and go one level down or up. A reader with onl
 the book should understand 95% of that code. A link adds to code on the page; it
 never replaces it.
 
+- Teach the current implementation. When code changes, update its excerpts and
+  explanations together. Keep an older excerpt only for a bug or performance
+  improvement: label it as old, explain the problem, show and explain the fix,
+  and link the evidence. End with the current behavior clear. Do not retain
+  obsolete code to avoid rewriting a lesson.
 - Receipt uses its own excerpt format, not the Rule 7 marker: a link line ending
   in a colon, a blank line, then the block.
 
